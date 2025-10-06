@@ -1,24 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "D:\\WorkSpace\\SEP490_G101\\EduMatch.DataAccessLayer\\EduMatch.DataAccessLayer.csproj": {}
+    "D:\\Ki9\\DoAn\\EduMatch\\EduMatch.DataAccessLayer\\EduMatch.DataAccessLayer.csproj": {}
   },
   "projects": {
-    "D:\\WorkSpace\\SEP490_G101\\EduMatch.DataAccessLayer\\EduMatch.DataAccessLayer.csproj": {
+    "D:\\Ki9\\DoAn\\EduMatch\\EduMatch.DataAccessLayer\\EduMatch.DataAccessLayer.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\WorkSpace\\SEP490_G101\\EduMatch.DataAccessLayer\\EduMatch.DataAccessLayer.csproj",
+        "projectUniqueName": "D:\\Ki9\\DoAn\\EduMatch\\EduMatch.DataAccessLayer\\EduMatch.DataAccessLayer.csproj",
         "projectName": "EduMatch.DataAccessLayer",
-        "projectPath": "D:\\WorkSpace\\SEP490_G101\\EduMatch.DataAccessLayer\\EduMatch.DataAccessLayer.csproj",
-        "packagesPath": "C:\\Users\\huuda\\.nuget\\packages\\",
-        "outputPath": "D:\\WorkSpace\\SEP490_G101\\EduMatch.DataAccessLayer\\obj\\",
+        "projectPath": "D:\\Ki9\\DoAn\\EduMatch\\EduMatch.DataAccessLayer\\EduMatch.DataAccessLayer.csproj",
+        "packagesPath": "C:\\Users\\ADMIN\\.nuget\\packages\\",
+        "outputPath": "D:\\Ki9\\DoAn\\EduMatch\\EduMatch.DataAccessLayer\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\huuda\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Users\\ADMIN\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -43,12 +39,33 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.300"
+        }
       },
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[8.0.20, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[8.0.20, )"
+            },
+            "Microsoft.EntityFrameworkCore.SqlServer": {
+              "target": "Package",
+              "version": "[8.0.20, )"
+            },
+            "Microsoft.EntityFrameworkCore.Tools": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[8.0.20, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
@@ -65,7 +82,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.301/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
