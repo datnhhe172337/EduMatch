@@ -118,3 +118,4 @@ Desktop.ini
 !EduMatch.PresentationLayer/
 !EduMatch.BusinessLogicLayer/
 !EduMatch.DataAccessLayer/
+!**/Configuration/
