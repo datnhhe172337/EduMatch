@@ -1,0 +1,120 @@
+###############################
+# 🧱 Build Results
+###############################
+bin/
+obj/
+out/
+dist/
+
+###############################
+# 💻 IDE / Editor Settings
+###############################
+.vs/
+.idea/
+.vscode/
+
+###############################
+# 👤 User-Specific Files
+###############################
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.swp
+*.bak
+*.orig
+*.rej
+
+###############################
+# 🪵 Logs / Temp
+###############################
+*.log
+*.tlog
+*.tmp
+*.temp
+logs/
+temp/
+tmp/
+
+###############################
+# 📦 NuGet Packages
+###############################
+*.nupkg
+*.snupkg
+packages/
+*.nuget.props
+*.nuget.targets
+
+###############################
+# 🚀 Publish / Deploy
+###############################
+*.Publish.xml
+*.pubxml
+*.publishproj
+PublishProfiles/
+project.lock.json
+app.publish/
+*.azurePubxml
+*.publishsettings
+
+###############################
+# 🧪 Test Results
+###############################
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+###############################
+# 🌐 Azure / IIS
+###############################
+Generated\ Files/
+
+###############################
+# 🧬 Entity Framework / Database
+###############################
+Migrations/
+*.mdf
+*.ldf
+*.dbmdl
+
+###############################
+# ⚙️ Configurations / Secrets
+###############################
+# Bỏ qua mọi file cấu hình nhạy cảm ở mọi Layer
+**/appsettings*
+**/launchSettings*
+**/secrets*
+**/.env
+**/.env.*
+**/config*
+**/data*
+
+# Nhưng vẫn giữ lại file mẫu cho team
+!**/appsettings.example.json
+!**/config.example.json
+
+###############################
+# 🧩 Frontend / Static Assets (nếu có)
+###############################
+wwwroot/lib/
+wwwroot/dist/
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+###############################
+# 🧰 OS / System Files
+###############################
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+###############################
+# 📂 Project Specific Whitelist
+###############################
+# Luôn giữ lại 3 layer chính (code thật)
+!EduMatch.PresentationLayer/
+!EduMatch.BusinessLogicLayer/
+!EduMatch.DataAccessLayer/
