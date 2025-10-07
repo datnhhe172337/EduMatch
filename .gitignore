@@ -87,7 +87,7 @@ Migrations/
 **/secrets*
 **/.env
 **/.env.*
-**/config*
+**/config*.json
 **/data*
 
 # Nhưng vẫn giữ lại file mẫu cho team
