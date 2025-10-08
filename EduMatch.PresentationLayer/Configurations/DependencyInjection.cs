@@ -25,6 +25,7 @@ namespace EduMatch.PresentationLayer.Configurations
 
 
 
+			// HttpContextAccessor for CurrentUserService
 			services.AddHttpContextAccessor();
 
 			return services;
