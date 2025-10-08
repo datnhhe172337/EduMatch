@@ -63,10 +63,6 @@ namespace EduMatch.BusinessLogicLayer.Settings
 		public sealed class FileImagePolicy
 		{
 			public int MaxSizeMB { get; set; } = 5;
-			public int MinWidth { get; set; } = 300;
-			public int MinHeight { get; set; } = 300;
-			public int MaxWidth { get; set; } = 6000;
-			public int MaxHeight { get; set; } = 6000;
 			public string[] AllowedContentTypes { get; set; } = Array.Empty<string>();
 			public string[] AllowedExtensions { get; set; } = Array.Empty<string>();
 		}

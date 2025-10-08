@@ -6,7 +6,5 @@ using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.Enum
 {
-	internal class MediaType
-	{
-	}
+	public enum MediaType { Image, Video }
 }

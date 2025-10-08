@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EduMatch.BusinessLogicLayer.Enum;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +7,12 @@ using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.Requests
 {
-	internal class UploadToCloudRequest
-	{
-	}
+	public sealed record UploadToCloudRequest(
+		Stream Content,
+		string FileName,
+		string ContentType,
+		long LengthBytes,
+		string OwnerEmail,
+		MediaType MediaType
+	);
 }

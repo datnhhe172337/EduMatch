@@ -1,4 +1,4 @@
-﻿using EduMatch.DataAccessLayer;
+﻿using EduMatch.DataAccessLayer.Data;
 using EduMatch.PresentationLayer.Configurations;
 using Microsoft.EntityFrameworkCore;
 
