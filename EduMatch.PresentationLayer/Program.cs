@@ -1,4 +1,4 @@
-﻿using EduMatch.DataAccessLayer;
+﻿using EduMatch.DataAccessLayer.Data;
 using EduMatch.PresentationLayer.Configurations;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,8 +11,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.ConfigureApplication(builder.Configuration);
 
 // Add services to the container.
-
-
 
 builder.Services.AddControllers();
 
