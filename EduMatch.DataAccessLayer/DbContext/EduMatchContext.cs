@@ -1,9 +1,10 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using EduMatch.DataAccessLayer.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace EduMatch.DataAccessLayer;
+namespace EduMatch.DataAccessLayer.Data;
 
 public partial class EduMatchContext : DbContext
 {
@@ -46,9 +47,9 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
 
-//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433; Database=EduMatch;UID=sa;PWD=FPTFall@2025!;TrustServerCertificate=True");
+    //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+    //        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433; Database=EduMatch;UID=sa;PWD=FPTFall@2025!;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
