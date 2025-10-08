@@ -12,8 +12,6 @@ builder.Services.ConfigureApplication(builder.Configuration);
 
 // Add services to the container.
 
-
-
 builder.Services.AddControllers();
 
 builder.Services.AddDbContext<EduMatchContext>(options =>
