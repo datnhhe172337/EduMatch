@@ -1,8 +1,18 @@
-﻿using EduMatch.DataAccessLayer.Data;
+﻿using DotNetEnv;
+using EduMatch.DataAccessLayer.Data;
 using EduMatch.PresentationLayer.Configurations;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+
+// Load ENV 
+Env.Load(); 
+builder.Configuration
+	.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+	.AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+	.AddEnvironmentVariables();
 
 
 
@@ -22,6 +32,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

@@ -1,0 +1,38 @@
+﻿using EduMatch.BusinessLogicLayer.Enum;
+using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Responses;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace EduMatch.BusinessLogicLayer.Interfaces
+{
+	public interface ICloudMediaService
+	{
+		// upload using stream with request.MediaType
+		Task<UploadToCloudResponse> UploadAsync(UploadToCloudRequest request, CancellationToken ct = default);
+
+
+		// upload useing URL 
+		Task<UploadToCloudResponse> UploadFromUrlAsync(
+			string fileUrl,
+			string fileName,
+			string ownerEmail,
+			MediaType mediaType,
+			string? contentType = null,
+			CancellationToken ct = default);
+	}
+
+	// validator cho media trước khi upload
+	public interface IMediaValidator
+	{
+		Task ValidateAsync(UploadToCloudRequest request, CancellationToken ct = default);
+		Task ValidateRemoteAsync(
+			string fileUrl,
+			string? contentType,
+			MediaType mediaType,
+			CancellationToken ct = default);
+	}
+}
