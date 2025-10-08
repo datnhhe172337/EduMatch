@@ -82,7 +82,7 @@ Migrations/
 # ⚙️ Configurations / Secrets
 ###############################
 # Bỏ qua mọi file cấu hình nhạy cảm ở mọi Layer
-**/appsettings*
+
 **/launchSettings*
 **/secrets*
 **/.env
@@ -90,9 +90,7 @@ Migrations/
 **/config*.json
 **/data*
 
-# Nhưng vẫn giữ lại file mẫu cho team
-!**/appsettings.example.json
-!**/config.example.json
+
 
 ###############################
 # 🧩 Frontend / Static Assets (nếu có)

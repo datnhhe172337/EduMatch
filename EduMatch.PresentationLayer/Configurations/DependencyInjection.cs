@@ -1,4 +1,7 @@
-﻿namespace EduMatch.PresentationLayer.Configurations
+﻿using DotNetEnv;
+using EduMatch.BusinessLogicLayer.Settings;
+
+namespace EduMatch.PresentationLayer.Configurations
 {
 	public static class DependencyInjection
 	{
@@ -9,7 +12,7 @@
 
 			//// Repositories
 			//services.AddScoped<IInvoiceRepository, InvoiceRepository>();
-		
+
 
 
 			//// AutoMapper
@@ -17,6 +20,15 @@
 
 			// HttpContextAccessor for CurrentUserService
 
+
+			// Bind "CloudinarySettings" 
+			services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
+
+		
+
+
+
+			// HttpContextAccessor for CurrentUserService
 			services.AddHttpContextAccessor();
 
 			return services;
