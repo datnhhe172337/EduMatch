@@ -1,4 +1,6 @@
-﻿using EduMatch.PresentationLayer.Configurations;
+﻿using EduMatch.DataAccessLayer.Data;
+using EduMatch.PresentationLayer.Configurations;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,9 +12,11 @@ builder.Services.ConfigureApplication(builder.Configuration);
 
 // Add services to the container.
 
-
-
 builder.Services.AddControllers();
+
+builder.Services.AddDbContext<EduMatchContext>(options =>
+  options.UseSqlServer(builder.Configuration.GetConnectionString("EduMatch")));
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
