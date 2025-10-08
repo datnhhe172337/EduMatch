@@ -23,7 +23,7 @@ namespace EduMatch.BusinessLogicLayer.Settings
 		public string ApiKey { get; set; } = "";
 		public string ApiSecret { get; set; } = "";
 		public string UnsignedUploadPreset { get; set; } = "";
-		public string AssetFolder { get; set; } = "edumatch/uploads";
+		public string AssetFolder { get; set; } = "user-infor";
 	}
 
 	public sealed class NamingOptions
