@@ -1,4 +1,5 @@
-﻿using EduMatch.BusinessLogicLayer.Settings;
+﻿using DotNetEnv;
+using EduMatch.BusinessLogicLayer.Settings;
 
 namespace EduMatch.PresentationLayer.Configurations
 {
@@ -22,6 +23,8 @@ namespace EduMatch.PresentationLayer.Configurations
 
 			// Bind "CloudinarySettings" 
 			services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
+
+		
 
 
 
