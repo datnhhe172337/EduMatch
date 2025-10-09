@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Load ENV 
 Env.Load(); 
+
 builder.Configuration
 	.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
 	.AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)

@@ -34,3 +34,8 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "EduMatch.PresentationLayer.dll"]
+
+
+
+
+# docker run -p 3002:3002 --env-file EduMatch.PresentationLayer/.env datnhm5/edumatch-api:v0
