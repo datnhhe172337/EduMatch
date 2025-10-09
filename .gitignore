@@ -83,7 +83,7 @@ Migrations/
 ###############################
 # Bỏ qua mọi file cấu hình nhạy cảm ở mọi Layer
 
-**/launchSettings*
+
 **/secrets*
 **/.env
 **/.env.*
