@@ -22,7 +22,7 @@ namespace EduMatch.BusinessLogicLayer.Settings
 		public string CloudName { get; set; } = "";
 		public string ApiKey { get; set; } = "";
 		public string ApiSecret { get; set; } = "";
-		public string UnsignedUploadPreset { get; set; } = "";
+		public string UploadPreset { get; set; } = "";
 		public string AssetFolder { get; set; } = "user-infor";
 	}
 

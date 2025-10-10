@@ -18,7 +18,8 @@ namespace EduMatch.PresentationLayer.Configurations
 			//// AutoMapper
 			//services.AddAutoMapper(typeof(MappingProfile).Assembly);
 
-			// HttpContextAccessor for CurrentUserService
+			// inject HttpClient
+			services.AddHttpClient();
 
 
 			// Bind "CloudinarySettings" 
