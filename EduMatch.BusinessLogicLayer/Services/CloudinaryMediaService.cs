@@ -11,6 +11,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using System.Net.Http;
 
 namespace EduMatch.BusinessLogicLayer.Services;
 
@@ -184,6 +185,56 @@ public sealed class CloudinaryMediaService : ICloudMediaService
 			return new UploadToCloudResponse(false, null, null, null, ex.Message);
 		}
 	}
+
+
+
+
+	public async Task<UploadToCloudResponse> DeleteByPublicIdAsync(
+		string publicId,
+		MediaType mediaType,
+		CancellationToken ct = default)
+	{
+		try
+		{
+			if (string.IsNullOrWhiteSpace(publicId))
+				return new UploadToCloudResponse(false, null, null, null, "publicId is empty.");
+
+			var cloudinary = CreateClient();
+
+			
+			var resourceType = mediaType switch
+			{
+				MediaType.Image => ResourceType.Image,
+				MediaType.Video => ResourceType.Video,
+				_ => ResourceType.Image 
+			};
+
+			var delParams = new DeletionParams(publicId)
+			{
+				Type = "upload",
+				Invalidate = true,       // xoá khỏi CDN cache
+				ResourceType = resourceType
+			};
+
+		
+			var result = await cloudinary.DestroyAsync(delParams);
+
+			var ok = string.Equals(result.Result, "ok", StringComparison.OrdinalIgnoreCase);
+
+			return new UploadToCloudResponse(
+				ok,
+				publicId,
+				null,
+				resourceType.ToString().ToLowerInvariant(),
+				ok ? null : result.Error?.Message
+			);
+		}
+		catch (Exception ex)
+		{
+			return new UploadToCloudResponse(false, publicId, null, null, ex.Message);
+		}
+	}
+
 
 	private Stream ResizeImage(Stream input, int maxWidth)
 	{

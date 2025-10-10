@@ -23,6 +23,13 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 			MediaType mediaType,
 			string? contentType = null,
 			CancellationToken ct = default);
+
+		// Xoá bằng publicId
+		Task<UploadToCloudResponse> DeleteByPublicIdAsync(
+			string publicId,
+			MediaType mediaType,
+			CancellationToken ct = default);
+
 	}
 
 	// validator cho media trước khi upload
@@ -35,4 +42,9 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 			MediaType mediaType,
 			CancellationToken ct = default);
 	}
+
+
+
+
+
 }

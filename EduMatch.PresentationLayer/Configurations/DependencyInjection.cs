@@ -1,4 +1,6 @@
 ﻿using DotNetEnv;
+using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.BusinessLogicLayer.Settings;
 
 namespace EduMatch.PresentationLayer.Configurations
@@ -24,8 +26,9 @@ namespace EduMatch.PresentationLayer.Configurations
 
 			// Bind "CloudinarySettings" 
 			services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
+			services.AddScoped<ICloudMediaService, CloudinaryMediaService>();
 
-		
+
 
 
 
