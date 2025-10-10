@@ -18,10 +18,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		// upload useing URL 
 		Task<UploadToCloudResponse> UploadFromUrlAsync(
 			string fileUrl,
-			string fileName,
 			string ownerEmail,
-			MediaType mediaType,
-			string? contentType = null,
 			CancellationToken ct = default);
 
 		// Xoá bằng publicId

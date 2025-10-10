@@ -1,7 +1,10 @@
-﻿using DotNetEnv;
+﻿using CloudinaryDotNet;
+using DotNetEnv;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.BusinessLogicLayer.Settings;
+using EduMatch.BusinessLogicLayer.Utils;
+using Microsoft.Extensions.Options;
 
 namespace EduMatch.PresentationLayer.Configurations
 {
@@ -26,6 +29,13 @@ namespace EduMatch.PresentationLayer.Configurations
 
 			// Bind "CloudinarySettings" 
 			services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
+
+			services.AddSingleton(sp => {
+				var opts = sp.GetRequiredService<IOptionsMonitor<CloudinaryRootOptions>>().CurrentValue;
+				var acc = new Account(opts.Cloudinary.CloudName, opts.Cloudinary.ApiKey, opts.Cloudinary.ApiSecret);
+				return new Cloudinary(acc) { Api = { Secure = true } };
+			});
+			services.AddSingleton<IMediaValidator, MediaValidator>();
 			services.AddScoped<ICloudMediaService, CloudinaryMediaService>();
 
 
