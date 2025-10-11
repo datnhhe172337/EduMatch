@@ -1,10 +1,9 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using EduMatch.DataAccessLayer.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace EduMatch.DataAccessLayer.Data;
+namespace EduMatch.DataAccessLayer;
 
 public partial class EduMatchContext : DbContext
 {
@@ -47,9 +46,9 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
 
-    //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-    //        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433; Database=EduMatch;UID=sa;PWD=FPTFall@2025!;TrustServerCertificate=True");
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433; Database=EduMatch;UID=sa;PWD=FPTFall@2025!;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -383,12 +382,15 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<UserProfile>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("user_profiles");
+            entity.HasKey(e => e.UserEmail);
+
+            entity.ToTable("user_profiles");
 
             entity.HasIndex(e => e.UserEmail, "UQ__user_pro__D54ADF55EDAB33DA").IsUnique();
 
+            entity.Property(e => e.UserEmail)
+                .HasMaxLength(100)
+                .HasColumnName("userEmail");
             entity.Property(e => e.AddressLine)
                 .HasMaxLength(500)
                 .HasColumnName("addressLine");
@@ -403,19 +405,16 @@ public partial class EduMatchContext : DbContext
                 .HasColumnType("decimal(9, 6)")
                 .HasColumnName("longitude");
             entity.Property(e => e.SubDistrictId).HasColumnName("sub_district_id");
-            entity.Property(e => e.UserEmail)
-                .HasMaxLength(100)
-                .HasColumnName("userEmail");
 
-            entity.HasOne(d => d.City).WithMany()
+            entity.HasOne(d => d.City).WithMany(p => p.UserProfiles)
                 .HasForeignKey(d => d.CityId)
                 .HasConstraintName("FK__user_prof__cityI__60A75C0F");
 
-            entity.HasOne(d => d.SubDistrict).WithMany()
+            entity.HasOne(d => d.SubDistrict).WithMany(p => p.UserProfiles)
                 .HasForeignKey(d => d.SubDistrictId)
                 .HasConstraintName("FK__user_prof__sub_d__628FA481");
 
-            entity.HasOne(d => d.UserEmailNavigation).WithOne()
+            entity.HasOne(d => d.UserEmailNavigation).WithOne(p => p.UserProfile)
                 .HasForeignKey<UserProfile>(d => d.UserEmail)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__user_prof__userE__6383C8BA");
