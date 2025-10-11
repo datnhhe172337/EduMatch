@@ -1,5 +1,5 @@
 ﻿using DotNetEnv;
-using EduMatch.DataAccessLayer;
+using EduMatch.DataAccessLayer.Database;
 using EduMatch.PresentationLayer.Configurations;
 using Microsoft.EntityFrameworkCore;
 
