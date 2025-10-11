@@ -35,11 +35,7 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<TutorCertificate> TutorCertificates { get; set; }
 
-    public virtual DbSet<TutorEducation> TutorEducations { get; set; }
-
     public virtual DbSet<TutorProfile> TutorProfiles { get; set; }
-
-    public virtual DbSet<TutorStatus> TutorStatuses { get; set; }
 
     public virtual DbSet<TutorSubject> TutorSubjects { get; set; }
 
@@ -155,169 +151,161 @@ public partial class EduMatchContext : DbContext
                 .HasColumnName("subjectName");
         });
 
-        modelBuilder.Entity<TimeSlot>(entity =>
+		// ---------- TimeSlot ----------
+		modelBuilder.Entity<TimeSlot>(entity =>
+		{
+			entity.ToTable("time_slots");
+			entity.HasKey(e => e.Id);
+			entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedOnAdd();
+			entity.Property(e => e.StartTime).HasColumnName("startTime");
+			entity.Property(e => e.EndTime).HasColumnName("endTime");
+		});
+
+
+
+
+
+		// ---------- TutorProfile ----------
+		modelBuilder.Entity<TutorProfile>(entity =>
         {
-            entity.HasKey(e => e.SlotId).HasName("PK__time_slo__9C4A671372AA7FF6");
-
-            entity.ToTable("time_slots");
-
-            entity.Property(e => e.SlotId).HasColumnName("slotId");
-            entity.Property(e => e.EndTime).HasColumnName("endTime");
-            entity.Property(e => e.StartTime).HasColumnName("startTime");
-        });
-
-        modelBuilder.Entity<TutorAvailability>(entity =>
-        {
-            entity.HasKey(e => e.AvailabilityId).HasName("PK__tutor_av__BFEBC055485BDF39");
-
-            entity.ToTable("tutor_availability");
-
-            entity.Property(e => e.AvailabilityId).HasColumnName("availabilityId");
-            entity.Property(e => e.DayOfWeek).HasColumnName("dayOfWeek");
-            entity.Property(e => e.EffectiveFrom).HasColumnName("effectiveFrom");
-            entity.Property(e => e.EffectiveTo).HasColumnName("effectiveTo");
-            entity.Property(e => e.IsRecurring)
-                .HasDefaultValue(true)
-                .HasColumnName("isRecurring");
-            entity.Property(e => e.SlotId).HasColumnName("slotId");
-            entity.Property(e => e.TutorId).HasColumnName("tutorId");
-
-            entity.HasOne(d => d.Slot).WithMany(p => p.TutorAvailabilities)
-                .HasForeignKey(d => d.SlotId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__tutor_ava__slotI__693CA210");
-
-            entity.HasOne(d => d.Tutor).WithMany(p => p.TutorAvailabilities)
-                .HasForeignKey(d => d.TutorId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__tutor_ava__tutor__68487DD7");
-        });
-
-        modelBuilder.Entity<TutorCertificate>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__tutor_ce__3213E83F36FD8838");
-
-            entity.ToTable("tutor_certificates");
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CertificateUrl)
-                .HasMaxLength(500)
-                .HasColumnName("certificateUrl");
-            entity.Property(e => e.CreatedAt)
-                .HasPrecision(3)
-                .HasDefaultValueSql("(sysdatetime())")
-                .HasColumnName("createdAt");
-            entity.Property(e => e.ExpiryDate).HasColumnName("expiryDate");
-            entity.Property(e => e.IssueDate).HasColumnName("issueDate");
-            entity.Property(e => e.Issuer)
-                .HasMaxLength(200)
-                .HasColumnName("issuer");
-            entity.Property(e => e.Title)
-                .HasMaxLength(200)
-                .HasColumnName("title");
-            entity.Property(e => e.TutorId).HasColumnName("tutorId");
-            entity.Property(e => e.Verified).HasColumnName("verified");
-
-            entity.HasOne(d => d.Tutor).WithMany(p => p.TutorCertificates)
-                .HasForeignKey(d => d.TutorId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__tutor_cer__tutor__5DCAEF64");
-        });
-
-        modelBuilder.Entity<TutorEducation>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__tutor_ed__3213E83F221566E1");
-
-            entity.ToTable("tutor_education");
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CertificateUrl)
-                .HasMaxLength(500)
-                .HasColumnName("certificateUrl");
-            entity.Property(e => e.CreatedAt)
-                .HasPrecision(3)
-                .HasDefaultValueSql("(sysdatetime())")
-                .HasColumnName("createdAt");
-            entity.Property(e => e.IssueDate).HasColumnName("issueDate");
-            entity.Property(e => e.Issuer)
-                .HasMaxLength(200)
-                .HasColumnName("issuer");
-            entity.Property(e => e.Title)
-                .HasMaxLength(200)
-                .HasColumnName("title");
-            entity.Property(e => e.TutorId).HasColumnName("tutorId");
-            entity.Property(e => e.Verified).HasColumnName("verified");
-
-            entity.HasOne(d => d.Tutor).WithMany(p => p.TutorEducations)
-                .HasForeignKey(d => d.TutorId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__tutor_edu__tutor__6754599E");
-        });
-
-        modelBuilder.Entity<TutorProfile>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__tutor_pr__3213E83F5EA8A0A2");
-
             entity.ToTable("tutor_profiles");
 
-            entity.HasIndex(e => e.UserEmail, "UQ__tutor_pr__D54ADF55D0EACA98").IsUnique();
+            entity.HasKey(e => e.Id);
 
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Bio).HasColumnName("bio");
-            entity.Property(e => e.CreatedAt)
-                .HasPrecision(3)
-                .HasDefaultValueSql("(sysdatetime())")
-                .HasColumnName("createdAt");
-            entity.Property(e => e.Dob).HasColumnName("dob");
-            entity.Property(e => e.Gender)
-                .HasMaxLength(20)
-                .HasColumnName("gender");
-            entity.Property(e => e.StatusId).HasColumnName("statusId");
-            entity.Property(e => e.TeachingExp)
-                .HasMaxLength(500)
-                .HasColumnName("teachingExp");
-            entity.Property(e => e.TeachingModes)
-                .HasMaxLength(200)
-                .HasColumnName("teachingModes");
-            entity.Property(e => e.Title)
-                .HasMaxLength(510)
-                .HasColumnName("title");
-            entity.Property(e => e.UpdatedAt)
-                .HasPrecision(3)
-                .HasColumnName("updatedAt");
-            entity.Property(e => e.UserEmail)
-                .HasMaxLength(100)
-                .HasColumnName("userEmail");
-            entity.Property(e => e.VideoIntroUrl)
-                .HasMaxLength(500)
-                .HasColumnName("videoIntroUrl");
+            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedOnAdd();
+			entity.HasIndex(e => e.UserEmail).IsUnique();
 
-            entity.HasOne(d => d.Status).WithMany(p => p.TutorProfiles)
-                .HasForeignKey(d => d.StatusId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__tutor_pro__statu__66603565");
+			entity.Property(e => e.Id).HasColumnName("id");
+			entity.Property(e => e.UserEmail)
+				.HasMaxLength(100)
+				.HasColumnName("userEmail");
 
-            entity.HasOne(d => d.UserEmailNavigation).WithOne(p => p.TutorProfile)
-                .HasForeignKey<TutorProfile>(d => d.UserEmail)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__tutor_pro__userE__6477ECF3");
-        });
+			entity.Property(e => e.Gender)
+				.HasConversion<byte>()
+                .HasColumnType("tinyint")
+				.HasColumnName("gender");
 
-        modelBuilder.Entity<TutorStatus>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__tutor_st__3213E83FE21FE1B2");
+			entity.Property(e => e.Dob).HasColumnName("dob");
+			entity.Property(e => e.Title)
+				.HasMaxLength(200)
+				.HasColumnName("title");
+			entity.Property(e => e.Bio).HasColumnName("bio");
+			entity.Property(e => e.TeachingExp)
+				.HasMaxLength(500)
+				.HasColumnName("teachingExp");
+			entity.Property(e => e.VideoIntroUrl)
+				.HasMaxLength(500)
+				.HasColumnName("videoIntroUrl");
+			entity.Property(e => e.VideoIntroPublicId)
+				.HasMaxLength(200)
+				.HasColumnName("videoIntroPublicId");
+			entity.Property(e => e.TeachingModes)
+				.HasConversion<byte>()
+				.HasColumnName("teachingModes")
+                .HasColumnType("tinyint");
+			entity.Property(e => e.Status)
+				.HasConversion<byte>()
+				.HasColumnType("tinyint")
+				.HasColumnName("status");
+			entity.Property(e => e.CreatedAt)
+				.HasPrecision(3)
+				.HasDefaultValueSql("(sysdatetime())")
+				.HasColumnName("createdAt");
+			entity.Property(e => e.UpdatedAt)
+				.HasPrecision(3)
+				.HasColumnName("updatedAt");
 
-            entity.ToTable("tutor_statuses");
+			entity.HasOne(d => d.UserEmailNavigation)
+				.WithOne(p => p.TutorProfile)
+				.HasForeignKey<TutorProfile>(d => d.UserEmail)
+				.OnDelete(DeleteBehavior.ClientSetNull)
+				.HasConstraintName("FK_tutor_profiles_users");
+		});
 
-            entity.HasIndex(e => e.StatusName, "UQ__tutor_st__6A50C212C66E9369").IsUnique();
 
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.StatusName)
-                .HasMaxLength(50)
-                .HasColumnName("statusName");
-        });
 
-        modelBuilder.Entity<TutorSubject>(entity =>
+
+
+
+		// ---------- TutorCertificate ----------
+		modelBuilder.Entity<TutorCertificate>(entity =>
+		{
+			entity.ToTable("tutor_certificates");
+			entity.HasKey(e => e.Id);
+
+			entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedOnAdd();
+			entity.Property(e => e.TutorId).HasColumnName("tutorId");
+            entity.Property(e => e.CertificateType)
+                .HasConversion<byte>()
+                .HasColumnType("tinyint")
+                .HasColumnName("certificateType");
+			entity.Property(e => e.Title)
+				.HasMaxLength(200)
+				.HasColumnName("title");
+			entity.Property(e => e.Issuer)
+				.HasMaxLength(200)
+				.HasColumnName("issuer");
+			entity.Property(e => e.IssueDate).HasColumnName("issueDate");
+			entity.Property(e => e.ExpiryDate).HasColumnName("expiryDate");
+			entity.Property(e => e.CertificateUrl)
+				.HasMaxLength(500)
+				.HasColumnName("certificateUrl");
+			entity.Property(e => e.CertificatePublicId)
+				.HasMaxLength(200)
+				.HasColumnName("certificatePublicId");
+			entity.Property(e => e.CreatedAt)
+				.HasPrecision(3)
+				.HasDefaultValueSql("(sysdatetime())")
+				.HasColumnName("createdAt");
+			entity.Property(e => e.Verified)
+				.HasConversion<byte>()
+                .HasColumnType("tinyint")
+				.HasColumnName("verified");
+
+			entity.HasOne(d => d.Tutor)
+				.WithMany(p => p.TutorCertificates)
+				.HasForeignKey(d => d.TutorId)
+				.OnDelete(DeleteBehavior.ClientSetNull)
+				.HasConstraintName("FK_tutor_certificates_tutor_profiles");
+		});
+
+
+
+		// ---------- TutorAvailability ----------
+		modelBuilder.Entity<TutorAvailability>(entity =>
+		{
+			entity.ToTable("tutor_availability");
+			entity.HasKey(e => e.Id);
+
+			entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedOnAdd();
+			entity.Property(e => e.TutorId).HasColumnName("tutorId");
+			entity.Property(e => e.SlotId).HasColumnName("slotId");
+			entity.Property(e => e.DayOfWeek)
+			 .HasConversion<byte>()
+			.HasColumnType("tinyint")
+			.HasColumnName("dayOfWeek")
+			.IsRequired();
+
+			entity.Property(e => e.IsRecurring)
+				.HasDefaultValue(true)
+				.HasColumnName("isRecurring");
+			entity.Property(e => e.EffectiveFrom).HasColumnName("effectiveFrom");
+			entity.Property(e => e.EffectiveTo).HasColumnName("effectiveTo");
+
+			entity.HasOne(d => d.Slot)
+				.WithMany(p => p.TutorAvailabilities)
+				.HasForeignKey(d => d.SlotId)
+				.OnDelete(DeleteBehavior.ClientSetNull)
+				.HasConstraintName("FK_tutor_availability_timeslots");
+
+			entity.HasOne(d => d.Tutor)
+				.WithMany(p => p.TutorAvailabilities)
+				.HasForeignKey(d => d.TutorId)
+				.OnDelete(DeleteBehavior.ClientSetNull)
+				.HasConstraintName("FK_tutor_availability_tutor_profiles");
+		});
+
+		modelBuilder.Entity<TutorSubject>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__tutor_su__3213E83F6946E504");
 

@@ -1,11 +1,11 @@
 ﻿using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
-using EduMatch.BusinessLogicLayer.Enum;
 using EduMatch.BusinessLogicLayer.Helper;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.BusinessLogicLayer.Responses;
 using EduMatch.BusinessLogicLayer.Settings;
+using EduMatch.DataAccessLayer.Enum;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Webp;

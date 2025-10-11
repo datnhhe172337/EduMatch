@@ -1,6 +1,6 @@
-﻿using EduMatch.BusinessLogicLayer.Enum;
-using EduMatch.BusinessLogicLayer.Interfaces;
+﻿using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.DataAccessLayer.Enum;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;

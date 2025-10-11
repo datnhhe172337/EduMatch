@@ -1,6 +1,6 @@
-﻿using EduMatch.BusinessLogicLayer.Enum;
-using EduMatch.BusinessLogicLayer.Requests;
+﻿using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.BusinessLogicLayer.Responses;
+using EduMatch.DataAccessLayer.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
