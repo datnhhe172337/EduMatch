@@ -1,6 +1,7 @@
 ﻿using DotNetEnv;
 using EduMatch.DataAccessLayer.Database;
 using EduMatch.PresentationLayer.Configurations;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,22 +31,32 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// NHẬN header từ reverse proxy (rất quan trọng khi đứng sau Traefik/Coolify)
+app.UseForwardedHeaders(new ForwardedHeadersOptions {
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Bật swagger theo ENV (an toàn cho prod)
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Swagger:Enabled"))
 {
 	app.UseSwagger();
 	app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
+// KHÔNG ép redirect HTTPS ở Production nếu container chỉ nghe HTTP (proxy lo TLS)
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection(); // chỉ dev
+}
 
 app.UseCors("CorsPolicy");
 
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+// Health endpoint để Coolify/Traefik check
+app.MapGet("/health", () => Results.Ok("OK"));
 
 app.MapControllers();
 
