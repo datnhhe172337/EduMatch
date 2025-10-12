@@ -1,5 +1,8 @@
 ﻿using DotNetEnv;
+using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.DataAccessLayer.Data;
+using EduMatch.DataAccessLayer.Repositories;
 using EduMatch.PresentationLayer.Configurations;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,12 +20,22 @@ builder.Configuration
 
 
 // Add services to the container.
-
+builder.Services.AddScoped<UserProfileRepository>();
+builder.Services.AddScoped<TutorProfileRepository>();
 builder.Services.ConfigureApplication(builder.Configuration);
+
+builder.Services.AddScoped<IUserProfileService, UserProfileService>();
+builder.Services.AddScoped<ITutorProfileService, TutorProfileService>();
+builder.Services.AddScoped<IFindTutorService, FindTutorService>();
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
 
 builder.Services.AddDbContext<EduMatchContext>(options =>
   options.UseSqlServer(builder.Configuration.GetConnectionString("EduMatch")));
