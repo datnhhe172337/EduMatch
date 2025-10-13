@@ -12,17 +12,20 @@ namespace EduMatch.DataAccessLayer.Repositories
 		private readonly EduMatchContext _ctx;
 		public TimeSlotRepository(EduMatchContext ctx) => _ctx = ctx;
 
+		private IQueryable<TimeSlot> IncludeAll() =>
+			_ctx.TimeSlots.AsNoTracking();
+
 		public async Task<TimeSlot?> GetByIdAsync(int id, CancellationToken ct = default)
-			=> await _ctx.TimeSlots.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id, ct);
+			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == id, ct);
 
 		public async Task<IReadOnlyList<TimeSlot>> GetAllAsync(CancellationToken ct = default)
-			=> await _ctx.TimeSlots.AsNoTracking().ToListAsync(ct);
+			=> await IncludeAll().ToListAsync(ct);
 
 		public async Task<IReadOnlyList<TimeSlot>> GetByTimeRangeAsync(TimeOnly startTime, TimeOnly endTime, CancellationToken ct = default)
-			=> await _ctx.TimeSlots.AsNoTracking().Where(t => t.StartTime >= startTime && t.EndTime <= endTime).ToListAsync(ct);
+			=> await IncludeAll().Where(t => t.StartTime >= startTime && t.EndTime <= endTime).ToListAsync(ct);
 
 		public async Task<TimeSlot?> GetByExactTimeAsync(TimeOnly startTime, TimeOnly endTime, CancellationToken ct = default)
-			=> await _ctx.TimeSlots.AsNoTracking().FirstOrDefaultAsync(t => t.StartTime == startTime && t.EndTime == endTime, ct);
+			=> await IncludeAll().FirstOrDefaultAsync(t => t.StartTime == startTime && t.EndTime == endTime, ct);
 
 		public async Task AddAsync(TimeSlot entity, CancellationToken ct = default)
 		{

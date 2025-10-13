@@ -17,7 +17,6 @@ namespace EduMatch.DataAccessLayer.Repositories
 		private IQueryable<TutorAvailability> IncludeAll() =>
 			_ctx.TutorAvailabilities
 			.AsNoTracking()
-			.AsSplitQuery()
 			.Include(t => t.Slot)
 			.Include(t => t.Tutor);
 

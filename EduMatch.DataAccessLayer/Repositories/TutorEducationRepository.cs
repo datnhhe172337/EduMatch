@@ -18,7 +18,6 @@ namespace EduMatch.DataAccessLayer.Repositories
 		private IQueryable<TutorEducation> IncludeAll() =>
 			_ctx.TutorEducations
 			.AsNoTracking()
-			.AsSplitQuery()
 			.Include(t => t.Institution)
 			.Include(t => t.Tutor);
 

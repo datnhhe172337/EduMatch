@@ -12,14 +12,17 @@ namespace EduMatch.DataAccessLayer.Repositories
 		private readonly EduMatchContext _ctx;
 		public LevelRepository(EduMatchContext ctx) => _ctx = ctx;
 
+		private IQueryable<Level> IncludeAll() =>
+			_ctx.Levels.AsNoTracking();
+
 		public async Task<Level?> GetByIdAsync(int id, CancellationToken ct = default)
-			=> await _ctx.Levels.AsNoTracking().FirstOrDefaultAsync(l => l.Id == id, ct);
+			=> await IncludeAll().FirstOrDefaultAsync(l => l.Id == id, ct);
 
 		public async Task<IReadOnlyList<Level>> GetAllAsync(CancellationToken ct = default)
-			=> await _ctx.Levels.AsNoTracking().ToListAsync(ct);
+			=> await IncludeAll().ToListAsync(ct);
 
 		public async Task<IReadOnlyList<Level>> GetByNameAsync(string name, CancellationToken ct = default)
-			=> await _ctx.Levels.AsNoTracking().Where(l => l.Name.Contains(name)).ToListAsync(ct);
+			=> await IncludeAll().Where(l => l.Name.Contains(name)).ToListAsync(ct);
 
 		public async Task AddAsync(Level entity, CancellationToken ct = default)
 		{

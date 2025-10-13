@@ -17,7 +17,6 @@ namespace EduMatch.DataAccessLayer.Repositories
 		private IQueryable<TutorCertificate> IncludeAll() =>
 			_ctx.TutorCertificates
 			.AsNoTracking()
-			.AsSplitQuery()
 			.Include(t => t.CertificateType)
 			.Include(t => t.Tutor);
 

@@ -12,20 +12,23 @@ namespace EduMatch.DataAccessLayer.Repositories
 		private readonly EduMatchContext _ctx;
 		public CertificateTypeSubjectRepository(EduMatchContext ctx) => _ctx = ctx;
 
+		private IQueryable<CertificateTypeSubject> IncludeAll() =>
+			_ctx.CertificateTypeSubjects.AsNoTracking();
+
 		public async Task<CertificateTypeSubject?> GetByIdAsync(int id, CancellationToken ct = default)
-			=> await _ctx.CertificateTypeSubjects.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, ct);
+			=> await IncludeAll().FirstOrDefaultAsync(c => c.Id == id, ct);
 
 		public async Task<IReadOnlyList<CertificateTypeSubject>> GetByCertificateTypeIdAsync(int certificateTypeId, CancellationToken ct = default)
-			=> await _ctx.CertificateTypeSubjects.AsNoTracking().Where(c => c.CertificateTypeId == certificateTypeId).ToListAsync(ct);
+			=> await IncludeAll().Where(c => c.CertificateTypeId == certificateTypeId).ToListAsync(ct);
 
 		public async Task<IReadOnlyList<CertificateTypeSubject>> GetBySubjectIdAsync(int subjectId, CancellationToken ct = default)
-			=> await _ctx.CertificateTypeSubjects.AsNoTracking().Where(c => c.SubjectId == subjectId).ToListAsync(ct);
+			=> await IncludeAll().Where(c => c.SubjectId == subjectId).ToListAsync(ct);
 
 		public async Task<CertificateTypeSubject?> GetByCertificateTypeAndSubjectAsync(int certificateTypeId, int subjectId, CancellationToken ct = default)
-			=> await _ctx.CertificateTypeSubjects.AsNoTracking().FirstOrDefaultAsync(c => c.CertificateTypeId == certificateTypeId && c.SubjectId == subjectId, ct);
+			=> await IncludeAll().FirstOrDefaultAsync(c => c.CertificateTypeId == certificateTypeId && c.SubjectId == subjectId, ct);
 
 		public async Task<IReadOnlyList<CertificateTypeSubject>> GetAllAsync(CancellationToken ct = default)
-			=> await _ctx.CertificateTypeSubjects.AsNoTracking().ToListAsync(ct);
+			=> await IncludeAll().ToListAsync(ct);
 
 		public async Task AddAsync(CertificateTypeSubject entity, CancellationToken ct = default)
 		{

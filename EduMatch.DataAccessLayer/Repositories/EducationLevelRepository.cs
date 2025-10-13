@@ -12,17 +12,20 @@ namespace EduMatch.DataAccessLayer.Repositories
 		private readonly EduMatchContext _ctx;
 		public EducationLevelRepository(EduMatchContext ctx) => _ctx = ctx;
 
+		private IQueryable<EducationLevel> IncludeAll() =>
+			_ctx.EducationLevels.AsNoTracking();
+
 		public async Task<EducationLevel?> GetByIdAsync(int id, CancellationToken ct = default)
-			=> await _ctx.EducationLevels.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id, ct);
+			=> await IncludeAll().FirstOrDefaultAsync(e => e.Id == id, ct);
 
 		public async Task<EducationLevel?> GetByCodeAsync(string code, CancellationToken ct = default)
-			=> await _ctx.EducationLevels.AsNoTracking().FirstOrDefaultAsync(e => e.Code == code, ct);
+			=> await IncludeAll().FirstOrDefaultAsync(e => e.Code == code, ct);
 
 		public async Task<IReadOnlyList<EducationLevel>> GetAllAsync(CancellationToken ct = default)
-			=> await _ctx.EducationLevels.AsNoTracking().ToListAsync(ct);
+			=> await IncludeAll().ToListAsync(ct);
 
 		public async Task<IReadOnlyList<EducationLevel>> GetByNameAsync(string name, CancellationToken ct = default)
-			=> await _ctx.EducationLevels.AsNoTracking().Where(e => e.Name.Contains(name)).ToListAsync(ct);
+			=> await IncludeAll().Where(e => e.Name.Contains(name)).ToListAsync(ct);
 
 		public async Task AddAsync(EducationLevel entity, CancellationToken ct = default)
 		{

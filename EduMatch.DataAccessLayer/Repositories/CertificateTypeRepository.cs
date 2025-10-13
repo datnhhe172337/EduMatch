@@ -12,17 +12,20 @@ namespace EduMatch.DataAccessLayer.Repositories
 		private readonly EduMatchContext _ctx;
 		public CertificateTypeRepository(EduMatchContext ctx) => _ctx = ctx;
 
+		private IQueryable<CertificateType> IncludeAll() =>
+			_ctx.CertificateTypes.AsNoTracking();
+
 		public async Task<CertificateType?> GetByIdAsync(int id, CancellationToken ct = default)
-			=> await _ctx.CertificateTypes.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, ct);
+			=> await IncludeAll().FirstOrDefaultAsync(c => c.Id == id, ct);
 
 		public async Task<CertificateType?> GetByCodeAsync(string code, CancellationToken ct = default)
-			=> await _ctx.CertificateTypes.AsNoTracking().FirstOrDefaultAsync(c => c.Code == code, ct);
+			=> await IncludeAll().FirstOrDefaultAsync(c => c.Code == code, ct);
 
 		public async Task<IReadOnlyList<CertificateType>> GetAllAsync(CancellationToken ct = default)
-			=> await _ctx.CertificateTypes.AsNoTracking().ToListAsync(ct);
+			=> await IncludeAll().ToListAsync(ct);
 
 		public async Task<IReadOnlyList<CertificateType>> GetByNameAsync(string name, CancellationToken ct = default)
-			=> await _ctx.CertificateTypes.AsNoTracking().Where(c => c.Name.Contains(name)).ToListAsync(ct);
+			=> await IncludeAll().Where(c => c.Name.Contains(name)).ToListAsync(ct);
 
 		public async Task AddAsync(CertificateType entity, CancellationToken ct = default)
 		{
