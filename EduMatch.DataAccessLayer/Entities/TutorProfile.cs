@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EduMatch.DataAccessLayer.Enum;
+using System;
 using System.Collections.Generic;
 
 namespace EduMatch.DataAccessLayer.Entities;
@@ -17,9 +18,9 @@ public partial class TutorProfile
 
     public string? VideoIntroPublicId { get; set; }
 
-    public byte TeachingModes { get; set; }
+    public TeachingMode TeachingModes { get; set; }
 
-    public byte Status { get; set; }
+    public TutorStatus Status { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
