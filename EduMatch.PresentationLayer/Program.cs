@@ -1,5 +1,5 @@
 ﻿using DotNetEnv;
-using EduMatch.DataAccessLayer.Database;
+using EduMatch.DataAccessLayer.Entities;
 using EduMatch.PresentationLayer.Configurations;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
