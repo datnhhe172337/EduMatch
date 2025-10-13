@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace EduMatch.BusinessLogicLayer.Requests
+﻿namespace EduMatch.BusinessLogicLayer.Requests
 {
-	public sealed record SubjectCreateRequest(string SubjectName);
+	public class SubjectCreateRequest
+	{
+		public string SubjectName { get; set; } = null!;
+	}
 }
