@@ -4,9 +4,3 @@ services:
       context: .
       dockerfile: EduMatch.PresentationLayer/Dockerfile
     image: datnhm5/edumatch-api:v0
-    ports:
-      - "3002:3002"
-    env_file:
-      - EduMatch.PresentationLayer/.env
-
-

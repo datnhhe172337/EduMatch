@@ -1,10 +1,14 @@
-﻿using CloudinaryDotNet;
+
+using CloudinaryDotNet;
 using DotNetEnv;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.BusinessLogicLayer.Utils;
 using Microsoft.Extensions.Options;
+using EduMatch.DataAccessLayer.Interfaces;
+using EduMatch.DataAccessLayer.Repositories;
+
 
 namespace EduMatch.PresentationLayer.Configurations
 {
@@ -12,11 +16,9 @@ namespace EduMatch.PresentationLayer.Configurations
 	{
 		public static IServiceCollection AddDependencies(this IServiceCollection services, IConfiguration configuration)
 		{
-			//services.AddDbContext<PaymentDbContext>(options =>
-			//	options.UseSqlServer(configuration.GetConnectionString("MyCnn")));
+            //// Mail Settings
+            services.Configure<MailSettings>(configuration.GetSection("MailSettings"));
 
-			//// Repositories
-			//services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 
 
 
@@ -26,9 +28,25 @@ namespace EduMatch.PresentationLayer.Configurations
 			// inject HttpClient
 			services.AddHttpClient();
 
+            //// Repositories
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IRefreshTokenRepositoy, RefreshTokenRepository>();
 
-			// Bind "CloudinarySettings" 
-			services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
+
+
+            //// Services
+            services.AddScoped<IUserService, UserService>();
+            services.AddTransient<EmailService>();
+            services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+
+            //// AutoMapper
+            //services.AddAutoMapper(typeof(MappingProfile).Assembly);
+
+            // HttpContextAccessor for CurrentUserService
+
+
+            // Bind "CloudinarySettings" 
+            services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
 
 			services.AddSingleton(sp => {
 				var opts = sp.GetRequiredService<IOptionsMonitor<CloudinaryRootOptions>>().CurrentValue;

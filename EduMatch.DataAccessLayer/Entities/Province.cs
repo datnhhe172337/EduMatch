@@ -10,4 +10,6 @@ public partial class Province
     public string Name { get; set; } = null!;
 
     public virtual ICollection<SubDistrict> SubDistricts { get; set; } = new List<SubDistrict>();
+
+    public virtual ICollection<UserProfile> UserProfiles { get; set; } = new List<UserProfile>();
 }
