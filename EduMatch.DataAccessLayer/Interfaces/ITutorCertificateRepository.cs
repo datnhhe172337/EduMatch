@@ -1,4 +1,5 @@
 using EduMatch.DataAccessLayer.Entities;
+using EduMatch.DataAccessLayer.Enum;
 
 namespace EduMatch.DataAccessLayer.Interfaces
 {
