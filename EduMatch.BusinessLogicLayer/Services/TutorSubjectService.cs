@@ -7,6 +7,8 @@ using EduMatch.DataAccessLayer.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
@@ -71,16 +73,71 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 		public async Task<TutorSubjectDto> CreateAsync(TutorSubjectCreateRequest request)
 		{
-			var entity = _mapper.Map<TutorSubject>(request);
-			await _repository.AddAsync(entity);
-			return _mapper.Map<TutorSubjectDto>(entity);
+			try
+			{
+				// Validate request
+				var validationContext = new ValidationContext(request);
+				var validationResults = new List<ValidationResult>();
+				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+				{
+					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
+				}
+
+				var entity = _mapper.Map<TutorSubject>(request);
+				await _repository.AddAsync(entity);
+				return _mapper.Map<TutorSubjectDto>(entity);
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to create tutor subject: {ex.Message}", ex);
+			}
 		}
 
 		public async Task<TutorSubjectDto> UpdateAsync(TutorSubjectUpdateRequest request)
 		{
-			var entity = _mapper.Map<TutorSubject>(request);
-			await _repository.UpdateAsync(entity);
-			return _mapper.Map<TutorSubjectDto>(entity);
+			try
+			{
+				// Validate request
+				var validationContext = new ValidationContext(request);
+				var validationResults = new List<ValidationResult>();
+				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+				{
+					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
+				}
+
+				// Check if entity exists
+				var existingEntity = await _repository.GetByIdFullAsync(request.Id);
+				if (existingEntity == null)
+				{
+					throw new ArgumentException($"Tutor subject with ID {request.Id} not found");
+				}
+
+				var entity = _mapper.Map<TutorSubject>(request);
+				await _repository.UpdateAsync(entity);
+				return _mapper.Map<TutorSubjectDto>(entity);
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to update tutor subject: {ex.Message}", ex);
+			}
+		}
+
+		public async Task<List<TutorSubjectDto>> CreateBulkAsync(List<TutorSubjectCreateRequest> requests)
+		{
+			try
+			{
+				var results = new List<TutorSubjectDto>();
+				foreach (var request in requests)
+				{
+					var result = await CreateAsync(request);
+					results.Add(result);
+				}
+				return results;
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to create bulk tutor subjects: {ex.Message}", ex);
+			}
 		}
 
 		public async Task DeleteAsync(int id)

@@ -58,6 +58,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ISubjectService, SubjectService>();
             services.AddScoped<ILevelService, LevelService>();
             services.AddScoped<ITimeSlotService, TimeSlotService>();
+            services.AddScoped<IEducationInstitutionService, EducationInstitutionService>();
 
             // HttpContextAccessor for CurrentUserService
 

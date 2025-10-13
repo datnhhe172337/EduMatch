@@ -18,6 +18,9 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		Task<IReadOnlyList<TutorAvailabilityDto>> GetAllFullAsync();
 		Task<TutorAvailabilityDto> CreateAsync(TutorAvailabilityCreateRequest request);
 		Task<TutorAvailabilityDto> UpdateAsync(TutorAvailabilityUpdateRequest request);
+		Task<List<TutorAvailabilityDto>> CreateBulkAsync(List<TutorAvailabilityCreateRequest> requests);
+		Task<List<TutorAvailabilityDto>> CreateRecurringWeeklyAsync(int tutorId, List<int> slotIds, List<DayOfWeek> daysOfWeek, DateTime startDate, DateTime? endDate = null);
+		Task<List<TutorAvailabilityDto>> CreateSingleDayAsync(int tutorId, List<int> slotIds, DateTime specificDate);
 		Task DeleteAsync(int id);
 		Task DeleteByTutorIdAsync(int tutorId);
 	}

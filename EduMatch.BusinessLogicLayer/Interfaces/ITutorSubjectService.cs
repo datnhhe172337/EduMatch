@@ -18,6 +18,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		Task<IReadOnlyList<TutorSubjectDto>> GetAllFullAsync();
 		Task<TutorSubjectDto> CreateAsync(TutorSubjectCreateRequest request);
 		Task<TutorSubjectDto> UpdateAsync(TutorSubjectUpdateRequest request);
+		Task<List<TutorSubjectDto>> CreateBulkAsync(List<TutorSubjectCreateRequest> requests);
 		Task DeleteAsync(int id);
 		Task DeleteByTutorIdAsync(int tutorId);
 	}

@@ -19,6 +19,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		Task<IReadOnlyList<TutorCertificateDto>> GetAllFullAsync();
 		Task<TutorCertificateDto> CreateAsync(TutorCertificateCreateRequest request);
 		Task<TutorCertificateDto> UpdateAsync(TutorCertificateUpdateRequest request);
+		Task<List<TutorCertificateDto>> CreateBulkAsync(List<TutorCertificateCreateRequest> requests);
 		Task DeleteAsync(int id);
 		Task DeleteByTutorIdAsync(int tutorId);
 	}
