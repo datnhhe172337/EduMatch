@@ -7,7 +7,13 @@ public partial class UserProfile
 {
     public string UserEmail { get; set; } = null!;
 
+    public DateTime? Dob { get; set; }
+
+    public byte? Gender { get; set; }
+
     public string? AvatarUrl { get; set; }
+
+    public string? AvatarUrlPublicId { get; set; }
 
     public int? CityId { get; set; }
 

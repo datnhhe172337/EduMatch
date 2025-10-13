@@ -1,5 +1,4 @@
-﻿using EduMatch.DataAccessLayer.Enum;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace EduMatch.DataAccessLayer.Entities;
@@ -10,7 +9,7 @@ public partial class TutorAvailability
 
     public int TutorId { get; set; }
 
-    public DayOfWeekEnum DayOfWeek { get; set; }
+    public byte DayOfWeek { get; set; }
 
     public int SlotId { get; set; }
 
