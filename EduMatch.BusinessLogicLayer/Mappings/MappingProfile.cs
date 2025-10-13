@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.Mappings
 {
-	internal class MappingProfile
+	public class MappingProfile
 	{
 	}
 }

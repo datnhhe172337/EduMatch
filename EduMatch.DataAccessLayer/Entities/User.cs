@@ -17,8 +17,6 @@ public partial class User
 
     public string LoginProvider { get; set; } = null!;
 
-    public string? ProviderKey { get; set; }
-
     public DateTime CreatedAt { get; set; }
 
     public bool? IsActive { get; set; }

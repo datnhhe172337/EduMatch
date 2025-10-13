@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EduMatch.DataAccessLayer.Enum;
+using System;
 using System.Collections.Generic;
 
 namespace EduMatch.DataAccessLayer.Entities;
@@ -19,7 +20,9 @@ public partial class TutorEducation
 
     public DateTime? CreatedAt { get; set; }
 
-    public byte Verified { get; set; }
+    public VerifyStatus Verified { get; set; }
+
+    public string? RejectReason { get; set; }
 
     public virtual EducationInstitution Institution { get; set; } = null!;
 

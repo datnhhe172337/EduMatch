@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EduMatch.DataAccessLayer.Enum;
+using System;
 using System.Collections.Generic;
 
 namespace EduMatch.DataAccessLayer.Entities;
@@ -11,7 +12,7 @@ public partial class EducationInstitution
 
     public string Name { get; set; } = null!;
 
-    public byte? InstitutionType { get; set; }
+    public InstitutionType? InstitutionType { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 

@@ -55,17 +55,17 @@ public partial class EduMatchContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1_0;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
+        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<CertificateType>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__certific__3213E83FA400C5F9");
+            entity.HasKey(e => e.Id).HasName("PK__certific__3213E83FDE654A19");
 
             entity.ToTable("certificate_types");
 
-            entity.HasIndex(e => e.Code, "UQ__certific__357D4CF9F748AC88").IsUnique();
+            entity.HasIndex(e => e.Code, "UQ__certific__357D4CF91A9931AE").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Code)
@@ -79,7 +79,7 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<CertificateTypeSubject>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__certific__3213E83FEB199B85");
+            entity.HasKey(e => e.Id).HasName("PK__certific__3213E83F1FDE61AB");
 
             entity.ToTable("certificate_type_subjects");
 
@@ -102,11 +102,11 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<EducationInstitution>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__educatio__3213E83FFA36281D");
+            entity.HasKey(e => e.Id).HasName("PK__educatio__3213E83F35BD3B4D");
 
             entity.ToTable("education_institutions");
 
-            entity.HasIndex(e => e.Code, "UQ__educatio__357D4CF9657BC118").IsUnique();
+            entity.HasIndex(e => e.Code, "UQ__educatio__357D4CF9265D7212").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Code)
@@ -121,7 +121,7 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<EducationInstitutionLevel>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__educatio__3213E83F9952406A");
+            entity.HasKey(e => e.Id).HasName("PK__educatio__3213E83FDE805B6D");
 
             entity.ToTable("education_institution_levels");
 
@@ -144,11 +144,11 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<EducationLevel>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__educatio__3213E83F45537BB7");
+            entity.HasKey(e => e.Id).HasName("PK__educatio__3213E83F7497348F");
 
             entity.ToTable("education_levels");
 
-            entity.HasIndex(e => e.Code, "UQ__educatio__357D4CF9D696186B").IsUnique();
+            entity.HasIndex(e => e.Code, "UQ__educatio__357D4CF94402477F").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Code)
@@ -162,13 +162,11 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<Level>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__levels__3213E83FE3B8CD9D");
+            entity.HasKey(e => e.Id).HasName("PK__levels__3213E83FBBB2DC59");
 
             entity.ToTable("levels");
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Name)
                 .HasMaxLength(100)
                 .HasColumnName("name");
@@ -176,7 +174,7 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<Province>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__province__3213E83F3AF6A85F");
+            entity.HasKey(e => e.Id).HasName("PK__province__3213E83F6CDD1EFF");
 
             entity.ToTable("provinces");
 
@@ -190,13 +188,11 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<RefreshToken>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__refresh___3213E83F5F17B3DD");
+            entity.HasKey(e => e.Id).HasName("PK__refresh___3213E83F81E60B63");
 
             entity.ToTable("refresh_tokens");
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CreatedAt).HasColumnName("createdAt");
             entity.Property(e => e.ExpiresAt).HasColumnName("expiresAt");
             entity.Property(e => e.RevokedAt).HasColumnName("revokedAt");
@@ -215,15 +211,13 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__roles__3213E83FDE2C2CAA");
+            entity.HasKey(e => e.Id).HasName("PK__roles__3213E83FF2BE7729");
 
             entity.ToTable("roles");
 
-            entity.HasIndex(e => e.RoleName, "UQ__roles__B1947861ADCB128F").IsUnique();
+            entity.HasIndex(e => e.RoleName, "UQ__roles__B194786149756F24").IsUnique();
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.RoleName)
                 .HasMaxLength(50)
                 .HasColumnName("roleName");
@@ -231,13 +225,11 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<SubDistrict>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__sub_dist__3213E83FDB03E49B");
+            entity.HasKey(e => e.Id).HasName("PK__sub_dist__3213E83FBE35CFDE");
 
             entity.ToTable("sub_district");
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Name)
                 .HasMaxLength(200)
                 .HasColumnName("name");
@@ -251,15 +243,13 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<Subject>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__subjects__3213E83F16A40A23");
+            entity.HasKey(e => e.Id).HasName("PK__subjects__3213E83F139E7B9A");
 
             entity.ToTable("subjects");
 
-            entity.HasIndex(e => e.SubjectName, "UQ__subjects__E5068BFDEDC26D03").IsUnique();
+            entity.HasIndex(e => e.SubjectName, "UQ__subjects__E5068BFDF89DFD9D").IsUnique();
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.SubjectName)
                 .HasMaxLength(200)
                 .HasColumnName("subjectName");
@@ -267,7 +257,7 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<TimeSlot>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__time_slo__3213E83F3FCBC5CA");
+            entity.HasKey(e => e.Id).HasName("PK__time_slo__3213E83FA036AB36");
 
             entity.ToTable("time_slots");
 
@@ -278,7 +268,7 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<TutorAvailability>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__tutor_av__3213E83FFC218E9A");
+            entity.HasKey(e => e.Id).HasName("PK__tutor_av__3213E83FD6CDA2B8");
 
             entity.ToTable("tutor_availability");
 
@@ -305,13 +295,11 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<TutorCertificate>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__tutor_ce__3213E83FD4E32696");
+            entity.HasKey(e => e.Id).HasName("PK__tutor_ce__3213E83F823119B0");
 
             entity.ToTable("tutor_certificates");
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CertificatePublicId)
                 .HasMaxLength(200)
                 .HasColumnName("certificatePublicId");
@@ -322,6 +310,9 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.CreatedAt).HasColumnName("createdAt");
             entity.Property(e => e.ExpiryDate).HasColumnName("expiryDate");
             entity.Property(e => e.IssueDate).HasColumnName("issueDate");
+            entity.Property(e => e.RejectReason)
+                .HasMaxLength(300)
+                .HasColumnName("rejectReason");
             entity.Property(e => e.TutorId).HasColumnName("tutorId");
             entity.Property(e => e.Verified).HasColumnName("verified");
 
@@ -338,7 +329,7 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<TutorEducation>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__tutor_ed__3213E83F1F9EC084");
+            entity.HasKey(e => e.Id).HasName("PK__tutor_ed__3213E83F838DE20D");
 
             entity.ToTable("tutor_education");
 
@@ -352,6 +343,9 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.CreatedAt).HasColumnName("createdAt");
             entity.Property(e => e.InstitutionId).HasColumnName("institutionId");
             entity.Property(e => e.IssueDate).HasColumnName("issueDate");
+            entity.Property(e => e.RejectReason)
+                .HasMaxLength(300)
+                .HasColumnName("rejectReason");
             entity.Property(e => e.TutorId).HasColumnName("tutorId");
             entity.Property(e => e.Verified).HasColumnName("verified");
 
@@ -368,15 +362,13 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<TutorProfile>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__tutor_pr__3213E83F5075CC24");
+            entity.HasKey(e => e.Id).HasName("PK__tutor_pr__3213E83F9C86065F");
 
             entity.ToTable("tutor_profiles");
 
-            entity.HasIndex(e => e.UserEmail, "UQ__tutor_pr__D54ADF5539FF299E").IsUnique();
+            entity.HasIndex(e => e.UserEmail, "UQ__tutor_pr__D54ADF5511AC457D").IsUnique();
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Bio).HasColumnName("bio");
             entity.Property(e => e.CreatedAt).HasColumnName("createdAt");
             entity.Property(e => e.Status).HasColumnName("status");
@@ -403,13 +395,11 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<TutorSubject>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__tutor_su__3213E83F295C158A");
+            entity.HasKey(e => e.Id).HasName("PK__tutor_su__3213E83F8F7E08F5");
 
             entity.ToTable("tutor_subjects");
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.HourlyRate)
                 .HasColumnType("decimal(10, 2)")
                 .HasColumnName("hourlyRate");
@@ -434,7 +424,7 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Email).HasName("PK__users__AB6E61653611F99F");
+            entity.HasKey(e => e.Email).HasName("PK__users__AB6E6165810127DE");
 
             entity.ToTable("users");
 
@@ -453,9 +443,6 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.Phone)
                 .HasMaxLength(30)
                 .HasColumnName("phone");
-            entity.Property(e => e.ProviderKey)
-                .HasMaxLength(255)
-                .HasColumnName("providerKey");
             entity.Property(e => e.RoleId).HasColumnName("roleId");
             entity.Property(e => e.UserName)
                 .HasMaxLength(100)
@@ -469,7 +456,7 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<UserProfile>(entity =>
         {
-            entity.HasKey(e => e.UserEmail).HasName("PK__user_pro__D54ADF547BA2179B");
+            entity.HasKey(e => e.UserEmail).HasName("PK__user_pro__D54ADF545FB0D5F2");
 
             entity.ToTable("user_profiles");
 

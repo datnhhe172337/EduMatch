@@ -9,7 +9,7 @@ public partial class TutorAvailability
 
     public int TutorId { get; set; }
 
-    public byte DayOfWeek { get; set; }
+    public DayOfWeek DayOfWeek { get; set; }
 
     public int SlotId { get; set; }
 

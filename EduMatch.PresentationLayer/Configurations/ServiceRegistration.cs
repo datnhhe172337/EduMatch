@@ -8,6 +8,7 @@
 			services.AddCorsPolicy(configuration);
 			services.AddJwtAuthentication(configuration);
 			services.AddSwaggerWithJwt();
+			services.AddApiBehavior();
 
 			return services;
 		}

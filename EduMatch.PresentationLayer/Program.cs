@@ -32,7 +32,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// NHẬN header từ reverse proxy (rất quan trọng khi đứng sau Traefik/Coolify)
+// NHẬN header từ reverse proxy 
 app.UseForwardedHeaders(new ForwardedHeadersOptions {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
