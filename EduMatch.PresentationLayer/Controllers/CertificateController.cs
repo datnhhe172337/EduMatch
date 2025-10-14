@@ -3,6 +3,7 @@ using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
