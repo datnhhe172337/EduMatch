@@ -69,6 +69,13 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 
 			// TutorProfile mappings
 			CreateMap<TutorProfile, TutorProfileDto>().ReverseMap();
+			CreateMap<TutorProfileCreateRequest, TutorProfile>()
+				.ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Now));
+				
+			CreateMap<TutorProfileUpdateRequest, TutorProfile>()
+				.ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => DateTime.Now));
+
+
 
 			// User mappings
 			CreateMap<User, UserDto>().ReverseMap();
