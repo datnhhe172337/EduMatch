@@ -28,4 +28,6 @@ public partial class User
     public virtual Role Role { get; set; } = null!;
 
     public virtual TutorProfile? TutorProfile { get; set; }
+
+    public virtual UserProfile? UserProfile { get; set; }
 }

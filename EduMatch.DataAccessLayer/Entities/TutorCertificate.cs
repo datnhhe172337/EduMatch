@@ -9,19 +9,23 @@ public partial class TutorCertificate
 
     public int TutorId { get; set; }
 
-    public string? Title { get; set; }
+    public int CertificateTypeId { get; set; }
 
-    public string? Issuer { get; set; }
+    public DateTime? IssueDate { get; set; }
 
-    public DateOnly? IssueDate { get; set; }
-
-    public DateOnly? ExpiryDate { get; set; }
+    public DateTime? ExpiryDate { get; set; }
 
     public string? CertificateUrl { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    public string? CertificatePublicId { get; set; }
 
-    public bool Verified { get; set; }
+    public DateTime? CreatedAt { get; set; }
+
+    public byte Verified { get; set; }
+
+    public string? RejectReason { get; set; }
+
+    public virtual CertificateType CertificateType { get; set; } = null!;
 
     public virtual TutorProfile Tutor { get; set; } = null!;
 }
