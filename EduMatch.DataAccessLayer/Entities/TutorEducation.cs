@@ -9,17 +9,21 @@ public partial class TutorEducation
 
     public int TutorId { get; set; }
 
-    public string? Title { get; set; }
+    public int InstitutionId { get; set; }
 
-    public string? Issuer { get; set; }
-
-    public DateOnly? IssueDate { get; set; }
+    public DateTime? IssueDate { get; set; }
 
     public string? CertificateUrl { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    public string? CertificatePublicId { get; set; }
 
-    public bool Verified { get; set; }
+    public DateTime? CreatedAt { get; set; }
+
+    public byte Verified { get; set; }
+
+    public string? RejectReason { get; set; }
+
+    public virtual EducationInstitution Institution { get; set; } = null!;
 
     public virtual TutorProfile Tutor { get; set; } = null!;
 }

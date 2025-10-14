@@ -9,27 +9,21 @@ public partial class TutorProfile
 
     public string UserEmail { get; set; } = null!;
 
-    public string? Gender { get; set; }
-
-    public DateOnly? Dob { get; set; }
-
-    public string? Title { get; set; }
-
     public string? Bio { get; set; }
 
     public string? TeachingExp { get; set; }
 
     public string? VideoIntroUrl { get; set; }
 
-    public string? TeachingModes { get; set; }
+    public string? VideoIntroPublicId { get; set; }
 
-    public int StatusId { get; set; }
+    public byte TeachingModes { get; set; }
+
+    public byte Status { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
-
-    public virtual TutorStatus Status { get; set; } = null!;
 
     public virtual ICollection<TutorAvailability> TutorAvailabilities { get; set; } = new List<TutorAvailability>();
 

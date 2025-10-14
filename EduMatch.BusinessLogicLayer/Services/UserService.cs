@@ -203,9 +203,12 @@ namespace EduMatch.BusinessLogicLayer.Services
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
+                new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Name, user.UserName ?? user.Email),
                 new Claim(ClaimTypes.Role, user.RoleId.ToString()),
                 new Claim("provider", user.LoginProvider),
+                new Claim("createdAt", user.CreatedAt.ToString()),
+                new Claim("avatarUrl", user.UserProfile?.AvatarUrl ?? string.Empty),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 

@@ -5,7 +5,7 @@ namespace EduMatch.DataAccessLayer.Entities;
 
 public partial class TutorAvailability
 {
-    public int AvailabilityId { get; set; }
+    public int Id { get; set; }
 
     public int TutorId { get; set; }
 
@@ -15,9 +15,9 @@ public partial class TutorAvailability
 
     public bool IsRecurring { get; set; }
 
-    public DateOnly EffectiveFrom { get; set; }
+    public DateTime EffectiveFrom { get; set; }
 
-    public DateOnly? EffectiveTo { get; set; }
+    public DateTime? EffectiveTo { get; set; }
 
     public virtual TimeSlot Slot { get; set; } = null!;
 
