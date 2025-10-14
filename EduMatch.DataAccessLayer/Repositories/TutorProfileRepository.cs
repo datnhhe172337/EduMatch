@@ -20,7 +20,8 @@ namespace EduMatch.DataAccessLayer.Repositories
 			.AsSplitQuery()
 			.Include(t => t.TutorAvailabilities)
 			.Include(t => t.TutorCertificates)
-			.Include(t => t.TutorEducations);
+			.Include(t => t.TutorEducations)
+			.Include(t => t.TutorSubjects);
 
 
 		public async Task<TutorProfile?> GetByIdFullAsync(int id, CancellationToken ct = default)

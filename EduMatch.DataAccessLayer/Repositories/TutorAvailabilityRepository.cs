@@ -47,6 +47,11 @@ namespace EduMatch.DataAccessLayer.Repositories
 			await _ctx.SaveChangesAsync(ct);
 		}
 
+		public async Task AddRangeAsync(IEnumerable<TutorAvailability> entity, CancellationToken ct = default)
+		{
+			await _ctx.TutorAvailabilities.AddRangeAsync(entity, ct);
+			await _ctx.SaveChangesAsync(ct);
+		}
 		public async Task UpdateAsync(TutorAvailability entity, CancellationToken ct = default)
 		{
 			_ctx.TutorAvailabilities.Update(entity);

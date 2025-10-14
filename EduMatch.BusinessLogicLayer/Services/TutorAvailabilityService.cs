@@ -162,65 +162,78 @@ namespace EduMatch.BusinessLogicLayer.Services
 				var seen = new HashSet<string>(); // tránh trùng (TutorId + Date + SlotId)
 
 				// XỬ LÝ KHÔNG LẶP (Non-recurring)
-				foreach (var daySlot in request.NonRecurringDaySlots)
+				if (request.RecurringSchedule != null)
 				{
-					var date = daySlot.Date.Date;
-
-					foreach (var slotId in daySlot.SlotIds)
+					foreach (var daySlot in request.NonRecurringDaySlots)
 					{
-						var key = $"{request.TutorId}_{date:yyyyMMdd}_{slotId}";
-						if (seen.Add(key))
+						var date = daySlot.Date.Date;
+
+						foreach (var slotId in daySlot.SlotIds)
 						{
-							requests.Add(new TutorAvailabilityCreateRequest
+							var key = $"{request.TutorId}_{date:yyyyMMdd}_{slotId}";
+							if (seen.Add(key))
 							{
-								TutorId = request.TutorId,
-								DayOfWeek = date.DayOfWeek,
-								SlotId = slotId,
-								IsRecurring = false,
-								EffectiveFrom = date,
-								EffectiveTo = date.AddDays(1).AddTicks(-1)
-							});
+								requests.Add(new TutorAvailabilityCreateRequest
+								{
+									TutorId = request.TutorId,
+									DayOfWeek = date.DayOfWeek,
+									SlotId = slotId,
+									IsRecurring = false,
+									EffectiveFrom = date,
+									EffectiveTo = date.AddDays(1).AddTicks(-1)
+								});
+							}
 						}
 					}
 				}
 
 				//  XỬ LÝ LẶP HÀNG TUẦN (Recurring)
-				foreach (var recurring in request.RecurringSchedule)
+				if (request.RecurringSchedule != null)
 				{
-					var start = recurring.StartDate.Date;
-					var end = (recurring.EndDate ?? start.AddMonths(1)).Date;
-
-					foreach (var daySlot in recurring.DaySlots)
+					foreach (var recurring in request.RecurringSchedule)
 					{
-						//  đầu tiên >= start có đúng DayOfWeek cần lặp
-						int daysUntilFirst = ((int)daySlot.DayOfWeek - (int)start.DayOfWeek + 7) % 7;
-						var current = start.AddDays(daysUntilFirst);
+						var start = recurring.StartDate.Date;
+						var end = (recurring.EndDate ?? start.AddMonths(1)).Date;
 
-						while (current <= end)
+						foreach (var daySlot in recurring.DaySlots)
 						{
-							foreach (var slotId in daySlot.SlotIds)
+							//  đầu tiên >= start có đúng DayOfWeek cần lặp
+							int daysUntilFirst = ((int)daySlot.DayOfWeek - (int)start.DayOfWeek + 7) % 7;
+							var current = start.AddDays(daysUntilFirst);
+
+							while (current <= end)
 							{
-								var key = $"{request.TutorId}_{current:yyyyMMdd}_{slotId}";
-								if (seen.Add(key))
+								foreach (var slotId in daySlot.SlotIds)
 								{
-									requests.Add(new TutorAvailabilityCreateRequest
+									var key = $"{request.TutorId}_{current:yyyyMMdd}_{slotId}";
+									if (seen.Add(key))
 									{
-										TutorId = request.TutorId,
-										DayOfWeek = current.DayOfWeek,
-										SlotId = slotId,
-										IsRecurring = true,
-										EffectiveFrom = current,
-										EffectiveTo = current.AddDays(1).AddTicks(-1)
-									});
+										requests.Add(new TutorAvailabilityCreateRequest
+										{
+											TutorId = request.TutorId,
+											DayOfWeek = current.DayOfWeek,
+											SlotId = slotId,
+											IsRecurring = true,
+											EffectiveFrom = current,
+											EffectiveTo = current.AddDays(1).AddTicks(-1)
+										});
+									}
 								}
+								current = current.AddDays(7); // nhảy đúng 1 tuần
 							}
-							current = current.AddDays(7); // nhảy đúng 1 tuần
 						}
 					}
 				}
 
-				// GỌI XỬ LÝ TẠO DỮ LIỆU
-				return await CreateBulkAsync(requests);
+				if (requests.Count == 0) return new List<TutorAvailabilityDto>();
+
+				var entities = _mapper.Map<List<TutorAvailability>>(requests);
+
+				await _repository.AddRangeAsync(entities);
+
+
+
+				return _mapper.Map<List<TutorAvailabilityDto>>(entities);
 			}
 			catch (Exception ex)
 			{

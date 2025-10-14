@@ -28,10 +28,10 @@ namespace EduMatch.BusinessLogicLayer.Requests
 	
 	public class DaySlotRequest
 	{
-		[Required]
+		
 		public DateTime Date { get; set; }
 
-		[Required]
+		
 		public List<int> SlotIds { get; set; } = new();
 	}
 
@@ -40,21 +40,21 @@ namespace EduMatch.BusinessLogicLayer.Requests
 
 	public class RecurringScheduleRequest
 	{
-		[Required]
+		
 		public DateTime StartDate { get; set; }
 
 		public DateTime? EndDate { get; set; }
 
-		[Required]
+	
 		public List<RecurringDaySlots> DaySlots { get; set; } = new();
 	}
 
 	public class RecurringDaySlots
 	{
-		[Required]
+		
 		public DayOfWeek DayOfWeek { get; set; }
 
-		[Required]
+		
 		public List<int> SlotIds { get; set; } = new();
 	}
 

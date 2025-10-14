@@ -16,7 +16,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 	public class TutorEducationService : ITutorEducationService
 	{
 		private readonly ITutorEducationRepository _repository;
-		private readonly ITutorEducationRepository _tutorEducationRepository;
+		private readonly IEducationInstitutionRepository _educationInstitutionRepository;
 		private readonly ITutorProfileRepository _tutorProfileRepository;
 		private readonly IMapper _mapper;
 		private readonly ICloudMediaService _cloudMedia;
@@ -27,7 +27,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 			IMapper mapper, ICloudMediaService cloudMedia,
 			CurrentUserService currentUserService,
 			ITutorProfileRepository tutorProfileRepository,
-			ITutorEducationRepository tutorEducationRepository,
+			IEducationInstitutionRepository educationInstitutionRepository,
 			ICloudMediaService cloudMediaService
 			)
 		{
@@ -36,7 +36,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 			_cloudMedia = cloudMedia; 
 			_currentUserService = currentUserService;
 			_tutorProfileRepository = tutorProfileRepository;
-			_tutorEducationRepository = tutorEducationRepository;
+			_educationInstitutionRepository = educationInstitutionRepository;
 			_cloudMedia = cloudMediaService;
 		}
 
@@ -87,23 +87,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 			try
 			{
 				
-				// VALIDATE REQUEST 
-			
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException(
-						$"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}"
-					);
-				}
-
 				var tutor = await _tutorProfileRepository.GetByIdFullAsync(request.TutorId);
 				if (tutor is null)
 					throw new ArgumentException($"Tutor with ID {request.TutorId} not found.");
 
 				
-				var institution = await _tutorEducationRepository.GetByIdFullAsync(request.InstitutionId);
+				var institution = await _educationInstitutionRepository.GetByIdAsync(request.InstitutionId);
 				if (institution is null)
 					throw new ArgumentException($"Education institution with ID {request.InstitutionId} not found.");
 
@@ -161,13 +150,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		{
 			try
 			{
-				// Validate request
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-				}
+				
 
 				// Check if entity exists
 				var existingEntity = await _repository.GetByIdFullAsync(request.Id);

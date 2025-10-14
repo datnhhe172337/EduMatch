@@ -57,7 +57,15 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 
 
 			// TutorProfile mappings
-			CreateMap<TutorProfile, TutorProfileDto>().ReverseMap();
+			CreateMap<TutorProfile, TutorProfileDto>()
+				.ForMember(d => d.TutorAvailabilitiesId,
+					opt => opt.MapFrom(s => s.TutorAvailabilities.Select(x => x.Id)))
+				.ForMember(d => d.TutorCertificatesId,
+					opt => opt.MapFrom(s => s.TutorCertificates.Select(x => x.Id)))
+				.ForMember(d => d.TutorEducationsId,
+					opt => opt.MapFrom(s => s.TutorEducations.Select(x => x.Id)))
+				.ForMember(d => d.TutorSubjectId,
+					opt => opt.MapFrom(s => s.TutorSubjects.Select(x => x.Id)));
 
 
 

@@ -139,6 +139,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				var entity = new TutorCertificate
 				{
 					TutorId = request.TutorId,
+					CertificateTypeId = request.CertificateTypeId,
 					IssueDate = request.IssueDate,
 					ExpiryDate = request.ExpiryDate,
 					CertificateUrl = uploadResult.SecureUrl,

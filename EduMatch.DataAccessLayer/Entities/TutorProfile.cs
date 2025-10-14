@@ -6,7 +6,7 @@ namespace EduMatch.DataAccessLayer.Entities;
 
 public partial class TutorProfile
 {
-    public int Id { get; set; }
+    public int? Id { get; set; }
 
     public string UserEmail { get; set; } = null!;
 

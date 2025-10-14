@@ -12,6 +12,7 @@ namespace EduMatch.DataAccessLayer.Interfaces
 		Task<IReadOnlyList<TutorAvailability>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate, CancellationToken ct = default);
 		Task<IReadOnlyList<TutorAvailability>> GetAllFullAsync(CancellationToken ct = default);
 		Task AddAsync(TutorAvailability entity, CancellationToken ct = default);
+		Task AddRangeAsync(IEnumerable<TutorAvailability> entity, CancellationToken ct = default);
 		Task UpdateAsync(TutorAvailability entity, CancellationToken ct = default);
 		Task RemoveByIdAsync(int id, CancellationToken ct = default);
 		Task RemoveByTutorIdAsync(int tutorId, CancellationToken ct = default);

@@ -29,7 +29,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 			ILevelRepository levelRepository)
 		{
 			_repository = repository;
-			_mapper = mapper;			_tutorProfileRepository = tutorProfileRepository;
+			_mapper = mapper;
+			_tutorProfileRepository = tutorProfileRepository;
 			_subjectRepository = subjectRepository;
 			_levelRepository = levelRepository;
 
