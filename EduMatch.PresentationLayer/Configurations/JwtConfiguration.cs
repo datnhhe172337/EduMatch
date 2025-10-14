@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
 namespace EduMatch.PresentationLayer.Configurations
@@ -18,6 +19,7 @@ namespace EduMatch.PresentationLayer.Configurations
 
             services.AddSingleton(jwtSettings);
 
+            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
             // Cấu hình Authentication JWT
             services.AddAuthentication(options =>
             {
@@ -32,7 +34,7 @@ namespace EduMatch.PresentationLayer.Configurations
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
-                    ValidateAudience = true,
+                    ValidateAudience = false,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = jwtSettings.Issuer,

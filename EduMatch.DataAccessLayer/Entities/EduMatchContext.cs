@@ -21,10 +21,6 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<EducationInstitution> EducationInstitutions { get; set; }
 
-    public virtual DbSet<EducationInstitutionLevel> EducationInstitutionLevels { get; set; }
-
-    public virtual DbSet<EducationLevel> EducationLevels { get; set; }
-
     public virtual DbSet<Level> Levels { get; set; }
 
     public virtual DbSet<Province> Provinces { get; set; }
@@ -53,19 +49,16 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
 
-//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<CertificateType>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__certific__3213E83FDE654A19");
+            entity.HasKey(e => e.Id).HasName("PK__certific__3213E83FC9E555E2");
 
             entity.ToTable("certificate_types");
 
-            entity.HasIndex(e => e.Code, "UQ__certific__357D4CF91A9931AE").IsUnique();
+            entity.HasIndex(e => e.Code, "UQ__certific__357D4CF92A8BE488").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Code)
@@ -79,7 +72,7 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<CertificateTypeSubject>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__certific__3213E83F1FDE61AB");
+            entity.HasKey(e => e.Id).HasName("PK__certific__3213E83FF192111C");
 
             entity.ToTable("certificate_type_subjects");
 
@@ -92,21 +85,21 @@ public partial class EduMatchContext : DbContext
             entity.HasOne(d => d.CertificateType).WithMany(p => p.CertificateTypeSubjects)
                 .HasForeignKey(d => d.CertificateTypeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__certifica__certi__6C190EBB");
+                .HasConstraintName("FK__certifica__certi__6754599E");
 
             entity.HasOne(d => d.Subject).WithMany(p => p.CertificateTypeSubjects)
                 .HasForeignKey(d => d.SubjectId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__certifica__subje__6D0D32F4");
+                .HasConstraintName("FK__certifica__subje__68487DD7");
         });
 
         modelBuilder.Entity<EducationInstitution>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__educatio__3213E83F35BD3B4D");
+            entity.HasKey(e => e.Id).HasName("PK__educatio__3213E83FFF7331E8");
 
             entity.ToTable("education_institutions");
 
-            entity.HasIndex(e => e.Code, "UQ__educatio__357D4CF9265D7212").IsUnique();
+            entity.HasIndex(e => e.Code, "UQ__educatio__357D4CF90B73C71D").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Code)
@@ -119,50 +112,9 @@ public partial class EduMatchContext : DbContext
                 .HasColumnName("name");
         });
 
-        modelBuilder.Entity<EducationInstitutionLevel>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__educatio__3213E83FDE805B6D");
-
-            entity.ToTable("education_institution_levels");
-
-            entity.HasIndex(e => new { e.InstitutionId, e.EducationLevelId }, "education_institution_levels_index_1").IsUnique();
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.EducationLevelId).HasColumnName("educationLevelId");
-            entity.Property(e => e.InstitutionId).HasColumnName("institutionId");
-
-            entity.HasOne(d => d.EducationLevel).WithMany(p => p.EducationInstitutionLevels)
-                .HasForeignKey(d => d.EducationLevelId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__education__educa__72C60C4A");
-
-            entity.HasOne(d => d.Institution).WithMany(p => p.EducationInstitutionLevels)
-                .HasForeignKey(d => d.InstitutionId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__education__insti__71D1E811");
-        });
-
-        modelBuilder.Entity<EducationLevel>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__educatio__3213E83F7497348F");
-
-            entity.ToTable("education_levels");
-
-            entity.HasIndex(e => e.Code, "UQ__educatio__357D4CF94402477F").IsUnique();
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Code)
-                .HasMaxLength(50)
-                .HasColumnName("code");
-            entity.Property(e => e.CreatedAt).HasColumnName("createdAt");
-            entity.Property(e => e.Name)
-                .HasMaxLength(100)
-                .HasColumnName("name");
-        });
-
         modelBuilder.Entity<Level>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__levels__3213E83FBBB2DC59");
+            entity.HasKey(e => e.Id).HasName("PK__levels__3213E83F3A1C9A36");
 
             entity.ToTable("levels");
 
@@ -174,7 +126,7 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<Province>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__province__3213E83F6CDD1EFF");
+            entity.HasKey(e => e.Id).HasName("PK__province__3213E83F688ECBDC");
 
             entity.ToTable("provinces");
 
@@ -188,12 +140,15 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<RefreshToken>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__refresh___3213E83F81E60B63");
+            entity.HasKey(e => e.Id).HasName("PK__refresh___3213E83F537F03B3");
 
             entity.ToTable("refresh_tokens");
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CreatedAt).HasColumnName("createdAt");
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(3)
+                .HasDefaultValueSql("(sysdatetime())")
+                .HasColumnName("createdAt");
             entity.Property(e => e.ExpiresAt).HasColumnName("expiresAt");
             entity.Property(e => e.RevokedAt).HasColumnName("revokedAt");
             entity.Property(e => e.TokenHash)
@@ -206,16 +161,16 @@ public partial class EduMatchContext : DbContext
             entity.HasOne(d => d.UserEmailNavigation).WithMany(p => p.RefreshTokens)
                 .HasForeignKey(d => d.UserEmail)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__refresh_t__userE__60A75C0F");
+                .HasConstraintName("FK__refresh_t__userE__5BE2A6F2");
         });
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__roles__3213E83FF2BE7729");
+            entity.HasKey(e => e.Id).HasName("PK__roles__3213E83F28BEE802");
 
             entity.ToTable("roles");
 
-            entity.HasIndex(e => e.RoleName, "UQ__roles__B194786149756F24").IsUnique();
+            entity.HasIndex(e => e.RoleName, "UQ__roles__B1947861DCC923FD").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.RoleName)
@@ -225,7 +180,7 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<SubDistrict>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__sub_dist__3213E83FBE35CFDE");
+            entity.HasKey(e => e.Id).HasName("PK__sub_dist__3213E83F66534916");
 
             entity.ToTable("sub_district");
 
@@ -238,16 +193,16 @@ public partial class EduMatchContext : DbContext
             entity.HasOne(d => d.Province).WithMany(p => p.SubDistricts)
                 .HasForeignKey(d => d.ProvinceId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__sub_distr__provi__656C112C");
+                .HasConstraintName("FK__sub_distr__provi__60A75C0F");
         });
 
         modelBuilder.Entity<Subject>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__subjects__3213E83F139E7B9A");
+            entity.HasKey(e => e.Id).HasName("PK__subjects__3213E83FAB8828FA");
 
             entity.ToTable("subjects");
 
-            entity.HasIndex(e => e.SubjectName, "UQ__subjects__E5068BFDF89DFD9D").IsUnique();
+            entity.HasIndex(e => e.SubjectName, "UQ__subjects__E5068BFD4F2F1D36").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.SubjectName)
@@ -257,7 +212,7 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<TimeSlot>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__time_slo__3213E83FA036AB36");
+            entity.HasKey(e => e.Id).HasName("PK__time_slo__3213E83F26A39A86");
 
             entity.ToTable("time_slots");
 
@@ -268,7 +223,7 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<TutorAvailability>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__tutor_av__3213E83FD6CDA2B8");
+            entity.HasKey(e => e.Id).HasName("PK__tutor_av__3213E83F6FEFE9BB");
 
             entity.ToTable("tutor_availability");
 
@@ -285,17 +240,17 @@ public partial class EduMatchContext : DbContext
             entity.HasOne(d => d.Slot).WithMany(p => p.TutorAvailabilities)
                 .HasForeignKey(d => d.SlotId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__tutor_ava__slotI__70DDC3D8");
+                .HasConstraintName("FK__tutor_ava__slotI__6C190EBB");
 
             entity.HasOne(d => d.Tutor).WithMany(p => p.TutorAvailabilities)
                 .HasForeignKey(d => d.TutorId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__tutor_ava__tutor__6FE99F9F");
+                .HasConstraintName("FK__tutor_ava__tutor__6B24EA82");
         });
 
         modelBuilder.Entity<TutorCertificate>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__tutor_ce__3213E83F823119B0");
+            entity.HasKey(e => e.Id).HasName("PK__tutor_ce__3213E83F3FCACDB2");
 
             entity.ToTable("tutor_certificates");
 
@@ -319,17 +274,17 @@ public partial class EduMatchContext : DbContext
             entity.HasOne(d => d.CertificateType).WithMany(p => p.TutorCertificates)
                 .HasForeignKey(d => d.CertificateTypeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__tutor_cer__certi__6A30C649");
+                .HasConstraintName("FK__tutor_cer__certi__656C112C");
 
             entity.HasOne(d => d.Tutor).WithMany(p => p.TutorCertificates)
                 .HasForeignKey(d => d.TutorId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__tutor_cer__tutor__6B24EA82");
+                .HasConstraintName("FK__tutor_cer__tutor__66603565");
         });
 
         modelBuilder.Entity<TutorEducation>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__tutor_ed__3213E83F838DE20D");
+            entity.HasKey(e => e.Id).HasName("PK__tutor_ed__3213E83F3A588FD9");
 
             entity.ToTable("tutor_education");
 
@@ -352,21 +307,21 @@ public partial class EduMatchContext : DbContext
             entity.HasOne(d => d.Institution).WithMany(p => p.TutorEducations)
                 .HasForeignKey(d => d.InstitutionId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__tutor_edu__insti__6E01572D");
+                .HasConstraintName("FK__tutor_edu__insti__693CA210");
 
             entity.HasOne(d => d.Tutor).WithMany(p => p.TutorEducations)
                 .HasForeignKey(d => d.TutorId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__tutor_edu__tutor__6EF57B66");
+                .HasConstraintName("FK__tutor_edu__tutor__6A30C649");
         });
 
         modelBuilder.Entity<TutorProfile>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__tutor_pr__3213E83F9C86065F");
+            entity.HasKey(e => e.Id).HasName("PK__tutor_pr__3213E83F924DBCEA");
 
             entity.ToTable("tutor_profiles");
 
-            entity.HasIndex(e => e.UserEmail, "UQ__tutor_pr__D54ADF5511AC457D").IsUnique();
+            entity.HasIndex(e => e.UserEmail, "UQ__tutor_pr__D54ADF55BAF574EE").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Bio).HasColumnName("bio");
@@ -390,12 +345,12 @@ public partial class EduMatchContext : DbContext
             entity.HasOne(d => d.UserEmailNavigation).WithOne(p => p.TutorProfile)
                 .HasForeignKey<TutorProfile>(d => d.UserEmail)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__tutor_pro__userE__68487DD7");
+                .HasConstraintName("FK__tutor_pro__userE__6383C8BA");
         });
 
         modelBuilder.Entity<TutorSubject>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__tutor_su__3213E83F8F7E08F5");
+            entity.HasKey(e => e.Id).HasName("PK__tutor_su__3213E83F05BD6105");
 
             entity.ToTable("tutor_subjects");
 
@@ -409,29 +364,32 @@ public partial class EduMatchContext : DbContext
 
             entity.HasOne(d => d.Level).WithMany(p => p.TutorSubjects)
                 .HasForeignKey(d => d.LevelId)
-                .HasConstraintName("FK__tutor_sub__level__693CA210");
+                .HasConstraintName("FK__tutor_sub__level__6477ECF3");
 
             entity.HasOne(d => d.Subject).WithMany(p => p.TutorSubjects)
                 .HasForeignKey(d => d.SubjectId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__tutor_sub__subje__6383C8BA");
+                .HasConstraintName("FK__tutor_sub__subje__5EBF139D");
 
             entity.HasOne(d => d.Tutor).WithMany(p => p.TutorSubjects)
                 .HasForeignKey(d => d.TutorId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__tutor_sub__tutor__628FA481");
+                .HasConstraintName("FK__tutor_sub__tutor__5DCAEF64");
         });
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Email).HasName("PK__users__AB6E6165810127DE");
+            entity.HasKey(e => e.Email).HasName("PK__users__AB6E61654D12C769");
 
             entity.ToTable("users");
 
             entity.Property(e => e.Email)
                 .HasMaxLength(100)
                 .HasColumnName("email");
-            entity.Property(e => e.CreatedAt).HasColumnName("createdAt");
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(3)
+                .HasDefaultValueSql("(sysdatetime())")
+                .HasColumnName("createdAt");
             entity.Property(e => e.IsActive).HasColumnName("isActive");
             entity.Property(e => e.IsEmailConfirmed).HasColumnName("isEmailConfirmed");
             entity.Property(e => e.LoginProvider)
@@ -451,12 +409,12 @@ public partial class EduMatchContext : DbContext
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
                 .HasForeignKey(d => d.RoleId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__users__roleId__619B8048");
+                .HasConstraintName("FK__users__roleId__5CD6CB2B");
         });
 
         modelBuilder.Entity<UserProfile>(entity =>
         {
-            entity.HasKey(e => e.UserEmail).HasName("PK__user_pro__D54ADF545FB0D5F2");
+            entity.HasKey(e => e.UserEmail).HasName("PK__user_pro__D54ADF5463AD4278");
 
             entity.ToTable("user_profiles");
 
@@ -485,16 +443,16 @@ public partial class EduMatchContext : DbContext
 
             entity.HasOne(d => d.City).WithMany(p => p.UserProfiles)
                 .HasForeignKey(d => d.CityId)
-                .HasConstraintName("FK__user_prof__cityI__6477ECF3");
+                .HasConstraintName("FK__user_prof__cityI__5FB337D6");
 
             entity.HasOne(d => d.SubDistrict).WithMany(p => p.UserProfiles)
                 .HasForeignKey(d => d.SubDistrictId)
-                .HasConstraintName("FK__user_prof__sub_d__66603565");
+                .HasConstraintName("FK__user_prof__sub_d__619B8048");
 
             entity.HasOne(d => d.UserEmailNavigation).WithOne(p => p.UserProfile)
                 .HasForeignKey<UserProfile>(d => d.UserEmail)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__user_prof__userE__6754599E");
+                .HasConstraintName("FK__user_prof__userE__628FA481");
         });
 
         OnModelCreatingPartial(modelBuilder);
