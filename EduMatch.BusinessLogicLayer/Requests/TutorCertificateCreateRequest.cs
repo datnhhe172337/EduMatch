@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using System;
 using System.ComponentModel.DataAnnotations;
 
@@ -17,11 +18,9 @@ namespace EduMatch.BusinessLogicLayer.Requests
 
 		public DateTime? ExpiryDate { get; set; }
 
-		[StringLength(500, ErrorMessage = "Certificate URL cannot exceed 500 characters")]
-		public string? CertificateUrl { get; set; }
+		[Required(ErrorMessage = "Certificate file is required")]
+		public IFormFile Certificate { get; set; }
 
-		[StringLength(200, ErrorMessage = "Certificate public ID cannot exceed 200 characters")]
-		public string? CertificatePublicId { get; set; }
 
 		[CustomValidation(typeof(TutorCertificateCreateRequest), "ValidateDateRange")]
 		public bool IsValidDateRange => !IssueDate.HasValue || !ExpiryDate.HasValue || ExpiryDate.Value >= IssueDate.Value;

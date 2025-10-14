@@ -13,10 +13,12 @@ namespace EduMatch.BusinessLogicLayer.Requests
 		[Range(1, int.MaxValue, ErrorMessage = "Subject ID must be greater than 0")]
 		public int SubjectId { get; set; }
 
+		[Required(ErrorMessage = "Hourly rate  is required")]
 		[Range(0, 999999.99, ErrorMessage = "Hourly rate must be between 0 and 999999.99")]
-		public decimal? HourlyRate { get; set; }
+		public decimal HourlyRate { get; set; }
 
+		[Required(ErrorMessage = "Level ID is required")]
 		[Range(1, int.MaxValue, ErrorMessage = "Level ID must be greater than 0")]
-		public int? LevelId { get; set; }
+		public int LevelId { get; set; }
 	}
 }

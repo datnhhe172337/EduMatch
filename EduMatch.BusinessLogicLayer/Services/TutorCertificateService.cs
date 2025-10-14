@@ -1,14 +1,15 @@
-using AutoMapper;
+﻿using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
+using EduMatch.DataAccessLayer.Repositories;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
@@ -17,12 +18,24 @@ namespace EduMatch.BusinessLogicLayer.Services
 		private readonly ITutorCertificateRepository _repository;
 		private readonly IMapper _mapper;
 		private readonly ICloudMediaService _cloudMedia;
+		private readonly CurrentUserService _currentUserService;
+		private readonly ITutorProfileRepository _tutorProfileRepository;
+		private readonly ICertificateTypeRepository _certificateTypeRepository;	
 
-		public TutorCertificateService(ITutorCertificateRepository repository, IMapper mapper, ICloudMediaService cloudMedia)
+		public TutorCertificateService(
+			ITutorCertificateRepository repository,
+			IMapper mapper,
+			ICloudMediaService cloudMedia,
+			CurrentUserService currentUserService ,
+			ITutorProfileRepository tutorProfileRepository,
+			ICertificateTypeRepository certificateTypeRepository	)
 		{
 			_repository = repository;
 			_mapper = mapper;
 			_cloudMedia = cloudMedia;
+			_currentUserService = currentUserService;
+			_tutorProfileRepository = tutorProfileRepository;
+			_certificateTypeRepository = certificateTypeRepository;
 		}
 
 		public async Task<TutorCertificateDto?> GetByIdFullAsync(int id)
@@ -77,16 +90,66 @@ namespace EduMatch.BusinessLogicLayer.Services
 		{
 			try
 			{
-				// Validate request
+
+				// VALIDATE REQUEST 
+
 				var validationContext = new ValidationContext(request);
 				var validationResults = new List<ValidationResult>();
 				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
 				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
+					throw new ArgumentException(
+						$"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}"
+					);
 				}
 
-				var entity = _mapper.Map<TutorCertificate>(request);
+				var tutor = await _tutorProfileRepository.GetByIdFullAsync(request.TutorId);
+				if (tutor is null)
+					throw new ArgumentException($"Tutor with ID {request.TutorId} not found.");
+
+
+				var certificateType = await _certificateTypeRepository.GetByIdAsync(request.CertificateTypeId);
+				if (certificateType is null)
+					throw new ArgumentException($"CertificateType with ID {request.CertificateTypeId} not found.");
+
+				//  UploadToCloudRequest
+
+				using var stream = request.Certificate.OpenReadStream();
+				var uploadRequest = new UploadToCloudRequest(
+					Content: stream,
+					FileName: request.Certificate.FileName,
+					ContentType: request.Certificate.ContentType ?? "application/octet-stream",
+					LengthBytes: request.Certificate.Length,
+					OwnerEmail: _currentUserService.Email,
+					MediaType: MediaType.Image
+				);
+
+
+				//  CloudinaryMediaService.UploadAsync()
+
+				var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
+
+				if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
+					throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
+
+
+				// MAP  -> ENTITY
+
+				var entity = new TutorCertificate
+				{
+					TutorId = request.TutorId,
+					IssueDate = request.IssueDate,
+					ExpiryDate = request.ExpiryDate,
+					CertificateUrl = uploadResult.SecureUrl,
+					CertificatePublicId = uploadResult.PublicId,
+					CreatedAt = DateTime.UtcNow,
+					Verified = VerifyStatus.Pending,
+					RejectReason = null
+				};
+
 				await _repository.AddAsync(entity);
+
+
+
 				return _mapper.Map<TutorCertificateDto>(entity);
 			}
 			catch (Exception ex)
@@ -125,11 +188,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 						{
 							if (t.IsCompletedSuccessfully)
 							{
-								Console.WriteLine($" X�a ?nh {oldPublicId} th�nh c�ng.");
+								Console.WriteLine($" Xóa ảnh {oldPublicId} thành công.");
 							}
 							else if (t.IsFaulted)
 							{
-								Console.WriteLine($" X�a ?nh {oldPublicId} th?t b?i: {t.Exception?.GetBaseException().Message}");
+								Console.WriteLine($" Xóa ảnh {oldPublicId} thất bại: {t.Exception?.GetBaseException().Message}");
 							}
 						});
 				}

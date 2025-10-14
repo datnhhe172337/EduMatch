@@ -16,14 +16,26 @@ namespace EduMatch.BusinessLogicLayer.Services
 	public class TutorEducationService : ITutorEducationService
 	{
 		private readonly ITutorEducationRepository _repository;
+		private readonly ITutorEducationRepository _tutorEducationRepository;
+		private readonly ITutorProfileRepository _tutorProfileRepository;
 		private readonly IMapper _mapper;
 		private readonly CloudinaryMediaService _cloudMedia;
+		private readonly CurrentUserService _currentUserService;
 
-		public TutorEducationService(ITutorEducationRepository repository, IMapper mapper, CloudinaryMediaService cloudMedia)
+		public TutorEducationService(
+			ITutorEducationRepository repository,
+			IMapper mapper, CloudinaryMediaService cloudMedia,
+			CurrentUserService currentUserService,
+			ITutorProfileRepository tutorProfileRepository,
+			ITutorEducationRepository tutorEducationRepository
+			)
 		{
 			_repository = repository;
 			_mapper = mapper;
 			_cloudMedia = cloudMedia; 
+			_currentUserService = currentUserService;
+			_tutorProfileRepository = tutorProfileRepository;
+			_tutorEducationRepository = tutorEducationRepository;
 		}
 
 		public async Task<TutorEducationDto?> GetByIdFullAsync(int id)
@@ -72,16 +84,68 @@ namespace EduMatch.BusinessLogicLayer.Services
 		{
 			try
 			{
-				// Validate request
+				
+				// VALIDATE REQUEST 
+			
 				var validationContext = new ValidationContext(request);
 				var validationResults = new List<ValidationResult>();
 				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
 				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
+					throw new ArgumentException(
+						$"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}"
+					);
 				}
 
-				var entity = _mapper.Map<TutorEducation>(request);
+				var tutor = await _tutorProfileRepository.GetByIdFullAsync(request.TutorId);
+				if (tutor is null)
+					throw new ArgumentException($"Tutor with ID {request.TutorId} not found.");
+
+				
+				var institution = await _tutorEducationRepository.GetByIdFullAsync(request.InstitutionId);
+				if (institution is null)
+					throw new ArgumentException($"Education institution with ID {request.InstitutionId} not found.");
+
+
+
+				//  UploadToCloudRequest
+
+				using var stream = request.CertificateEducation.OpenReadStream();
+				var uploadRequest = new UploadToCloudRequest(
+					Content: stream,
+					FileName: request.CertificateEducation.FileName,
+					ContentType: request.CertificateEducation.ContentType ?? "application/octet-stream",
+					LengthBytes: request.CertificateEducation.Length,
+					OwnerEmail: _currentUserService.Email,
+					MediaType: MediaType.Image
+				);
+
+				
+				//  CloudinaryMediaService.UploadAsync()
+			
+				var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
+
+				if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
+					throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
+
+			
+				// MAP  -> ENTITY
+				
+				var entity = new TutorEducation
+				{
+					TutorId = request.TutorId,
+					InstitutionId = request.InstitutionId,
+					IssueDate = request.IssueDate,
+					CertificateUrl = uploadResult.SecureUrl,
+					CertificatePublicId = uploadResult.PublicId,
+					CreatedAt = DateTime.UtcNow,
+					Verified = VerifyStatus.Pending,
+					RejectReason = null
+				};
+
 				await _repository.AddAsync(entity);
+
+				
+
 				return _mapper.Map<TutorEducationDto>(entity);
 			}
 			catch (Exception ex)
@@ -89,6 +153,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				throw new InvalidOperationException($"Failed to create tutor education: {ex.Message}", ex);
 			}
 		}
+
 
 		public async Task<TutorEducationDto> UpdateAsync(TutorEducationUpdateRequest request)
 		{

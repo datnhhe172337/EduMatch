@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using System;
 using System.ComponentModel.DataAnnotations;
 
@@ -15,10 +16,8 @@ namespace EduMatch.BusinessLogicLayer.Requests
 
 		public DateTime? IssueDate { get; set; }
 
-		[StringLength(500, ErrorMessage = "Certificate URL cannot exceed 500 characters")]
-		public string? CertificateUrl { get; set; }
+		[Required(ErrorMessage = "Certificate file is required")]
+		public IFormFile CertificateEducation { get; set; }
 
-		[StringLength(200, ErrorMessage = "Certificate public ID cannot exceed 200 characters")]
-		public string? CertificatePublicId { get; set; }
 	}
 }

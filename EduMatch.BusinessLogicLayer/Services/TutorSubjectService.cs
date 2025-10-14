@@ -4,11 +4,12 @@ using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
+using EduMatch.DataAccessLayer.Repositories;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
@@ -16,11 +17,22 @@ namespace EduMatch.BusinessLogicLayer.Services
 	{
 		private readonly ITutorSubjectRepository _repository;
 		private readonly IMapper _mapper;
+		private readonly ITutorProfileRepository _tutorProfileRepository;
+		private	readonly ISubjectRepository _subjectRepository;
+		private readonly ILevelRepository _levelRepository;
 
-		public TutorSubjectService(ITutorSubjectRepository repository, IMapper mapper)
+		public TutorSubjectService(
+			ITutorSubjectRepository repository,
+			IMapper mapper,
+			ITutorProfileRepository tutorProfileRepository,
+			ISubjectRepository subjectRepository,
+			ILevelRepository levelRepository)
 		{
 			_repository = repository;
-			_mapper = mapper;
+			_mapper = mapper;			_tutorProfileRepository = tutorProfileRepository;
+			_subjectRepository = subjectRepository;
+			_levelRepository = levelRepository;
+
 		}
 
 		public async Task<TutorSubjectDto?> GetByIdFullAsync(int id)
@@ -82,6 +94,18 @@ namespace EduMatch.BusinessLogicLayer.Services
 				{
 					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
 				}
+
+				var tutor = await _tutorProfileRepository.GetByIdFullAsync(request.TutorId);
+				if (tutor is null)
+					throw new ArgumentException($"Tutor with ID {request.TutorId} not found.");
+
+				var subject = await _subjectRepository.GetByIdAsync(request.SubjectId);
+				if (subject is null)
+					throw new ArgumentException($"subject with ID {request.SubjectId} not found.");
+
+				var level = await _levelRepository.GetByIdAsync(request.LevelId);
+				if (level is null)
+					throw new ArgumentException($"level with ID {request.LevelId} not found.");
 
 				var entity = _mapper.Map<TutorSubject>(request);
 				await _repository.AddAsync(entity);

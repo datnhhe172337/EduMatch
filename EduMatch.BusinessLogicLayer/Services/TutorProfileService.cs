@@ -19,15 +19,19 @@ namespace EduMatch.BusinessLogicLayer.Services
 		private readonly ITutorProfileRepository _repository;
 		private readonly ICloudMediaService _cloudMedia;
 		private readonly IMapper _mapper;
+		private readonly CurrentUserService _currentUserService;
 
 		public TutorProfileService(
 			 ITutorProfileRepository repository,
 			 IMapper mapper,
-			 ICloudMediaService cloudMedia) 
+			 ICloudMediaService cloudMedia,
+			 CurrentUserService currentUserService
+			 ) 
 		{
 			_repository = repository;
 			_mapper = mapper;
 			_cloudMedia = cloudMedia; 
+			_currentUserService = currentUserService ;
 		}
 
 
@@ -54,23 +58,65 @@ namespace EduMatch.BusinessLogicLayer.Services
 			return _mapper.Map<IReadOnlyList<TutorProfileDto>>(entities);
 		}
 
-		
+
 
 		public async Task<TutorProfileDto> CreateAsync(TutorProfileCreateRequest request)
 		{
 			try
 			{
-				ValidateRequest(request);
 
-				// Optional: chặn trùng theo email profile
-				var existed = await _repository.GetByEmailFullAsync(request.UserEmail);
-				if (existed != null)
-					throw new ArgumentException($"Tutor profile with email '{request.UserEmail}' already exists.");
+				// VALIDATE REQUEST 
 
-				var entity = _mapper.Map<TutorProfile>(request);
-				entity.CreatedAt = DateTime.UtcNow;
+				var validationContext = new ValidationContext(request);
+				var validationResults = new List<ValidationResult>();
+				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+				{
+					throw new ArgumentException(
+						$"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}"
+					);
+				}
+
+
+				//  UploadToCloudRequest
+
+				using var stream = request.VideoIntro.OpenReadStream();
+				var uploadRequest = new UploadToCloudRequest(
+					Content: stream,
+					FileName: request.VideoIntro.FileName,
+					ContentType: request.VideoIntro.ContentType ?? "application/octet-stream",
+					LengthBytes: request.VideoIntro.Length,
+					OwnerEmail: _currentUserService.Email,
+					MediaType: MediaType.Video
+				);
+
+
+				//  CloudinaryMediaService.UploadAsync()
+
+				var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
+
+				if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
+					throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
+
+
+				// MAP  -> ENTITY
+
+				var entity = new TutorProfile
+				{
+					UserEmail = request.UserEmail,
+					Bio = request.Bio,
+					TeachingExp = request.TeachingExp,
+					VideoIntroUrl = uploadResult.SecureUrl,
+					VideoIntroPublicId = uploadResult.PublicId,
+					TeachingModes = request.TeachingModes,
+					Status = TutorStatus.Pending,
+					CreatedAt = DateTime.UtcNow,
+					UpdatedAt = DateTime.UtcNow
+				};
 
 				await _repository.AddAsync(entity);
+
+
+
 				return _mapper.Map<TutorProfileDto>(entity);
 			}
 			catch (Exception ex)

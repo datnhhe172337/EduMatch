@@ -50,33 +50,28 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 
 			// TutorCertificate mappings
 			CreateMap<TutorCertificate, TutorCertificateDto>().ReverseMap();
-			CreateMap<TutorCertificateCreateRequest, TutorCertificate>()
-				.ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Now))
-				.ForMember(dest => dest.Verified, opt => opt.MapFrom(src => VerifyStatus.Pending));
-			CreateMap<TutorCertificateUpdateRequest, TutorCertificate>();
+
 
 			// TutorEducation mappings
 			CreateMap<TutorEducation, TutorEducationDto>().ReverseMap();
-			CreateMap<TutorEducationCreateRequest, TutorEducation>()
-				.ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Now))
-				.ForMember(dest => dest.Verified, opt => opt.MapFrom(src => VerifyStatus.Pending));
-			CreateMap<TutorEducationUpdateRequest, TutorEducation>();
+
+
+			// TutorProfile mappings
+			CreateMap<TutorProfile, TutorProfileDto>().ReverseMap();
+
+
+
+
+
+
 
 			// TutorSubject mappings
 			CreateMap<TutorSubject, TutorSubjectDto>().ReverseMap();
 			CreateMap<TutorSubjectCreateRequest, TutorSubject>();
 			CreateMap<TutorSubjectUpdateRequest, TutorSubject>();
 
-			// TutorProfile mappings
-			CreateMap<TutorProfile, TutorProfileDto>().ReverseMap();
-			CreateMap<TutorProfileCreateRequest, TutorProfile>()
-				  .ForMember(d => d.Id, opt => opt.Ignore())
-				  .ForMember(d => d.CreatedAt, opt => opt.Ignore())
-				  .ForMember(d => d.UpdatedAt, opt => opt.Ignore());
+			
 
-			CreateMap<TutorProfileUpdateRequest, TutorProfile>()
-				.ForMember(d => d.CreatedAt, opt => opt.Ignore())
-				.ForMember(d => d.UpdatedAt, opt => opt.Ignore());
 
 
 

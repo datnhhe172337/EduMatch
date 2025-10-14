@@ -17,11 +17,20 @@ namespace EduMatch.BusinessLogicLayer.Services
 	{
 		private readonly ITutorAvailabilityRepository _repository;
 		private readonly IMapper _mapper;
+		private readonly ITutorProfileRepository _tutorProfileRepository;
+		private readonly ITimeSlotRepository _timeSlotRepository;
 
-		public TutorAvailabilityService(ITutorAvailabilityRepository repository, IMapper mapper)
+
+		public TutorAvailabilityService(
+			ITutorAvailabilityRepository repository,
+			IMapper mapper,
+			ITimeSlotRepository timeSlotRepository,
+			ITutorProfileRepository tutorProfileRepository)
 		{
 			_repository = repository;
 			_mapper = mapper;
+			_timeSlotRepository = timeSlotRepository;
+			_tutorProfileRepository = tutorProfileRepository;
 		}
 
 		public async Task<TutorAvailabilityDto?> GetByIdFullAsync(int id)
@@ -77,6 +86,14 @@ namespace EduMatch.BusinessLogicLayer.Services
 				{
 					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
 				}
+
+				var tutor = await _tutorProfileRepository.GetByIdFullAsync(request.TutorId);
+				if (tutor is null)
+					throw new ArgumentException($"Tutor with ID {request.TutorId} not found.");
+
+				var timeSlot = await _timeSlotRepository.GetByIdAsync(request.SlotId);
+				if (timeSlot is null)
+					throw new ArgumentException($"timeSlot with ID {request.SlotId} not found.");
 
 				var entity = _mapper.Map<TutorAvailability>(request);
 				await _repository.AddAsync(entity);
@@ -141,58 +158,67 @@ namespace EduMatch.BusinessLogicLayer.Services
 			try
 			{
 				var requests = new List<TutorAvailabilityCreateRequest>();
+				var seen = new HashSet<string>(); // tránh trùng (TutorId + Date + SlotId)
 
-				
-				//  KHÔNG LẶP LẠI
-				
+				// XỬ LÝ KHÔNG LẶP (Non-recurring)
 				foreach (var daySlot in request.NonRecurringDaySlots)
 				{
+					var date = daySlot.Date.Date;
+
 					foreach (var slotId in daySlot.SlotIds)
 					{
-						requests.Add(new TutorAvailabilityCreateRequest
+						var key = $"{request.TutorId}_{date:yyyyMMdd}_{slotId}";
+						if (seen.Add(key))
 						{
-							TutorId = request.TutorId,
-							DayOfWeek = daySlot.Date.DayOfWeek,
-							SlotId = slotId,
-							IsRecurring = false,
-							EffectiveFrom = daySlot.Date.Date,
-							EffectiveTo = daySlot.Date.Date.AddDays(1).AddTicks(-1)
-						});
-					}
-				}
-
-
-				// CÓ LẶP LẠI (recurring weekly)
-			
-				foreach (var recurring in request.RecurringDaySlots)
-				{
-					var currentDate = recurring.StartDate.Date;
-					var endDate = recurring.EndDate ?? recurring.StartDate.AddMonths(1);
-
-					while (currentDate <= endDate)
-					{
-						if (currentDate.DayOfWeek == recurring.DayOfWeek)
-						{
-							foreach (var slotId in recurring.SlotIds)
+							requests.Add(new TutorAvailabilityCreateRequest
 							{
-								requests.Add(new TutorAvailabilityCreateRequest
-								{
-									TutorId = request.TutorId,
-									DayOfWeek = currentDate.DayOfWeek,
-									SlotId = slotId,
-									IsRecurring = true,
-									EffectiveFrom = currentDate,
-									EffectiveTo = endDate
-								});
-							}
+								TutorId = request.TutorId,
+								DayOfWeek = date.DayOfWeek,
+								SlotId = slotId,
+								IsRecurring = false,
+								EffectiveFrom = date,
+								EffectiveTo = date.AddDays(1).AddTicks(-1)
+							});
 						}
-						currentDate = currentDate.AddDays(1);
 					}
 				}
 
-				
-				// THỰC HIỆN TẠO DỮ LIỆU
-				
+				//  XỬ LÝ LẶP HÀNG TUẦN (Recurring)
+				foreach (var recurring in request.RecurringSchedule)
+				{
+					var start = recurring.StartDate.Date;
+					var end = (recurring.EndDate ?? start.AddMonths(1)).Date;
+
+					foreach (var daySlot in recurring.DaySlots)
+					{
+						//  đầu tiên >= start có đúng DayOfWeek cần lặp
+						int daysUntilFirst = ((int)daySlot.DayOfWeek - (int)start.DayOfWeek + 7) % 7;
+						var current = start.AddDays(daysUntilFirst);
+
+						while (current <= end)
+						{
+							foreach (var slotId in daySlot.SlotIds)
+							{
+								var key = $"{request.TutorId}_{current:yyyyMMdd}_{slotId}";
+								if (seen.Add(key))
+								{
+									requests.Add(new TutorAvailabilityCreateRequest
+									{
+										TutorId = request.TutorId,
+										DayOfWeek = current.DayOfWeek,
+										SlotId = slotId,
+										IsRecurring = true,
+										EffectiveFrom = current,
+										EffectiveTo = current.AddDays(1).AddTicks(-1)
+									});
+								}
+							}
+							current = current.AddDays(7); // nhảy đúng 1 tuần
+						}
+					}
+				}
+
+				// GỌI XỬ LÝ TẠO DỮ LIỆU
 				return await CreateBulkAsync(requests);
 			}
 			catch (Exception ex)
@@ -200,6 +226,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				throw new InvalidOperationException($"Failed to create mixed tutor availabilities: {ex.Message}", ex);
 			}
 		}
+
 
 
 
