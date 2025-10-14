@@ -80,5 +80,13 @@ namespace EduMatch.DataAccessLayer.Repositories
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<IEnumerable<User>> GetAdminAsync()
+        {
+            return await _context.Users
+                .Where(u => u.RoleId == 3)
+                .OrderByDescending(u => u.CreatedAt)
+                .ToListAsync();
+        }
     }
 }

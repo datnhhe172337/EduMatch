@@ -103,6 +103,17 @@ namespace EduMatch.BusinessLogicLayer.Services
                                     .ToList() ?? new List<string>()
                         });
                     break;
+                case 3: //admin
+                    users = (await _userRepo.GetAdminAsync())
+                        .Select(u => new ManageUserDto
+                        {
+                            Email = u.Email,
+                            UserName = u.UserName,
+                            Phone = u.Phone,
+                            IsActive = u.IsActive,
+                            CreateAt = u.CreatedAt
+                        });
+                    break;
                 default:
                     return Enumerable.Empty<ManageUserDto>();
             }
