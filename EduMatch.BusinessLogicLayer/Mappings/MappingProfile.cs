@@ -12,9 +12,12 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 		public MappingProfile()
 		{
 			// CertificateType mappings
-			CreateMap<CertificateType, CertificateTypeDto>().ReverseMap();
+			CreateMap<CertificateType, CertificateTypeDto>()
+				.ForMember(dest => dest.Subjects, opt => opt.MapFrom(src => src.CertificateTypeSubjects.Select(cts => cts.Subject)));
+
 			CreateMap<CertificateTypeCreateRequest, CertificateType>()
 				.ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Now));
+
 			CreateMap<CertificateTypeUpdateRequest, CertificateType>();
 
 			// CertificateTypeSubject mappings
@@ -22,7 +25,7 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 
 			// EducationInstitution mappings
 			CreateMap<EducationInstitution, EducationInstitutionDto>().ReverseMap();
-
+			 
 			// EducationInstitutionLevel mappings
 			CreateMap<EducationInstitutionLevel, EducationInstitutionLevelDto>().ReverseMap();
 

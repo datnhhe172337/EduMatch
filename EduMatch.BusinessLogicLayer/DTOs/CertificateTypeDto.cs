@@ -8,5 +8,7 @@ namespace EduMatch.BusinessLogicLayer.DTOs
 		public string Code { get; set; } = null!;
 		public string Name { get; set; } = null!;
 		public DateTime? CreatedAt { get; set; }
+
+		public ICollection<SubjectDto> Subjects { get; set; } = new List<SubjectDto>();
 	}
 }

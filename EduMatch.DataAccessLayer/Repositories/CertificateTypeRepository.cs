@@ -13,7 +13,11 @@ namespace EduMatch.DataAccessLayer.Repositories
 		public CertificateTypeRepository(EduMatchContext ctx) => _ctx = ctx;
 
 		private IQueryable<CertificateType> IncludeAll() =>
-			_ctx.CertificateTypes.AsNoTracking();
+			_ctx.CertificateTypes
+			.AsNoTracking()
+			.AsSplitQuery()
+			.Include(c => c.CertificateTypeSubjects)
+		 		.ThenInclude(c => c.Subject);
 
 		public async Task<CertificateType?> GetByIdAsync(int id, CancellationToken ct = default)
 			=> await IncludeAll().FirstOrDefaultAsync(c => c.Id == id, ct);

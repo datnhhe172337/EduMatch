@@ -14,7 +14,11 @@ namespace EduMatch.DataAccessLayer.Repositories
 		public EducationInstitutionRepository(EduMatchContext ctx) => _ctx = ctx;
 
 		private IQueryable<EducationInstitution> IncludeAll() =>
-			_ctx.EducationInstitutions.AsNoTracking();
+			_ctx.EducationInstitutions
+			.AsNoTracking()
+			.AsSplitQuery()
+			.Include(e => e.EducationInstitutionLevels)
+				.ThenInclude(e => e.EducationLevel);
 
 		public async Task<EducationInstitution?> GetByIdAsync(int id, CancellationToken ct = default)
 			=> await IncludeAll().FirstOrDefaultAsync(e => e.Id == id, ct);
