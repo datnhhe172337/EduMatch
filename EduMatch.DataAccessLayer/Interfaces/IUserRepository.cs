@@ -12,9 +12,14 @@ namespace EduMatch.DataAccessLayer.Interfaces
         Task<User?> GetUserByEmailAsync(string email);
 
         Task<bool> IsEmailAvailableAsync(string email);
+
         Task<IEnumerable<User>> GetLearnerAsync();
         Task<IEnumerable<User>> GetTutorAsync();
         Task<bool> UpdateUserStatusAsync(string email, bool isActive);
-        Task<User> CreateAdminAccAsync(User user);
+        Task CreateAdminAccAsync(User user);
+
+        Task CreateUserAsync(User user);
+        Task UpdateUserAsync(User user);
+
     }
 }

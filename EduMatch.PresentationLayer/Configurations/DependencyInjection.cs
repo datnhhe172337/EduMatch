@@ -25,6 +25,26 @@ namespace EduMatch.PresentationLayer.Configurations
             // HttpContextAccessor for CurrentUserService
 
 
+            //// Mail Settings
+            services.Configure<MailSettings>(configuration.GetSection("MailSettings"));
+
+
+            //// Repositories
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IRefreshTokenRepositoy, RefreshTokenRepository>();
+
+
+            //// Services
+            services.AddScoped<IUserService, UserService>();
+            services.AddTransient<EmailService>();
+            services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+
+            //// AutoMapper
+            //services.AddAutoMapper(typeof(MappingProfile).Assembly);
+
+            // HttpContextAccessor for CurrentUserService
+
+
             // Bind "CloudinarySettings" 
             services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
 

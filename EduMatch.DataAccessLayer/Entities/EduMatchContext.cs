@@ -49,9 +49,10 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
+//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+//        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433; Database=EduMatch;UID=sa;PWD=FPTFall@2025!;TrustServerCertificate=True");
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -412,6 +413,9 @@ public partial class EduMatchContext : DbContext
         modelBuilder.Entity<UserProfile>(entity =>
         {
             entity.HasKey(e => e.UserEmail).HasName("PK__user_pro__D54ADF5463AD4278");
+            entity.HasKey(e => e.UserEmail);
+
+            entity.ToTable("user_profiles");
 
             entity.ToTable("user_profiles");
 
