@@ -1,5 +1,4 @@
-﻿using EduMatch.DataAccessLayer;
-using EduMatch.DataAccessLayer.Entities;
+﻿using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
