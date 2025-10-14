@@ -15,10 +15,7 @@ namespace EduMatch.DataAccessLayer.Repositories
 
 		private IQueryable<EducationInstitution> IncludeAll() =>
 			_ctx.EducationInstitutions
-			.AsNoTracking()
-			.AsSplitQuery()
-			.Include(e => e.EducationInstitutionLevels)
-				.ThenInclude(e => e.EducationLevel);
+			.AsNoTracking();
 
 		public async Task<EducationInstitution?> GetByIdAsync(int id, CancellationToken ct = default)
 			=> await IncludeAll().FirstOrDefaultAsync(e => e.Id == id, ct);

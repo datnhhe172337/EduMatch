@@ -1,5 +1,4 @@
-﻿using EduMatch.DataAccessLayer.Enum;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace EduMatch.DataAccessLayer.Entities;
@@ -10,7 +9,7 @@ public partial class UserProfile
 
     public DateTime? Dob { get; set; }
 
-    public Gender? Gender { get; set; }
+    public byte? Gender { get; set; }
 
     public string? AvatarUrl { get; set; }
 

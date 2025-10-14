@@ -16,7 +16,5 @@ public partial class EducationInstitution
 
     public DateTime? CreatedAt { get; set; }
 
-    public virtual ICollection<EducationInstitutionLevel> EducationInstitutionLevels { get; set; } = new List<EducationInstitutionLevel>();
-
     public virtual ICollection<TutorEducation> TutorEducations { get; set; } = new List<TutorEducation>();
 }

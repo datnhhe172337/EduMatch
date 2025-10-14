@@ -40,8 +40,6 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ICertificateTypeRepository, CertificateTypeRepository>();
             services.AddScoped<ICertificateTypeSubjectRepository, CertificateTypeSubjectRepository>();
             services.AddScoped<IEducationInstitutionRepository, EducationInstitutionRepository>();
-            services.AddScoped<IEducationInstitutionLevelRepository, EducationInstitutionLevelRepository>();
-            services.AddScoped<IEducationLevelRepository, EducationLevelRepository>();
             services.AddScoped<ILevelRepository, LevelRepository>();
             services.AddScoped<ISubjectRepository, SubjectRepository>();
             services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();

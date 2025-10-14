@@ -26,11 +26,7 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 			// EducationInstitution mappings
 			CreateMap<EducationInstitution, EducationInstitutionDto>().ReverseMap();
 			 
-			// EducationInstitutionLevel mappings
-			CreateMap<EducationInstitutionLevel, EducationInstitutionLevelDto>().ReverseMap();
-
-			// EducationLevel mappings
-			CreateMap<EducationLevel, EducationLevelDto>().ReverseMap();
+		
 
 			// Level mappings
 			CreateMap<Level, LevelDto>().ReverseMap();
