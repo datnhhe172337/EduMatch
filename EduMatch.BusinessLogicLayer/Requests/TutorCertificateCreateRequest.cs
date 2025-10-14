@@ -22,7 +22,5 @@ namespace EduMatch.BusinessLogicLayer.Requests
 		public IFormFile Certificate { get; set; }
 
 
-		[CustomValidation(typeof(TutorCertificateCreateRequest), "ValidateDateRange")]
-		public bool IsValidDateRange => !IssueDate.HasValue || !ExpiryDate.HasValue || ExpiryDate.Value >= IssueDate.Value;
 	}
 }

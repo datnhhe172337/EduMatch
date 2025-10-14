@@ -46,19 +46,21 @@ namespace EduMatch.PresentationLayer.Configurations
 
             // Services
             services.AddScoped<IUserService, UserService>();
-            services.AddTransient<EmailService>();
+            services.AddScoped<CurrentUserService>();
+			services.AddTransient<EmailService>();
             services.AddScoped<IGoogleAuthService, GoogleAuthService>();
             services.AddScoped<ITutorAvailabilityService, TutorAvailabilityService>();
             services.AddScoped<ITutorCertificateService, TutorCertificateService>();
             services.AddScoped<ITutorEducationService, TutorEducationService>();
             services.AddScoped<ITutorSubjectService, TutorSubjectService>();
-            services.AddScoped<ICertificateTypeService, CertificateTypeService>();
+            services.AddScoped<ITutorProfileService, TutorProfileService>();
+			services.AddScoped<ICertificateTypeService, CertificateTypeService>();
             services.AddScoped<ISubjectService, SubjectService>();
             services.AddScoped<ILevelService, LevelService>();
             services.AddScoped<ITimeSlotService, TimeSlotService>();
             services.AddScoped<IEducationInstitutionService, EducationInstitutionService>();
 
-            // HttpContextAccessor for CurrentUserService
+          
 
 
             // Bind "CloudinarySettings" 

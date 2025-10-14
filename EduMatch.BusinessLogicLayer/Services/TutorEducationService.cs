@@ -19,15 +19,16 @@ namespace EduMatch.BusinessLogicLayer.Services
 		private readonly ITutorEducationRepository _tutorEducationRepository;
 		private readonly ITutorProfileRepository _tutorProfileRepository;
 		private readonly IMapper _mapper;
-		private readonly CloudinaryMediaService _cloudMedia;
+		private readonly ICloudMediaService _cloudMedia;
 		private readonly CurrentUserService _currentUserService;
 
 		public TutorEducationService(
 			ITutorEducationRepository repository,
-			IMapper mapper, CloudinaryMediaService cloudMedia,
+			IMapper mapper, ICloudMediaService cloudMedia,
 			CurrentUserService currentUserService,
 			ITutorProfileRepository tutorProfileRepository,
-			ITutorEducationRepository tutorEducationRepository
+			ITutorEducationRepository tutorEducationRepository,
+			ICloudMediaService cloudMediaService
 			)
 		{
 			_repository = repository;
@@ -36,6 +37,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 			_currentUserService = currentUserService;
 			_tutorProfileRepository = tutorProfileRepository;
 			_tutorEducationRepository = tutorEducationRepository;
+			_cloudMedia = cloudMediaService;
 		}
 
 		public async Task<TutorEducationDto?> GetByIdFullAsync(int id)

@@ -8,7 +8,7 @@ namespace EduMatch.BusinessLogicLayer.Settings
 {
 	public static class JwtClaimTypes
 	{
-		public const string UserName = "username";
+		public const string UserName = "unique_name";
 		public const string Email = "sub";
 		public const string FullName = "fullname";
 		public const string PhoneNumber = "phone_number";

@@ -95,6 +95,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				if (timeSlot is null)
 					throw new ArgumentException($"timeSlot with ID {request.SlotId} not found.");
 
+
 				var entity = _mapper.Map<TutorAvailability>(request);
 				await _repository.AddAsync(entity);
 				return _mapper.Map<TutorAvailabilityDto>(entity);

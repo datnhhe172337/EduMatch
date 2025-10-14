@@ -1,4 +1,5 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
+using EduMatch.BusinessLogicLayer.Requests;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +11,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 	public interface ITutorProfileService
 	{
 		Task<TutorProfileDto?> GetByIdFullAsync(int id);
-		Task<TutorProfileDto?> GetByTutorIdFullAsync(int tutorId);
 		Task<TutorProfileDto?> GetByEmailFullAsync(string email);
 		Task<IReadOnlyList<TutorProfileDto>> GetAllFullAsync();
 
