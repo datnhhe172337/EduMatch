@@ -1,5 +1,4 @@
-﻿using EduMatch.DataAccessLayer.Database;
-using EduMatch.DataAccessLayer.Entities;
+﻿using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,7 +13,7 @@ namespace EduMatch.DataAccessLayer.Repositories
     {
         private readonly EduMatchContext _context;
 
-        public RefreshTokenRepository (EduMatchContext context)
+        public RefreshTokenRepository(EduMatchContext context)
         {
             _context = context;
         }

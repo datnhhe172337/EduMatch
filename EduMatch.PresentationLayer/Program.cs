@@ -1,8 +1,8 @@
 ﻿using DotNetEnv;
-using EduMatch.DataAccessLayer.Database;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Services;
-using EduMatch.DataAccessLayer.Data;
+using EduMatch.DataAccessLayer.Entities;
+using EduMatch.DataAccessLayer.Interfaces;
 using EduMatch.DataAccessLayer.Repositories;
 using EduMatch.PresentationLayer.Configurations;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -18,17 +18,13 @@ builder.Configuration
 	.AddEnvironmentVariables();
 
 // Add services to the container.
-builder.Services.ConfigureApplication(builder.Configuration);
-
-
-// Add services to the container.
 builder.Services.AddControllers();
-builder.Services.AddScoped<UserProfileRepository>();
-builder.Services.AddScoped<TutorProfileRepository>();
+builder.Services.AddScoped<UserProfileRepository, UserProfileRepository>();
+builder.Services.AddScoped<IManageTutorProfileRepository, ManageTutorProfileRepository>();
 builder.Services.ConfigureApplication(builder.Configuration);
-
+builder.Services.AddScoped<IFindTutorRepository, FindTutorRepository>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
-builder.Services.AddScoped<ITutorProfileService, TutorProfileService>();
+builder.Services.AddScoped<IManageTutorProfileService, ManageTutorProfileService>();
 builder.Services.AddScoped<IFindTutorService, FindTutorService>();
 
 // Add services to the container.

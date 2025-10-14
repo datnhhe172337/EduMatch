@@ -1,5 +1,4 @@
-﻿using EduMatch.DataAccessLayer.Database;
-using EduMatch.DataAccessLayer.Entities;
+﻿using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,7 +11,7 @@ namespace EduMatch.DataAccessLayer.Repositories
 {
     public class UserRepository : IUserRepository
     {
-        private readonly EduMatchContext  _context;
+        private readonly EduMatchContext _context;
 
         public UserRepository(EduMatchContext context)
         {

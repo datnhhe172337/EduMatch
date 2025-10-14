@@ -1,5 +1,4 @@
-﻿using EduMatch.DataAccessLayer.Data;
-using EduMatch.DataAccessLayer.Entities;
+﻿using EduMatch.DataAccessLayer.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
