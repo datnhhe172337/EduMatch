@@ -16,11 +16,13 @@ namespace EduMatch.BusinessLogicLayer.Services
 	{
 		private readonly ITutorCertificateRepository _repository;
 		private readonly IMapper _mapper;
+		private readonly ICloudMediaService _cloudMedia;
 
-		public TutorCertificateService(ITutorCertificateRepository repository, IMapper mapper)
+		public TutorCertificateService(ITutorCertificateRepository repository, IMapper mapper, ICloudMediaService cloudMedia)
 		{
 			_repository = repository;
 			_mapper = mapper;
+			_cloudMedia = cloudMedia;
 		}
 
 		public async Task<TutorCertificateDto?> GetByIdFullAsync(int id)
@@ -112,8 +114,26 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Tutor certificate with ID {request.Id} not found");
 				}
 
+				var oldPublicId = existingEntity.CertificatePublicId;
 				var entity = _mapper.Map<TutorCertificate>(request);
 				await _repository.UpdateAsync(entity);
+
+				if (!string.IsNullOrWhiteSpace(oldPublicId))
+				{
+					_ = _cloudMedia.DeleteByPublicIdAsync(oldPublicId, MediaType.Image)
+						.ContinueWith(t =>
+						{
+							if (t.IsCompletedSuccessfully)
+							{
+								Console.WriteLine($" Xóa ?nh {oldPublicId} thành công.");
+							}
+							else if (t.IsFaulted)
+							{
+								Console.WriteLine($" Xóa ?nh {oldPublicId} th?t b?i: {t.Exception?.GetBaseException().Message}");
+							}
+						});
+				}
+
 				return _mapper.Map<TutorCertificateDto>(entity);
 			}
 			catch (Exception ex)

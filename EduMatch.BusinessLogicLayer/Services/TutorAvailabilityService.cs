@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests;
@@ -135,62 +135,75 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
-		public async Task<List<TutorAvailabilityDto>> CreateRecurringWeeklyAsync(int tutorId, List<int> slotIds, List<DayOfWeek> daysOfWeek, DateTime startDate, DateTime? endDate = null)
+
+		public async Task<List<TutorAvailabilityDto>> CreateMixedAvailabilitiesAsync(TutorAvailabilityMixedRequest request)
 		{
 			try
 			{
 				var requests = new List<TutorAvailabilityCreateRequest>();
+
 				
-				foreach (var dayOfWeek in daysOfWeek)
+				//  KHÔNG LẶP LẠI
+				
+				foreach (var daySlot in request.NonRecurringDaySlots)
 				{
-					foreach (var slotId in slotIds)
+					foreach (var slotId in daySlot.SlotIds)
 					{
 						requests.Add(new TutorAvailabilityCreateRequest
 						{
-							TutorId = tutorId,
-							DayOfWeek = dayOfWeek,
+							TutorId = request.TutorId,
+							DayOfWeek = daySlot.Date.DayOfWeek,
 							SlotId = slotId,
-							IsRecurring = true,
-							EffectiveFrom = startDate,
-							EffectiveTo = endDate
+							IsRecurring = false,
+							EffectiveFrom = daySlot.Date.Date,
+							EffectiveTo = daySlot.Date.Date.AddDays(1).AddTicks(-1)
 						});
 					}
 				}
 
-				return await CreateBulkAsync(requests);
-			}
-			catch (Exception ex)
-			{
-				throw new InvalidOperationException($"Failed to create recurring weekly availability: {ex.Message}", ex);
-			}
-		}
 
-		public async Task<List<TutorAvailabilityDto>> CreateSingleDayAsync(int tutorId, List<int> slotIds, DateTime specificDate)
-		{
-			try
-			{
-				var requests = new List<TutorAvailabilityCreateRequest>();
-				
-				foreach (var slotId in slotIds)
+				// CÓ LẶP LẠI (recurring weekly)
+			
+				foreach (var recurring in request.RecurringDaySlots)
 				{
-					requests.Add(new TutorAvailabilityCreateRequest
+					var currentDate = recurring.StartDate.Date;
+					var endDate = recurring.EndDate ?? recurring.StartDate.AddMonths(1);
+
+					while (currentDate <= endDate)
 					{
-						TutorId = tutorId,
-						DayOfWeek = specificDate.DayOfWeek,
-						SlotId = slotId,
-						IsRecurring = false,
-						EffectiveFrom = specificDate.Date,
-						EffectiveTo = specificDate.Date.AddDays(1).AddTicks(-1) // End of the same day
-					});
+						if (currentDate.DayOfWeek == recurring.DayOfWeek)
+						{
+							foreach (var slotId in recurring.SlotIds)
+							{
+								requests.Add(new TutorAvailabilityCreateRequest
+								{
+									TutorId = request.TutorId,
+									DayOfWeek = currentDate.DayOfWeek,
+									SlotId = slotId,
+									IsRecurring = true,
+									EffectiveFrom = currentDate,
+									EffectiveTo = endDate
+								});
+							}
+						}
+						currentDate = currentDate.AddDays(1);
+					}
 				}
 
+				
+				// THỰC HIỆN TẠO DỮ LIỆU
+				
 				return await CreateBulkAsync(requests);
 			}
 			catch (Exception ex)
 			{
-				throw new InvalidOperationException($"Failed to create single day availability: {ex.Message}", ex);
+				throw new InvalidOperationException($"Failed to create mixed tutor availabilities: {ex.Message}", ex);
 			}
 		}
+
+
+
+
 
 		public async Task DeleteAsync(int id)
 		{

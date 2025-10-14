@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests;
@@ -17,11 +17,13 @@ namespace EduMatch.BusinessLogicLayer.Services
 	{
 		private readonly ITutorEducationRepository _repository;
 		private readonly IMapper _mapper;
+		private readonly CloudinaryMediaService _cloudMedia;
 
-		public TutorEducationService(ITutorEducationRepository repository, IMapper mapper)
+		public TutorEducationService(ITutorEducationRepository repository, IMapper mapper, CloudinaryMediaService cloudMedia)
 		{
 			_repository = repository;
 			_mapper = mapper;
+			_cloudMedia = cloudMedia; 
 		}
 
 		public async Task<TutorEducationDto?> GetByIdFullAsync(int id)
@@ -107,8 +109,27 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Tutor education with ID {request.Id} not found");
 				}
 
+				var oldPublicId = existingEntity.CertificatePublicId;
 				var entity = _mapper.Map<TutorEducation>(request);
 				await _repository.UpdateAsync(entity);
+
+				if (!string.IsNullOrWhiteSpace(oldPublicId))
+				{
+					_ = _cloudMedia.DeleteByPublicIdAsync(oldPublicId, MediaType.Image)
+						.ContinueWith(t =>
+						{
+							if (t.IsCompletedSuccessfully)
+							{
+								Console.WriteLine($" Xóa ảnh {oldPublicId} thành công.");
+							}
+							else if (t.IsFaulted)
+							{
+								Console.WriteLine($" Xóa ảnh {oldPublicId} thất bại: {t.Exception?.GetBaseException().Message}");
+							}
+						});
+				}
+
+
 				return _mapper.Map<TutorEducationDto>(entity);
 			}
 			catch (Exception ex)

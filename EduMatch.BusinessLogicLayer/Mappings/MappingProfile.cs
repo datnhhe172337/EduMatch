@@ -70,10 +70,13 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 			// TutorProfile mappings
 			CreateMap<TutorProfile, TutorProfileDto>().ReverseMap();
 			CreateMap<TutorProfileCreateRequest, TutorProfile>()
-				.ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Now));
-				
+				  .ForMember(d => d.Id, opt => opt.Ignore())
+				  .ForMember(d => d.CreatedAt, opt => opt.Ignore())
+				  .ForMember(d => d.UpdatedAt, opt => opt.Ignore());
+
 			CreateMap<TutorProfileUpdateRequest, TutorProfile>()
-				.ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => DateTime.Now));
+				.ForMember(d => d.CreatedAt, opt => opt.Ignore())
+				.ForMember(d => d.UpdatedAt, opt => opt.Ignore());
 
 
 
