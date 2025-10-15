@@ -144,7 +144,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 RoleId = 3,
                 IsEmailConfirmed = true,
                 IsActive = true,
-                LoginProvider = "System",
+                LoginProvider = "Local",
                 CreatedAt = DateTime.UtcNow
             };
 
