@@ -111,7 +111,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 				if (certificateType is null)
 					throw new ArgumentException($"CertificateType with ID {request.CertificateTypeId} not found.");
 
-
+				if(_currentUserService.Email is null)
+					throw new ArgumentException("Current user email not found.");
 
 				//  UploadToCloudRequest
 

@@ -76,6 +76,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 					);
 				}
 
+				//  CHECK IF TUTOR PROFILE EXISTS
+				var existing = await _repository.GetByEmailFullAsync(request.UserEmail);
+				if (existing is not null)
+					throw new ArgumentException($"Tutor profile for email {request.UserEmail} already exists.");
+
 
 				//  UploadToCloudRequest
 
@@ -85,7 +90,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 					FileName: request.VideoIntro.FileName,
 					ContentType: request.VideoIntro.ContentType ?? "application/octet-stream",
 					LengthBytes: request.VideoIntro.Length,
-					OwnerEmail: _currentUserService.Email,
+					OwnerEmail: request.UserEmail,
 					MediaType: MediaType.Video
 				);
 

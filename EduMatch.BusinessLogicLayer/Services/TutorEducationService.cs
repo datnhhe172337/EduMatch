@@ -96,7 +96,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 				if (institution is null)
 					throw new ArgumentException($"Education institution with ID {request.InstitutionId} not found.");
 
-
+				if (_currentUserService.Email is null)
+					throw new ArgumentException("Current user email not found.");
 
 				//  UploadToCloudRequest
 

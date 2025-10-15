@@ -66,23 +66,23 @@ namespace EduMatch.PresentationLayer.Controllers
 			if (!ModelState.IsValid)
 				return BadRequest(ApiResponse<string>.Fail("Invalid request."));
 
-			// 1) Xác thực
+			// Xác thực
 			var userEmail = _currentUserService.Email;
 			if (string.IsNullOrWhiteSpace(userEmail))
 				return Unauthorized(ApiResponse<string>.Fail("User email not found."));
 
-			// đảm bảo profile request có email đúng user hiện tại (nếu bạn lưu trường này)
+			// đảm bảo profile request có email đúng user hiện tại 
 			request.TutorProfile.UserEmail = userEmail;
 
-			// 2) Transaction cho toàn bộ quy trình
+			// Transaction cho toàn bộ quy trình
 			await using var tx = await _eduMatch.Database.BeginTransactionAsync();
 			try
 			{
-				// 3) Tạo TutorProfile (trả về Id để gán cho các entity con)
+				// Tạo TutorProfile
 				var profileDto = await _tutorProfileService.CreateAsync(request.TutorProfile);
 				var tutorId = profileDto.Id;
 
-				// 4) Gắn TutorId cho các request con (nếu chưa có)
+				//  Gắn TutorId cho các request con (nếu chưa có)
 				if (request.Educations != null && request.Educations.Count > 0)
 				{
 					foreach (var e in request.Educations) e.TutorId = tutorId;
@@ -107,18 +107,17 @@ namespace EduMatch.PresentationLayer.Controllers
 					await _tutorAvailabilityService.CreateMixedAvailabilitiesAsync(request.Availabilities);
 				}
 
-				// 5) Commit
+				//  Commit
 				await tx.CommitAsync();
 
-				// 6) Re-load full profile để trả ra UI (đồng bộ trạng thái DB)
-				//    Service nên include: Educations, Certificates, Subjects, Availabilities
+				
+				
 				var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
 
-				// 7) Trả về full profile + trạng thái
+				
 				return Ok(ApiResponse<object>.Ok(new
 				{
-					profile = fullProfile,
-					status = "Pending"
+					profile = fullProfile
 				}, "Tutor profile created successfully and pending approval."));
 			}
 			catch (Exception ex)
