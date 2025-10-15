@@ -9,6 +9,7 @@ namespace EduMatch.PresentationLayer.Configurations
 		{
 			services.AddSwaggerGen(options =>
 			{
+				
 				options.SwaggerDoc("v1", new OpenApiInfo
 				{
 					Title = "EduMatch API",

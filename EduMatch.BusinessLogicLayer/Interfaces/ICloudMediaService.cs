@@ -1,6 +1,6 @@
-﻿using EduMatch.BusinessLogicLayer.Enum;
-using EduMatch.BusinessLogicLayer.Requests;
+﻿using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.BusinessLogicLayer.Responses;
+using EduMatch.DataAccessLayer.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,11 +18,15 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		// upload useing URL 
 		Task<UploadToCloudResponse> UploadFromUrlAsync(
 			string fileUrl,
-			string fileName,
 			string ownerEmail,
-			MediaType mediaType,
-			string? contentType = null,
 			CancellationToken ct = default);
+
+		// Xoá bằng publicId
+		Task<UploadToCloudResponse> DeleteByPublicIdAsync(
+			string publicId,
+			MediaType mediaType,
+			CancellationToken ct = default);
+
 	}
 
 	// validator cho media trước khi upload
@@ -35,4 +39,9 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 			MediaType mediaType,
 			CancellationToken ct = default);
 	}
+
+
+
+
+
 }

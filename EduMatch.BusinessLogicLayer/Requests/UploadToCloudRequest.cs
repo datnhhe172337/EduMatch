@@ -1,4 +1,4 @@
-﻿using EduMatch.BusinessLogicLayer.Enum;
+﻿using EduMatch.DataAccessLayer.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;

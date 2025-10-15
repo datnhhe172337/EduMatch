@@ -31,11 +31,15 @@ namespace EduMatch.PresentationLayer.Configurations
                 options.RequireHttpsMetadata = true;
                 //lưu lại token JWT (từ header Authorization) vào HttpContext -> await HttpContext.GetTokenAsync("access_token");
                 options.SaveToken = true;
-                options.TokenValidationParameters = new TokenValidationParameters
+				options.MapInboundClaims = false;
+				options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer = true,
-                    ValidateAudience = false,
-                    ValidateLifetime = true,
+
+					NameClaimType = "sub",
+					ValidateIssuer = true,
+					ValidateAudience = false,              
+					ValidateLifetime = true,
+
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = jwtSettings.Issuer,
                     ValidAudience = jwtSettings.Audience,

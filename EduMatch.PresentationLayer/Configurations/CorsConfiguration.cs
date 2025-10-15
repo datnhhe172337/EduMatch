@@ -6,6 +6,7 @@
 		{
 			var allowedOrigins = configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
 
+
 			services.AddCors(options =>
 			{
 				options.AddPolicy("CorsPolicy", builder =>

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EduMatch.BusinessLogicLayer.Enum
+namespace EduMatch.DataAccessLayer.Enum
 {
 	public enum MediaType { Image, Video }
 }

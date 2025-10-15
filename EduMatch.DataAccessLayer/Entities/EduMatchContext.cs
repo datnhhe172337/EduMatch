@@ -149,6 +149,7 @@ public partial class EduMatchContext : DbContext
 
             entity.Property(e => e.CreatedAt).HasColumnName("createdAt");
 
+
             entity.Property(e => e.CreatedAt)
                 .HasPrecision(3)
                 .HasDefaultValueSql("(sysdatetime())")

@@ -11,7 +11,8 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Load ENV 
-Env.Load(); 
+Env.TraversePath().Load();
+
 builder.Configuration
 	.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
 	.AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
@@ -47,7 +48,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// NHẬN header từ reverse proxy (rất quan trọng khi đứng sau Traefik/Coolify)
+// NHẬN header từ reverse proxy 
 app.UseForwardedHeaders(new ForwardedHeadersOptions {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });

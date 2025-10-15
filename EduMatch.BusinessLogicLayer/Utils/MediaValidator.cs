@@ -1,6 +1,6 @@
-﻿using EduMatch.BusinessLogicLayer.Enum;
-using EduMatch.BusinessLogicLayer.Requests;
+﻿using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.BusinessLogicLayer.Settings;
+using EduMatch.DataAccessLayer.Enum;
 using Microsoft.Extensions.Options;
 
 namespace EduMatch.BusinessLogicLayer.Utils

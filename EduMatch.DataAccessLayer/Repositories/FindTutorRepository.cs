@@ -1,4 +1,5 @@
 ﻿using EduMatch.DataAccessLayer.Entities;
+using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -33,7 +34,7 @@ namespace EduMatch.DataAccessLayer.Repositories
         }
 
         public async Task<IEnumerable<TutorProfile>> SearchTutorsAsync(
-            string? keyword, string? gender, string? city, string? teachingMode, int? statusId, int page, int pageSize)
+            string? keyword, Gender? gender, string? city, TeachingMode? teachingMode, TutorStatus? statusId, int page, int pageSize)
         {
             var query = _context.TutorProfiles
                 .Include(t => t.UserEmailNavigation)
@@ -55,22 +56,10 @@ namespace EduMatch.DataAccessLayer.Repositories
             }
 
             // Gender (byte)
-            if (!string.IsNullOrEmpty(gender))
+            if (gender.HasValue)
             {
-                if (byte.TryParse(gender, out var genderByte))
-                {
-                    query = query.Where(t =>
-                        t.UserEmailNavigation.UserProfile != null &&
-                        t.UserEmailNavigation.UserProfile.Gender == genderByte);
-                }
-                else if (gender.Equals("male", StringComparison.OrdinalIgnoreCase))
-                {
-                    query = query.Where(t => t.UserEmailNavigation.UserProfile!.Gender == 0);
-                }
-                else if (gender.Equals("female", StringComparison.OrdinalIgnoreCase))
-                {
-                    query = query.Where(t => t.UserEmailNavigation.UserProfile!.Gender == 1);
-                }
+                    query = query.Where(t => t.UserEmailNavigation.UserProfile!.Gender == gender);
+               
             }
 
             // City filter
@@ -85,15 +74,15 @@ namespace EduMatch.DataAccessLayer.Repositories
             }
 
             // Teaching mode (byte)
-            if (!string.IsNullOrEmpty(teachingMode) && byte.TryParse(teachingMode, out var modeByte))
+            if (teachingMode != null)
             {
-                query = query.Where(t => t.TeachingModes == modeByte);
+                query = query.Where(t => t.TeachingModes == teachingMode);
             }
 
             // Status (byte)
             if (statusId.HasValue)
             {
-                query = query.Where(t => t.Status == (byte)statusId.Value);
+                query = query.Where(t => t.Status == statusId);
             }
 
             // Pagination

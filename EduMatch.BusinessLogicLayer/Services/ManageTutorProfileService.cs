@@ -39,7 +39,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 SubDistrictId = dto.SubDistrictId,
                 CityId = dto.CityId,
                 AvatarUrl = dto.AvatarUrl,
-                Gender = dto.Gender.HasValue ? (byte?)dto.Gender.Value : null,
+                Gender = dto.Gender,
                 Dob = dto.Dob
             };
 
