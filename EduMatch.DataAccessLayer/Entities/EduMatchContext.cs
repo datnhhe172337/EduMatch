@@ -147,6 +147,9 @@ public partial class EduMatchContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
 
+            entity.Property(e => e.CreatedAt).HasColumnName("createdAt");
+
+
             entity.Property(e => e.CreatedAt)
                 .HasPrecision(3)
                 .HasDefaultValueSql("(sysdatetime())")
@@ -415,6 +418,14 @@ public partial class EduMatchContext : DbContext
         modelBuilder.Entity<UserProfile>(entity =>
         {
             entity.HasKey(e => e.UserEmail).HasName("PK__user_pro__D54ADF5463AD4278");
+
+            entity.HasKey(e => e.UserEmail);
+
+            entity.ToTable("user_profiles");
+
+            entity.ToTable("user_profiles");
+
+
 
             entity.ToTable("user_profiles");
 

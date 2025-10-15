@@ -17,6 +17,20 @@ namespace EduMatch.PresentationLayer.Configurations
 	{
 		public static IServiceCollection AddDependencies(this IServiceCollection services, IConfiguration configuration)
 		{
+            //services.AddDbContext<PaymentDbContext>(options =>
+            //	options.UseSqlServer(configuration.GetConnectionString("MyCnn")));
+
+            //// Repositories
+            //services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IUserService, UserService>();
+
+            //// AutoMapper
+            //services.AddAutoMapper(typeof(MappingProfile).Assembly);
+
+            // HttpContextAccessor for CurrentUserService
+
+
             //// Mail Settings
             services.Configure<MailSettings>(configuration.GetSection("MailSettings"));
 
