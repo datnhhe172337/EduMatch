@@ -2,6 +2,7 @@
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.BusinessLogicLayer.Services;
+using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using EduMatch.PresentationLayer.Common;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
 
 namespace EduMatch.PresentationLayer.Controllers
@@ -26,6 +28,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		private readonly ITutorProfileService _tutorProfileService;
 		private readonly ITutorCertificateService _tutorCertificateService;
 		private readonly ITutorEducationService _tutorEducationService;
+		private readonly EmailService _emailService;
 
 		public TutorsController(
 			ITutorSubjectService tutorSubjectService,
@@ -36,7 +39,8 @@ namespace EduMatch.PresentationLayer.Controllers
 			ITutorProfileService tutorProfileService,
 			ITutorCertificateService tutorCertificateService,
 			EduMatchContext eduMatch,
-			ITutorEducationService tutorEducationService
+			ITutorEducationService tutorEducationService,
+			EmailService emailService
 
 			)
 		{
@@ -49,6 +53,7 @@ namespace EduMatch.PresentationLayer.Controllers
 			_tutorCertificateService = tutorCertificateService;
 			_eduMatch = eduMatch;
 			_tutorEducationService = tutorEducationService;
+			_emailService = emailService;
 
 		}
 
@@ -110,11 +115,11 @@ namespace EduMatch.PresentationLayer.Controllers
 				//  Commit
 				await tx.CommitAsync();
 
-				
-				
+
+
 				var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
 
-				
+
 				return Ok(ApiResponse<object>.Ok(new
 				{
 					profile = fullProfile
@@ -128,9 +133,24 @@ namespace EduMatch.PresentationLayer.Controllers
 					new { exception = ex.Message }
 				));
 			}
+
+
 		}
 
 
 
+
+		[HttpGet("test-send mail")]
+		public IActionResult TestSendMail()
+		{
+
+			_emailService.SendBecomeTutorWelcomeAsync("datnhhe172337@fpt.edu.vn");
+			return Ok("Done");
+		}
+
+
+
+
 	}
+
 }

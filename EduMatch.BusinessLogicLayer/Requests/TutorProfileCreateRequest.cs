@@ -25,7 +25,6 @@ namespace EduMatch.BusinessLogicLayer.Requests
 		public IFormFile VideoIntro { get; set; }
 
 
-
 		[Required(ErrorMessage = "Teaching mode is required.")]
 		[EnumDataType(typeof(TeachingMode))]
 		public TeachingMode TeachingModes { get; set; }
