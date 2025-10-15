@@ -1,11 +1,13 @@
-﻿namespace EduMatch.BusinessLogicLayer.DTOs
+﻿using EduMatch.DataAccessLayer.Enum;
+
+namespace EduMatch.BusinessLogicLayer.DTOs
 {
     public class UpdateUserProfileDto
     {
         public string? UserName { get; set; }
         public string? Phone { get; set; }
         public DateTime? Dob { get; set; }
-        public byte? Gender { get; set; }
+        public Gender? Gender { get; set; }
 
         public string? AvatarUrl { get; set; }
         public string? AvatarUrlPublicId { get; set; }
