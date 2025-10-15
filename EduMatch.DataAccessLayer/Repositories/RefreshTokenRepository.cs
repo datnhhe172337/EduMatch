@@ -13,7 +13,7 @@ namespace EduMatch.DataAccessLayer.Repositories
     {
         private readonly EduMatchContext _context;
 
-        public RefreshTokenRepository (EduMatchContext context)
+        public RefreshTokenRepository(EduMatchContext context)
         {
             _context = context;
         }

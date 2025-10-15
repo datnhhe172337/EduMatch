@@ -27,7 +27,6 @@ namespace EduMatch.PresentationLayer.Common
                 Error = null
             };
 
-
         public static ApiResponse<T> Fail(string message, object? error = null)
             => new()
             {
