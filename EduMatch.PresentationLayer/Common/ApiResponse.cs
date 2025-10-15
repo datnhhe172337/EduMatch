@@ -2,6 +2,7 @@
 
 namespace EduMatch.PresentationLayer.Common
 {
+
 	public class ApiResponse<T>
 	{
 		[JsonPropertyName("success")]
@@ -40,3 +41,4 @@ namespace EduMatch.PresentationLayer.Common
 
 	
 }
+

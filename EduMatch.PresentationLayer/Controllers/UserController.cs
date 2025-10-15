@@ -45,7 +45,7 @@ namespace EduMatch.PresentationLayer.Controllers
             var success = await _userService.VerifyEmailAsync(token);
             if (!success) return BadRequest("Invalid or expired token!");
 
-            return Ok(new { message = "Email verified successfully!" });
+            return Redirect("http://localhost:3000/login");
         }
 
         [HttpPost("resend-verify")]
@@ -144,6 +144,7 @@ namespace EduMatch.PresentationLayer.Controllers
                 Secure = true,
                 SameSite = SameSiteMode.None
             });
+
             return Ok(new { revoked = true, message = "Logout successful" });
         }
 
@@ -192,8 +193,7 @@ namespace EduMatch.PresentationLayer.Controllers
         [HttpGet("me")]
         public async Task<IActionResult> GetCurrentUser()
         {
-            // Lấy thông tin từ JWT claims
-            var email = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
 
             if (string.IsNullOrEmpty(email))
                 return Unauthorized(new { Message = "Invalid token: missing email." });
@@ -201,14 +201,17 @@ namespace EduMatch.PresentationLayer.Controllers
             var name = User.FindFirst(ClaimTypes.Name)?.Value;
             var roleId = User.FindFirst(ClaimTypes.Role)?.Value;
             var loginProvider = User.FindFirst("provider")?.Value;
-
+            var createdAt = User.FindFirst("createdAt")?.Value;
+            var avatarUrl = User.FindFirst("avatarUrl")?.Value;
 
             return Ok(new
             {
                 Email = email,
                 Name = name,
                 RoleId = roleId,
-                LoginProvider = loginProvider
+                LoginProvider = loginProvider,
+                CreatedAt = createdAt,
+                AvatarUrl = avatarUrl
             });
         }
     }

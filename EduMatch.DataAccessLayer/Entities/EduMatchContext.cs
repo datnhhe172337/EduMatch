@@ -49,7 +49,8 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
 
-   
+
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<CertificateType>(entity =>
@@ -145,7 +146,12 @@ public partial class EduMatchContext : DbContext
             entity.ToTable("refresh_tokens");
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CreatedAt).HasColumnName("createdAt");
+
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(3)
+                .HasDefaultValueSql("(sysdatetime())")
+                .HasColumnName("createdAt");
+
             entity.Property(e => e.ExpiresAt).HasColumnName("expiresAt");
             entity.Property(e => e.RevokedAt).HasColumnName("revokedAt");
             entity.Property(e => e.TokenHash)

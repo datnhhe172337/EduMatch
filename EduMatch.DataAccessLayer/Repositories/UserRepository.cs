@@ -11,7 +11,7 @@ namespace EduMatch.DataAccessLayer.Repositories
 {
     public class UserRepository : IUserRepository
     {
-        private readonly EduMatchContext  _context;
+        private readonly EduMatchContext _context;
 
         public UserRepository(EduMatchContext context)
         {
