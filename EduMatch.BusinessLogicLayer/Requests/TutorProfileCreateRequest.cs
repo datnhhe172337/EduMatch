@@ -21,13 +21,28 @@ namespace EduMatch.BusinessLogicLayer.Requests
 		[MaxLength(2000, ErrorMessage = "Teaching experience cannot exceed 2000 characters.")]
 		public string? TeachingExp { get; set; }
 
-		[Required(ErrorMessage = "Video URL must be a valid URL.")]
-		public IFormFile VideoIntro { get; set; }
+
+		// Either provide a file or a URL (e.g., YouTube). Only one is required.
+		public IFormFile? VideoIntro { get; set; }
+
+		[Url(ErrorMessage = "Video URL must be a valid URL.")]
+		public string? VideoIntroUrl { get; set; }
 
 
 		[Required(ErrorMessage = "Teaching mode is required.")]
 		[EnumDataType(typeof(TeachingMode))]
 		public TeachingMode TeachingModes { get; set; }
 
+		// Custom validation to ensure either file or URL is provided
+		public static ValidationResult? ValidateSource(TutorProfileCreateRequest request, ValidationContext context)
+		{
+			var hasFile = request.VideoIntro != null && request.VideoIntro.Length > 0;
+			var hasUrl = !string.IsNullOrWhiteSpace(request.VideoIntroUrl);
+			if (!hasFile && !hasUrl)
+			{
+				return new ValidationResult("Either a video file or a video URL must be provided.");
+			}
+			return ValidationResult.Success;
+		}
 	}
 }
