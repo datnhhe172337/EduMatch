@@ -2,10 +2,8 @@
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace EduMatch.DataAccessLayer.Repositories
@@ -34,13 +32,13 @@ namespace EduMatch.DataAccessLayer.Repositories
         }
 
         public async Task<IEnumerable<TutorProfile>> SearchTutorsAsync(
-             string? keyword,
-             Gender? gender,
-             string? city,
-             TeachingMode? teachingMode,
-             TutorStatus? status,
-             int page,
-             int pageSize)
+            string? keyword,
+            Gender? gender,
+            int? cityId,
+            TeachingMode? teachingMode,
+            TutorStatus? status,
+            int page,
+            int pageSize)
         {
             var query = _context.TutorProfiles
                 .Include(t => t.UserEmailNavigation)
@@ -48,7 +46,6 @@ namespace EduMatch.DataAccessLayer.Repositories
                         .ThenInclude(p => p.City)
                 .AsQueryable();
 
-            // ✅ Apply filters only when provided
             if (!string.IsNullOrEmpty(keyword))
             {
                 var lowerKeyword = keyword.ToLower();
@@ -62,8 +59,8 @@ namespace EduMatch.DataAccessLayer.Repositories
             if (gender.HasValue)
                 query = query.Where(t => t.UserEmailNavigation.UserProfile.Gender == gender.Value);
 
-            if (!string.IsNullOrEmpty(city))
-                query = query.Where(t => t.UserEmailNavigation.UserProfile.City.Id.ToString() == city);
+            if (cityId.HasValue)
+                query = query.Where(t => t.UserEmailNavigation.UserProfile.CityId == cityId.Value);
 
             if (teachingMode.HasValue)
                 query = query.Where(t => t.TeachingModes == teachingMode.Value);
@@ -71,11 +68,11 @@ namespace EduMatch.DataAccessLayer.Repositories
             if (status.HasValue)
                 query = query.Where(t => t.Status == status.Value);
 
-            // ✅ Pagination
-            query = query.Skip((page - 1) * pageSize).Take(pageSize);
+            query = query.OrderByDescending(t => t.CreatedAt)
+                         .Skip((page - 1) * pageSize)
+                         .Take(pageSize);
 
             return await query.ToListAsync();
         }
     }
 }
-

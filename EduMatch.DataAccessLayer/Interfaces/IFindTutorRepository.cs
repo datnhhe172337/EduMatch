@@ -14,7 +14,7 @@ namespace EduMatch.DataAccessLayer.Interfaces
         Task<IEnumerable<TutorProfile>> SearchTutorsAsync(
             string? keyword,
             Gender? gender,
-            string? city,
+            int? city,
             TeachingMode? teachingMode,
             TutorStatus? status,
             int page,

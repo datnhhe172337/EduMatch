@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EduMatch.DataAccessLayer.Enum
 {
-	public enum DayOfWeekEnum : byte
+	public enum DayOfWeekEnum 
 	{
 		Sunday = 0,
 		Monday = 1,

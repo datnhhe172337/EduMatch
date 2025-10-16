@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EduMatch.DataAccessLayer.Enum
 {
-	public enum TeachingMode : byte
+	public enum TeachingMode 
 	{
 		Offline = 0, // Dạy trực tiếp
 		Online = 1,  // Dạy online

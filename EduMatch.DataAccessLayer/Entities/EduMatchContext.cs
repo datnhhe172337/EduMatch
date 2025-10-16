@@ -19,6 +19,10 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<CertificateTypeSubject> CertificateTypeSubjects { get; set; }
 
+    public virtual DbSet<ChatMessage> ChatMessages { get; set; }
+
+    public virtual DbSet<ChatRoom> ChatRooms { get; set; }
+
     public virtual DbSet<EducationInstitution> EducationInstitutions { get; set; }
 
     public virtual DbSet<Level> Levels { get; set; }
@@ -49,7 +53,9 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
 
-
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -92,6 +98,51 @@ public partial class EduMatchContext : DbContext
                 .HasForeignKey(d => d.SubjectId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__certifica__subje__68487DD7");
+        });
+
+        modelBuilder.Entity<ChatMessage>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__chat_mes__3213E83FE96FA10E");
+
+            entity.ToTable("chat_messages");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ChatRoomId).HasColumnName("chat_room_id");
+            entity.Property(e => e.IsRead).HasColumnName("is_read");
+            entity.Property(e => e.MessageText).HasColumnName("message_text");
+            entity.Property(e => e.ReceiverEmail)
+                .HasMaxLength(100)
+                .HasColumnName("receiver_email");
+            entity.Property(e => e.SenderEmail)
+                .HasMaxLength(100)
+                .HasColumnName("sender_email");
+            entity.Property(e => e.SentAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("sent_at");
+
+            entity.HasOne(d => d.ChatRoom).WithMany(p => p.ChatMessages).HasForeignKey(d => d.ChatRoomId);
+        });
+
+        modelBuilder.Entity<ChatRoom>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__chat_roo__3213E83F7E89E749");
+
+            entity.ToTable("chat_room");
+
+            entity.HasIndex(e => new { e.UserEmail, e.TutorId }, "UQ_chat_room_user_tutor").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("created_at");
+            entity.Property(e => e.TutorId).HasColumnName("tutor_id");
+            entity.Property(e => e.UserEmail)
+                .HasMaxLength(100)
+                .HasColumnName("user_email");
+
+            entity.HasOne(d => d.Tutor).WithMany(p => p.ChatRooms).HasForeignKey(d => d.TutorId);
+
+            entity.HasOne(d => d.UserEmailNavigation).WithMany(p => p.ChatRooms).HasForeignKey(d => d.UserEmail);
         });
 
         modelBuilder.Entity<EducationInstitution>(entity =>
@@ -146,15 +197,10 @@ public partial class EduMatchContext : DbContext
             entity.ToTable("refresh_tokens");
 
             entity.Property(e => e.Id).HasColumnName("id");
-
-            entity.Property(e => e.CreatedAt).HasColumnName("createdAt");
-
-
             entity.Property(e => e.CreatedAt)
                 .HasPrecision(3)
                 .HasDefaultValueSql("(sysdatetime())")
                 .HasColumnName("createdAt");
-
             entity.Property(e => e.ExpiresAt).HasColumnName("expiresAt");
             entity.Property(e => e.RevokedAt).HasColumnName("revokedAt");
             entity.Property(e => e.TokenHash)
@@ -392,7 +438,10 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.Email)
                 .HasMaxLength(100)
                 .HasColumnName("email");
-            entity.Property(e => e.CreatedAt).HasColumnName("createdAt");
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(3)
+                .HasDefaultValueSql("(sysdatetime())")
+                .HasColumnName("createdAt");
             entity.Property(e => e.IsActive).HasColumnName("isActive");
             entity.Property(e => e.IsEmailConfirmed).HasColumnName("isEmailConfirmed");
             entity.Property(e => e.LoginProvider)
@@ -418,14 +467,6 @@ public partial class EduMatchContext : DbContext
         modelBuilder.Entity<UserProfile>(entity =>
         {
             entity.HasKey(e => e.UserEmail).HasName("PK__user_pro__D54ADF5463AD4278");
-
-            entity.HasKey(e => e.UserEmail);
-
-            entity.ToTable("user_profiles");
-
-            entity.ToTable("user_profiles");
-
-
 
             entity.ToTable("user_profiles");
 
