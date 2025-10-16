@@ -6,7 +6,7 @@ namespace EduMatch.DataAccessLayer.Entities;
 
 public partial class TutorEducation
 {
-    public int? Id { get; set; }
+    public int Id { get; set; }
 
     public int TutorId { get; set; }
 

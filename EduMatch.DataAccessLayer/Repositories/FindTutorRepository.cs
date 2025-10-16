@@ -2,10 +2,8 @@
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace EduMatch.DataAccessLayer.Repositories
@@ -34,7 +32,13 @@ namespace EduMatch.DataAccessLayer.Repositories
         }
 
         public async Task<IEnumerable<TutorProfile>> SearchTutorsAsync(
-            string? keyword, Gender? gender, string? city, TeachingMode? teachingMode, TutorStatus? statusId, int page, int pageSize)
+            string? keyword,
+            Gender? gender,
+            int? cityId,
+            TeachingMode? teachingMode,
+            TutorStatus? status,
+            int page,
+            int pageSize)
         {
             var query = _context.TutorProfiles
                 .Include(t => t.UserEmailNavigation)
@@ -46,7 +50,6 @@ namespace EduMatch.DataAccessLayer.Repositories
                         .ThenInclude(up => up.City)
                 .AsQueryable();
 
-            // Keyword filter
             if (!string.IsNullOrEmpty(keyword))
             {
                 query = query.Where(t =>
@@ -62,16 +65,8 @@ namespace EduMatch.DataAccessLayer.Repositories
                
             }
 
-            // City filter
-            if (!string.IsNullOrEmpty(city))
-            {
-                query = query.Where(t =>
-                    (t.UserEmailNavigation.UserProfile.City != null &&
-                     t.UserEmailNavigation.UserProfile.City.Name.Contains(city)) ||
-                    (t.UserEmailNavigation.UserProfile.SubDistrict != null &&
-                     t.UserEmailNavigation.UserProfile.SubDistrict.Province != null &&
-                     t.UserEmailNavigation.UserProfile.SubDistrict.Province.Name.Contains(city)));
-            }
+            if (cityId.HasValue)
+                query = query.Where(t => t.UserEmailNavigation.UserProfile.CityId == cityId.Value);
 
             // Teaching mode (byte)
             if (teachingMode != null)
@@ -80,17 +75,16 @@ namespace EduMatch.DataAccessLayer.Repositories
             }
 
             // Status (byte)
-            if (statusId.HasValue)
+            if (status.HasValue)
             {
-                query = query.Where(t => t.Status == statusId);
+                query = query.Where(t => t.Status == status);
             }
 
-            // Pagination
-            return await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            query = query.OrderByDescending(t => t.CreatedAt)
+                         .Skip((page - 1) * pageSize)
+                         .Take(pageSize);
+
+            return await query.ToListAsync();
         }
     }
 }
-
