@@ -23,7 +23,5 @@ namespace EduMatch.BusinessLogicLayer.Services
 				?? _httpContextAccessor.HttpContext?.User?.FindFirstValue("email")
 				?? _httpContextAccessor.HttpContext?.User?.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
-
-
 	}
 }
