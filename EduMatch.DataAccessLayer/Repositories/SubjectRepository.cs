@@ -13,7 +13,10 @@ namespace EduMatch.DataAccessLayer.Repositories
 		public SubjectRepository(EduMatchContext ctx) => _ctx = ctx;
 
 		private IQueryable<Subject> IncludeAll() =>
-			_ctx.Subjects.AsNoTracking();
+			_ctx.Subjects
+			.AsNoTracking()
+			.Include(s => s.CertificateTypeSubjects)
+				.ThenInclude(s => s.CertificateType);
 
 		public async Task<Subject?> GetByIdAsync(int id, CancellationToken ct = default)
 			=> await IncludeAll().FirstOrDefaultAsync(s => s.Id == id, ct);

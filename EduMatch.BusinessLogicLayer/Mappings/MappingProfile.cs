@@ -13,7 +13,8 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 		{
 			// CertificateType mappings
 			CreateMap<CertificateType, CertificateTypeDto>()
-				.ForMember(dest => dest.Subjects, opt => opt.MapFrom(src => src.CertificateTypeSubjects.Select(cts => cts.Subject)));
+				.ForMember(dest => dest.Subjects, opt => opt.Ignore());
+
 
 			CreateMap<CertificateTypeCreateRequest, CertificateType>()
 				.ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Now));
@@ -34,7 +35,9 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 			CreateMap<LevelUpdateRequest, Level>();
 
 			// Subject mappings
-			CreateMap<Subject, SubjectDto>().ReverseMap();
+			CreateMap<Subject, SubjectDto>()
+				.ForMember(dest => dest.CertificateTypes, opt => opt.MapFrom(src => src.CertificateTypeSubjects.Select(cts => cts.CertificateType)));
+
 			CreateMap<SubjectCreateRequest, Subject>();
 			CreateMap<SubjectUpdateRequest, Subject>();
 
@@ -58,14 +61,9 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 
 			// TutorProfile mappings
 			CreateMap<TutorProfile, TutorProfileDto>()
-				.ForMember(d => d.TutorAvailabilitiesId,
-					opt => opt.MapFrom(s => s.TutorAvailabilities.Select(x => x.Id)))
-				.ForMember(d => d.TutorCertificatesId,
-					opt => opt.MapFrom(s => s.TutorCertificates.Select(x => x.Id)))
-				.ForMember(d => d.TutorEducationsId,
-					opt => opt.MapFrom(s => s.TutorEducations.Select(x => x.Id)))
-				.ForMember(d => d.TutorSubjectId,
-					opt => opt.MapFrom(s => s.TutorSubjects.Select(x => x.Id)));
+				.ForMember(d => d.TutorAvailabilities,
+					opt => opt.MapFrom(s => s.TutorAvailabilities.Select(x => x.Id)));
+				
 
 
 

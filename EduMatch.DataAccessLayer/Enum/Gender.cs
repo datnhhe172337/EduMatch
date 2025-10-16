@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EduMatch.DataAccessLayer.Enum
 {
-	public enum Gender : byte
+	public enum Gender 
 	{
 		Unknown = 0, // Không xác định
 		Male = 1, // Nam

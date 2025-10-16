@@ -16,9 +16,9 @@ namespace EduMatch.BusinessLogicLayer.DTOs
 		public TutorStatus Status { get; set; }
 		public DateTime CreatedAt { get; set; }
 		public DateTime? UpdatedAt { get; set; }
-		public List<int>? TutorAvailabilitiesId { get; set; }
-		public List<int>? TutorCertificatesId { get; set; }
-		public List<int>? TutorEducationsId { get; set; }
-		public List<int>? TutorSubjectId { get; set; }
+		public List<TutorAvailabilityDto>? TutorAvailabilities { get; set; }
+		public List<TutorCertificateDto>? TutorCertificates { get; set; }
+		public List<TutorEducationDto>? TutorEducations { get; set; }
+		public List<TutorSubjectDto>? TutorSubjects { get; set; }
 	}
 }

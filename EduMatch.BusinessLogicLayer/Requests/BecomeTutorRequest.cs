@@ -15,13 +15,13 @@ namespace EduMatch.BusinessLogicLayer.Requests
 		public TutorProfileCreateRequest TutorProfile { get; set; } = new();
 
 		// ----- EDUCATION -----
-		public List<TutorEducationCreateRequest> Educations { get; set; } = new();
+		public List<TutorEducationCreateRequest>? Educations { get; set; } = new();
 
 		// ----- CERTIFICATES -----
-		public List<TutorCertificateCreateRequest> Certificates { get; set; } = new();
+		public List<TutorCertificateCreateRequest>? Certificates { get; set; } = new();
 
 		// ----- SUBJECTS -----
-		public List<TutorSubjectCreateRequest> Subjects { get; set; } = new();
+		public List<TutorSubjectCreateRequest>? Subjects { get; set; } = new();
 
 		// ----- AVAILABILITY -----
 

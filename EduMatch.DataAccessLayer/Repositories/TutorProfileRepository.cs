@@ -19,6 +19,7 @@ namespace EduMatch.DataAccessLayer.Repositories
 			.AsNoTracking()
 			.AsSplitQuery()
 			.Include(t => t.TutorAvailabilities)
+			   .ThenInclude(t => t.Slot)
 			.Include(t => t.TutorCertificates)
 			.Include(t => t.TutorEducations)
 			.Include(t => t.TutorSubjects);

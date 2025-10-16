@@ -59,8 +59,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 
-
-		// became tutor
+		// beacme tutor
 		[Authorize]
 		[HttpPost("become-tutor")]
 		[Consumes("multipart/form-data")]
@@ -72,54 +71,52 @@ namespace EduMatch.PresentationLayer.Controllers
 			if (!ModelState.IsValid)
 				return BadRequest(ApiResponse<string>.Fail("Invalid request."));
 
-			// Xác thực
 			var userEmail = _currentUserService.Email;
 			if (string.IsNullOrWhiteSpace(userEmail))
 				return Unauthorized(ApiResponse<string>.Fail("User email not found."));
 
+			// 🔒 Đảm bảo các danh sách không bị null
+			request.Educations ??= new List<TutorEducationCreateRequest>();
+			request.Certificates ??= new List<TutorCertificateCreateRequest>();
+			request.Subjects ??= new List<TutorSubjectCreateRequest>();
+			request.Availabilities ??= new TutorAvailabilityMixedRequest();
 
-			// Transaction cho toàn bộ quy trình
 			await using var tx = await _eduMatch.Database.BeginTransactionAsync();
 			try
 			{
-				// Tạo TutorProfile
+				// Tạo profile
 				var profileDto = await _tutorProfileService.CreateAsync(request.TutorProfile);
 				var tutorId = profileDto.Id;
 
-				//  Gắn TutorId cho các request con (nếu chưa có)
-				if (request.Educations != null && request.Educations.Count > 0)
+				// Bulk insert (nếu có)
+				if (request.Educations.Any())
 				{
 					foreach (var e in request.Educations) e.TutorId = tutorId;
 					await _tutorEducationService.CreateBulkAsync(request.Educations);
 				}
 
-				if (request.Certificates != null && request.Certificates.Count > 0)
+				if (request.Certificates.Any())
 				{
 					foreach (var c in request.Certificates) c.TutorId = tutorId;
 					await _tutorCertificateService.CreateBulkAsync(request.Certificates);
 				}
 
-				if (request.Subjects != null && request.Subjects.Count > 0)
+				if (request.Subjects.Any())
 				{
 					foreach (var s in request.Subjects) s.TutorId = tutorId;
 					await _tutorSubjectService.CreateBulkAsync(request.Subjects);
 				}
 
-				if (request.Availabilities != null)
+				if (request.Availabilities is not null)
 				{
 					request.Availabilities.TutorId = tutorId;
 					await _tutorAvailabilityService.CreateMixedAvailabilitiesAsync(request.Availabilities);
 				}
 
-				//  Commit
+				await _emailService.SendBecomeTutorWelcomeAsync(userEmail);
 				await tx.CommitAsync();
 
-
-				await _emailService.SendBecomeTutorWelcomeAsync(userEmail);
-
-
 				var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
-
 
 				return Ok(ApiResponse<object>.Ok(new
 				{
@@ -134,9 +131,11 @@ namespace EduMatch.PresentationLayer.Controllers
 					new { exception = ex.Message }
 				));
 			}
-
-
 		}
+
+
+
+
 
 
 		// Update tutor education (partial)

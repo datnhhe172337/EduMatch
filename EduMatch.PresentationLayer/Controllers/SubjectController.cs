@@ -50,5 +50,41 @@ namespace EduMatch.PresentationLayer.Controllers
 				);
 			}
 		}
+
+
+
+		[HttpGet("get-subject-by-id/{id:int}")]
+		[ProducesResponseType(typeof(ApiResponse<SubjectDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]
+		public async Task<IActionResult> GetSubjectById(int id)
+		{
+			try
+			{
+				var subject = await _subjectService.GetByIdAsync(id);
+
+				if (subject == null)
+				{
+					return NotFound(ApiResponse<string>.Fail($"Subject with ID {id} was not found."));
+				}
+
+				return Ok(ApiResponse<SubjectDto>.Ok(
+					subject,
+					$"Successfully retrieved subject with ID {id}."
+				));
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(
+					StatusCodes.Status500InternalServerError,
+					ApiResponse<string>.Fail(
+						"An error occurred while retrieving the subject.",
+						new { error = ex.Message, stackTrace = ex.StackTrace }
+					)
+				);
+			}
+		}
+
+
 	}
 }

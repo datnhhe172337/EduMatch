@@ -162,7 +162,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				var seen = new HashSet<string>(); // tránh trùng (TutorId + Date + SlotId)
 
 				// XỬ LÝ KHÔNG LẶP (Non-recurring)
-				if (request.RecurringSchedule != null)
+				if (request.NonRecurringDaySlots != null)
 				{
 					foreach (var daySlot in request.NonRecurringDaySlots)
 					{
@@ -188,7 +188,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 
 				//  XỬ LÝ LẶP HÀNG TUẦN (Recurring)
-				if (request.RecurringSchedule != null)
+				if (request.RecurringSchedule != null && request.RecurringSchedule.Count > 0)
 				{
 					foreach (var recurring in request.RecurringSchedule)
 					{
@@ -197,29 +197,24 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 						foreach (var daySlot in recurring.DaySlots)
 						{
-							//  đầu tiên >= start có đúng DayOfWeek cần lặp
-							int daysUntilFirst = ((int)daySlot.DayOfWeek - (int)start.DayOfWeek + 7) % 7;
-							var current = start.AddDays(daysUntilFirst);
+							if (daySlot.SlotIds == null || daySlot.SlotIds.Count == 0)
+								continue;
 
-							while (current <= end)
+							foreach (var slotId in daySlot.SlotIds.Distinct())
 							{
-								foreach (var slotId in daySlot.SlotIds)
+								var key = $"{request.TutorId}_{daySlot.DayOfWeek}_{slotId}";
+								if (seen.Add(key))
 								{
-									var key = $"{request.TutorId}_{current:yyyyMMdd}_{slotId}";
-									if (seen.Add(key))
+									requests.Add(new TutorAvailabilityCreateRequest
 									{
-										requests.Add(new TutorAvailabilityCreateRequest
-										{
-											TutorId = request.TutorId,
-											DayOfWeek = current.DayOfWeek,
-											SlotId = slotId,
-											IsRecurring = true,
-											EffectiveFrom = current,
-											EffectiveTo = current.AddDays(1).AddTicks(-1)
-										});
-									}
+										TutorId = request.TutorId,
+										DayOfWeek = daySlot.DayOfWeek,   
+										SlotId = slotId,                
+										IsRecurring = true,            
+										EffectiveFrom = start,          
+										EffectiveTo = end              
+									});
 								}
-								current = current.AddDays(7); // nhảy đúng 1 tuần
 							}
 						}
 					}

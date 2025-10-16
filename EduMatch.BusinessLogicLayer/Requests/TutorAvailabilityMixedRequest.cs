@@ -15,12 +15,12 @@ namespace EduMatch.BusinessLogicLayer.Requests
 		
 		/// Danh sách ngày-slot không lặp lại
 	
-		public List<DaySlotRequest> NonRecurringDaySlots { get; set; } = new();
+		public List<DaySlotRequest>? NonRecurringDaySlots { get; set; } = new();
 
 		
 		/// Danh sách ngày-slot có lặp lại
 		
-		public List<RecurringScheduleRequest> RecurringSchedule { get; set; } = new();
+		public List<RecurringScheduleRequest>? RecurringSchedule { get; set; } = new();
 	}
 
 	

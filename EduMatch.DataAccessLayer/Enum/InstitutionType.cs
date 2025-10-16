@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EduMatch.DataAccessLayer.Enum
 {
-	 public enum InstitutionType : byte
+	 public enum InstitutionType 
     {
       
         /// Trung cấp / Vocational
