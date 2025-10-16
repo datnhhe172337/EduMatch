@@ -84,24 +84,34 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 				//  UploadToCloudRequest
 
-				using var stream = request.VideoIntro.OpenReadStream();
-				var uploadRequest = new UploadToCloudRequest(
-					Content: stream,
-					FileName: request.VideoIntro.FileName,
-					ContentType: request.VideoIntro.ContentType ?? "application/octet-stream",
-					LengthBytes: request.VideoIntro.Length,
-					OwnerEmail: request.UserEmail,
-					MediaType: MediaType.Video
-				);
-
-
-				//  CloudinaryMediaService.UploadAsync()
-
-				var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
-
-				if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
-					throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
-
+				string? videoUrl = null;
+				string? videoPublicId = null;
+				var hasFile = request.VideoIntro != null && request.VideoIntro.Length > 0 && !string.IsNullOrWhiteSpace(request.VideoIntro.FileName);
+				if (hasFile)
+				{
+					using var stream = request.VideoIntro!.OpenReadStream();
+					var uploadRequest = new UploadToCloudRequest(
+						Content: stream,
+						FileName: request.VideoIntro!.FileName,
+						ContentType: request.VideoIntro!.ContentType ?? "application/octet-stream",
+						LengthBytes: request.VideoIntro!.Length,
+						OwnerEmail: request.UserEmail,
+						MediaType: MediaType.Video
+					);
+					var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
+					if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
+						throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
+					videoUrl = uploadResult.SecureUrl;
+					videoPublicId = uploadResult.PublicId;
+				}
+				else if (!string.IsNullOrWhiteSpace(request.VideoIntroUrl))
+				{
+					videoUrl = NormalizeYouTubeUrl(request.VideoIntroUrl!);
+				}
+				else
+				{
+					throw new ArgumentException("Either VideoIntro file or VideoIntroUrl is required.");
+				}
 
 				// MAP  -> ENTITY
 
@@ -110,8 +120,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 					UserEmail = request.UserEmail,
 					Bio = request.Bio,
 					TeachingExp = request.TeachingExp,
-					VideoIntroUrl = uploadResult.SecureUrl,
-					VideoIntroPublicId = uploadResult.PublicId,
+					VideoIntroUrl = videoUrl,
+					VideoIntroPublicId = videoPublicId,
 					TeachingModes = request.TeachingModes,
 					Status = TutorStatus.Pending,
 					CreatedAt = DateTime.UtcNow,
@@ -140,22 +150,42 @@ namespace EduMatch.BusinessLogicLayer.Services
 				if (existing is null)
 					throw new ArgumentException($"Tutor profile with ID {request.Id} not found.");
 
-				// Giữ lại publicId cũ để xoá sau khi update
 				var oldPublicId = existing.VideoIntroPublicId;
 
 				// Cập nhật fields
 				existing.UserEmail = request.UserEmail;
 				existing.Bio = request.Bio;
 				existing.TeachingExp = request.TeachingExp;
-				existing.VideoIntroUrl = request.VideoIntroUrl;
-				existing.VideoIntroPublicId = request.VideoIntroPublicId;
+				var hasNewFile = request.VideoIntro != null && request.VideoIntro.Length > 0 && !string.IsNullOrWhiteSpace(request.VideoIntro.FileName);
+				if (hasNewFile)
+				{
+					using var stream = request.VideoIntro!.OpenReadStream();
+					var uploadRequest = new UploadToCloudRequest(
+						Content: stream,
+						FileName: request.VideoIntro!.FileName,
+						ContentType: request.VideoIntro!.ContentType ?? "application/octet-stream",
+						LengthBytes: request.VideoIntro!.Length,
+						OwnerEmail: request.UserEmail,
+						MediaType: MediaType.Video
+					);
+					var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
+					if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
+						throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
+					existing.VideoIntroUrl = uploadResult.SecureUrl;
+					existing.VideoIntroPublicId = uploadResult.PublicId;
+				}
+				else if (!string.IsNullOrWhiteSpace(request.VideoIntroUrl))
+				{
+					existing.VideoIntroUrl = NormalizeYouTubeUrl(request.VideoIntroUrl!);
+					// keep old public id when only URL changes
+				}
 				existing.TeachingModes = request.TeachingModes;
 				existing.Status = request.Status;
 				existing.UpdatedAt = DateTime.UtcNow;
 
 				await _repository.UpdateAsync(existing);
 
-				if (!string.IsNullOrWhiteSpace(oldPublicId))
+				if (hasNewFile && !string.IsNullOrWhiteSpace(oldPublicId))
 				{
 					_ = _cloudMedia.DeleteByPublicIdAsync(oldPublicId, MediaType.Video)
 						.ContinueWith(t =>
@@ -189,6 +219,32 @@ namespace EduMatch.BusinessLogicLayer.Services
 		}
 
 		
+
+		private static string NormalizeYouTubeUrl(string rawUrl)
+		{
+			try
+			{
+				var uri = new Uri(rawUrl);
+				string? videoId = null;
+				if (uri.Host.Contains("youtu.be", StringComparison.OrdinalIgnoreCase))
+				{
+					videoId = uri.AbsolutePath.Trim('/');
+				}
+				else if (uri.Host.Contains("youtube.com", StringComparison.OrdinalIgnoreCase))
+				{
+					var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+					videoId = query["v"];
+					if (string.IsNullOrWhiteSpace(videoId) && uri.AbsolutePath.StartsWith("/embed/", StringComparison.OrdinalIgnoreCase))
+						videoId = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+				}
+				if (string.IsNullOrWhiteSpace(videoId)) return rawUrl;
+				return $"https://www.youtube.com/watch?v={videoId}";
+			}
+			catch
+			{
+				return rawUrl;
+			}
+		}
 
 		private static void ValidateRequest(object request)
 		{

@@ -101,25 +101,27 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 				//  UploadToCloudRequest
 
-				using var stream = request.CertificateEducation.OpenReadStream();
-				var uploadRequest = new UploadToCloudRequest(
-					Content: stream,
-					FileName: request.CertificateEducation.FileName,
-					ContentType: request.CertificateEducation.ContentType ?? "application/octet-stream",
-					LengthBytes: request.CertificateEducation.Length,
-					OwnerEmail: _currentUserService.Email,
-					MediaType: MediaType.Image
-				);
+				string? certUrl = null;
+				string? certPublicId = null;
+				var hasFile = request.CertificateEducation != null && request.CertificateEducation.Length > 0 && !string.IsNullOrWhiteSpace(request.CertificateEducation.FileName);
+				if (hasFile)
+				{
+					using var stream = request.CertificateEducation!.OpenReadStream();
+					var uploadRequest = new UploadToCloudRequest(
+						Content: stream,
+						FileName: request.CertificateEducation!.FileName,
+						ContentType: request.CertificateEducation!.ContentType ?? "application/octet-stream",
+						LengthBytes: request.CertificateEducation!.Length,
+						OwnerEmail: _currentUserService.Email!,
+						MediaType: MediaType.Image
+					);
+					var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
+					if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
+						throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
+					certUrl = uploadResult.SecureUrl;
+					certPublicId = uploadResult.PublicId;
+				}
 
-				
-				//  CloudinaryMediaService.UploadAsync()
-			
-				var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
-
-				if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
-					throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
-
-			
 				// MAP  -> ENTITY
 				
 				var entity = new TutorEducation
@@ -127,8 +129,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 					TutorId = request.TutorId,
 					InstitutionId = request.InstitutionId,
 					IssueDate = request.IssueDate,
-					CertificateUrl = uploadResult.SecureUrl,
-					CertificatePublicId = uploadResult.PublicId,
+					CertificateUrl = certUrl,
+					CertificatePublicId = certPublicId,
 					CreatedAt = DateTime.UtcNow,
 					Verified = VerifyStatus.Pending,
 					RejectReason = null
@@ -161,10 +163,32 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 
 				var oldPublicId = existingEntity.CertificatePublicId;
-				var entity = _mapper.Map<TutorEducation>(request);
-				await _repository.UpdateAsync(entity);
+				var hasNewFile = request.CertificateEducation != null && request.CertificateEducation.Length > 0 && !string.IsNullOrWhiteSpace(request.CertificateEducation.FileName);
+				if (hasNewFile)
+				{
+					using var stream = request.CertificateEducation!.OpenReadStream();
+					var uploadRequest = new UploadToCloudRequest(
+						Content: stream,
+						FileName: request.CertificateEducation!.FileName,
+						ContentType: request.CertificateEducation!.ContentType ?? "application/octet-stream",
+						LengthBytes: request.CertificateEducation!.Length,
+						OwnerEmail: _currentUserService.Email!,
+						MediaType: MediaType.Image
+					);
+					var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
+					if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
+						throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
+					existingEntity.CertificateUrl = uploadResult.SecureUrl;
+					existingEntity.CertificatePublicId = uploadResult.PublicId;
+				}
+				existingEntity.TutorId = request.TutorId;
+				existingEntity.InstitutionId = request.InstitutionId;
+				existingEntity.IssueDate = request.IssueDate;
+				existingEntity.Verified = request.Verified;
+				existingEntity.RejectReason = request.RejectReason;
+				await _repository.UpdateAsync(existingEntity);
 
-				if (!string.IsNullOrWhiteSpace(oldPublicId))
+				if (hasNewFile && !string.IsNullOrWhiteSpace(oldPublicId))
 				{
 					_ = _cloudMedia.DeleteByPublicIdAsync(oldPublicId, MediaType.Image)
 						.ContinueWith(t =>
@@ -181,7 +205,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 
 
-				return _mapper.Map<TutorEducationDto>(entity);
+				return _mapper.Map<TutorEducationDto>(existingEntity);
 			}
 			catch (Exception ex)
 			{

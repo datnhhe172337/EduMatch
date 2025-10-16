@@ -19,8 +19,6 @@ namespace EduMatch.BusinessLogicLayer.Requests
 		// Allow either file upload or remote URL. Only one is required.
 		public IFormFile? CertificateEducation { get; set; }
 
-		[Url(ErrorMessage = "Certificate URL must be a valid URL.")]
-		public string? CertificateUrl { get; set; }
 
 	}
 }

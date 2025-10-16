@@ -33,16 +33,6 @@ namespace EduMatch.BusinessLogicLayer.Requests
 		[EnumDataType(typeof(TeachingMode))]
 		public TeachingMode TeachingModes { get; set; }
 
-		// Custom validation to ensure either file or URL is provided
-		public static ValidationResult? ValidateSource(TutorProfileCreateRequest request, ValidationContext context)
-		{
-			var hasFile = request.VideoIntro != null && request.VideoIntro.Length > 0;
-			var hasUrl = !string.IsNullOrWhiteSpace(request.VideoIntroUrl);
-			if (!hasFile && !hasUrl)
-			{
-				return new ValidationResult("Either a video file or a video URL must be provided.");
-			}
-			return ValidationResult.Success;
-		}
+		
 	}
 }
