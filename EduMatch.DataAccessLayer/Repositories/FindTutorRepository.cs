@@ -75,9 +75,9 @@ namespace EduMatch.DataAccessLayer.Repositories
             }
 
             // Status (byte)
-            if (statusId.HasValue)
+            if (status.HasValue)
             {
-                query = query.Where(t => t.Status == statusId);
+                query = query.Where(t => t.Status == status);
             }
 
             query = query.OrderByDescending(t => t.CreatedAt)
