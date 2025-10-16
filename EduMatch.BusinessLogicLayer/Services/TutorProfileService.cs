@@ -188,8 +188,13 @@ namespace EduMatch.BusinessLogicLayer.Services
 					existing.VideoIntroUrl = normalized;
 					// keep old public id when only URL changes
 				}
-				existing.TeachingModes = request.TeachingModes;
-				existing.Status = request.Status;
+
+				if (request.TeachingModes.HasValue)
+					existing.TeachingModes = request.TeachingModes.Value;
+
+				if (request.Status.HasValue)
+					existing.Status = request.Status.Value;
+
 				existing.UpdatedAt = DateTime.UtcNow;
 
 				await _repository.UpdateAsync(existing);

@@ -11,6 +11,7 @@ namespace EduMatch.BusinessLogicLayer.Requests
 {
 	public class TutorProfileUpdateRequest
 	{
+		[Required]
 		[Range(1, int.MaxValue, ErrorMessage = "ID must be greater than 0.")]
 		public int Id { get; set; }
 
@@ -25,13 +26,13 @@ namespace EduMatch.BusinessLogicLayer.Requests
 		[Url(ErrorMessage = "Video URL must be a valid URL.")]
 		public string? VideoIntroUrl { get; set; }
 
-		[Required(ErrorMessage = "Teaching mode is required.")]
-		[EnumDataType(typeof(TeachingMode))]
-		public TeachingMode TeachingModes { get; set; }
+		
+		[EnumDataType(typeof(TeachingMode), ErrorMessage = "Invalid TeachingMode")]
+		public TeachingMode? TeachingModes { get; set; }
 
-		[Required(ErrorMessage = "Tutor status is required.")]
-		[EnumDataType(typeof(TutorStatus))]
-		public TutorStatus Status { get; set; }
+
+		[EnumDataType(typeof(TutorStatus), ErrorMessage = "Invalid TutorStatus")]
+		public TutorStatus? Status { get; set; }
 	}
 
 }

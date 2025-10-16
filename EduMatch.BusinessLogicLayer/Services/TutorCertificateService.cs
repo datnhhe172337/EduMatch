@@ -200,12 +200,30 @@ namespace EduMatch.BusinessLogicLayer.Services
 					existingEntity.CertificateUrl = uploadResult.SecureUrl;
 					existingEntity.CertificatePublicId = uploadResult.PublicId;
 				}
+
 				existingEntity.TutorId = request.TutorId;
 				existingEntity.CertificateTypeId = request.CertificateTypeId;
-				existingEntity.IssueDate = request.IssueDate;
-				existingEntity.ExpiryDate = request.ExpiryDate;
-				existingEntity.Verified = request.Verified;
-				existingEntity.RejectReason = request.RejectReason;
+
+
+
+				// Optional -> chỉ set khi có giá trị
+				if (request.Verified.HasValue) existingEntity.Verified = request.Verified.Value;
+				if (request.IssueDate.HasValue) existingEntity.IssueDate = request.IssueDate.Value;
+				if (request.ExpiryDate.HasValue) existingEntity.ExpiryDate = request.ExpiryDate.Value;
+
+				// RejectReason: yêu cầu nếu Verified = Rejected, ngược lại clear
+				if (request.Verified == VerifyStatus.Rejected)
+				{
+					if (string.IsNullOrWhiteSpace(request.RejectReason))
+						throw new ArgumentException("Reject reason is required when verification status is Rejected.");
+					existingEntity.RejectReason = request.RejectReason!.Trim();
+				}
+				else
+				{
+					// Nếu không bị từ chối thì xóa lý do
+					existingEntity.RejectReason = null;
+				}
+
 				await _repository.UpdateAsync(existingEntity);
 
 				if (hasNewFile && !string.IsNullOrWhiteSpace(oldPublicId))

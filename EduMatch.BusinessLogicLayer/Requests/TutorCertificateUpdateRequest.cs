@@ -27,8 +27,8 @@ namespace EduMatch.BusinessLogicLayer.Requests
 		public IFormFile? Certificate { get; set; }
 
 
-		[Required(ErrorMessage = "Verification status is required")]
-		public VerifyStatus Verified { get; set; }
+		[EnumDataType(typeof(VerifyStatus), ErrorMessage = "Invalid verify status")]
+		public VerifyStatus? Verified { get; set; }
 
 		[StringLength(500, ErrorMessage = "Reject reason cannot exceed 500 characters")]
 		public string? RejectReason { get; set; }

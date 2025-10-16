@@ -59,10 +59,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 
 
-
-
-
-
 		//  Gửi mail chúc mừng trở thành Gia sư 
 		public Task<string> SendBecomeTutorWelcomeAsync(string toEmail, string toName = null)
 		{

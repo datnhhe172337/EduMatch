@@ -141,7 +141,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
 		// Update tutor education (partial)
 		[Authorize]
-		[HttpPut("education/{id}")]
+		[HttpPut("update-education/{id}")]
 		[Consumes("multipart/form-data")]
 		[ProducesResponseType(typeof(ApiResponse<TutorEducationDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -176,7 +176,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
 		// Update tutor certificate (partial)
 		[Authorize]
-		[HttpPut("certificate/{id}")]
+		[HttpPut("update-certificate/{id}")]
 		[Consumes("multipart/form-data")]
 		[ProducesResponseType(typeof(ApiResponse<TutorCertificateDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -305,7 +305,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
 		// Get all tutors by status
 		[Authorize]
-		[HttpGet("by-status")]
+		[HttpGet("get-all-tutor-by-status")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorProfileDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
 		public async Task<IActionResult> GetTutorsByStatus([FromQuery] TutorStatus status)
@@ -324,7 +324,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
 		// Get all certificates and educations of a tutor filtered by verify status
 		[Authorize]
-		[HttpGet("{tutorId}/verifications")]
+		[HttpGet("get-tutor/{tutorId}/verifications")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
 		public async Task<IActionResult> GetTutorVerifications([FromRoute] int tutorId, [FromQuery] VerifyStatus status)
