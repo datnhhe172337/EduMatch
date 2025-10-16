@@ -60,6 +60,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
 
 		// beacme tutor
+		// beacme tutor
 		[Authorize]
 		[HttpPost("become-tutor")]
 		[Consumes("multipart/form-data")]
@@ -75,7 +76,6 @@ namespace EduMatch.PresentationLayer.Controllers
 			if (string.IsNullOrWhiteSpace(userEmail))
 				return Unauthorized(ApiResponse<string>.Fail("User email not found."));
 
-			// 🔒 Đảm bảo các danh sách không bị null
 			request.Educations ??= new List<TutorEducationCreateRequest>();
 			request.Certificates ??= new List<TutorCertificateCreateRequest>();
 			request.Subjects ??= new List<TutorSubjectCreateRequest>();
@@ -88,7 +88,6 @@ namespace EduMatch.PresentationLayer.Controllers
 				var profileDto = await _tutorProfileService.CreateAsync(request.TutorProfile);
 				var tutorId = profileDto.Id;
 
-				// Bulk insert (nếu có)
 				if (request.Educations.Any())
 				{
 					foreach (var e in request.Educations) e.TutorId = tutorId;
@@ -114,6 +113,7 @@ namespace EduMatch.PresentationLayer.Controllers
 				}
 
 				await _emailService.SendBecomeTutorWelcomeAsync(userEmail);
+
 				await tx.CommitAsync();
 
 				var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
@@ -125,13 +125,14 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 			catch (Exception ex)
 			{
-				await tx.RollbackAsync();
+				// ❌ KHÔNG rollback ở đây nữa
 				return BadRequest(ApiResponse<string>.Fail(
 					"Failed to create tutor profile.",
 					new { exception = ex.Message }
 				));
 			}
 		}
+
 
 
 
