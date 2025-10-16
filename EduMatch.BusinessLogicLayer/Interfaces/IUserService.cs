@@ -11,12 +11,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
     public interface IUserService
     {
         Task<bool> RegisterAsync(string email, string password, string baseUrl);
-
-        Task<IEnumerable<ManageUserDto>> GetUserByRoleAsync(int roleId);
-        Task<bool> DeactivateUserAsync(string email);
-        Task<bool> ActivateUserAsync(string email);
-        Task<User> CreateAdminAccAsync(string email);
-
         Task<bool> VerifyEmailAsync(string token);
         Task<LoginResponseDto> LoginAsync(string email, string password);
         Task<bool> ResendEmailVerifyAsync(string email, string baseUrl);

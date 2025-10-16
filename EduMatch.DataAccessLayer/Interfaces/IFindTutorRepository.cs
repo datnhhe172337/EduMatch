@@ -11,13 +11,6 @@ namespace EduMatch.DataAccessLayer.Interfaces
     public interface IFindTutorRepository
     {
         Task<IEnumerable<TutorProfile>> GetAllTutorsAsync();
-        Task<IEnumerable<TutorProfile>> SearchTutorsAsync(
-            string? keyword,
-            Gender? gender,
-            string? city,
-            TeachingMode? teachingMode,
-            TutorStatus? status,
-            int page,
-            int pageSize);
+        Task<IEnumerable<TutorProfile>> SearchTutorsAsync(string? keyword, Gender? gender, string? city, TeachingMode? teachingMode, TutorStatus? statusId, int page, int pageSize);
     }
 }

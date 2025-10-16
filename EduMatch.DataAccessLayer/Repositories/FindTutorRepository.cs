@@ -34,47 +34,62 @@ namespace EduMatch.DataAccessLayer.Repositories
         }
 
         public async Task<IEnumerable<TutorProfile>> SearchTutorsAsync(
-             string? keyword,
-             Gender? gender,
-             string? city,
-             TeachingMode? teachingMode,
-             TutorStatus? status,
-             int page,
-             int pageSize)
+            string? keyword, Gender? gender, string? city, TeachingMode? teachingMode, TutorStatus? statusId, int page, int pageSize)
         {
             var query = _context.TutorProfiles
                 .Include(t => t.UserEmailNavigation)
                     .ThenInclude(u => u.UserProfile)
-                        .ThenInclude(p => p.City)
+                        .ThenInclude(up => up.SubDistrict)
+                            .ThenInclude(sd => sd.Province)
+                .Include(t => t.UserEmailNavigation)
+                    .ThenInclude(u => u.UserProfile)
+                        .ThenInclude(up => up.City)
                 .AsQueryable();
 
-            // ✅ Apply filters only when provided
+            // Keyword filter
             if (!string.IsNullOrEmpty(keyword))
             {
-                var lowerKeyword = keyword.ToLower();
                 query = query.Where(t =>
-                    (t.UserEmailNavigation.UserName != null && t.UserEmailNavigation.UserName.ToLower().Contains(lowerKeyword)) ||
-                    (t.Bio != null && t.Bio.ToLower().Contains(lowerKeyword)) ||
-                    (t.TeachingExp != null && t.TeachingExp.ToLower().Contains(lowerKeyword))
-                );
+                    (t.UserEmailNavigation.UserName != null && t.UserEmailNavigation.UserName.Contains(keyword)) ||
+                    (t.Bio != null && t.Bio.Contains(keyword)) ||
+                    (t.TeachingExp != null && t.TeachingExp.Contains(keyword)));
             }
 
+            // Gender (byte)
             if (gender.HasValue)
-                query = query.Where(t => t.UserEmailNavigation.UserProfile.Gender == gender.Value);
+            {
+                    query = query.Where(t => t.UserEmailNavigation.UserProfile!.Gender == gender);
+               
+            }
 
+            // City filter
             if (!string.IsNullOrEmpty(city))
-                query = query.Where(t => t.UserEmailNavigation.UserProfile.City.Id.ToString() == city);
+            {
+                query = query.Where(t =>
+                    (t.UserEmailNavigation.UserProfile.City != null &&
+                     t.UserEmailNavigation.UserProfile.City.Name.Contains(city)) ||
+                    (t.UserEmailNavigation.UserProfile.SubDistrict != null &&
+                     t.UserEmailNavigation.UserProfile.SubDistrict.Province != null &&
+                     t.UserEmailNavigation.UserProfile.SubDistrict.Province.Name.Contains(city)));
+            }
 
-            if (teachingMode.HasValue)
-                query = query.Where(t => t.TeachingModes == teachingMode.Value);
+            // Teaching mode (byte)
+            if (teachingMode != null)
+            {
+                query = query.Where(t => t.TeachingModes == teachingMode);
+            }
 
-            if (status.HasValue)
-                query = query.Where(t => t.Status == status.Value);
+            // Status (byte)
+            if (statusId.HasValue)
+            {
+                query = query.Where(t => t.Status == statusId);
+            }
 
-            // ✅ Pagination
-            query = query.Skip((page - 1) * pageSize).Take(pageSize);
-
-            return await query.ToListAsync();
+            // Pagination
+            return await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
         }
     }
 }
