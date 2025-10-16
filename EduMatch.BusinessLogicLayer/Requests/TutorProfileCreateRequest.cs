@@ -11,9 +11,6 @@ namespace EduMatch.BusinessLogicLayer.Requests
 {
 	public class TutorProfileCreateRequest
 	{
-		[Required(ErrorMessage = "User email is required.")]
-		[EmailAddress(ErrorMessage = "Invalid email format.")]
-		public string UserEmail { get; set; } = null!;
 
 		[MaxLength(2000, ErrorMessage = "Bio cannot exceed 2000 characters.")]
 		public string? Bio { get; set; }
@@ -33,6 +30,5 @@ namespace EduMatch.BusinessLogicLayer.Requests
 		[EnumDataType(typeof(TeachingMode))]
 		public TeachingMode TeachingModes { get; set; }
 
-		
 	}
 }

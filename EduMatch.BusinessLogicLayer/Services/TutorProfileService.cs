@@ -77,9 +77,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 
 				//  CHECK IF TUTOR PROFILE EXISTS
-				var existing = await _repository.GetByEmailFullAsync(request.UserEmail);
+				if (string.IsNullOrWhiteSpace(_currentUserService.Email))
+					throw new ArgumentException("Current user email not found.");
+				var userEmail = _currentUserService.Email!;
+				var existing = await _repository.GetByEmailFullAsync(userEmail);
 				if (existing is not null)
-					throw new ArgumentException($"Tutor profile for email {request.UserEmail} already exists.");
+					throw new ArgumentException($"Tutor profile for email {userEmail} already exists.");
 
 
 				//  UploadToCloudRequest
@@ -95,7 +98,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 						FileName: request.VideoIntro!.FileName,
 						ContentType: request.VideoIntro!.ContentType ?? "application/octet-stream",
 						LengthBytes: request.VideoIntro!.Length,
-						OwnerEmail: request.UserEmail,
+						OwnerEmail: userEmail,
 						MediaType: MediaType.Video
 					);
 					var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
@@ -106,7 +109,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 				else if (!string.IsNullOrWhiteSpace(request.VideoIntroUrl))
 				{
-					videoUrl = NormalizeYouTubeUrl(request.VideoIntroUrl!);
+					var normalized = NormalizeYouTubeEmbedUrlOrNull(request.VideoIntroUrl!);
+					if (normalized is null)
+						throw new ArgumentException("VideoIntroUrl must be a valid YouTube link.");
+					videoUrl = normalized;
 				}
 				else
 				{
@@ -117,7 +123,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 				var entity = new TutorProfile
 				{
-					UserEmail = request.UserEmail,
+					UserEmail = userEmail,
 					Bio = request.Bio,
 					TeachingExp = request.TeachingExp,
 					VideoIntroUrl = videoUrl,
@@ -153,7 +159,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				var oldPublicId = existing.VideoIntroPublicId;
 
 				// Cập nhật fields
-				existing.UserEmail = request.UserEmail;
+				existing.UserEmail = existing.UserEmail;
 				existing.Bio = request.Bio;
 				existing.TeachingExp = request.TeachingExp;
 				var hasNewFile = request.VideoIntro != null && request.VideoIntro.Length > 0 && !string.IsNullOrWhiteSpace(request.VideoIntro.FileName);
@@ -165,7 +171,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 						FileName: request.VideoIntro!.FileName,
 						ContentType: request.VideoIntro!.ContentType ?? "application/octet-stream",
 						LengthBytes: request.VideoIntro!.Length,
-						OwnerEmail: request.UserEmail,
+						OwnerEmail: _currentUserService.Email!,
 						MediaType: MediaType.Video
 					);
 					var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
@@ -176,7 +182,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 				else if (!string.IsNullOrWhiteSpace(request.VideoIntroUrl))
 				{
-					existing.VideoIntroUrl = NormalizeYouTubeUrl(request.VideoIntroUrl!);
+					var normalized = NormalizeYouTubeEmbedUrlOrNull(request.VideoIntroUrl!);
+					if (normalized is null)
+						throw new ArgumentException("VideoIntroUrl must be a valid YouTube link.");
+					existing.VideoIntroUrl = normalized;
 					// keep old public id when only URL changes
 				}
 				existing.TeachingModes = request.TeachingModes;
@@ -220,7 +229,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 		
 
-		private static string NormalizeYouTubeUrl(string rawUrl)
+		private static string? NormalizeYouTubeEmbedUrlOrNull(string rawUrl)
 		{
 			try
 			{
@@ -237,12 +246,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 					if (string.IsNullOrWhiteSpace(videoId) && uri.AbsolutePath.StartsWith("/embed/", StringComparison.OrdinalIgnoreCase))
 						videoId = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
 				}
-				if (string.IsNullOrWhiteSpace(videoId)) return rawUrl;
-				return $"https://www.youtube.com/watch?v={videoId}";
+				if (string.IsNullOrWhiteSpace(videoId)) return null;
+				return $"https://www.youtube.com/embed/{videoId}";
 			}
 			catch
 			{
-				return rawUrl;
+				return null;
 			}
 		}
 

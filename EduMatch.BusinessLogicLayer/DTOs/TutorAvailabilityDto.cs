@@ -13,6 +13,5 @@ namespace EduMatch.BusinessLogicLayer.DTOs
 		public DateTime EffectiveFrom { get; set; }
 		public DateTime? EffectiveTo { get; set; }
 		public TimeSlotDto? Slot { get; set; }
-		public TutorProfileDto? Tutor { get; set; }
 	}
 }

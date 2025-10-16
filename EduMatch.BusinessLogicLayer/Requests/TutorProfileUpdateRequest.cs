@@ -14,10 +14,6 @@ namespace EduMatch.BusinessLogicLayer.Requests
 		[Range(1, int.MaxValue, ErrorMessage = "ID must be greater than 0.")]
 		public int Id { get; set; }
 
-		[Required(ErrorMessage = "User email is required.")]
-		[EmailAddress(ErrorMessage = "Invalid email format.")]
-		public string UserEmail { get; set; } = null!;
-
 		[MaxLength(2000, ErrorMessage = "Bio cannot exceed 2000 characters.")]
 		public string? Bio { get; set; }
 
