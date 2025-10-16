@@ -43,30 +43,42 @@ namespace EduMatch.DataAccessLayer.Repositories
             var query = _context.TutorProfiles
                 .Include(t => t.UserEmailNavigation)
                     .ThenInclude(u => u.UserProfile)
-                        .ThenInclude(p => p.City)
+                        .ThenInclude(up => up.SubDistrict)
+                            .ThenInclude(sd => sd.Province)
+                .Include(t => t.UserEmailNavigation)
+                    .ThenInclude(u => u.UserProfile)
+                        .ThenInclude(up => up.City)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
             {
-                var lowerKeyword = keyword.ToLower();
                 query = query.Where(t =>
-                    (t.UserEmailNavigation.UserName != null && t.UserEmailNavigation.UserName.ToLower().Contains(lowerKeyword)) ||
-                    (t.Bio != null && t.Bio.ToLower().Contains(lowerKeyword)) ||
-                    (t.TeachingExp != null && t.TeachingExp.ToLower().Contains(lowerKeyword))
-                );
+                    (t.UserEmailNavigation.UserName != null && t.UserEmailNavigation.UserName.Contains(keyword)) ||
+                    (t.Bio != null && t.Bio.Contains(keyword)) ||
+                    (t.TeachingExp != null && t.TeachingExp.Contains(keyword)));
             }
 
+            // Gender (byte)
             if (gender.HasValue)
-                query = query.Where(t => t.UserEmailNavigation.UserProfile.Gender == gender.Value);
+            {
+                    query = query.Where(t => t.UserEmailNavigation.UserProfile!.Gender == gender);
+               
+            }
 
             if (cityId.HasValue)
                 query = query.Where(t => t.UserEmailNavigation.UserProfile.CityId == cityId.Value);
 
-            if (teachingMode.HasValue)
-                query = query.Where(t => t.TeachingModes == teachingMode.Value);
+            // Teaching mode (byte)
+            if (teachingMode != null)
+            {
+                query = query.Where(t => t.TeachingModes == teachingMode);
+            }
 
-            if (status.HasValue)
-                query = query.Where(t => t.Status == status.Value);
+            // Status (byte)
+            if (statusId.HasValue)
+            {
+                query = query.Where(t => t.Status == statusId);
+            }
 
             query = query.OrderByDescending(t => t.CreatedAt)
                          .Skip((page - 1) * pageSize)
