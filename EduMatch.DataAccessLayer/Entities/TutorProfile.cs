@@ -6,7 +6,7 @@ namespace EduMatch.DataAccessLayer.Entities;
 
 public partial class TutorProfile
 {
-    public int? Id { get; set; }
+    public int Id { get; set; }
 
     public string UserEmail { get; set; } = null!;
 
@@ -22,10 +22,11 @@ public partial class TutorProfile
 
     public TutorStatus Status { get; set; }
 
-
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
+
+    public virtual ICollection<ChatRoom> ChatRooms { get; set; } = new List<ChatRoom>();
 
     public virtual ICollection<TutorAvailability> TutorAvailabilities { get; set; } = new List<TutorAvailability>();
 

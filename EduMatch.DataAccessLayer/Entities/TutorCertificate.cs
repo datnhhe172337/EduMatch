@@ -6,7 +6,7 @@ namespace EduMatch.DataAccessLayer.Entities;
 
 public partial class TutorCertificate
 {
-    public int? Id { get; set; }
+    public int Id { get; set; }
 
     public int TutorId { get; set; }
 
@@ -22,9 +22,7 @@ public partial class TutorCertificate
 
     public DateTime? CreatedAt { get; set; }
 
-
     public VerifyStatus Verified { get; set; }
-
 
     public string? RejectReason { get; set; }
 

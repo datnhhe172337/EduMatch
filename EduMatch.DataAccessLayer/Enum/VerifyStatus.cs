@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EduMatch.DataAccessLayer.Enum
 {
-	public enum VerifyStatus : byte
+	public enum VerifyStatus
 	{
 		Pending = 0,   // Chờ duyệt
 		Verified = 1,  // Đã xác minh

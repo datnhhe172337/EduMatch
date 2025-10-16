@@ -5,6 +5,7 @@ using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using EduMatch.DataAccessLayer.Repositories;
 using EduMatch.PresentationLayer.Configurations;
+using EduMatch.PresentationLayer.Hubs;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,7 +28,8 @@ builder.Services.AddScoped<IFindTutorRepository, FindTutorRepository>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IManageTutorProfileService, ManageTutorProfileService>();
 builder.Services.AddScoped<IFindTutorService, FindTutorService>();
-
+builder.Services.AddScoped<IChatRepository, ChatRepository>();
+builder.Services.AddScoped<IChatService, ChatService>();
 // Add services to the container.
 
 builder.Services.AddControllers()
@@ -45,8 +47,12 @@ builder.Services.AddAuthorization();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSignalR();
+builder.Services.AddScoped<ChatService>();
 
 var app = builder.Build();
+
+app.MapHub<ChatHub>("/chatHub");
 
 // NHẬN header từ reverse proxy 
 app.UseForwardedHeaders(new ForwardedHeadersOptions {

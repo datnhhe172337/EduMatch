@@ -11,7 +11,7 @@ namespace EduMatch.BusinessLogicLayer.DTOs
     {
         public string? Keyword { get; set; } 
         public Gender? Gender { get; set; }
-        public string? City { get; set; }
+        public int? City { get; set; }
         public TeachingMode? TeachingMode { get; set; } 
         public TutorStatus? StatusId { get; set; }
         public int Page { get; set; } = 1;
