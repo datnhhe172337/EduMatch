@@ -58,7 +58,6 @@ namespace EduMatch.DataAccessLayer.Repositories
                     (t.TeachingExp != null && t.TeachingExp.Contains(keyword)));
             }
 
-            // Gender (byte)
             if (gender.HasValue)
             {
                     query = query.Where(t => t.UserEmailNavigation.UserProfile!.Gender == gender);
@@ -68,13 +67,11 @@ namespace EduMatch.DataAccessLayer.Repositories
             if (cityId.HasValue)
                 query = query.Where(t => t.UserEmailNavigation.UserProfile.CityId == cityId.Value);
 
-            // Teaching mode (byte)
             if (teachingMode != null)
             {
                 query = query.Where(t => t.TeachingModes == teachingMode);
             }
 
-            // Status (byte)
             if (status.HasValue)
             {
                 query = query.Where(t => t.Status == status);
