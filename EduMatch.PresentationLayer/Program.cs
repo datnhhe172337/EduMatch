@@ -30,6 +30,9 @@ builder.Services.AddScoped<IManageTutorProfileService, ManageTutorProfileService
 builder.Services.AddScoped<IFindTutorService, FindTutorService>();
 builder.Services.AddScoped<IChatRepository, ChatRepository>();
 builder.Services.AddScoped<IChatService, ChatService>();
+
+
+
 // Add services to the container.
 
 builder.Services.AddControllers()

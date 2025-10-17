@@ -27,27 +27,30 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly EmailService _emailService;
         private readonly IRefreshTokenRepositoy _refreshRepo;
         private readonly IGoogleAuthService _googleAuthService;
+        private readonly IUserProfileRepository _profileRepo;
 
 
-        public UserService(IUserRepository userRepo, IOptions<JwtSettings> options, EmailService emailService, IRefreshTokenRepositoy refreshRepo, IGoogleAuthService googleAuthService)
+        public UserService(IUserRepository userRepo, IOptions<JwtSettings> options, EmailService emailService, IRefreshTokenRepositoy refreshRepo, 
+                            IGoogleAuthService googleAuthService, IUserProfileRepository profileRepo)
         {
             _userRepo = userRepo;
             _jwt = options.Value;
             _emailService = emailService;
             _refreshRepo = refreshRepo;
             _googleAuthService = googleAuthService;
+            _profileRepo = profileRepo;
         }
 
-        public async Task<bool> RegisterAsync(string email, string password, string baseUrl)
+        public async Task<bool> RegisterAsync(string fullName, string email, string password, string baseUrl)
         {
             if(await _userRepo.IsEmailAvailableAsync(email))
                 return false;
 
             var user = new User
-            {
+            { 
                 Email = email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-                UserName = email,
+                UserName = fullName,
                 LoginProvider = "Local",
                 RoleId = 1,
                 IsEmailConfirmed = false,
@@ -218,6 +221,13 @@ namespace EduMatch.BusinessLogicLayer.Services
                 user.IsEmailConfirmed = true;
                 user.IsActive = true;
                 await _userRepo.UpdateUserAsync(user);
+
+                var profile = new UserProfile
+                {
+                    UserEmail = userEmail,
+
+                };
+                await _profileRepo.CreateUserProfileAsync(profile);
 
                 return true;
             }

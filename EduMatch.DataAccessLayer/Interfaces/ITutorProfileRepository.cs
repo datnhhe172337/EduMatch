@@ -13,9 +13,12 @@ namespace EduMatch.DataAccessLayer.Interfaces
 		Task<TutorProfile?> GetByEmailFullAsync(string email, CancellationToken ct = default);
 		Task<IReadOnlyList<TutorProfile>> GetAllFullAsync(CancellationToken ct = default);
 
-
 		Task AddAsync(TutorProfile entity, CancellationToken ct = default);
 		Task UpdateAsync(TutorProfile entity, CancellationToken ct = default);
 		Task RemoveByIdAsync(int id, CancellationToken ct = default);
+
+		//Task UpdateUserProfileAsync(UserProfile entity);
+		//Task UpdateUserAsync(User entity);
+
 	}
 }

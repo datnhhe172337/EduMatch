@@ -19,6 +19,6 @@ namespace EduMatch.DataAccessLayer.Interfaces
         Task CreateAdminAccAsync(User user);
         Task CreateUserAsync(User user);
         Task UpdateUserAsync(User user);
-        Task<bool> UpdateRoleUserAsync(string email, int roleId);
-    }
+        Task<bool> UpdateRoleUserAsync(string email, int roleId);   
+	}
 }

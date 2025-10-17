@@ -29,14 +29,14 @@ namespace EduMatch.DataAccessLayer.Repositories
 		public async Task<IReadOnlyList<TutorAvailability>> GetByTutorIdAsync(int tutorId, CancellationToken ct = default)
 			=> await IncludeAll().Where(t => t.TutorId == tutorId).ToListAsync(ct);
 
-		public async Task<IReadOnlyList<TutorAvailability>> GetByDayOfWeekAsync(DayOfWeek dayOfWeek, CancellationToken ct = default)
-			=> await IncludeAll().Where(t => t.DayOfWeek == dayOfWeek).ToListAsync(ct);
+		//public async Task<IReadOnlyList<TutorAvailability>> GetByDayOfWeekAsync(DayOfWeek dayOfWeek, CancellationToken ct = default)
+		//	=> await IncludeAll().Where(t => t.DayOfWeek == dayOfWeek).ToListAsync(ct);
 
-		public async Task<IReadOnlyList<TutorAvailability>> GetByTimeSlotAsync(int slotId, CancellationToken ct = default)
-			=> await IncludeAll().Where(t => t.SlotId == slotId).ToListAsync(ct);
+		//public async Task<IReadOnlyList<TutorAvailability>> GetByTimeSlotAsync(int slotId, CancellationToken ct = default)
+		//	=> await IncludeAll().Where(t => t.SlotId == slotId).ToListAsync(ct);
 
-		public async Task<IReadOnlyList<TutorAvailability>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate, CancellationToken ct = default)
-			=> await IncludeAll().Where(t => t.EffectiveFrom >= fromDate && (t.EffectiveTo == null || t.EffectiveTo <= toDate)).ToListAsync(ct);
+		//public async Task<IReadOnlyList<TutorAvailability>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate, CancellationToken ct = default)
+		//	=> await IncludeAll().Where(t => t.EffectiveFrom >= fromDate && (t.EffectiveTo == null || t.EffectiveTo <= toDate)).ToListAsync(ct);
 
 		public async Task<IReadOnlyList<TutorAvailability>> GetAllFullAsync(CancellationToken ct = default)
 			=> await IncludeAll().ToListAsync(ct);
