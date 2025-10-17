@@ -11,23 +11,44 @@ namespace EduMatch.BusinessLogicLayer.Requests
 {
 	public class TutorProfileCreateRequest
 	{
-		[Required(ErrorMessage = "User email is required.")]
-		[EmailAddress(ErrorMessage = "Invalid email format.")]
-		public string UserEmail { get; set; } = null!;
+		[MaxLength(100, ErrorMessage = "User name cannot exceed 100 characters.")]
+		public string? UserName { get; set; }
+
+		[MaxLength(30)]
+		[RegularExpression(@"^(?:0\d{9}|(?:\+?84)\d{9,10})$", ErrorMessage = "Phone is not a valid VN number.")]
+		public string? Phone { get; set; }
 
 		[MaxLength(2000, ErrorMessage = "Bio cannot exceed 2000 characters.")]
 		public string? Bio { get; set; }
 
+		[DataType(DataType.Date)]
+		public DateTime? DateOfBirth { get; set; }
+
+		public IFormFile? AvatarFile { get; set; }
+
+		[Range(1, int.MaxValue, ErrorMessage = "ProvinceId must be a positive number.")]
+		public int? ProvinceId { get; set; }
+
+		[Range(1, int.MaxValue, ErrorMessage = "SubDistrictId must be a positive number.")]
+		public int? SubDistrictId { get; set; }
+
 		[MaxLength(2000, ErrorMessage = "Teaching experience cannot exceed 2000 characters.")]
 		public string? TeachingExp { get; set; }
+		
 
-		[Required(ErrorMessage = "Video URL must be a valid URL.")]
-		public IFormFile VideoIntro { get; set; }
+		// Either provide a file or a URL (e.g., YouTube). Only one is required.
+		public IFormFile? VideoIntro { get; set; }
+
+
+		[Url(ErrorMessage = "Video URL must be a valid URL.")]
+		public string? VideoIntroUrl { get; set; }
 
 
 		[Required(ErrorMessage = "Teaching mode is required.")]
 		[EnumDataType(typeof(TeachingMode))]
 		public TeachingMode TeachingModes { get; set; }
+
+
 
 	}
 }

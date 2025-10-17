@@ -15,6 +15,5 @@ namespace EduMatch.BusinessLogicLayer.DTOs
 		public VerifyStatus Verified { get; set; }
 		public string? RejectReason { get; set; }
 		public EducationInstitutionDto? Institution { get; set; }
-		public TutorProfileDto? Tutor { get; set; }
 	}
 }

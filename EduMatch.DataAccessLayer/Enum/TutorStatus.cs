@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EduMatch.DataAccessLayer.Enum
 {
-	public enum TutorStatus
+	public enum TutorStatus 
 	{
 		Pending = 0,  // Chờ duyệt
 		Approved = 1,  // Đã duyệt

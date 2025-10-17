@@ -114,26 +114,26 @@ namespace EduMatch.BusinessLogicLayer.Services
 				if(_currentUserService.Email is null)
 					throw new ArgumentException("Current user email not found.");
 
-				//  UploadToCloudRequest
-
-				using var stream = request.Certificate.OpenReadStream();
-				var uploadRequest = new UploadToCloudRequest(
-					Content: stream,
-					FileName: request.Certificate.FileName,
-					ContentType: request.Certificate.ContentType ?? "application/octet-stream",
-					LengthBytes: request.Certificate.Length,
-					OwnerEmail: _currentUserService.Email,
-					MediaType: MediaType.Image
-				);
-
-
-				//  CloudinaryMediaService.UploadAsync()
-
-				var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
-
-				if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
-					throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
-
+				string? certUrl = null;
+				string? certPublicId = null;
+				var hasFile = request.Certificate != null && request.Certificate.Length > 0 && !string.IsNullOrWhiteSpace(request.Certificate.FileName);
+				if (hasFile)
+				{
+					using var stream = request.Certificate!.OpenReadStream();
+					var uploadRequest = new UploadToCloudRequest(
+						Content: stream,
+						FileName: request.Certificate!.FileName,
+						ContentType: request.Certificate!.ContentType ?? "application/octet-stream",
+						LengthBytes: request.Certificate!.Length,
+						OwnerEmail: _currentUserService.Email!,
+						MediaType: MediaType.Image
+					);
+					var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
+					if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
+						throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
+					certUrl = uploadResult.SecureUrl;
+					certPublicId = uploadResult.PublicId;
+				}
 
 				// MAP  -> ENTITY
 
@@ -143,8 +143,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 					CertificateTypeId = request.CertificateTypeId,
 					IssueDate = request.IssueDate,
 					ExpiryDate = request.ExpiryDate,
-					CertificateUrl = uploadResult.SecureUrl,
-					CertificatePublicId = uploadResult.PublicId,
+					CertificateUrl = certUrl,
+					CertificatePublicId = certPublicId,
 					CreatedAt = DateTime.UtcNow,
 					Verified = VerifyStatus.Pending,
 					RejectReason = null
@@ -182,10 +182,51 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 
 				var oldPublicId = existingEntity.CertificatePublicId;
-				var entity = _mapper.Map<TutorCertificate>(request);
-				await _repository.UpdateAsync(entity);
+				var hasNewFile = request.Certificate != null && request.Certificate.Length > 0 && !string.IsNullOrWhiteSpace(request.Certificate.FileName);
+				if (hasNewFile)
+				{
+					using var stream = request.Certificate!.OpenReadStream();
+					var uploadRequest = new UploadToCloudRequest(
+						Content: stream,
+						FileName: request.Certificate!.FileName,
+						ContentType: request.Certificate!.ContentType ?? "application/octet-stream",
+						LengthBytes: request.Certificate!.Length,
+						OwnerEmail: _currentUserService.Email!,
+						MediaType: MediaType.Image
+					);
+					var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
+					if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
+						throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
+					existingEntity.CertificateUrl = uploadResult.SecureUrl;
+					existingEntity.CertificatePublicId = uploadResult.PublicId;
+				}
 
-				if (!string.IsNullOrWhiteSpace(oldPublicId))
+				existingEntity.TutorId = request.TutorId;
+				existingEntity.CertificateTypeId = request.CertificateTypeId;
+
+
+
+				// Optional -> chỉ set khi có giá trị
+				if (request.Verified.HasValue) existingEntity.Verified = request.Verified.Value;
+				if (request.IssueDate.HasValue) existingEntity.IssueDate = request.IssueDate.Value;
+				if (request.ExpiryDate.HasValue) existingEntity.ExpiryDate = request.ExpiryDate.Value;
+
+				// RejectReason: yêu cầu nếu Verified = Rejected, ngược lại clear
+				if (request.Verified == VerifyStatus.Rejected)
+				{
+					if (string.IsNullOrWhiteSpace(request.RejectReason))
+						throw new ArgumentException("Reject reason is required when verification status is Rejected.");
+					existingEntity.RejectReason = request.RejectReason!.Trim();
+				}
+				else
+				{
+					// Nếu không bị từ chối thì xóa lý do
+					existingEntity.RejectReason = null;
+				}
+
+				await _repository.UpdateAsync(existingEntity);
+
+				if (hasNewFile && !string.IsNullOrWhiteSpace(oldPublicId))
 				{
 					_ = _cloudMedia.DeleteByPublicIdAsync(oldPublicId, MediaType.Image)
 						.ContinueWith(t =>
@@ -201,7 +242,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 						});
 				}
 
-				return _mapper.Map<TutorCertificateDto>(entity);
+				return _mapper.Map<TutorCertificateDto>(existingEntity);
 			}
 			catch (Exception ex)
 			{

@@ -17,5 +17,11 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task<LoginResponseDto> RefreshTokenAsync(string token);
         Task<bool> RevokeTokenAsync(string token);
         Task<object?> LoginWithGoogleAsync(GoogleLoginRequest request);
+        
+         Task<IEnumerable<ManageUserDto>> GetUserByRoleAsync(int roleId);
+        Task<bool> DeactivateUserAsync(string email);
+        Task<bool> ActivateUserAsync(string email);
+        Task<User> CreateAdminAccAsync(string email);
+
     }
 }

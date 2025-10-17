@@ -13,7 +13,15 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 		{
 			// CertificateType mappings
 			CreateMap<CertificateType, CertificateTypeDto>()
-				.ForMember(dest => dest.Subjects, opt => opt.MapFrom(src => src.CertificateTypeSubjects.Select(cts => cts.Subject)));
+				.ForMember(d => d.Subjects, o => o.MapFrom(s =>
+					s.CertificateTypeSubjects.Select(x => new SubjectDto
+					{
+						Id = x.Subject.Id,
+						SubjectName = x.Subject.SubjectName,
+						CertificateTypes = new List<CertificateTypeDto>()
+					})
+				));	
+
 
 			CreateMap<CertificateTypeCreateRequest, CertificateType>()
 				.ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Now));
@@ -34,7 +42,9 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 			CreateMap<LevelUpdateRequest, Level>();
 
 			// Subject mappings
-			CreateMap<Subject, SubjectDto>().ReverseMap();
+			CreateMap<Subject, SubjectDto>()
+				.ForMember(dest => dest.CertificateTypes, opt => opt.MapFrom(src => src.CertificateTypeSubjects.Select(cts => cts.CertificateType)));
+
 			CreateMap<SubjectCreateRequest, Subject>();
 			CreateMap<SubjectUpdateRequest, Subject>();
 
@@ -57,15 +67,70 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 
 
 			// TutorProfile mappings
+			// ========== PROFILE ==========
 			CreateMap<TutorProfile, TutorProfileDto>()
-				.ForMember(d => d.TutorAvailabilitiesId,
-					opt => opt.MapFrom(s => s.TutorAvailabilities.Select(x => x.Id)))
-				.ForMember(d => d.TutorCertificatesId,
-					opt => opt.MapFrom(s => s.TutorCertificates.Select(x => x.Id)))
-				.ForMember(d => d.TutorEducationsId,
-					opt => opt.MapFrom(s => s.TutorEducations.Select(x => x.Id)))
-				.ForMember(d => d.TutorSubjectId,
-					opt => opt.MapFrom(s => s.TutorSubjects.Select(x => x.Id)));
+				.ForMember(d => d.TutorAvailabilities,
+					opt => opt.MapFrom(s => s.TutorAvailabilities != null
+						? s.TutorAvailabilities.Select(a => new TutorAvailabilityDto
+						{
+							Id = a.Id,
+							Slot = a.Slot != null
+								? new TimeSlotDto { Id = a.Slot.Id, StartTime = a.Slot.StartTime, EndTime = a.Slot.EndTime }
+								: null
+						})
+						: new List<TutorAvailabilityDto>()))
+
+				.ForMember(d => d.TutorCertificates,
+					opt => opt.MapFrom(s => s.TutorCertificates != null
+						? s.TutorCertificates.Select(c => new TutorCertificateDto
+						{
+							Id = c.Id,
+							CertificateUrl = c.CertificateUrl,
+							CertificateType = c.CertificateType != null
+								? new CertificateTypeDto { Id = c.CertificateType.Id, Name = c.CertificateType.Name }
+								: null
+						})
+						: new List<TutorCertificateDto>()))
+				.ForMember(d => d.TutorEducations,
+					opt => opt.MapFrom(s => s.TutorEducations != null
+						? s.TutorEducations.Select(e => new TutorEducationDto
+						{
+							Id = e.Id,
+							CertificateUrl = e.CertificateUrl,
+							Institution = e.Institution != null
+								? new EducationInstitutionDto { Id = e.Institution.Id, Name = e.Institution.Name }
+								: null
+						})
+						: new List<TutorEducationDto>()))
+				.ForMember(d => d.TutorSubjects,
+					opt => opt.MapFrom(s => s.TutorSubjects != null
+						? s.TutorSubjects.Select(ts => new TutorSubjectDto
+						{
+							Id = ts.Id,
+							Subject = ts.Subject != null
+								? new SubjectDto { Id = ts.Subject.Id, SubjectName = ts.Subject.SubjectName }
+								: null,
+							Level = ts.Level != null
+								? new LevelDto { Id = ts.Level.Id, Name = ts.Level.Name }
+								: null
+						})
+						: new List<TutorSubjectDto>()))
+
+				// mapping from UserProfile
+				.ForMember(d => d.Gender, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.Gender))
+				.ForMember(d => d.Province, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.City))
+				.ForMember(d => d.SubDistrict, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.SubDistrict))
+				.ForMember(d => d.Dob, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.Dob))
+				.ForMember(d => d.AvatarUrl, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.AvatarUrl))
+				.ForMember(d => d.AddressLine, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.AddressLine))
+				.ForMember(d => d.Latitude, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.Latitude))
+				.ForMember(d => d.Longitude, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.Longitude))
+				// mapping to User 
+				.ForMember(d => d.UserName, opt => opt.MapFrom(src => src.UserEmailNavigation.UserName))
+				.ForMember(d => d.Phone, opt => opt.MapFrom(src => src.UserEmailNavigation.Phone));
+
+
+
 
 
 
@@ -96,10 +161,10 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 			CreateMap<UserProfile, UserProfileDto>().ReverseMap();
 
 			// Province mappings
-			CreateMap<Province, ProvinceDto>().ReverseMap();
+			CreateMap<Province, ProvinceDto>();
 
 			// SubDistrict mappings
-			CreateMap<SubDistrict, SubDistrictDto>().ReverseMap();
+			CreateMap<SubDistrict, SubDistrictDto>();
 		}
 	}
 }

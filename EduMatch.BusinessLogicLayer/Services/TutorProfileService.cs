@@ -77,41 +77,57 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 
 				//  CHECK IF TUTOR PROFILE EXISTS
-				var existing = await _repository.GetByEmailFullAsync(request.UserEmail);
+				if (string.IsNullOrWhiteSpace(_currentUserService.Email))
+					throw new ArgumentException("Current user email not found.");
+				var userEmail = _currentUserService.Email!;
+				var existing = await _repository.GetByEmailFullAsync(userEmail);
 				if (existing is not null)
-					throw new ArgumentException($"Tutor profile for email {request.UserEmail} already exists.");
+					throw new ArgumentException($"Tutor profile for email {userEmail} already exists.");
 
 
 				//  UploadToCloudRequest
 
-				using var stream = request.VideoIntro.OpenReadStream();
-				var uploadRequest = new UploadToCloudRequest(
-					Content: stream,
-					FileName: request.VideoIntro.FileName,
-					ContentType: request.VideoIntro.ContentType ?? "application/octet-stream",
-					LengthBytes: request.VideoIntro.Length,
-					OwnerEmail: request.UserEmail,
-					MediaType: MediaType.Video
-				);
-
-
-				//  CloudinaryMediaService.UploadAsync()
-
-				var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
-
-				if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
-					throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
-
+				string? videoUrl = null;
+				string? videoPublicId = null;
+				var hasFile = request.VideoIntro != null && request.VideoIntro.Length > 0 && !string.IsNullOrWhiteSpace(request.VideoIntro.FileName);
+				if (hasFile)
+				{
+					using var stream = request.VideoIntro!.OpenReadStream();
+					var uploadRequest = new UploadToCloudRequest(
+						Content: stream,
+						FileName: request.VideoIntro!.FileName,
+						ContentType: request.VideoIntro!.ContentType ?? "application/octet-stream",
+						LengthBytes: request.VideoIntro!.Length,
+						OwnerEmail: userEmail,
+						MediaType: MediaType.Video
+					);
+					var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
+					if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
+						throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
+					videoUrl = uploadResult.SecureUrl;
+					videoPublicId = uploadResult.PublicId;
+				}
+				else if (!string.IsNullOrWhiteSpace(request.VideoIntroUrl))
+				{
+					var normalized = NormalizeYouTubeEmbedUrlOrNull(request.VideoIntroUrl!);
+					if (normalized is null)
+						throw new ArgumentException("VideoIntroUrl must be a valid YouTube link.");
+					videoUrl = normalized;
+				}
+				else
+				{
+					throw new ArgumentException("Either VideoIntro file or VideoIntroUrl is required.");
+				}
 
 				// MAP  -> ENTITY
 
 				var entity = new TutorProfile
 				{
-					UserEmail = request.UserEmail,
+					UserEmail = userEmail,
 					Bio = request.Bio,
 					TeachingExp = request.TeachingExp,
-					VideoIntroUrl = uploadResult.SecureUrl,
-					VideoIntroPublicId = uploadResult.PublicId,
+					VideoIntroUrl = videoUrl,
+					VideoIntroPublicId = videoPublicId,
 					TeachingModes = request.TeachingModes,
 					Status = TutorStatus.Pending,
 					CreatedAt = DateTime.UtcNow,
@@ -140,22 +156,50 @@ namespace EduMatch.BusinessLogicLayer.Services
 				if (existing is null)
 					throw new ArgumentException($"Tutor profile with ID {request.Id} not found.");
 
-				// Giữ lại publicId cũ để xoá sau khi update
 				var oldPublicId = existing.VideoIntroPublicId;
 
 				// Cập nhật fields
-				existing.UserEmail = request.UserEmail;
+				existing.UserEmail = existing.UserEmail;
 				existing.Bio = request.Bio;
 				existing.TeachingExp = request.TeachingExp;
-				existing.VideoIntroUrl = request.VideoIntroUrl;
-				existing.VideoIntroPublicId = request.VideoIntroPublicId;
-				existing.TeachingModes = request.TeachingModes;
-				existing.Status = request.Status;
+				var hasNewFile = request.VideoIntro != null && request.VideoIntro.Length > 0 && !string.IsNullOrWhiteSpace(request.VideoIntro.FileName);
+				if (hasNewFile)
+				{
+					using var stream = request.VideoIntro!.OpenReadStream();
+					var uploadRequest = new UploadToCloudRequest(
+						Content: stream,
+						FileName: request.VideoIntro!.FileName,
+						ContentType: request.VideoIntro!.ContentType ?? "application/octet-stream",
+						LengthBytes: request.VideoIntro!.Length,
+						OwnerEmail: _currentUserService.Email!,
+						MediaType: MediaType.Video
+					);
+					var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
+					if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
+						throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
+					existing.VideoIntroUrl = uploadResult.SecureUrl;
+					existing.VideoIntroPublicId = uploadResult.PublicId;
+				}
+				else if (!string.IsNullOrWhiteSpace(request.VideoIntroUrl))
+				{
+					var normalized = NormalizeYouTubeEmbedUrlOrNull(request.VideoIntroUrl!);
+					if (normalized is null)
+						throw new ArgumentException("VideoIntroUrl must be a valid YouTube link.");
+					existing.VideoIntroUrl = normalized;
+					// keep old public id when only URL changes
+				}
+
+				if (request.TeachingModes.HasValue)
+					existing.TeachingModes = request.TeachingModes.Value;
+
+				if (request.Status.HasValue)
+					existing.Status = request.Status.Value;
+
 				existing.UpdatedAt = DateTime.UtcNow;
 
 				await _repository.UpdateAsync(existing);
 
-				if (!string.IsNullOrWhiteSpace(oldPublicId))
+				if (hasNewFile && !string.IsNullOrWhiteSpace(oldPublicId))
 				{
 					_ = _cloudMedia.DeleteByPublicIdAsync(oldPublicId, MediaType.Video)
 						.ContinueWith(t =>
@@ -189,6 +233,32 @@ namespace EduMatch.BusinessLogicLayer.Services
 		}
 
 		
+
+		private static string? NormalizeYouTubeEmbedUrlOrNull(string rawUrl)
+		{
+			try
+			{
+				var uri = new Uri(rawUrl);
+				string? videoId = null;
+				if (uri.Host.Contains("youtu.be", StringComparison.OrdinalIgnoreCase))
+				{
+					videoId = uri.AbsolutePath.Trim('/');
+				}
+				else if (uri.Host.Contains("youtube.com", StringComparison.OrdinalIgnoreCase))
+				{
+					var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+					videoId = query["v"];
+					if (string.IsNullOrWhiteSpace(videoId) && uri.AbsolutePath.StartsWith("/embed/", StringComparison.OrdinalIgnoreCase))
+						videoId = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+				}
+				if (string.IsNullOrWhiteSpace(videoId)) return null;
+				return $"https://www.youtube.com/embed/{videoId}";
+			}
+			catch
+			{
+				return null;
+			}
+		}
 
 		private static void ValidateRequest(object request)
 		{

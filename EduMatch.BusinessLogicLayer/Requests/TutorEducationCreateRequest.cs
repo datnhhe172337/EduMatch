@@ -6,7 +6,7 @@ namespace EduMatch.BusinessLogicLayer.Requests
 {
 	public class TutorEducationCreateRequest
 	{
-		[Required(ErrorMessage = "Tutor ID is required")]
+		
 		[Range(1, int.MaxValue, ErrorMessage = "Tutor ID must be greater than 0")]
 		public int TutorId { get; set; }
 
@@ -16,8 +16,12 @@ namespace EduMatch.BusinessLogicLayer.Requests
 
 		public DateTime? IssueDate { get; set; }
 
-		[Required(ErrorMessage = "Certificate file is required")]
-		public IFormFile CertificateEducation { get; set; }
+		// Allow either file upload or remote URL. Only one is required.
+		public IFormFile? CertificateEducation { get; set; }
+
+		//[Url(ErrorMessage = "Certificate URL must be a valid URL.")]
+		//public string? CertificateEducationUrl { get; set; }
+
 
 	}
 }

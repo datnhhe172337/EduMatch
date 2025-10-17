@@ -1,5 +1,7 @@
 ﻿using EduMatch.BusinessLogicLayer.Settings;
 using Microsoft.AspNetCore.Http;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
@@ -16,9 +18,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 		public string UserId => _httpContextAccessor.HttpContext?.User?.FindFirst(JwtClaimTypes.UserName)?.Value ?? string.Empty;
 
 		// Lấy Email từ Claims
-		public string Email => _httpContextAccessor.HttpContext?.User?.FindFirst(JwtClaimTypes.Email)?.Value ?? string.Empty;
-
-
+		public string Email =>
+				_httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email)
+				?? _httpContextAccessor.HttpContext?.User?.FindFirstValue("email")
+				?? _httpContextAccessor.HttpContext?.User?.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
 	}
 }

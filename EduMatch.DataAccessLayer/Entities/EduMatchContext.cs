@@ -53,10 +53,6 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<CertificateType>(entity =>
@@ -275,29 +271,29 @@ public partial class EduMatchContext : DbContext
 
         modelBuilder.Entity<TutorAvailability>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__tutor_av__3213E83F6FEFE9BB");
+            entity.HasKey(e => e.Id).HasName("PK__tutor_av__3213E83FAAA63124");
 
-            entity.ToTable("tutor_availability");
+            entity.ToTable("tutor_availabilities");
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.DayOfWeek).HasColumnName("dayOfWeek");
-            entity.Property(e => e.EffectiveFrom).HasColumnName("effectiveFrom");
-            entity.Property(e => e.EffectiveTo).HasColumnName("effectiveTo");
-            entity.Property(e => e.IsRecurring)
-                .HasDefaultValue(true)
-                .HasColumnName("isRecurring");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.EndDate).HasColumnName("endDate");
             entity.Property(e => e.SlotId).HasColumnName("slotId");
+            entity.Property(e => e.StartDate).HasColumnName("startDate");
+            entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.TutorId).HasColumnName("tutorId");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updatedAt");
 
             entity.HasOne(d => d.Slot).WithMany(p => p.TutorAvailabilities)
                 .HasForeignKey(d => d.SlotId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__tutor_ava__slotI__6C190EBB");
+                .HasConstraintName("FK_tutor_availabilities_time_slots");
 
             entity.HasOne(d => d.Tutor).WithMany(p => p.TutorAvailabilities)
                 .HasForeignKey(d => d.TutorId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__tutor_ava__tutor__6B24EA82");
+                .HasConstraintName("FK_tutor_availabilities_tutor_profiles");
         });
 
         modelBuilder.Entity<TutorCertificate>(entity =>
