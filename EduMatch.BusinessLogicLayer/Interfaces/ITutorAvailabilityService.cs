@@ -10,18 +10,12 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 	public interface ITutorAvailabilityService
 	{
 		Task<TutorAvailabilityDto?> GetByIdFullAsync(int id);
-		Task<TutorAvailabilityDto?> GetByTutorIdFullAsync(int tutorId);
 		Task<IReadOnlyList<TutorAvailabilityDto>> GetByTutorIdAsync(int tutorId);
-		//Task<IReadOnlyList<TutorAvailabilityDto>> GetByDayOfWeekAsync(DayOfWeek dayOfWeek);
-		//Task<IReadOnlyList<TutorAvailabilityDto>> GetByTimeSlotAsync(int slotId);
-		//Task<IReadOnlyList<TutorAvailabilityDto>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate);
 		Task<IReadOnlyList<TutorAvailabilityDto>> GetAllFullAsync();
 		Task<TutorAvailabilityDto> CreateAsync(TutorAvailabilityCreateRequest request);
 		Task<TutorAvailabilityDto> UpdateAsync(TutorAvailabilityUpdateRequest request);
 		Task<List<TutorAvailabilityDto>> CreateBulkAsync(List<TutorAvailabilityCreateRequest> requests);
-		Task<List<TutorAvailabilityDto>> CreateMixedAvailabilitiesAsync(TutorAvailabilityMixedRequest request);
 
 		Task DeleteAsync(int id);
-		Task DeleteByTutorIdAsync(int tutorId);
 	}
 }

@@ -54,9 +54,21 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 			CreateMap<TimeSlotUpdateRequest, TimeSlot>();
 
 			// TutorAvailability mappings
-			CreateMap<TutorAvailability, TutorAvailabilityDto>().ReverseMap();
-			CreateMap<TutorAvailabilityCreateRequest, TutorAvailability>();
-			CreateMap<TutorAvailabilityUpdateRequest, TutorAvailability>();
+			CreateMap<TutorAvailability, TutorAvailabilityDto>()
+				.ForMember(dest => dest.Slot, opt => opt.MapFrom(src => src.Slot))
+				.ForMember(dest => dest.Tutor, opt => opt.MapFrom(src => src.Tutor))
+				.ReverseMap();
+			CreateMap<TutorAvailabilityCreateRequest, TutorAvailability>()
+				.ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Now))
+				.ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+				.ForMember(dest => dest.Status, opt => opt.Ignore())
+				.ForMember(dest => dest.Slot, opt => opt.Ignore())
+				.ForMember(dest => dest.Tutor, opt => opt.Ignore());
+			CreateMap<TutorAvailabilityUpdateRequest, TutorAvailability>()
+				.ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => DateTime.Now))
+				.ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+				.ForMember(dest => dest.Slot, opt => opt.Ignore())
+				.ForMember(dest => dest.Tutor, opt => opt.Ignore());
 
 			// TutorCertificate mappings
 			CreateMap<TutorCertificate, TutorCertificateDto>().ReverseMap();
@@ -74,6 +86,15 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 						? s.TutorAvailabilities.Select(a => new TutorAvailabilityDto
 						{
 							Id = a.Id,
+							TutorId = a.TutorId,
+							SlotId = a.SlotId,
+							DayOfWeek = a.DayOfWeek,
+							IsRecurring = a.IsRecurring,
+							EffectiveFrom = a.EffectiveFrom,
+							EffectiveTo = a.EffectiveTo,
+							Status = a.Status,
+							CreatedAt = a.CreatedAt,
+							UpdatedAt = a.UpdatedAt,
 							Slot = a.Slot != null
 								? new TimeSlotDto { Id = a.Slot.Id, StartTime = a.Slot.StartTime, EndTime = a.Slot.EndTime }
 								: null

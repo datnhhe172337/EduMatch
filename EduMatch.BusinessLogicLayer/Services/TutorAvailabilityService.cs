@@ -39,11 +39,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 			return entity != null ? _mapper.Map<TutorAvailabilityDto>(entity) : null;
 		}
 
-		public async Task<TutorAvailabilityDto?> GetByTutorIdFullAsync(int tutorId)
-		{
-			var entity = await _repository.GetByTutorIdFullAsync(tutorId);
-			return entity != null ? _mapper.Map<TutorAvailabilityDto>(entity) : null;
-		}
 
 		public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByTutorIdAsync(int tutorId)
 		{
@@ -51,23 +46,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 			return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
 		}
 
-		//public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByDayOfWeekAsync(DayOfWeek dayOfWeek)
-		//{
-		//	var entities = await _repository.GetByDayOfWeekAsync(dayOfWeek);
-		//	return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
-		//}
-
-		//public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByTimeSlotAsync(int slotId)
-		//{
-		//	var entities = await _repository.GetByTimeSlotAsync(slotId);
-		//	return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
-		//}
-
-		//public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate)
-		//{
-		//	var entities = await _repository.GetByDateRangeAsync(fromDate, toDate);
-		//	return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
-		//}
+		
 
 		public async Task<IReadOnlyList<TutorAvailabilityDto>> GetAllFullAsync()
 		{
@@ -154,101 +133,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 		}
 
 
-		public async Task<List<TutorAvailabilityDto>> CreateMixedAvailabilitiesAsync(TutorAvailabilityMixedRequest request)
-		{
-			try
-			{
-				var requests = new List<TutorAvailabilityCreateRequest>();
-				var seen = new HashSet<string>(); // tránh trùng (TutorId + Date + SlotId)
-
-				// XỬ LÝ KHÔNG LẶP (Non-recurring)
-				if (request.NonRecurringDaySlots != null)
-				{
-					foreach (var daySlot in request.NonRecurringDaySlots)
-					{
-						var date = daySlot.Date.Date;
-
-						foreach (var slotId in daySlot.SlotIds)
-						{
-							var key = $"{request.TutorId}_{date:yyyyMMdd}_{slotId}";
-							if (seen.Add(key))
-							{
-								requests.Add(new TutorAvailabilityCreateRequest
-								{
-									TutorId = request.TutorId,
-									DayOfWeek = date.DayOfWeek,
-									SlotId = slotId,
-									IsRecurring = false,
-									EffectiveFrom = date,
-									EffectiveTo = date.AddDays(1).AddTicks(-1)
-								});
-							}
-						}
-					}
-				}
-
-				//  XỬ LÝ LẶP HÀNG TUẦN (Recurring)
-				if (request.RecurringSchedule != null && request.RecurringSchedule.Count > 0)
-				{
-					foreach (var recurring in request.RecurringSchedule)
-					{
-						var start = recurring.StartDate.Date;
-						var end = (recurring.EndDate ?? start.AddMonths(1)).Date;
-
-						foreach (var daySlot in recurring.DaySlots)
-						{
-							if (daySlot.SlotIds == null || daySlot.SlotIds.Count == 0)
-								continue;
-
-							foreach (var slotId in daySlot.SlotIds.Distinct())
-							{
-								var key = $"{request.TutorId}_{daySlot.DayOfWeek}_{slotId}";
-								if (seen.Add(key))
-								{
-									requests.Add(new TutorAvailabilityCreateRequest
-									{
-										TutorId = request.TutorId,
-										DayOfWeek = daySlot.DayOfWeek,   
-										SlotId = slotId,                
-										IsRecurring = true,            
-										EffectiveFrom = start,          
-										EffectiveTo = end              
-									});
-								}
-							}
-						}
-					}
-				}
-
-				if (requests.Count == 0) return new List<TutorAvailabilityDto>();
-
-				var entities = _mapper.Map<List<TutorAvailability>>(requests);
-
-				await _repository.AddRangeAsync(entities);
-
-
-
-				return _mapper.Map<List<TutorAvailabilityDto>>(entities);
-			}
-			catch (Exception ex)
-			{
-				throw new InvalidOperationException($"Failed to create mixed tutor availabilities: {ex.Message}", ex);
-			}
-		}
-
-
-
-
-
 
 		public async Task DeleteAsync(int id)
 		{
 			await _repository.RemoveByIdAsync(id);
 		}
 
-		public async Task DeleteByTutorIdAsync(int tutorId)
-		{
-			await _repository.RemoveByTutorIdAsync(tutorId);
-		}
+		
 	}
 }

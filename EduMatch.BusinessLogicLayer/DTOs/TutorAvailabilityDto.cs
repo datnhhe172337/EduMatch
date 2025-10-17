@@ -7,11 +7,13 @@ namespace EduMatch.BusinessLogicLayer.DTOs
 	{
 		public int Id { get; set; }
 		public int TutorId { get; set; }
-		public DayOfWeek DayOfWeek { get; set; }
 		public int SlotId { get; set; }
-		public bool IsRecurring { get; set; }
-		public DateTime EffectiveFrom { get; set; }
-		public DateTime? EffectiveTo { get; set; }
+		public TutorAvailabilityStatus? Status { get; set; }
+		public DateTime StartDate { get; set; }
+		public DateTime? EndDate { get; set; }
+		public DateTime CreatedAt { get; set; }
+		public DateTime? UpdatedAt { get; set; }
 		public TimeSlotDto? Slot { get; set; }
+		public TutorProfileDto? Tutor { get; set; }
 	}
 }

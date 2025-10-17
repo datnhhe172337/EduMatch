@@ -11,6 +11,7 @@ namespace EduMatch.BusinessLogicLayer.Requests
 {
 	public class TutorProfileCreateRequest
 	{
+
 		[MaxLength(100, ErrorMessage = "User name cannot exceed 100 characters.")]
 		public string? UserName { get; set; }
 
@@ -29,8 +30,10 @@ namespace EduMatch.BusinessLogicLayer.Requests
 		[Range(1, int.MaxValue, ErrorMessage = "ProvinceId must be a positive number.")]
 		public int? ProvinceId { get; set; }
 
+
 		[Range(1, int.MaxValue, ErrorMessage = "SubDistrictId must be a positive number.")]
 		public int? SubDistrictId { get; set; }
+
 
 		[MaxLength(2000, ErrorMessage = "Teaching experience cannot exceed 2000 characters.")]
 		public string? TeachingExp { get; set; }

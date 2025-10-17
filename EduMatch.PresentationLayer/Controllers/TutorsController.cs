@@ -79,7 +79,7 @@ namespace EduMatch.PresentationLayer.Controllers
 			request.Educations ??= new List<TutorEducationCreateRequest>();
 			request.Certificates ??= new List<TutorCertificateCreateRequest>();
 			request.Subjects ??= new List<TutorSubjectCreateRequest>();
-			request.Availabilities ??= new TutorAvailabilityMixedRequest();
+			request.Availabilities ??= new List<TutorAvailabilityCreateRequest>();
 
 			await using var tx = await _eduMatch.Database.BeginTransactionAsync();
 			try
@@ -106,10 +106,10 @@ namespace EduMatch.PresentationLayer.Controllers
 					await _tutorSubjectService.CreateBulkAsync(request.Subjects);
 				}
 
-				if (request.Availabilities is not null)
+				if (request.Availabilities.Any())
 				{
-					request.Availabilities.TutorId = tutorId;
-					await _tutorAvailabilityService.CreateMixedAvailabilitiesAsync(request.Availabilities);
+					foreach (var s in request.Availabilities) s.TutorId = tutorId;
+					await _tutorAvailabilityService.CreateBulkAsync(request.Availabilities);
 				}
 
 				await _emailService.SendBecomeTutorWelcomeAsync(userEmail);

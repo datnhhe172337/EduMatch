@@ -17,8 +17,7 @@ namespace EduMatch.DataAccessLayer.Interfaces
 		Task UpdateAsync(TutorProfile entity, CancellationToken ct = default);
 		Task RemoveByIdAsync(int id, CancellationToken ct = default);
 
-		//Task UpdateUserProfileAsync(UserProfile entity);
-		//Task UpdateUserAsync(User entity);
+
 
 	}
 }

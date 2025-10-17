@@ -26,6 +26,6 @@ namespace EduMatch.BusinessLogicLayer.Requests
 		// ----- AVAILABILITY -----
 
 		[Required(ErrorMessage = "Availability information is required.")]
-		public TutorAvailabilityMixedRequest Availabilities { get; set; } = new();
+		public List<TutorAvailabilityCreateRequest> Availabilities { get; set; } = new();
 	}
 }

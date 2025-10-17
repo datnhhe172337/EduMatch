@@ -279,8 +279,8 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnName("createdAt");
-            entity.Property(e => e.EndDate).HasColumnName("endDate");
             entity.Property(e => e.SlotId).HasColumnName("slotId");
+             entity.Property(e => e.EndDate).HasColumnName("endDate");
             entity.Property(e => e.StartDate).HasColumnName("startDate");
             entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.TutorId).HasColumnName("tutorId");
