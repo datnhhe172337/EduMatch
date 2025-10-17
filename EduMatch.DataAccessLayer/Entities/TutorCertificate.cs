@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EduMatch.DataAccessLayer.Enum;
+using System;
 using System.Collections.Generic;
 
 namespace EduMatch.DataAccessLayer.Entities;
@@ -21,7 +22,7 @@ public partial class TutorCertificate
 
     public DateTime? CreatedAt { get; set; }
 
-    public int Verified { get; set; }
+    public VerifyStatus? Verified { get; set; }
 
     public string? RejectReason { get; set; }
 
