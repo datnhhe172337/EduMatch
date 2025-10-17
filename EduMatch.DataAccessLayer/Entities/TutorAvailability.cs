@@ -9,15 +9,17 @@ public partial class TutorAvailability
 
     public int TutorId { get; set; }
 
-    public DayOfWeek DayOfWeek { get; set; }
-
     public int SlotId { get; set; }
 
-    public bool IsRecurring { get; set; }
+    public DateTime StartDate { get; set; }
 
-    public DateTime EffectiveFrom { get; set; }
+    public DateTime? EndDate { get; set; }
 
-    public DateTime? EffectiveTo { get; set; }
+    public int Status { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
 
     public virtual TimeSlot Slot { get; set; } = null!;
 
