@@ -1,4 +1,5 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
+using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.DataAccessLayer.Entities;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task<UserProfile?> GetByEmailAsync(string email);
         Task<bool> UpdateUserProfileAsync(string email, UpdateUserProfileDto dto);
 
-        Task<UserProfileDto> UpdateAsync(UpdateUserProfileDto userProfile);
+        Task<UserProfileDto> UpdateAsync(UserProfileUpdateRequest request);
 		Task<UserProfileDto?> GetByEmailDatAsync(string email);
 
 	}

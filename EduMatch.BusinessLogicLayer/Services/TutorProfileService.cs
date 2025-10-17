@@ -20,18 +20,24 @@ namespace EduMatch.BusinessLogicLayer.Services
 		private readonly ICloudMediaService _cloudMedia;
 		private readonly IMapper _mapper;
 		private readonly CurrentUserService _currentUserService;
+		private readonly IUserService _userService;
+		private readonly IUserProfileService _userProfileService;
 
 		public TutorProfileService(
 			 ITutorProfileRepository repository,
 			 IMapper mapper,
 			 ICloudMediaService cloudMedia,
-			 CurrentUserService currentUserService
+			 CurrentUserService currentUserService,
+			 IUserService userService,
+			 IUserProfileService userProfileService
 			 ) 
 		{
 			_repository = repository;
 			_mapper = mapper;
 			_cloudMedia = cloudMedia; 
 			_currentUserService = currentUserService ;
+			_userService = userService;
+			_userProfileService = userProfileService;
 		}
 
 
@@ -89,8 +95,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 				string? videoUrl = null;
 				string? videoPublicId = null;
-				var hasFile = request.VideoIntro != null && request.VideoIntro.Length > 0 && !string.IsNullOrWhiteSpace(request.VideoIntro.FileName);
-				if (hasFile)
+				var hasFileVideo = request.VideoIntro != null && request.VideoIntro.Length > 0 && !string.IsNullOrWhiteSpace(request.VideoIntro.FileName);
+				if (hasFileVideo)
 				{
 					using var stream = request.VideoIntro!.OpenReadStream();
 					var uploadRequest = new UploadToCloudRequest(
@@ -118,6 +124,51 @@ namespace EduMatch.BusinessLogicLayer.Services
 				{
 					throw new ArgumentException("Either VideoIntro file or VideoIntroUrl is required.");
 				}
+				string? AvataUrl = null;
+				string? AvataUrlcId = null;
+				var hasFileAvata = request.AvatarFile != null && request.AvatarFile.Length > 0 && !string.IsNullOrWhiteSpace(request.AvatarFile.FileName);
+				if (hasFileAvata)
+				{
+					using var stream = request.VideoIntro!.OpenReadStream();
+					var uploadAvataRequest = new UploadToCloudRequest(
+						Content: stream,
+						FileName: request.AvatarFile!.FileName,
+						ContentType: request.AvatarFile!.ContentType ?? "application/octet-stream",
+						LengthBytes: request.AvatarFile!.Length,
+						OwnerEmail: userEmail,
+						MediaType: MediaType.Image
+					);
+					var uploadAvataResult = await _cloudMedia.UploadAsync(uploadAvataRequest);
+					if (!uploadAvataResult.Ok || string.IsNullOrEmpty(uploadAvataResult.SecureUrl))
+						throw new InvalidOperationException($"Failed to upload file: {uploadAvataResult.ErrorMessage}");
+					AvataUrl = uploadAvataResult.SecureUrl;
+					AvataUrlcId = uploadAvataResult.PublicId;
+				}
+				else
+				{
+					throw new ArgumentException("Either AvataUrl file  is required.");
+				}
+				
+				var userProfileUpdate = new UserProfileUpdateRequest
+				{
+					UserEmail = _currentUserService.Email,
+					Dob = request.DateOfBirth,
+					CityId = request.ProvinceId,
+					SubDistrictId = request.SubDistrictId,
+					AvatarUrl = AvataUrl,
+					AvatarUrlPublicId = AvataUrlcId
+				};
+				await _userProfileService.UpdateAsync(userProfileUpdate);
+
+				var userUpdate = new UserUpdateRequest
+				{
+					Email = _currentUserService.Email,
+					UserName = request.UserName,
+					Phone = request.Phone
+				};
+
+
+				await _userService.UpdateUserAsync(userUpdate);
 
 				// MAP  -> ENTITY
 
