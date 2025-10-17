@@ -13,7 +13,14 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 		{
 			// CertificateType mappings
 			CreateMap<CertificateType, CertificateTypeDto>()
-				.ForMember(dest => dest.Subjects, opt => opt.Ignore());
+				.ForMember(d => d.Subjects, o => o.MapFrom(s =>
+					s.CertificateTypeSubjects.Select(x => new SubjectDto
+					{
+						Id = x.Subject.Id,
+						SubjectName = x.Subject.SubjectName,
+						CertificateTypes = new List<CertificateTypeDto>()
+					})
+				));	
 
 
 			CreateMap<CertificateTypeCreateRequest, CertificateType>()
@@ -68,7 +75,7 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 						{
 							Id = a.Id,
 							Slot = a.Slot != null
-								? new TimeSlotDto { Id = a.Slot.Id, StartTime = a.Slot.StartTime,EndTime = a.Slot.EndTime }
+								? new TimeSlotDto { Id = a.Slot.Id, StartTime = a.Slot.StartTime, EndTime = a.Slot.EndTime }
 								: null
 						})
 						: new List<TutorAvailabilityDto>()))
@@ -107,7 +114,22 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 								? new LevelDto { Id = ts.Level.Id, Name = ts.Level.Name }
 								: null
 						})
-						: new List<TutorSubjectDto>()));
+						: new List<TutorSubjectDto>()))
+
+				// mapping from UserProfile
+				.ForMember(d => d.Gender, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.Gender))
+				.ForMember(d => d.Province, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.City))
+				.ForMember(d => d.SubDistrict, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.SubDistrict))
+				.ForMember(d => d.Dob, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.Dob))
+				.ForMember(d => d.AvatarUrl, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.AvatarUrl))
+				.ForMember(d => d.AddressLine, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.AddressLine))
+				.ForMember(d => d.Latitude, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.Latitude))
+				.ForMember(d => d.Longitude, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.Longitude))
+				// mapping to User 
+				.ForMember(d => d.UserName, opt => opt.MapFrom(src => src.UserEmailNavigation.UserName))
+				.ForMember(d => d.Phone, opt => opt.MapFrom(src => src.UserEmailNavigation.Phone));
+
+
 
 
 
@@ -139,10 +161,10 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 			CreateMap<UserProfile, UserProfileDto>().ReverseMap();
 
 			// Province mappings
-			CreateMap<Province, ProvinceDto>().ReverseMap();
+			CreateMap<Province, ProvinceDto>();
 
 			// SubDistrict mappings
-			CreateMap<SubDistrict, SubDistrictDto>().ReverseMap();
+			CreateMap<SubDistrict, SubDistrictDto>();
 		}
 	}
 }

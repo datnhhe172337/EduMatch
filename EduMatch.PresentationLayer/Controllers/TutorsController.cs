@@ -304,7 +304,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 		// Get all tutors by status
-		[Authorize]
+		
 		[HttpGet("get-all-tutor-by-status")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorProfileDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -315,6 +315,23 @@ namespace EduMatch.PresentationLayer.Controllers
 				var all = await _tutorProfileService.GetAllFullAsync();
 				var filtered = all.Where(t => t.Status == status).ToList();
 				return Ok(ApiResponse<List<TutorProfileDto>>.Ok(filtered));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail("Failed to get tutors", ex.Message));
+			}
+		}
+
+		[HttpGet("get-all-tutor")]
+		[ProducesResponseType(typeof(ApiResponse<List<TutorProfileDto>>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		public async Task<IActionResult> GetTutorsAll()
+		{
+			try
+			{
+				var all = await _tutorProfileService.GetAllFullAsync();
+				var allList = all.ToList();
+				return Ok(ApiResponse<List<TutorProfileDto>>.Ok(allList));
 			}
 			catch (Exception ex)
 			{
@@ -342,6 +359,11 @@ namespace EduMatch.PresentationLayer.Controllers
 				return BadRequest(ApiResponse<string>.Fail("Failed to get tutor verifications", ex.Message));
 			}
 		}
+
+
+
+
+
 
 	}
 }

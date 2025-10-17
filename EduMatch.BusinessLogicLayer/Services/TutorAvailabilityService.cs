@@ -51,23 +51,23 @@ namespace EduMatch.BusinessLogicLayer.Services
 			return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
 		}
 
-		public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByDayOfWeekAsync(DayOfWeek dayOfWeek)
-		{
-			var entities = await _repository.GetByDayOfWeekAsync(dayOfWeek);
-			return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
-		}
+		//public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByDayOfWeekAsync(DayOfWeek dayOfWeek)
+		//{
+		//	var entities = await _repository.GetByDayOfWeekAsync(dayOfWeek);
+		//	return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
+		//}
 
-		public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByTimeSlotAsync(int slotId)
-		{
-			var entities = await _repository.GetByTimeSlotAsync(slotId);
-			return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
-		}
+		//public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByTimeSlotAsync(int slotId)
+		//{
+		//	var entities = await _repository.GetByTimeSlotAsync(slotId);
+		//	return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
+		//}
 
-		public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate)
-		{
-			var entities = await _repository.GetByDateRangeAsync(fromDate, toDate);
-			return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
-		}
+		//public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByDateRangeAsync(DateTime fromDate, DateTime toDate)
+		//{
+		//	var entities = await _repository.GetByDateRangeAsync(fromDate, toDate);
+		//	return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
+		//}
 
 		public async Task<IReadOnlyList<TutorAvailabilityDto>> GetAllFullAsync()
 		{

@@ -18,9 +18,9 @@ public partial class TutorProfile
 
     public string? VideoIntroPublicId { get; set; }
 
-    public TeachingMode TeachingModes { get; set; }
+    public TeachingMode? TeachingModes { get; set; }
 
-    public TutorStatus Status { get; set; }
+    public TutorStatus? Status { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
