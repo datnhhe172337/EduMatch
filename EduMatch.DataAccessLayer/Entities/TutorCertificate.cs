@@ -22,7 +22,7 @@ public partial class TutorCertificate
 
     public DateTime? CreatedAt { get; set; }
 
-    public VerifyStatus? Verified { get; set; }
+    public VerifyStatus Verified { get; set; }
 
     public string? RejectReason { get; set; }
 
