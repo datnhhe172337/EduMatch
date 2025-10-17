@@ -1,4 +1,5 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
+using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.DataAccessLayer.Entities;
 using System;
 using System.Collections.Generic;
@@ -23,5 +24,9 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task<bool> ActivateUserAsync(string email);
         Task<User> CreateAdminAccAsync(string email);
 
-    }
+        Task<UserDto?> GetByEmailAsync(string email);
+
+        Task<UserDto?> UpdateUserAsync(UserUpdateRequest request);
+
+	}
 }

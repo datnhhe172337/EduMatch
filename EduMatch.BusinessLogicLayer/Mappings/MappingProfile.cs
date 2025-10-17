@@ -88,10 +88,8 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 							Id = a.Id,
 							TutorId = a.TutorId,
 							SlotId = a.SlotId,
-							DayOfWeek = a.DayOfWeek,
-							IsRecurring = a.IsRecurring,
-							EffectiveFrom = a.EffectiveFrom,
-							EffectiveTo = a.EffectiveTo,
+							StartDate = a.StartDate,
+							EndDate = a.EndDate,
 							Status = a.Status,
 							CreatedAt = a.CreatedAt,
 							UpdatedAt = a.UpdatedAt,
@@ -171,6 +169,10 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 
 			// User mappings
 			CreateMap<User, UserDto>().ReverseMap();
+			CreateMap<UserUpdateRequest, UserProfile>()
+				.ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+		
+
 
 			// Role mappings
 			CreateMap<Role, RoleDto>().ReverseMap();
@@ -180,6 +182,10 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 
 			// UserProfile mappings
 			CreateMap<UserProfile, UserProfileDto>().ReverseMap();
+
+			CreateMap<UserProfileUpdateRequest, UserProfile>()
+			.ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
 
 			// Province mappings
 			CreateMap<Province, ProvinceDto>();

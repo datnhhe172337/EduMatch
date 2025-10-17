@@ -12,5 +12,9 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
     {
         Task<UserProfile?> GetByEmailAsync(string email);
         Task<bool> UpdateUserProfileAsync(string email, UpdateUserProfileDto dto);
-    }
+
+        Task<UserProfileDto> UpdateAsync(UpdateUserProfileDto userProfile);
+		Task<UserProfileDto?> GetByEmailDatAsync(string email);
+
+	}
 }

@@ -1,4 +1,5 @@
 ﻿using EduMatch.DataAccessLayer.Entities;
+using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -8,8 +9,8 @@ using System.Threading.Tasks;
 
 namespace EduMatch.DataAccessLayer.Repositories
 {
-    public class UserProfileRepository
-    {
+    public class UserProfileRepository : IUserProfileRepository
+	{
         private readonly EduMatchContext _context;
 
         public UserProfileRepository(EduMatchContext context)

@@ -1,5 +1,7 @@
-﻿using EduMatch.BusinessLogicLayer.DTOs;
+﻿using AutoMapper;
+using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
@@ -27,16 +29,18 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly EmailService _emailService;
         private readonly IRefreshTokenRepositoy _refreshRepo;
         private readonly IGoogleAuthService _googleAuthService;
+        private readonly IMapper _mapper;
 
 
-        public UserService(IUserRepository userRepo, IOptions<JwtSettings> options, EmailService emailService, IRefreshTokenRepositoy refreshRepo, IGoogleAuthService googleAuthService)
+		public UserService(IUserRepository userRepo, IMapper mapper , IOptions<JwtSettings> options, EmailService emailService, IRefreshTokenRepositoy refreshRepo, IGoogleAuthService googleAuthService)
         {
             _userRepo = userRepo;
             _jwt = options.Value;
             _emailService = emailService;
             _refreshRepo = refreshRepo;
             _googleAuthService = googleAuthService;
-        }
+            _mapper = mapper;
+		}
 
         public async Task<bool> RegisterAsync(string email, string password, string baseUrl)
         {
@@ -461,5 +465,33 @@ namespace EduMatch.BusinessLogicLayer.Services
                 RefreshToken = refreshToken
             };
         }
-    }
+
+		public async Task<UserDto?> GetByEmailAsync(string email)
+		{
+			if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("Email is required.");
+
+            var entity = await _userRepo.GetUserByEmailAsync(email);
+            return entity is null ? null : _mapper.Map<UserDto>(entity);
+		}
+
+		public async Task<UserDto?> UpdateAsync(UserUpdateRequest request)
+		{
+			if (request.Email is null)
+				throw new ArgumentException("Email is required.");
+
+		
+			var entityExisting = await _userRepo.GetUserByEmailAsync(request.Email);
+			if (entityExisting == null)
+				throw new ArgumentException("User not found.");
+
+		
+			_mapper.Map(request, entityExisting);
+
+			await _userRepo.UpdateUserAsync(entityExisting);
+
+			return _mapper.Map<UserDto>(entityExisting);
+		}
+
+	}
 }

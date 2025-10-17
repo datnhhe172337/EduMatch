@@ -1,5 +1,7 @@
-﻿using EduMatch.BusinessLogicLayer.DTOs;
+﻿using AutoMapper;
+using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Repositories;
 
@@ -8,18 +10,55 @@ namespace EduMatch.BusinessLogicLayer.Services
     public class UserProfileService : IUserProfileService
     {
         private readonly UserProfileRepository _repo;
+        private readonly IMapper _mapper;
 
-        public UserProfileService(UserProfileRepository repo)
+		public UserProfileService(UserProfileRepository repo, IMapper mapper)
         {
             _repo = repo;
-        }
+            _mapper = mapper;
+		}
 
         public async Task<UserProfile?> GetByEmailAsync(string email)
         {
             return await _repo.GetByEmailAsync(email);
         }
 
-        public async Task<bool> UpdateUserProfileAsync(string email, UpdateUserProfileDto dto)
+		public async Task<UserProfileDto?> GetByEmailDatAsync(string email)
+		{
+			if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("Email is required.");
+
+            var profile = _repo.GetByEmailAsync(email);
+            
+            if (profile == null)
+                return null;
+
+		 return	 _mapper.Map<UserProfileDto>(profile);
+		}
+
+
+
+		public async Task<UserProfileDto?> UpdateAsync(UserProfileUpdateRequest request)
+		{
+			if (string.IsNullOrWhiteSpace(request.UserEmail))
+				throw new ArgumentException("User email is required.");
+
+			var existingProfile = await _repo.GetByEmailAsync(request.UserEmail);
+			if (existingProfile == null)
+				throw new InvalidOperationException($"User profile with email '{request.UserEmail}' not found.");
+
+			
+			_mapper.Map(request, existingProfile);
+
+			await _repo.UpdateAsync(existingProfile);
+
+			return _mapper.Map<UserProfileDto>(existingProfile);
+		}
+
+
+
+
+		public async Task<bool> UpdateUserProfileAsync(string email, UpdateUserProfileDto dto)
         {
             // Load profile including linked User entity
             var profile = await _repo.GetByEmailAsync(email);
