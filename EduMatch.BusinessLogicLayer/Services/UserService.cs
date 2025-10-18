@@ -127,6 +127,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                         {
                             Email = u.Email,
                             UserName = u.UserName,
+                            RoleName = u.Role.RoleName,
                             Phone = u.Phone,
                             IsActive = u.IsActive,
                             CreateAt = u.CreatedAt
@@ -138,12 +139,16 @@ namespace EduMatch.BusinessLogicLayer.Services
                         {
                             Email = u.Email,
                             UserName = u.UserName,
+                            RoleName = u.Role.RoleName,
                             Phone = u.Phone,
                             IsActive = u.IsActive,
                             CreateAt = u.TutorProfile?.CreatedAt ?? u.CreatedAt,
                             Subjects = u.TutorProfile?.TutorSubjects
                                     .Select(ts => ts.Subject.SubjectName)
-                                    .ToList() ?? new List<string>()
+                                    .ToList() ?? new List<string>(),
+                            HourlyRate = u.TutorProfile?.TutorSubjects
+                                    .Select(ts => ts.HourlyRate)
+                                    .ToList() ?? new List<decimal?>()
                         });
                     break;
                 case 3: //admin
@@ -152,6 +157,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                         {
                             Email = u.Email,
                             UserName = u.UserName,
+                            RoleName = u.Role.RoleName,
                             Phone = u.Phone,
                             IsActive = u.IsActive,
                             CreateAt = u.CreatedAt
@@ -483,6 +489,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             };
         }
 
+
 		public async Task<UserDto?> GetByEmailAsync(string email)
 		{
 			if (string.IsNullOrWhiteSpace(email))
@@ -514,4 +521,32 @@ namespace EduMatch.BusinessLogicLayer.Services
 		}
 
 	}
+
+        public async Task<IEnumerable<ManageUserDto>> GetAllUsers()
+        {
+            IEnumerable<ManageUserDto> users;
+            users = (await _userRepo.GetAllUsers())
+                .Select(u => new ManageUserDto
+                {
+                    Email = u.Email,
+                    UserName = u.UserName,
+                    Phone = u.Phone,
+                    IsActive = u.IsActive,
+                    CreateAt = u.TutorProfile?.CreatedAt ?? u.CreatedAt,
+                    Subjects = u.TutorProfile?.TutorSubjects
+                                    .Select(ts => ts.Subject.SubjectName)
+                                    .ToList() ?? new List<string>(),
+                    HourlyRate = u.TutorProfile?.TutorSubjects
+                                    .Select(ts => ts.HourlyRate)
+                                    .ToList() ?? new List<decimal?>()
+                });
+            return users;
+        }
+
+        public async Task<bool> UpdateRoleUserAsync(string email, int roleId)
+        {
+            return await _userRepo.UpdateRoleUserAsync(email, roleId);
+        }
+    }
+
 }

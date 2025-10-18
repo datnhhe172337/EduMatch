@@ -36,6 +36,7 @@ namespace EduMatch.DataAccessLayer.Repositories
         {
             return await _context.Users
                 .Where(u => u.RoleId == 1)
+                .Include(u => u.Role)
                 .OrderByDescending(u => u.CreatedAt)
                 .ToListAsync();
         }
@@ -44,6 +45,7 @@ namespace EduMatch.DataAccessLayer.Repositories
         {
             return await _context.Users
                 .Where(u => u.RoleId == 2)
+                .Include(u => u.Role)
                 .Include(u => u.TutorProfile)
                 .ThenInclude(tp => tp.TutorSubjects)
                 .ThenInclude(ts => ts.Subject)
@@ -85,8 +87,32 @@ namespace EduMatch.DataAccessLayer.Repositories
         {
             return await _context.Users
                 .Where(u => u.RoleId == 3)
+                .Include(u => u.Role)
                 .OrderByDescending(u => u.CreatedAt)
                 .ToListAsync();
+        }
+
+        public async Task<IEnumerable<User>> GetAllUsers()
+        {
+            return await _context.Users
+                .Include(u => u.UserProfile)
+                .Include(u => u.TutorProfile)
+                .ThenInclude(tp => tp.TutorSubjects)
+                .ThenInclude(tp => tp.Subject)
+                .OrderByDescending(u => u.TutorProfile != null
+                ? u.TutorProfile.CreatedAt
+                : u.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<bool> UpdateRoleUserAsync(string email, int roleId)
+        {
+            var user = await _context.Users.FindAsync(email);
+            if (user == null) return false;
+            user.RoleId = roleId;
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

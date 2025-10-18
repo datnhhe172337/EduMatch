@@ -23,8 +23,19 @@ namespace EduMatch.PresentationLayer.Controllers
         {
             var users = await _userService.GetUserByRoleAsync(roleId);
             if (users == null || !users.Any())
-                return Ok(ApiResponse<IEnumerable<ManageUserDto>>.Fail("Invalid or empty role ID."));
+                return Ok(ApiResponse<IEnumerable<ManageUserDto>>.Fail("RoleId không hợp lệ hoặc danh sách rỗng."));
 
+            string roleName = users.First().RoleName;
+            return Ok(ApiResponse<object>.Ok(users, $"Lấy danh sách {roleName} thành công."));
+        }
+
+        [HttpGet("getAllUsers")]
+        public async Task<IActionResult> GetAllUser()
+        {
+            var users = await _userService.GetAllUsers();
+            if (users == null || !users.Any())
+                return Ok(ApiResponse<IEnumerable<ManageUserDto>>.Fail("Danh sách người dùng rỗng."));
+            
             return Ok(ApiResponse<object>.Ok(users, "Lấy danh sách người dùng thành công."));
         }
 
@@ -42,6 +53,14 @@ namespace EduMatch.PresentationLayer.Controllers
             var result = await _userService.ActivateUserAsync(email);
             if (!result) return NotFound(ApiResponse<string>.Fail("Không tìm thấy người dùng."));
             return Ok(ApiResponse<string>.Ok(null, "Kích hoạt tài khoản thành công."));
+        }
+
+        [HttpPut("users/{email}/{roleId}")]
+        public async Task<IActionResult> UpdateRoleUser(string email, int roleId)
+        {
+            var result = await _userService.UpdateRoleUserAsync(email, roleId);
+            if (!result) return NotFound(ApiResponse<string>.Fail("Không tìm thấy người dùng"));
+            return Ok(ApiResponse<string>.Ok(null, "Cập nhật vai trò người dùng thành công."));
         }
 
         [HttpPost("create-admin")]
