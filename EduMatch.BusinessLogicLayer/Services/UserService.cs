@@ -492,17 +492,20 @@ namespace EduMatch.BusinessLogicLayer.Services
             return entity is null ? null : _mapper.Map<UserDto>(entity);
 		}
 
-		public async Task<UserDto?> UpdateAsync(UserUpdateRequest request)
+		
+
+		public async Task<UserDto?> UpdateUserAsync(UserUpdateRequest request)
 		{
+
 			if (request.Email is null)
 				throw new ArgumentException("Email is required.");
 
-		
+
 			var entityExisting = await _userRepo.GetUserByEmailAsync(request.Email);
 			if (entityExisting == null)
 				throw new ArgumentException("User not found.");
 
-		
+
 			_mapper.Map(request, entityExisting);
 
 			await _userRepo.UpdateUserAsync(entityExisting);
