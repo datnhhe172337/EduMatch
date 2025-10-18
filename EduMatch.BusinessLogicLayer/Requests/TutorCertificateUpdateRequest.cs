@@ -33,9 +33,6 @@ namespace EduMatch.BusinessLogicLayer.Requests
 		[StringLength(500, ErrorMessage = "Reject reason cannot exceed 500 characters")]
 		public string? RejectReason { get; set; }
 
-		[CustomValidation(typeof(TutorCertificateUpdateRequest), "ValidateDateRange")]
-		public bool IsValidDateRange => !IssueDate.HasValue || !ExpiryDate.HasValue || ExpiryDate.Value >= IssueDate.Value;
-
 		
 	}
 }

@@ -345,7 +345,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 		// Get all certificates and educations of a tutor filtered by verify status
-		[Authorize]
+		
 		[HttpGet("get-all-tutor-certificate-education/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
