@@ -86,8 +86,6 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 						? s.TutorAvailabilities.Select(a => new TutorAvailabilityDto
 						{
 							Id = a.Id,
-							TutorId = a.TutorId,
-							SlotId = a.SlotId,
 							StartDate = a.StartDate,
 							EndDate = a.EndDate,
 							Status = a.Status,
@@ -104,6 +102,10 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 						? s.TutorCertificates.Select(c => new TutorCertificateDto
 						{
 							Id = c.Id,
+							IssueDate = c.IssueDate,
+							ExpiryDate = c.ExpiryDate,
+							CreatedAt = c.CreatedAt,
+							Verified = c.Verified,
 							CertificateUrl = c.CertificateUrl,
 							CertificateType = c.CertificateType != null
 								? new CertificateTypeDto { Id = c.CertificateType.Id, Name = c.CertificateType.Name }
@@ -116,6 +118,10 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 						{
 							Id = e.Id,
 							CertificateUrl = e.CertificateUrl,
+							IssueDate = e.IssueDate,
+							CreatedAt = e.CreatedAt,
+							Verified = e.Verified,
+
 							Institution = e.Institution != null
 								? new EducationInstitutionDto { Id = e.Institution.Id, Name = e.Institution.Name }
 								: null
@@ -126,6 +132,7 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 						? s.TutorSubjects.Select(ts => new TutorSubjectDto
 						{
 							Id = ts.Id,
+							HourlyRate = ts.HourlyRate,
 							Subject = ts.Subject != null
 								? new SubjectDto { Id = ts.Subject.Id, SubjectName = ts.Subject.SubjectName }
 								: null,
@@ -169,7 +176,7 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 
 			// User mappings
 			CreateMap<User, UserDto>().ReverseMap();
-			CreateMap<UserUpdateRequest, UserProfile>()
+			CreateMap<UserUpdateRequest, User>()
 				.ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 		
 

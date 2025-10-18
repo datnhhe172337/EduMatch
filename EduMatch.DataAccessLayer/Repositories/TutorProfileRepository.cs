@@ -15,16 +15,36 @@ namespace EduMatch.DataAccessLayer.Repositories
 		public TutorProfileRepository(EduMatchContext ctx) => _ctx = ctx;
 
 		private IQueryable<TutorProfile> IncludeAll() =>
-			_ctx.TutorProfiles
-			.AsNoTracking()
-			.AsSplitQuery()
-			.Include(t => t.TutorAvailabilities)
-			   .ThenInclude(t => t.Slot)
-			.Include(t => t.TutorCertificates)
-			.Include(t => t.TutorEducations)
-			.Include(t => t.TutorSubjects)
-			.Include(t => t.UserEmailNavigation)
-				.ThenInclude(t => t.UserProfile);
+	_ctx.TutorProfiles
+		.AsNoTracking()
+		.AsSplitQuery()
+
+		// Availabilities + Slot
+		.Include(t => t.TutorAvailabilities)
+			.ThenInclude(a => a.Slot)
+
+		// Certificates + CertificateType
+		.Include(t => t.TutorCertificates)
+			.ThenInclude(c => c.CertificateType)
+
+		// Educations + Institution
+		.Include(t => t.TutorEducations)
+			.ThenInclude(e => e.Institution)
+
+		// Subjects + Subject, Level (cần 2 Include riêng)
+		.Include(t => t.TutorSubjects)
+			.ThenInclude(ts => ts.Subject)
+		.Include(t => t.TutorSubjects)
+			.ThenInclude(ts => ts.Level)
+
+		// User -> UserProfile -> City/SubDistrict
+		.Include(t => t.UserEmailNavigation)
+			.ThenInclude(u => u.UserProfile)
+				.ThenInclude(p => p.City)
+		.Include(t => t.UserEmailNavigation)
+			.ThenInclude(u => u.UserProfile)
+				.ThenInclude(p => p.SubDistrict);
+
 
 
 		public async Task<TutorProfile?> GetByIdFullAsync(int id, CancellationToken ct = default)

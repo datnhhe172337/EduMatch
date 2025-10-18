@@ -501,26 +501,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 		
 
-		public async Task<UserDto?> UpdateUserAsync(UserUpdateRequest request)
-		{
-
-			if (request.Email is null)
-				throw new ArgumentException("Email is required.");
-
-
-			var entityExisting = await _userRepo.GetUserByEmailAsync(request.Email);
-			if (entityExisting == null)
-				throw new ArgumentException("User not found.");
-
-
-			_mapper.Map(request, entityExisting);
-
-			await _userRepo.UpdateUserAsync(entityExisting);
-
-			return _mapper.Map<UserDto>(entityExisting);
-		}
-
-	}
+		
+	
 
         public async Task<IEnumerable<ManageUserDto>> GetAllUsers()
         {
@@ -547,6 +529,25 @@ namespace EduMatch.BusinessLogicLayer.Services
         {
             return await _userRepo.UpdateRoleUserAsync(email, roleId);
         }
-    }
+
+		public async Task<UserDto?> UpdateUserNameAndPhoneAsync(string email, string phone, string name)
+		{
+			if(string.IsNullOrWhiteSpace(email))
+				throw new ArgumentException("Email is required.");
+
+            if(string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Name is required.");
+
+            if(string.IsNullOrWhiteSpace(phone))
+                throw new ArgumentException("Phone is required.");
+            var user = await _userRepo.GetUserByEmailAsync(email);
+            if (user == null) return null;
+           
+            await _userRepo.UpdateNameAndPhoneUserAsync(name, phone, email);
+
+            return _mapper.Map<UserDto>(user);
+
+		}
+	}
 
 }

@@ -18,7 +18,8 @@ namespace EduMatch.DataAccessLayer.Interfaces
         Task<bool> UpdateUserStatusAsync(string email, bool isActive);
         Task CreateAdminAccAsync(User user);
         Task CreateUserAsync(User user);
-        Task UpdateUserAsync(User user);
+		Task UpdateUserAsync(User user);
+		Task UpdateNameAndPhoneUserAsync(string name,string phone, string email);
         Task<bool> UpdateRoleUserAsync(string email, int roleId);   
 	}
 }

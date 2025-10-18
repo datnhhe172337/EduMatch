@@ -28,12 +28,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 			if (string.IsNullOrWhiteSpace(email))
                 throw new ArgumentException("Email is required.");
 
-            var profile = _repo.GetByEmailAsync(email);
-            
-            if (profile == null)
-                return null;
+			var profile = await _repo.GetByEmailAsync(email);
+			if (profile == null) return null;
 
-		 return	 _mapper.Map<UserProfileDto>(profile);
+			return _mapper.Map<UserProfileDto>(profile);
+
 		}
 
 

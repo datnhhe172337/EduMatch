@@ -129,7 +129,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				var hasFileAvata = request.AvatarFile != null && request.AvatarFile.Length > 0 && !string.IsNullOrWhiteSpace(request.AvatarFile.FileName);
 				if (hasFileAvata)
 				{
-					using var stream = request.VideoIntro!.OpenReadStream();
+					using var stream = request.AvatarFile!.OpenReadStream();
 					var uploadAvataRequest = new UploadToCloudRequest(
 						Content: stream,
 						FileName: request.AvatarFile!.FileName,
@@ -160,15 +160,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 				};
 				await _userProfileService.UpdateAsync(userProfileUpdate);
 
-				var userUpdate = new UserUpdateRequest
-				{
-					Email = _currentUserService.Email,
-					UserName = request.UserName,
-					Phone = request.Phone
-				};
 
 
-				await _userService.UpdateUserAsync(userUpdate);
+				await _userService.UpdateUserNameAndPhoneAsync(_currentUserService.Email,request.Phone,request.UserName);
 
 				// MAP  -> ENTITY
 

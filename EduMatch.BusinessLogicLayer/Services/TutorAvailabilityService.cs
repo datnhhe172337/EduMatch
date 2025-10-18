@@ -76,6 +76,15 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 
 				var entity = _mapper.Map<TutorAvailability>(request);
+
+				if (entity.Status == null)
+					entity.Status = TutorAvailabilityStatus.Available;
+
+				entity.CreatedAt = DateTime.UtcNow;
+				entity.UpdatedAt = null;
+				entity.StartDate = request.StartDate.Date.Add(timeSlot.StartTime.ToTimeSpan());
+				entity.EndDate = request.StartDate.Date.Add(timeSlot.EndTime.ToTimeSpan());
+
 				await _repository.AddAsync(entity);
 				return _mapper.Map<TutorAvailabilityDto>(entity);
 			}

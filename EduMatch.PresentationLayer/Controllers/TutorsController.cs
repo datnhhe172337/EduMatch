@@ -246,7 +246,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
 		// Batch verify: education
 		[Authorize]
-		[HttpPut("update-education-list/{tutorId}/verify-batch")]
+		[HttpPut("update-verify-education-list/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorEducationDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
 		public async Task<IActionResult> VerifyEducationBatch([FromRoute] int tutorId, [FromBody] List<VerifyUpdateRequest> updates)
@@ -275,7 +275,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
 		// Batch verify: certificate
 		[Authorize]
-		[HttpPut("update-certificate-list/{tutorId}/verify-batch")]
+		[HttpPut("update-verify-certificate-list/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorCertificateDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
 		public async Task<IActionResult> VerifyCertificateBatch([FromRoute] int tutorId, [FromBody] List<VerifyUpdateRequest> updates)
@@ -341,17 +341,17 @@ namespace EduMatch.PresentationLayer.Controllers
 
 		// Get all certificates and educations of a tutor filtered by verify status
 		[Authorize]
-		[HttpGet("get-tutor/{tutorId}/verifications")]
+		[HttpGet("get-all-tutor-certificate-education/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-		public async Task<IActionResult> GetTutorVerifications([FromRoute] int tutorId, [FromQuery] VerifyStatus status)
+		public async Task<IActionResult> GetTutorVerifications([FromRoute] int tutorId)
 		{
 			try
 			{
 				var certs = await _tutorCertificateService.GetByTutorIdAsync(tutorId);
 				var edus = await _tutorEducationService.GetByTutorIdAsync(tutorId);
-				var certsFiltered = certs.Where(c => c.Verified == status).ToList();
-				var edusFiltered = edus.Where(e => e.Verified == status).ToList();
+				var certsFiltered = certs.ToList();
+				var edusFiltered = edus.ToList();
 				return Ok(ApiResponse<object>.Ok(new { certificates = certsFiltered, educations = edusFiltered }));
 			}
 			catch (Exception ex)
@@ -359,6 +359,34 @@ namespace EduMatch.PresentationLayer.Controllers
 				return BadRequest(ApiResponse<string>.Fail("Failed to get tutor verifications", ex.Message));
 			}
 		}
+
+
+
+		
+		[HttpGet("get-tutor-by-id/{tutorId}")]
+		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		public async Task<IActionResult> GetTutorById([FromRoute] int tutorId)
+		{
+			try
+			{
+				if (tutorId <= 0)
+					return BadRequest(ApiResponse<string>.Fail("Invalid tutor ID."));
+
+				var tutor = await _tutorProfileService.GetByIdFullAsync(tutorId);
+				if (tutor == null)
+					return NotFound(ApiResponse<string>.Fail($"Tutor with ID {tutorId} not found."));
+
+				return Ok(ApiResponse<TutorProfileDto>.Ok(tutor));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail("Failed to get tutor profile.", ex.Message));
+			}
+		}
+
+
 
 
 

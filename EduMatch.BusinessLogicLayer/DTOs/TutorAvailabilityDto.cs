@@ -1,12 +1,15 @@
 using EduMatch.DataAccessLayer.Enum;
 using System;
+using System.Text.Json.Serialization;
 
 namespace EduMatch.BusinessLogicLayer.DTOs
 {
 	public class TutorAvailabilityDto
 	{
 		public int Id { get; set; }
+		[JsonIgnore]
 		public int TutorId { get; set; }
+		[JsonIgnore]
 		public int SlotId { get; set; }
 		public TutorAvailabilityStatus? Status { get; set; }
 		public DateTime StartDate { get; set; }

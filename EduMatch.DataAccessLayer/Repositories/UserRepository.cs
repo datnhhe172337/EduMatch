@@ -77,13 +77,13 @@ namespace EduMatch.DataAccessLayer.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateUserAsync(User user)
-        {
-            _context.Users.Update(user);
-            await _context.SaveChangesAsync();
-        }
+		public async Task UpdateUserAsync(User user)
+		{
+			_context.Users.Update(user);
+			await _context.SaveChangesAsync();
+		}
 
-         public async Task<IEnumerable<User>> GetAdminAsync()
+		public async Task<IEnumerable<User>> GetAdminAsync()
         {
             return await _context.Users
                 .Where(u => u.RoleId == 3)
@@ -114,5 +114,18 @@ namespace EduMatch.DataAccessLayer.Repositories
             await _context.SaveChangesAsync();
             return true;
         }
-    }
+
+		public async Task UpdateNameAndPhoneUserAsync(string name, string phone, string email)
+		{
+
+			var user = await GetUserByEmailAsync( email);
+            if (user != null)
+            {
+                user.UserName = name;
+                user.Phone = phone;
+                _context.Users.Update(user);
+                await _context.SaveChangesAsync();
+			}
+		}
+	}
 }
