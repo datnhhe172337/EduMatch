@@ -30,6 +30,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		private readonly ITutorCertificateService _tutorCertificateService;
 		private readonly ITutorEducationService _tutorEducationService;
 		private readonly EmailService _emailService;
+		private readonly IUserService _userService;
 
 		public TutorsController(
 			ITutorSubjectService tutorSubjectService,
@@ -41,7 +42,8 @@ namespace EduMatch.PresentationLayer.Controllers
 			ITutorCertificateService tutorCertificateService,
 			EduMatchContext eduMatch,
 			ITutorEducationService tutorEducationService,
-			EmailService emailService
+			EmailService emailService,
+			IUserService userService 
 
 			)
 		{
@@ -55,6 +57,7 @@ namespace EduMatch.PresentationLayer.Controllers
 			_eduMatch = eduMatch;
 			_tutorEducationService = tutorEducationService;
 			_emailService = emailService;
+			_userService = userService;
 
 		}
 
@@ -113,6 +116,8 @@ namespace EduMatch.PresentationLayer.Controllers
 				}
 
 				await _emailService.SendBecomeTutorWelcomeAsync(userEmail);
+
+				await _userService.UpdateRoleUserAsync(userEmail, 2);
 
 				await tx.CommitAsync();
 

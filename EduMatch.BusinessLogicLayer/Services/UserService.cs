@@ -527,8 +527,17 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task<bool> UpdateRoleUserAsync(string email, int roleId)
         {
-            return await _userRepo.UpdateRoleUserAsync(email, roleId);
+            if(string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("Email is required.");
+            if(roleId <= 0)
+                throw new ArgumentException("RoleId is invalid.");
+             var role = await _userRepo.GetRoleByIdAsync(roleId);
+            if(role == null)
+                throw new ArgumentException("RoleId does not exist.");
+
+			return await _userRepo.UpdateRoleUserAsync(email, roleId);
         }
+
 
 		public async Task<UserDto?> UpdateUserNameAndPhoneAsync(string email, string phone, string name)
 		{

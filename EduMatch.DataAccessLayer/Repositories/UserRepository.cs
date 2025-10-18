@@ -127,5 +127,16 @@ namespace EduMatch.DataAccessLayer.Repositories
                 await _context.SaveChangesAsync();
 			}
 		}
+
+		public async Task<Role> GetRoleByIdAsync(int roleId)
+		{
+		   var role = await _context.Roles.SingleOrDefaultAsync(r => r.Id == roleId);
+
+            if (role == null)
+            {
+                throw new Exception("Role not found");
+			}
+            return role;
+		}
 	}
 }
