@@ -7,9 +7,12 @@ using System.Threading.Tasks;
 
 namespace EduMatch.DataAccessLayer.Interfaces
 {
-	public interface  IUserProfileRepository
-	{
-		Task<UserProfile?> GetByEmailAsync(string email);
-		Task UpdateAsync(UserProfile profile);
-	}
+
+    public interface IUserProfileRepository
+    {
+        Task CreateUserProfileAsync (UserProfile profile);
+        Task<UserProfile?> GetByEmailAsync(string email);
+        Task UpdateAsync(UserProfile profile);
+    }
+
 }

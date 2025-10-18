@@ -11,7 +11,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 {
     public interface IUserService
     {
-        Task<bool> RegisterAsync(string email, string password, string baseUrl);
+        Task<bool> RegisterAsync(string fullName, string email, string password, string baseUrl);
         Task<bool> VerifyEmailAsync(string token);
         Task<LoginResponseDto> LoginAsync(string email, string password);
         Task<bool> ResendEmailVerifyAsync(string email, string baseUrl);

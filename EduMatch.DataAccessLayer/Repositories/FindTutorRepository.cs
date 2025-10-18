@@ -27,6 +27,10 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .Include(t => t.UserEmailNavigation)
                     .ThenInclude(u => u.UserProfile)
                         .ThenInclude(up => up.City)
+                .Include(t => t.TutorAvailabilities)
+                .Include(t => t.TutorCertificates)
+                .Include(t => t.TutorEducations)
+                .Include(t => t.TutorSubjects)
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
         }
@@ -48,6 +52,10 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .Include(t => t.UserEmailNavigation)
                     .ThenInclude(u => u.UserProfile)
                         .ThenInclude(up => up.City)
+                .Include(t => t.TutorAvailabilities)
+                .Include(t => t.TutorCertificates)
+                .Include(t => t.TutorEducations)
+                .Include(t => t.TutorSubjects)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
@@ -58,27 +66,17 @@ namespace EduMatch.DataAccessLayer.Repositories
                     (t.TeachingExp != null && t.TeachingExp.Contains(keyword)));
             }
 
-            // Gender (byte)
             if (gender.HasValue)
-            {
-                    query = query.Where(t => t.UserEmailNavigation.UserProfile!.Gender == gender);
-               
-            }
+                query = query.Where(t => t.UserEmailNavigation.UserProfile!.Gender == gender.Value);
 
             if (cityId.HasValue)
                 query = query.Where(t => t.UserEmailNavigation.UserProfile.CityId == cityId.Value);
 
-            // Teaching mode (byte)
-            if (teachingMode != null)
-            {
-                query = query.Where(t => t.TeachingModes == teachingMode);
-            }
+            if (teachingMode.HasValue)
+                query = query.Where(t => t.TeachingModes == teachingMode.Value);
 
-            // Status (byte)
             if (status.HasValue)
-            {
-                query = query.Where(t => t.Status == status);
-            }
+                query = query.Where(t => t.Status == status.Value);
 
             query = query.OrderByDescending(t => t.CreatedAt)
                          .Skip((page - 1) * pageSize)

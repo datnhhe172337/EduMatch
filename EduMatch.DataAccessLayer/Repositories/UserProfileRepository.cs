@@ -11,11 +11,18 @@ namespace EduMatch.DataAccessLayer.Repositories
 {
     public class UserProfileRepository : IUserProfileRepository
 	{
+
         private readonly EduMatchContext _context;
 
         public UserProfileRepository(EduMatchContext context)
         {
             _context = context;
+        }
+
+        public async Task CreateUserProfileAsync(UserProfile profile)
+        {
+            _context.UserProfiles.Add(profile);
+            await _context.SaveChangesAsync();
         }
 
         public async Task<UserProfile?> GetByEmailAsync(string email)

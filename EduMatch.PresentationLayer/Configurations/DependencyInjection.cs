@@ -43,6 +43,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ILevelRepository, LevelRepository>();
             services.AddScoped<ISubjectRepository, SubjectRepository>();
             services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
+            services.AddScoped<IUserProfileRepository, UserProfileRepository>();
 
             // Services
             services.AddScoped<IUserService, UserService>();

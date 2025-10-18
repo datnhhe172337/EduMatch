@@ -29,11 +29,11 @@ namespace EduMatch.PresentationLayer.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> RegisterAsync([FromBody] RegisterRequestDto req)
         {
-            if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrWhiteSpace(req.Password))
-                return BadRequest("Email and password required");
+            if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrWhiteSpace(req.Password) || string.IsNullOrWhiteSpace(req.FullName))
+                return BadRequest("All fields required");
 
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
-            var success = await _userService.RegisterAsync(req.Email, req.Password, baseUrl);
+            var success = await _userService.RegisterAsync(req.FullName ,req.Email, req.Password, baseUrl);
             if (!success) return BadRequest("Email already exists");
 
             return Ok(new { message = "Registration successful, check your email to verify." });
