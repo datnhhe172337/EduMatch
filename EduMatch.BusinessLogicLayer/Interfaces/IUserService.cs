@@ -23,7 +23,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task<IEnumerable<ManageUserDto>> GetAllUsers();
         Task<bool> DeactivateUserAsync(string email);
         Task<bool> ActivateUserAsync(string email);
-        Task<User> CreateAdminAccAsync(string email);
+        Task<User> CreateAdminAccAsync(string email, string password);
         Task<bool> UpdateRoleUserAsync(string email, int roleId);
 
         Task<UserDto?> GetByEmailAsync(string email);

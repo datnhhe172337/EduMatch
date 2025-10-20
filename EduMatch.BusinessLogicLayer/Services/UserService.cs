@@ -142,13 +142,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                             RoleName = u.Role.RoleName,
                             Phone = u.Phone,
                             IsActive = u.IsActive,
-                            CreateAt = u.TutorProfile?.CreatedAt ?? u.CreatedAt,
-                            Subjects = u.TutorProfile?.TutorSubjects
-                                    .Select(ts => ts.Subject.SubjectName)
-                                    .ToList() ?? new List<string>(),
-                            HourlyRate = u.TutorProfile?.TutorSubjects
-                                    .Select(ts => ts.HourlyRate)
-                                    .ToList() ?? new List<decimal?>()
+                            CreateAt = u.TutorProfile?.CreatedAt ?? u.CreatedAt
                         });
                     break;
                 case 3: //admin
@@ -180,7 +174,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             return await _userRepo.UpdateUserStatusAsync(email, true);
         }
 
-        public async Task<User> CreateAdminAccAsync(string email)
+        public async Task<User> CreateAdminAccAsync(string email, string password)
         {
             var existingUser = await _userRepo.GetUserByEmailAsync(email);
             if (existingUser != null) throw new InvalidOperationException("Email đã tồn tại.");
@@ -189,7 +183,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 Email = email,
                 UserName = email.Split('@')[0],
-                PasswordHash = "123",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
                 RoleId = 3,
                 IsEmailConfirmed = true,
                 IsActive = true,
@@ -198,6 +192,37 @@ namespace EduMatch.BusinessLogicLayer.Services
             };
 
             await _userRepo.CreateAdminAccAsync(admin);
+
+            var subject = "Tài khoản Quản trị viên của bạn đã được tạo thành công";
+            var body = $@"
+        <div style='font-family: Arial, sans-serif; color: #333;'>
+            <h2 style='color:#2c3e50;'>Xin chào {admin.UserName},</h2>
+            <p>Hệ thống xin thông báo rằng tài khoản <strong>Quản trị viên</strong> của bạn đã được khởi tạo thành công.</p>
+            <p>Dưới đây là thông tin đăng nhập của bạn:</p>
+            <table style='border-collapse: collapse;'>
+                <tr>
+                    <td style='padding: 6px 12px; font-weight: bold;'>Email:</td>
+                    <td style='padding: 6px 12px;'>{email}</td>
+                </tr>
+                <tr>
+                    <td style='padding: 6px 12px; font-weight: bold;'>Mật khẩu:</td>
+                    <td style='padding: 6px 12px;'>{password}</td>
+                </tr>
+            </table>
+            <p><em>Vui lòng thay đổi mật khẩu ngay sau khi đăng nhập để đảm bảo an toàn tài khoản.</em></p>
+            <br/>
+            <p>Trân trọng,<br/><strong>Đội ngũ Hỗ trợ Hệ thống</strong></p>
+            <hr style='border: none; border-top: 1px solid #ddd;'/>
+            <p style='font-size: 12px; color: #777;'>Đây là email tự động, vui lòng không trả lời lại.</p>
+        </div>";
+
+            await _emailService.SendMailAsync(new MailContent
+            {
+                To = email,
+                Subject = subject,
+                Body = body
+            });
+
             return admin;
         }
 
@@ -499,10 +524,6 @@ namespace EduMatch.BusinessLogicLayer.Services
             return entity is null ? null : _mapper.Map<UserDto>(entity);
 		}
 
-		
-
-		
-	
 
         public async Task<IEnumerable<ManageUserDto>> GetAllUsers()
         {
@@ -512,15 +533,10 @@ namespace EduMatch.BusinessLogicLayer.Services
                 {
                     Email = u.Email,
                     UserName = u.UserName,
+                    RoleName = u.Role.RoleName,
                     Phone = u.Phone,
                     IsActive = u.IsActive,
                     CreateAt = u.TutorProfile?.CreatedAt ?? u.CreatedAt,
-                    Subjects = u.TutorProfile?.TutorSubjects
-                                    .Select(ts => ts.Subject.SubjectName)
-                                    .ToList() ?? new List<string>(),
-                    HourlyRate = u.TutorProfile?.TutorSubjects
-                                    .Select(ts => ts.HourlyRate)
-                                    .ToList() ?? new List<decimal?>()
                 });
             return users;
         }
