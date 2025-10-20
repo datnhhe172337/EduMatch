@@ -15,6 +15,9 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 		[Range(1, int.MaxValue, ErrorMessage = "ID must be greater than 0.")]
 		public int Id { get; set; }
 
+		[Range(1, int.MaxValue, ErrorMessage = "Tutor ID must be greater than 0.")]
+		public int? TutorId { get; set; }
+
 		[MaxLength(2000, ErrorMessage = "Bio cannot exceed 2000 characters.")]
 		public string? Bio { get; set; }
 
@@ -33,6 +36,9 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 
 		[EnumDataType(typeof(TutorStatus), ErrorMessage = "Invalid TutorStatus")]
 		public TutorStatus? Status { get; set; }
+
+		[MaxLength(500, ErrorMessage = "Reject reason cannot exceed 500 characters.")]
+		public string? RejectReason { get; set; }
 	}
 
 }
