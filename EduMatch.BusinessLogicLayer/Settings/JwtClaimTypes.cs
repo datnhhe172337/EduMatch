@@ -10,9 +10,9 @@ namespace EduMatch.BusinessLogicLayer.Settings
 	{
 		public const string UserName = "email";
 		public const string Email = "email";
-		public const string FullName = "fullname";
+		public const string FullName = "email";
 		public const string PhoneNumber = "phone_number";
-		public const string Address = "address";
+		public const string Address = "email";
 		public const string Role = "role";
 	}
 }
