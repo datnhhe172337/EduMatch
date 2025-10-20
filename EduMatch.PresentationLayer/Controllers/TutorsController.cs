@@ -458,6 +458,9 @@ namespace EduMatch.PresentationLayer.Controllers
 
 				await tx.CommitAsync();
 
+				// Update user role to tutor since status is Approved
+				await _userService.UpdateRoleUserAsync(existingProfile.UserEmail, 2); // Role 2 = Tutor
+
 				var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
 				return Ok(ApiResponse<TutorProfileDto>.Ok(fullProfile!, "Tutor approved and all certificates/educations verified."));
 			}
@@ -492,6 +495,13 @@ namespace EduMatch.PresentationLayer.Controllers
 				};
 
 				var updatedProfile = await _tutorProfileService.UpdateAsync(updateRequest);
+
+				// If status is Approved, update user role to tutor
+				if (request.Status == TutorStatus.Approved)
+				{
+					await _userService.UpdateRoleUserAsync(existingProfile.UserEmail, 2); // Role 2 = Tutor
+				}
+
 				return Ok(ApiResponse<TutorProfileDto>.Ok(updatedProfile, $"Tutor status updated to {request.Status}."));
 			}
 			catch (Exception ex)

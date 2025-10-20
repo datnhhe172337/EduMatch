@@ -55,8 +55,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 				var entity = new Subject
 				{
-					Name = request.Name,
-					CreatedAt = DateTime.UtcNow
+					SubjectName = request.SubjectName
 				};
 				await _repository.AddAsync(entity);
 				return _mapper.Map<SubjectDto>(entity);
@@ -87,8 +86,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 
 				// Update only provided fields
-				existingEntity.Name = request.SubjectName;
-				existingEntity.UpdatedAt = DateTime.UtcNow;
+				existingEntity.SubjectName = request.SubjectName;
 
 				await _repository.UpdateAsync(existingEntity);
 				return _mapper.Map<SubjectDto>(existingEntity);

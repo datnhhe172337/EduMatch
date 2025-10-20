@@ -159,7 +159,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 					existingEntity.Name = name;
 				if (institutionType.HasValue)
 					existingEntity.InstitutionType = institutionType;
-				existingEntity.UpdatedAt = DateTime.UtcNow;
 
 				await _repository.UpdateAsync(existingEntity);
 				return _mapper.Map<EducationInstitutionDto>(existingEntity);

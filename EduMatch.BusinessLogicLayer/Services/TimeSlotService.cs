@@ -69,8 +69,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 var entity = new TimeSlot
                 {
                     StartTime = request.StartTime,
-                    EndTime = request.EndTime,
-                    CreatedAt = DateTime.UtcNow
+                    EndTime = request.EndTime
                 };
 				await _repository.AddAsync(entity);
 				return _mapper.Map<TimeSlotDto>(entity);
@@ -110,7 +109,6 @@ namespace EduMatch.BusinessLogicLayer.Services
                 // Update only provided fields
                 existingEntity.StartTime = request.StartTime;
                 existingEntity.EndTime = request.EndTime;
-                existingEntity.UpdatedAt = DateTime.UtcNow;
 
                 await _repository.UpdateAsync(existingEntity);
                 return _mapper.Map<TimeSlotDto>(existingEntity);

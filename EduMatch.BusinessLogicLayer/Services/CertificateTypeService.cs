@@ -110,7 +110,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 				// Update only provided fields
 				existingEntity.Code = request.Code;
 				existingEntity.Name = request.Name;
-				existingEntity.UpdatedAt = DateTime.UtcNow;
 
 				await _repository.UpdateAsync(existingEntity);
 				return _mapper.Map<CertificateTypeDto>(existingEntity);

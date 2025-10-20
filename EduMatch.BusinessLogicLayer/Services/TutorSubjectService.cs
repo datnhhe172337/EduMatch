@@ -113,8 +113,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 					TutorId = request.TutorId,
 					SubjectId = request.SubjectId,
 					LevelId = request.LevelId,
-					HourlyRate = request.HourlyRate,
-					CreatedAt = DateTime.UtcNow
+					HourlyRate = request.HourlyRate
 				};
 				await _repository.AddAsync(entity);
 				return _mapper.Map<TutorSubjectDto>(entity);
@@ -147,11 +146,10 @@ namespace EduMatch.BusinessLogicLayer.Services
                 // Update only provided fields
                 existingEntity.TutorId = request.TutorId;
                 existingEntity.SubjectId = request.SubjectId;
-                if (request.LevelId.HasValue)
+                if (request.LevelId.HasValue) 
                     existingEntity.LevelId = request.LevelId.Value;
                 if (request.HourlyRate.HasValue) 
                     existingEntity.HourlyRate = request.HourlyRate.Value;
-                existingEntity.UpdatedAt = DateTime.UtcNow;
 
                 await _repository.UpdateAsync(existingEntity);
                 return _mapper.Map<TutorSubjectDto>(existingEntity);
