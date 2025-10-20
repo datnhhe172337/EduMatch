@@ -1,4 +1,8 @@
 ﻿using EduMatch.DataAccessLayer.Enum;
+using EduMatch.BusinessLogicLayer.Requests.TutorEducation;
+using EduMatch.BusinessLogicLayer.Requests.TutorCertificate;
+using EduMatch.BusinessLogicLayer.Requests.TutorSubject;
+using EduMatch.BusinessLogicLayer.Requests.TutorAvailability;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -7,7 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EduMatch.BusinessLogicLayer.Requests
+namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 {
 	public class BecomeTutorRequest
 	{

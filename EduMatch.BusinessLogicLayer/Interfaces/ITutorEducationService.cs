@@ -1,5 +1,5 @@
 using EduMatch.BusinessLogicLayer.DTOs;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.TutorEducation;
 using EduMatch.DataAccessLayer.Enum;
 using System.Collections.Generic;
 using System.Threading.Tasks;

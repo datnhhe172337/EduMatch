@@ -1,5 +1,5 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.User;
 using EduMatch.DataAccessLayer.Entities;
 using System;
 using System.Collections.Generic;

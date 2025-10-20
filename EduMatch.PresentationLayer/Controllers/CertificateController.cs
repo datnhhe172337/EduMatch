@@ -1,6 +1,6 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.CertificateType;
 using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

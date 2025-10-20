@@ -1,9 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace EduMatch.BusinessLogicLayer.Requests
+namespace EduMatch.BusinessLogicLayer.Requests.CertificateType
 {
-	public class CertificateTypeCreateRequest
+	public class CertificateTypeUpdateRequest
 	{
+		[Required(ErrorMessage = "Id is required")]
+		[Range(1, int.MaxValue, ErrorMessage = "Id must be greater than 0")]
+		public int Id { get; set; }
+
 		[Required(ErrorMessage = "Code is required")]
 		[StringLength(50, ErrorMessage = "Code cannot exceed 50 characters")]
 		public string Code { get; set; } = null!;

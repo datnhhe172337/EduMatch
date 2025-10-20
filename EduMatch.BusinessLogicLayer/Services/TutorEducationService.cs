@@ -1,7 +1,8 @@
 ﻿using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.TutorEducation;
+using EduMatch.BusinessLogicLayer.Requests.Common;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;

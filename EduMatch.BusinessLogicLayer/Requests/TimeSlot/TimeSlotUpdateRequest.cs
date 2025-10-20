@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace EduMatch.BusinessLogicLayer.Requests
+namespace EduMatch.BusinessLogicLayer.Requests.TimeSlot
 {
 	public class TimeSlotUpdateRequest
 	{

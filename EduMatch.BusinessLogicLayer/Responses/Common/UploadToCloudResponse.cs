@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EduMatch.BusinessLogicLayer.Responses
+namespace EduMatch.BusinessLogicLayer.Responses.Common
 {
 	public sealed record UploadToCloudResponse(
 		bool Ok,

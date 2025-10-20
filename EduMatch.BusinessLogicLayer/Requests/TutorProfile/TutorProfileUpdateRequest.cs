@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EduMatch.BusinessLogicLayer.Requests
+namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 {
 	public class TutorProfileUpdateRequest
 	{

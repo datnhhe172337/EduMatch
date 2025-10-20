@@ -1,6 +1,15 @@
 ﻿using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.TutorProfile;
+using EduMatch.BusinessLogicLayer.Requests.TutorCertificate;
+using EduMatch.BusinessLogicLayer.Requests.TutorEducation;
+using EduMatch.BusinessLogicLayer.Requests.TutorSubject;
+using EduMatch.BusinessLogicLayer.Requests.TutorAvailability;
+using EduMatch.BusinessLogicLayer.Requests.User;
+using EduMatch.BusinessLogicLayer.Requests.CertificateType;
+using EduMatch.BusinessLogicLayer.Requests.Level;
+using EduMatch.BusinessLogicLayer.Requests.Subject;
+using EduMatch.BusinessLogicLayer.Requests.TimeSlot;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using System;

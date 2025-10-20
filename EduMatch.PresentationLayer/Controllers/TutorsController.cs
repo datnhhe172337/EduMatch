@@ -1,6 +1,11 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.TutorProfile;
+using EduMatch.BusinessLogicLayer.Requests.TutorCertificate;
+using EduMatch.BusinessLogicLayer.Requests.TutorEducation;
+using EduMatch.BusinessLogicLayer.Requests.TutorSubject;
+using EduMatch.BusinessLogicLayer.Requests.TutorAvailability;
+using EduMatch.BusinessLogicLayer.Requests.User;
 using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Entities;

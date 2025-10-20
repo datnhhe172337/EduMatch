@@ -1,5 +1,5 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.TutorProfile;
 using System;
 using System.Collections.Generic;
 using System.Linq;

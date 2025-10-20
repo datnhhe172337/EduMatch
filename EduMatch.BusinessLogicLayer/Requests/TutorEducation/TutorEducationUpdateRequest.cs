@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace EduMatch.BusinessLogicLayer.Requests
+namespace EduMatch.BusinessLogicLayer.Requests.TutorEducation
 {
 	public class TutorEducationUpdateRequest
 	{

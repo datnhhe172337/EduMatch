@@ -1,7 +1,7 @@
 using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.CertificateType;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using System.Collections.Generic;
