@@ -22,8 +22,6 @@ public partial class TutorProfile
 
     public TutorStatus? Status { get; set; }
 
-    public string? RejectReason { get; set; }
-
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }

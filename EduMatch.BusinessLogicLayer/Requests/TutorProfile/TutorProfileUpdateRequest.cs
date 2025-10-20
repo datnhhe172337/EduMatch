@@ -37,8 +37,7 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 		[EnumDataType(typeof(TutorStatus), ErrorMessage = "Invalid TutorStatus")]
 		public TutorStatus? Status { get; set; }
 
-		[MaxLength(500, ErrorMessage = "Reject reason cannot exceed 500 characters.")]
-		public string? RejectReason { get; set; }
+      
 	}
 
 }

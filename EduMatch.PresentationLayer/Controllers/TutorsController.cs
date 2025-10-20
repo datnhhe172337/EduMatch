@@ -313,130 +313,87 @@ namespace EduMatch.PresentationLayer.Controllers
 			return Ok(ApiResponse<List<TutorCertificateDto>>.Ok(results, "Batch verification applied"));
 		}
 
-		// Approve tutor and optionally verify all certificates/educations
-		[Authorize]
-		[HttpPut("approve-tutor/{tutorId}")]
-		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
-		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
-		public async Task<IActionResult> ApproveTutor([FromRoute] int tutorId, [FromBody] ApproveTutorRequest request)
-		{
-			if (tutorId <= 0)
-				return BadRequest(ApiResponse<string>.Fail("Invalid tutor ID."));
+        // Update tutor status. If approveAndVerifyAll = true, set status Approved and verify all certificates/educations.
+        [Authorize]
+        [HttpPut("update-tutor-status/{tutorId}")]
+        [ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateTutorStatus([FromRoute] int tutorId, [FromBody] UpdateTutorStatusRequest request)
+        {
+            if (tutorId <= 0)
+                return BadRequest(ApiResponse<string>.Fail("Invalid tutor ID."));
 
-			var tutor = await _tutorProfileService.GetByIdFullAsync(tutorId);
-			if (tutor == null)
-				return NotFound(ApiResponse<string>.Fail($"Tutor with ID {tutorId} not found."));
+            var tutor = await _tutorProfileService.GetByIdFullAsync(tutorId);
+            if (tutor == null)
+                return NotFound(ApiResponse<string>.Fail($"Tutor with ID {tutorId} not found."));
 
-			await using var tx = await _eduMatch.Database.BeginTransactionAsync();
-			try
-			{
-				// Update tutor status to Approved
-				var updateProfileRequest = new TutorProfileUpdateRequest
-				{
-					Id = tutorId,
-					TutorId = tutorId,
-					Status = TutorStatus.Approved
-				};
+            if (!request.ApproveAndVerifyAll && request.Status == null)
+                return BadRequest(ApiResponse<string>.Fail("Status is required when ApproveAndVerifyAll is false."));
 
-				var updatedProfile = await _tutorProfileService.UpdateAsync(updateProfileRequest);
+            await using var tx = await _eduMatch.Database.BeginTransactionAsync();
+            try
+            {
+                var nextStatus = request.ApproveAndVerifyAll ? TutorStatus.Approved : request.Status!.Value;
 
-				// If verifyAll is true, also verify all certificates and educations
-				if (request.VerifyAll)
-				{
-					// Get all certificates and educations for this tutor
-					var certificates = await _tutorCertificateService.GetByTutorIdAsync(tutorId);
-					var educations = await _tutorEducationService.GetByTutorIdAsync(tutorId);
+                var updateProfileRequest = new TutorProfileUpdateRequest
+                {
+                    Id = tutorId,
+                    TutorId = tutorId,
+                    Status = nextStatus
+                };
 
-					// Verify all certificates
-					foreach (var cert in certificates)
-					{
-						var certUpdateRequest = new TutorCertificateUpdateRequest
-						{
-							Id = cert.Id,
-							TutorId = cert.TutorId,
-							CertificateTypeId = cert.CertificateTypeId,
-							IssueDate = cert.IssueDate,
-							ExpiryDate = cert.ExpiryDate,
-							Verified = VerifyStatus.Verified,
-							RejectReason = null
-						};
-						await _tutorCertificateService.UpdateAsync(certUpdateRequest);
-					}
+                await _tutorProfileService.UpdateAsync(updateProfileRequest);
 
-					// Verify all educations
-					foreach (var edu in educations)
-					{
-						var eduUpdateRequest = new TutorEducationUpdateRequest
-						{
-							Id = edu.Id,
-							TutorId = edu.TutorId,
-							InstitutionId = edu.InstitutionId,
-							IssueDate = edu.IssueDate,
-							Verified = VerifyStatus.Verified,
-							RejectReason = null
-						};
-						await _tutorEducationService.UpdateAsync(eduUpdateRequest);
-					}
-				}
+                if (request.ApproveAndVerifyAll)
+                {
+                    var certificates = await _tutorCertificateService.GetByTutorIdAsync(tutorId);
+                    var educations = await _tutorEducationService.GetByTutorIdAsync(tutorId);
 
-				await tx.CommitAsync();
+                    foreach (var cert in certificates)
+                    {
+                        var certUpdateRequest = new TutorCertificateUpdateRequest
+                        {
+                            Id = cert.Id,
+                            TutorId = cert.TutorId,
+                            CertificateTypeId = cert.CertificateTypeId,
+                            IssueDate = cert.IssueDate,
+                            ExpiryDate = cert.ExpiryDate,
+                            Verified = VerifyStatus.Verified
+                        };
+                        await _tutorCertificateService.UpdateAsync(certUpdateRequest);
+                    }
 
-				// Get updated profile with all related data
-				var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
+                    foreach (var edu in educations)
+                    {
+                        var eduUpdateRequest = new TutorEducationUpdateRequest
+                        {
+                            Id = edu.Id,
+                            TutorId = edu.TutorId,
+                            InstitutionId = edu.InstitutionId,
+                            IssueDate = edu.IssueDate,
+                            Verified = VerifyStatus.Verified
+                        };
+                        await _tutorEducationService.UpdateAsync(eduUpdateRequest);
+                    }
+                }
 
-				return Ok(ApiResponse<TutorProfileDto>.Ok(fullProfile, 
-					request.VerifyAll ? "Tutor approved and all certificates/educations verified." : "Tutor approved."));
-			}
-			catch (Exception ex)
-			{
-				await tx.RollbackAsync();
-				return BadRequest(ApiResponse<string>.Fail("Failed to approve tutor.", ex.Message));
-			}
-		}
+                await tx.CommitAsync();
 
-		// Reject tutor
-		[Authorize]
-		[HttpPut("reject-tutor/{tutorId}")]
-		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
-		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
-		public async Task<IActionResult> RejectTutor([FromRoute] int tutorId, [FromBody] RejectTutorRequest request)
-		{
-			if (tutorId <= 0)
-				return BadRequest(ApiResponse<string>.Fail("Invalid tutor ID."));
+                var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
+                var msg = request.ApproveAndVerifyAll
+                    ? "Tutor approved and all certificates/educations verified."
+                    : $"Tutor status updated to {nextStatus}.";
+                return Ok(ApiResponse<TutorProfileDto>.Ok(fullProfile, msg));
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                return BadRequest(ApiResponse<string>.Fail("Failed to update tutor status.", ex.Message));
+            }
+        }
 
-			var tutor = await _tutorProfileService.GetByIdFullAsync(tutorId);
-			if (tutor == null)
-				return NotFound(ApiResponse<string>.Fail($"Tutor with ID {tutorId} not found."));
-
-			await using var tx = await _eduMatch.Database.BeginTransactionAsync();
-			try
-			{
-				// Update tutor status to Rejected
-				var updateProfileRequest = new TutorProfileUpdateRequest
-				{
-					Id = tutorId,
-					TutorId = tutorId,
-					Status = TutorStatus.Rejected,
-					RejectReason = request.RejectReason
-				};
-
-				await _tutorProfileService.UpdateAsync(updateProfileRequest);
-
-				await tx.CommitAsync();
-
-				// Get updated profile
-				var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
-
-				return Ok(ApiResponse<TutorProfileDto>.Ok(fullProfile, "Tutor rejected."));
-			}
-			catch (Exception ex)
-			{
-				await tx.RollbackAsync();
-				return BadRequest(ApiResponse<string>.Fail("Failed to reject tutor.", ex.Message));
-			}
-		}
+        // (Merged into update-tutor-status)
 
 		// Get all tutors by status
 		
