@@ -339,7 +339,6 @@ namespace EduMatch.PresentationLayer.Controllers
                 var updateProfileRequest = new TutorProfileUpdateRequest
                 {
                     Id = tutorId,
-                    TutorId = tutorId,
                     Status = nextStatus
                 };
 
@@ -393,7 +392,7 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
-        // (Merged into update-tutor-status)
+      
 
 		// Get all tutors by status
 		

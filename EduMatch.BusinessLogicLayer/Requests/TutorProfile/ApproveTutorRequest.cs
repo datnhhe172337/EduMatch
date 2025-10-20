@@ -1,3 +1,4 @@
+using EduMatch.DataAccessLayer.Enum;
 using System.ComponentModel.DataAnnotations;
 
 namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
@@ -8,6 +9,6 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 		public bool ApproveAndVerifyAll { get; set; }
 
 		// Required when ApproveAndVerifyAll == false
-		public EduMatch.DataAccessLayer.Enum.TutorStatus? Status { get; set; }
+		public TutorStatus? Status { get; set; }
 	}
 }
