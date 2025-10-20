@@ -53,7 +53,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
 				}
 
-				var entity = _mapper.Map<Subject>(request);
+				var entity = new Subject
+				{
+					Name = request.Name,
+					CreatedAt = DateTime.UtcNow
+				};
 				await _repository.AddAsync(entity);
 				return _mapper.Map<SubjectDto>(entity);
 			}
@@ -82,9 +86,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Subject with ID {request.Id} not found");
 				}
 
-				var entity = _mapper.Map<Subject>(request);
-				await _repository.UpdateAsync(entity);
-				return _mapper.Map<SubjectDto>(entity);
+				// Update only provided fields
+				existingEntity.Name = request.SubjectName;
+				existingEntity.UpdatedAt = DateTime.UtcNow;
+
+				await _repository.UpdateAsync(existingEntity);
+				return _mapper.Map<SubjectDto>(existingEntity);
 			}
 			catch (Exception ex)
 			{

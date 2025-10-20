@@ -47,7 +47,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 			return entity != null ? _mapper.Map<TimeSlotDto>(entity) : null;
 		}
 
-		public async Task<TimeSlotDto> CreateAsync(TimeSlotCreateRequest request)
+        public async Task<TimeSlotDto> CreateAsync(TimeSlotCreateRequest request)
 		{
 			try
 			{
@@ -66,7 +66,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Time slot with start time {request.StartTime} and end time {request.EndTime} already exists");
 				}
 
-				var entity = _mapper.Map<TimeSlot>(request);
+                var entity = new TimeSlot
+                {
+                    StartTime = request.StartTime,
+                    EndTime = request.EndTime,
+                    CreatedAt = DateTime.UtcNow
+                };
 				await _repository.AddAsync(entity);
 				return _mapper.Map<TimeSlotDto>(entity);
 			}
@@ -102,9 +107,13 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Time slot with start time {request.StartTime} and end time {request.EndTime} already exists");
 				}
 
-				var entity = _mapper.Map<TimeSlot>(request);
-				await _repository.UpdateAsync(entity);
-				return _mapper.Map<TimeSlotDto>(entity);
+                // Update only provided fields
+                existingEntity.StartTime = request.StartTime;
+                existingEntity.EndTime = request.EndTime;
+                existingEntity.UpdatedAt = DateTime.UtcNow;
+
+                await _repository.UpdateAsync(existingEntity);
+                return _mapper.Map<TimeSlotDto>(existingEntity);
 			}
 			catch (Exception ex)
 			{

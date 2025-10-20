@@ -205,10 +205,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 				var oldPublicId = existing.VideoIntroPublicId;
 
-				// Cập nhật fields
-				existing.UserEmail = existing.UserEmail;
-				existing.Bio = request.Bio;
-				existing.TeachingExp = request.TeachingExp;
+				// Update only provided fields
+				if (!string.IsNullOrWhiteSpace(request.Bio))
+					existing.Bio = request.Bio;
+				if (!string.IsNullOrWhiteSpace(request.TeachingExp))
+					existing.TeachingExp = request.TeachingExp;
+
 				var hasNewFile = request.VideoIntro != null && request.VideoIntro.Length > 0 && !string.IsNullOrWhiteSpace(request.VideoIntro.FileName);
 				if (hasNewFile)
 				{

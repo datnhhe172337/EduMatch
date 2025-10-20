@@ -66,7 +66,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Certificate type with code '{request.Code}' already exists");
 				}
 
-				var entity = _mapper.Map<CertificateType>(request);
+				var entity = new CertificateType
+				{
+					Code = request.Code,
+					Name = request.Name,
+					CreatedAt = DateTime.UtcNow
+				};
 				await _repository.AddAsync(entity);
 				return _mapper.Map<CertificateTypeDto>(entity);
 			}
@@ -102,9 +107,13 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Certificate type with code '{request.Code}' already exists");
 				}
 
-				var entity = _mapper.Map<CertificateType>(request);
-				await _repository.UpdateAsync(entity);
-				return _mapper.Map<CertificateTypeDto>(entity);
+				// Update only provided fields
+				existingEntity.Code = request.Code;
+				existingEntity.Name = request.Name;
+				existingEntity.UpdatedAt = DateTime.UtcNow;
+
+				await _repository.UpdateAsync(existingEntity);
+				return _mapper.Map<CertificateTypeDto>(existingEntity);
 			}
 			catch (Exception ex)
 			{

@@ -108,7 +108,14 @@ namespace EduMatch.BusinessLogicLayer.Services
 				if (level is null)
 					throw new ArgumentException($"level with ID {request.LevelId} not found.");
 
-				var entity = _mapper.Map<TutorSubject>(request);
+				var entity = new TutorSubject
+				{
+					TutorId = request.TutorId,
+					SubjectId = request.SubjectId,
+					LevelId = request.LevelId,
+					HourlyRate = request.HourlyRate,
+					CreatedAt = DateTime.UtcNow
+				};
 				await _repository.AddAsync(entity);
 				return _mapper.Map<TutorSubjectDto>(entity);
 			}
@@ -118,34 +125,42 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
-		public async Task<TutorSubjectDto> UpdateAsync(TutorSubjectUpdateRequest request)
-		{
-			try
-			{
-				// Validate request
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-				}
+        public async Task<TutorSubjectDto> UpdateAsync(TutorSubjectUpdateRequest request)
+        {
+            try
+            {
+                // Validate request
+                var validationContext = new ValidationContext(request);
+                var validationResults = new List<ValidationResult>();
+                if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+                {
+                    throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
+                }
 
-				// Check if entity exists
-				var existingEntity = await _repository.GetByIdFullAsync(request.Id);
-				if (existingEntity == null)
-				{
-					throw new ArgumentException($"Tutor subject with ID {request.Id} not found");
-				}
+                // Check if entity exists
+                var existingEntity = await _repository.GetByIdFullAsync(request.Id);
+                if (existingEntity == null)
+                {
+                    throw new ArgumentException($"Tutor subject with ID {request.Id} not found");
+                }
 
-				var entity = _mapper.Map<TutorSubject>(request);
-				await _repository.UpdateAsync(entity);
-				return _mapper.Map<TutorSubjectDto>(entity);
-			}
-			catch (Exception ex)
-			{
-				throw new InvalidOperationException($"Failed to update tutor subject: {ex.Message}", ex);
-			}
-		}
+                // Update only provided fields
+                existingEntity.TutorId = request.TutorId;
+                existingEntity.SubjectId = request.SubjectId;
+                if (request.LevelId.HasValue)
+                    existingEntity.LevelId = request.LevelId.Value;
+                if (request.HourlyRate.HasValue) 
+                    existingEntity.HourlyRate = request.HourlyRate.Value;
+                existingEntity.UpdatedAt = DateTime.UtcNow;
+
+                await _repository.UpdateAsync(existingEntity);
+                return _mapper.Map<TutorSubjectDto>(existingEntity);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to update tutor subject: {ex.Message}", ex);
+            }
+        }
 
 		public async Task<List<TutorSubjectDto>> CreateBulkAsync(List<TutorSubjectCreateRequest> requests)
 		{

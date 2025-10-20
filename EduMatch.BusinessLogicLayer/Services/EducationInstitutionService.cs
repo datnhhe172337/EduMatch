@@ -115,7 +115,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 					Code = code,
 					Name = name,
 					InstitutionType = institutionType,
-					CreatedAt = DateTime.Now
+					CreatedAt = DateTime.UtcNow
 				};
 
 				await _repository.AddAsync(entity);
@@ -152,9 +152,14 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Education institution with code '{code}' already exists");
 				}
 
-				existingEntity.Code = code;
-				existingEntity.Name = name;
-				existingEntity.InstitutionType = institutionType;
+				// Update only provided fields
+				if (!string.IsNullOrWhiteSpace(code))
+					existingEntity.Code = code;
+				if (!string.IsNullOrWhiteSpace(name))
+					existingEntity.Name = name;
+				if (institutionType.HasValue)
+					existingEntity.InstitutionType = institutionType;
+				existingEntity.UpdatedAt = DateTime.UtcNow;
 
 				await _repository.UpdateAsync(existingEntity);
 				return _mapper.Map<EducationInstitutionDto>(existingEntity);

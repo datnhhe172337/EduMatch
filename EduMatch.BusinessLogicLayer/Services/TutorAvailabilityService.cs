@@ -74,16 +74,15 @@ namespace EduMatch.BusinessLogicLayer.Services
 				if (timeSlot is null)
 					throw new ArgumentException($"timeSlot with ID {request.SlotId} not found.");
 
-
-				var entity = _mapper.Map<TutorAvailability>(request);
-
-				if (entity.Status == null)
-					entity.Status = TutorAvailabilityStatus.Available;
-
-				entity.CreatedAt = DateTime.UtcNow;
-				entity.UpdatedAt = null;
-				entity.StartDate = request.StartDate.Date.Add(timeSlot.StartTime.ToTimeSpan());
-				entity.EndDate = request.StartDate.Date.Add(timeSlot.EndTime.ToTimeSpan());
+				var entity = new TutorAvailability
+				{
+					TutorId = request.TutorId,
+					SlotId = request.SlotId,
+					Status = TutorAvailabilityStatus.Available,
+					CreatedAt = DateTime.UtcNow,
+					StartDate = request.StartDate.Date.Add(timeSlot.StartTime.ToTimeSpan()),
+					EndDate = request.StartDate.Date.Add(timeSlot.EndTime.ToTimeSpan())
+				};
 
 				await _repository.AddAsync(entity);
 				return _mapper.Map<TutorAvailabilityDto>(entity);
@@ -113,9 +112,22 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Tutor availability with ID {request.Id} not found");
 				}
 
-				var entity = _mapper.Map<TutorAvailability>(request);
-				await _repository.UpdateAsync(entity);
-				return _mapper.Map<TutorAvailabilityDto>(entity);
+				// Update only provided fields
+				existingEntity.TutorId = request.TutorId;
+				existingEntity.SlotId = request.SlotId;
+				if (request.Status.HasValue)
+					existingEntity.Status = request.Status.Value;
+
+				// Update StartDate and EndDate based on SlotId
+				var timeSlot = await _timeSlotRepository.GetByIdAsync(request.SlotId);
+				if (timeSlot is null)
+					throw new ArgumentException($"timeSlot with ID {request.SlotId} not found.");
+				existingEntity.StartDate = request.StartDate.Date.Add(timeSlot.StartTime.ToTimeSpan());
+				existingEntity.EndDate = request.StartDate.Date.Add(timeSlot.EndTime.ToTimeSpan());
+				existingEntity.UpdatedAt = DateTime.UtcNow;
+
+				await _repository.UpdateAsync(existingEntity);
+				return _mapper.Map<TutorAvailabilityDto>(existingEntity);
 			}
 			catch (Exception ex)
 			{

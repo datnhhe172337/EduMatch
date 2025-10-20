@@ -91,9 +91,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		{
 			try
 			{
-
 				// VALIDATE REQUEST 
-
 				var validationContext = new ValidationContext(request);
 				var validationResults = new List<ValidationResult>();
 				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
@@ -106,7 +104,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 				var tutor = await _tutorProfileRepository.GetByIdFullAsync(request.TutorId);
 				if (tutor is null)
 					throw new ArgumentException($"Tutor with ID {request.TutorId} not found.");
-
 
 				var certificateType = await _certificateTypeRepository.GetByIdAsync(request.CertificateTypeId);
 				if (certificateType is null)
@@ -137,7 +134,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 
 				// MAP  -> ENTITY
-
 				var entity = new TutorCertificate
 				{
 					TutorId = request.TutorId,
@@ -152,9 +148,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 				};
 
 				await _repository.AddAsync(entity);
-
-
-
 				return _mapper.Map<TutorCertificateDto>(entity);
 			}
 			catch (Exception ex)
@@ -202,27 +195,28 @@ namespace EduMatch.BusinessLogicLayer.Services
 					existingEntity.CertificatePublicId = uploadResult.PublicId;
 				}
 
+				// Update only provided fields
 				existingEntity.TutorId = request.TutorId;
 				existingEntity.CertificateTypeId = request.CertificateTypeId;
+				if (request.IssueDate.HasValue) 
+					existingEntity.IssueDate = request.IssueDate.Value;
+				if (request.ExpiryDate.HasValue) 
+					existingEntity.ExpiryDate = request.ExpiryDate.Value;
 
-
-
-				// Optional -> chỉ set khi có giá trị
-				if (request.Verified.HasValue) existingEntity.Verified = request.Verified.Value;
-				if (request.IssueDate.HasValue) existingEntity.IssueDate = request.IssueDate.Value;
-				if (request.ExpiryDate.HasValue) existingEntity.ExpiryDate = request.ExpiryDate.Value;
-
-				// RejectReason: yêu cầu nếu Verified = Rejected, ngược lại clear
-				if (request.Verified == VerifyStatus.Rejected)
+				// Handle Verified status
+				if (request.Verified.HasValue)
 				{
-					if (string.IsNullOrWhiteSpace(request.RejectReason))
-						throw new ArgumentException("Reject reason is required when verification status is Rejected.");
-					existingEntity.RejectReason = request.RejectReason!.Trim();
-				}
-				else
-				{
-					// Nếu không bị từ chối thì xóa lý do
-					existingEntity.RejectReason = null;
+					existingEntity.Verified = request.Verified.Value;
+					if (request.Verified.Value == VerifyStatus.Rejected)
+					{
+						if (string.IsNullOrWhiteSpace(request.RejectReason))
+							throw new ArgumentException("Reject reason is required when verification status is Rejected.");
+						existingEntity.RejectReason = request.RejectReason!.Trim();
+					}
+					else
+					{
+						existingEntity.RejectReason = null;
+					}
 				}
 
 				await _repository.UpdateAsync(existingEntity);

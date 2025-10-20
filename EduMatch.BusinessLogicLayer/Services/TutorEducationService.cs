@@ -23,22 +23,21 @@ namespace EduMatch.BusinessLogicLayer.Services
 		private readonly ICloudMediaService _cloudMedia;
 		private readonly CurrentUserService _currentUserService;
 
-		public TutorEducationService(
-			ITutorEducationRepository repository,
-			IMapper mapper, ICloudMediaService cloudMedia,
-			CurrentUserService currentUserService,
-			ITutorProfileRepository tutorProfileRepository,
-			IEducationInstitutionRepository educationInstitutionRepository,
-			ICloudMediaService cloudMediaService
-			)
+        public TutorEducationService(
+            ITutorEducationRepository repository,
+            IMapper mapper,
+            ICloudMediaService cloudMedia,
+            CurrentUserService currentUserService,
+            ITutorProfileRepository tutorProfileRepository,
+            IEducationInstitutionRepository educationInstitutionRepository
+            )
 		{
 			_repository = repository;
 			_mapper = mapper;
-			_cloudMedia = cloudMedia; 
+            _cloudMedia = cloudMedia; 
 			_currentUserService = currentUserService;
 			_tutorProfileRepository = tutorProfileRepository;
 			_educationInstitutionRepository = educationInstitutionRepository;
-			_cloudMedia = cloudMediaService;
 		}
 
 		public async Task<TutorEducationDto?> GetByIdFullAsync(int id)
@@ -87,12 +86,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 		{
 			try
 			{
-				
 				var tutor = await _tutorProfileRepository.GetByIdFullAsync(request.TutorId);
 				if (tutor is null)
 					throw new ArgumentException($"Tutor with ID {request.TutorId} not found.");
 
-				
 				var institution = await _educationInstitutionRepository.GetByIdAsync(request.InstitutionId);
 				if (institution is null)
 					throw new ArgumentException($"Education institution with ID {request.InstitutionId} not found.");
@@ -100,8 +97,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				if (_currentUserService.Email is null)
 					throw new ArgumentException("Current user email not found.");
 
-				//  UploadToCloudRequest
-
+				// UploadToCloudRequest
 				string? certUrl = null;
 				string? certPublicId = null;
 				var hasFile = request.CertificateEducation != null && request.CertificateEducation.Length > 0 && !string.IsNullOrWhiteSpace(request.CertificateEducation.FileName);
@@ -124,7 +120,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 
 				// MAP  -> ENTITY
-				
 				var entity = new TutorEducation
 				{
 					TutorId = request.TutorId,
@@ -138,9 +133,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 				};
 
 				await _repository.AddAsync(entity);
-
-				
-
 				return _mapper.Map<TutorEducationDto>(entity);
 			}
 			catch (Exception ex)
@@ -154,8 +146,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 		{
 			try
 			{
-				
-
 				// Check if entity exists
 				var existingEntity = await _repository.GetByIdFullAsync(request.Id);
 				if (existingEntity == null)
@@ -182,37 +172,29 @@ namespace EduMatch.BusinessLogicLayer.Services
 					existingEntity.CertificateUrl = uploadResult.SecureUrl;
 					existingEntity.CertificatePublicId = uploadResult.PublicId;
 				}
+
+				// Update only provided fields
 				existingEntity.TutorId = request.TutorId;
 				existingEntity.InstitutionId = request.InstitutionId;
-
-				
 				if (request.IssueDate.HasValue)
 					existingEntity.IssueDate = request.IssueDate.Value;
 
-				
-				var targetVerified = request.Verified ?? existingEntity.Verified;
-
-				// Quản lý RejectReason theo trạng thái đích
-				if (targetVerified == VerifyStatus.Rejected)
+				// Handle Verified status
+				if (request.Verified.HasValue)
 				{
-					// Nếu chuyển/đích là Rejected thì cần RejectReason:
-					var reason = request.RejectReason ?? existingEntity.RejectReason;
-					if (string.IsNullOrWhiteSpace(reason))
-						throw new ArgumentException("Reject reason is required when verification status is Rejected.");
-					existingEntity.RejectReason = reason.Trim();
-				}
-				else
-				{
-					
-					if (request.Verified.HasValue)
+					existingEntity.Verified = request.Verified.Value;
+					if (request.Verified.Value == VerifyStatus.Rejected)
 					{
-						existingEntity.RejectReason = null; 
+						var reason = request.RejectReason ?? existingEntity.RejectReason;
+						if (string.IsNullOrWhiteSpace(reason))
+							throw new ArgumentException("Reject reason is required when verification status is Rejected.");
+						existingEntity.RejectReason = reason.Trim();
 					}
-					
+					else
+					{
+						existingEntity.RejectReason = null;
+					}
 				}
-
-				
-				existingEntity.Verified = targetVerified;
 
 				await _repository.UpdateAsync(existingEntity);
 
@@ -231,7 +213,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 							}
 						});
 				}
-
 
 				return _mapper.Map<TutorEducationDto>(existingEntity);
 			}
