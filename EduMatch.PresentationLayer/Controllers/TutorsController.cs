@@ -468,6 +468,38 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
+		// Update only tutor status
+		[Authorize]
+		[HttpPut("update-tutor-status/{tutorId}")]
+		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		public async Task<IActionResult> UpdateTutorStatus([FromRoute] int tutorId, [FromBody] UpdateTutorStatusRequest request)
+		{
+			if (tutorId <= 0)
+				return BadRequest(ApiResponse<string>.Fail("Invalid tutor ID."));
+
+			var existingProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
+			if (existingProfile == null)
+				return NotFound(ApiResponse<string>.Fail($"Tutor with ID {tutorId} not found."));
+
+			try
+			{
+				var updateRequest = new TutorProfileUpdateRequest
+				{
+					Id = tutorId,
+					Status = request.Status
+				};
+
+				var updatedProfile = await _tutorProfileService.UpdateAsync(updateRequest);
+				return Ok(ApiResponse<TutorProfileDto>.Ok(updatedProfile, $"Tutor status updated to {request.Status}."));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail("Failed to update tutor status.", ex.Message));
+			}
+		}
+
 
 
 
