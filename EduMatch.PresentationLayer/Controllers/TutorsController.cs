@@ -409,25 +409,25 @@ namespace EduMatch.PresentationLayer.Controllers
 			if (tutorId <= 0)
 				return BadRequest(ApiResponse<string>.Fail("Invalid tutor ID."));
 
+			// Check if tutor exists using service layer
 			var existingProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
 			if (existingProfile == null)
 				return NotFound(ApiResponse<string>.Fail($"Tutor with ID {tutorId} not found."));
 
-			await using var tx = await _eduMatch.Database.BeginTransactionAsync();
 			try
 			{
-				// Update tutor status to Approved
+				// Update tutor status to Approved using service layer
 				await _tutorProfileService.UpdateAsync(new TutorProfileUpdateRequest
 				{
 					Id = tutorId,
 					Status = TutorStatus.Approved
 				});
 
-				// Verify all certificates
+				// Verify all certificates using service layer
 				var certs = await _tutorCertificateService.GetByTutorIdAsync(tutorId);
 				foreach (var c in certs)
 				{
-					var certUpdate = new TutorCertificateUpdateRequest
+					await _tutorCertificateService.UpdateAsync(new TutorCertificateUpdateRequest
 					{
 						Id = c.Id,
 						TutorId = c.TutorId,
@@ -436,15 +436,14 @@ namespace EduMatch.PresentationLayer.Controllers
 						ExpiryDate = c.ExpiryDate,
 						Verified = VerifyStatus.Verified,
 						RejectReason = null
-					};
-					await _tutorCertificateService.UpdateAsync(certUpdate);
+					});
 				}
 
-				// Verify all educations
+				// Verify all educations using service layer
 				var edus = await _tutorEducationService.GetByTutorIdAsync(tutorId);
 				foreach (var e in edus)
 				{
-					var eduUpdate = new TutorEducationUpdateRequest
+					await _tutorEducationService.UpdateAsync(new TutorEducationUpdateRequest
 					{
 						Id = e.Id,
 						TutorId = e.TutorId,
@@ -452,11 +451,8 @@ namespace EduMatch.PresentationLayer.Controllers
 						IssueDate = e.IssueDate,
 						Verified = VerifyStatus.Verified,
 						RejectReason = null
-					};
-					await _tutorEducationService.UpdateAsync(eduUpdate);
+					});
 				}
-
-				await tx.CommitAsync();
 
 				// Update user role to tutor since status is Approved
 				await _userService.UpdateRoleUserAsync(existingProfile.UserEmail, 2); // Role 2 = Tutor
@@ -466,7 +462,6 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 			catch (Exception ex)
 			{
-				await tx.RollbackAsync();
 				return BadRequest(ApiResponse<string>.Fail("Failed to approve and verify all.", ex.Message));
 			}
 		}
@@ -482,19 +477,19 @@ namespace EduMatch.PresentationLayer.Controllers
 			if (tutorId <= 0)
 				return BadRequest(ApiResponse<string>.Fail("Invalid tutor ID."));
 
+			// Check if tutor exists using service layer
 			var existingProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
 			if (existingProfile == null)
 				return NotFound(ApiResponse<string>.Fail($"Tutor with ID {tutorId} not found."));
 
 			try
 			{
-				var updateRequest = new TutorProfileUpdateRequest
+				// Update tutor status using service layer
+				await _tutorProfileService.UpdateAsync(new TutorProfileUpdateRequest
 				{
 					Id = tutorId,
 					Status = request.Status
-				};
-
-				var updatedProfile = await _tutorProfileService.UpdateAsync(updateRequest);
+				});
 
 				// If status is Approved, update user role to tutor
 				if (request.Status == TutorStatus.Approved)
@@ -502,7 +497,8 @@ namespace EduMatch.PresentationLayer.Controllers
 					await _userService.UpdateRoleUserAsync(existingProfile.UserEmail, 2); // Role 2 = Tutor
 				}
 
-				return Ok(ApiResponse<TutorProfileDto>.Ok(updatedProfile, $"Tutor status updated to {request.Status}."));
+				var updatedProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
+				return Ok(ApiResponse<TutorProfileDto>.Ok(updatedProfile!, $"Tutor status updated to {request.Status}."));
 			}
 			catch (Exception ex)
 			{

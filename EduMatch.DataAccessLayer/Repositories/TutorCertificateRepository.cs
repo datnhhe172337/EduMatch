@@ -27,8 +27,8 @@ namespace EduMatch.DataAccessLayer.Repositories
 		public async Task<TutorCertificate?> GetByTutorIdFullAsync(int tutorId, CancellationToken ct = default)
 			=> await IncludeAll().FirstOrDefaultAsync(t => t.TutorId == tutorId, ct);
 
-		public async Task<IReadOnlyList<TutorCertificate>> GetByTutorIdAsync(int tutorId, CancellationToken ct = default)
-			=> await IncludeAll().Where(t => t.TutorId == tutorId).ToListAsync(ct);
+	public async Task<IReadOnlyList<TutorCertificate>> GetByTutorIdAsync(int tutorId)
+		=> await IncludeAll().Where(t => t.TutorId == tutorId).ToListAsync();
 
 		public async Task<IReadOnlyList<TutorCertificate>> GetByCertificateTypeAsync(int certificateTypeId, CancellationToken ct = default)
 			=> await IncludeAll().Where(t => t.CertificateTypeId == certificateTypeId).ToListAsync(ct);
