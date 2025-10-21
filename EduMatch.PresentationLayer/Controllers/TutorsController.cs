@@ -222,21 +222,21 @@ namespace EduMatch.PresentationLayer.Controllers
 
 		// Update tutor subject (partial)
 		[Authorize]
-		[HttpPut("update-tutor-subject/{id}")]
+		[HttpPut("update-tutor-subject/{tutorSubjectId}")]
 		[ProducesResponseType(typeof(ApiResponse<TutorSubjectDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
-		public async Task<IActionResult> UpdateSubject([FromRoute] int id, [FromBody] TutorSubjectUpdateRequest request)
+		public async Task<IActionResult> UpdateSubject([FromRoute] int tutorSubjectId, [FromBody] TutorSubjectUpdateRequest request)
 		{
 			try
 			{
-				var existing = await _tutorSubjectService.GetByIdFullAsync(id);
+				var existing = await _tutorSubjectService.GetByIdFullAsync(tutorSubjectId);
 				if (existing == null)
-					return NotFound(ApiResponse<string>.Fail("Not found", $"TutorSubject #{id} not found"));
+					return NotFound(ApiResponse<string>.Fail("Not found", $"TutorSubject #{tutorSubjectId} not found"));
 
 				var merged = new TutorSubjectUpdateRequest
 				{
-					Id = id,
+					Id = tutorSubjectId,
 					TutorId = request.TutorId != 0 ? request.TutorId : existing.TutorId,
 					SubjectId = request.SubjectId != 0 ? request.SubjectId : existing.SubjectId,
 					HourlyRate = request.HourlyRate ?? existing.HourlyRate,
@@ -256,7 +256,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
 		// Batch verify: education
 		[Authorize]
-		[HttpPut("update-verify-education-list/{tutorId}")]
+		[HttpPut("verify-list-education/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorEducationDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
 		public async Task<IActionResult> VerifyEducationBatch([FromRoute] int tutorId, [FromBody] List<VerifyUpdateRequest> updates)
@@ -285,7 +285,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
 		// Batch verify: certificate
 		[Authorize]
-		[HttpPut("update-verify-certificate-list/{tutorId}")]
+		[HttpPut("verify-list-certificate/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorCertificateDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
 		public async Task<IActionResult> VerifyCertificateBatch([FromRoute] int tutorId, [FromBody] List<VerifyUpdateRequest> updates)
