@@ -7,7 +7,7 @@ namespace EduMatch.DataAccessLayer.Interfaces
 	{
 		Task<TutorCertificate?> GetByIdFullAsync(int id, CancellationToken ct = default);
 		Task<TutorCertificate?> GetByTutorIdFullAsync(int tutorId, CancellationToken ct = default);
-		Task<IReadOnlyList<TutorCertificate>> GetByTutorIdAsync(int tutorId, CancellationToken ct = default);
+		Task<IReadOnlyList<TutorCertificate>> GetByTutorIdAsync(int tutorId);
 		Task<IReadOnlyList<TutorCertificate>> GetByCertificateTypeAsync(int certificateTypeId, CancellationToken ct = default);
 		Task<IReadOnlyList<TutorCertificate>> GetByVerifiedStatusAsync(VerifyStatus verified, CancellationToken ct = default);
 		Task<IReadOnlyList<TutorCertificate>> GetExpiredCertificatesAsync(CancellationToken ct = default);

@@ -13,42 +13,42 @@ namespace EduMatch.DataAccessLayer.Repositories
 		public CertificateTypeSubjectRepository(EduMatchContext ctx) => _ctx = ctx;
 
 		private IQueryable<CertificateTypeSubject> IncludeAll() =>
-			_ctx.CertificateTypeSubjects.AsNoTracking();
+			_ctx.CertificateTypeSubjects;
 
-		public async Task<CertificateTypeSubject?> GetByIdAsync(int id, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(c => c.Id == id, ct);
+		public async Task<CertificateTypeSubject?> GetByIdAsync(int id)
+			=> await IncludeAll().FirstOrDefaultAsync(c => c.Id == id);
 
-		public async Task<IReadOnlyList<CertificateTypeSubject>> GetByCertificateTypeIdAsync(int certificateTypeId, CancellationToken ct = default)
-			=> await IncludeAll().Where(c => c.CertificateTypeId == certificateTypeId).ToListAsync(ct);
+		public async Task<IReadOnlyList<CertificateTypeSubject>> GetByCertificateTypeIdAsync(int certificateTypeId)
+			=> await IncludeAll().Where(c => c.CertificateTypeId == certificateTypeId).ToListAsync();
 
-		public async Task<IReadOnlyList<CertificateTypeSubject>> GetBySubjectIdAsync(int subjectId, CancellationToken ct = default)
-			=> await IncludeAll().Where(c => c.SubjectId == subjectId).ToListAsync(ct);
+		public async Task<IReadOnlyList<CertificateTypeSubject>> GetBySubjectIdAsync(int subjectId)
+			=> await IncludeAll().Where(c => c.SubjectId == subjectId).ToListAsync();
 
-		public async Task<CertificateTypeSubject?> GetByCertificateTypeAndSubjectAsync(int certificateTypeId, int subjectId, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(c => c.CertificateTypeId == certificateTypeId && c.SubjectId == subjectId, ct);
+		public async Task<CertificateTypeSubject?> GetByCertificateTypeAndSubjectAsync(int certificateTypeId, int subjectId)
+			=> await IncludeAll().FirstOrDefaultAsync(c => c.CertificateTypeId == certificateTypeId && c.SubjectId == subjectId);
 
-		public async Task<IReadOnlyList<CertificateTypeSubject>> GetAllAsync(CancellationToken ct = default)
-			=> await IncludeAll().ToListAsync(ct);
+		public async Task<IReadOnlyList<CertificateTypeSubject>> GetAllAsync()
+			=> await IncludeAll().ToListAsync();
 
-		public async Task AddAsync(CertificateTypeSubject entity, CancellationToken ct = default)
+		public async Task AddAsync(CertificateTypeSubject entity)
 		{
-			await _ctx.CertificateTypeSubjects.AddAsync(entity, ct);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.CertificateTypeSubjects.AddAsync(entity);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task UpdateAsync(CertificateTypeSubject entity, CancellationToken ct = default)
+		public async Task UpdateAsync(CertificateTypeSubject entity)
 		{
 			_ctx.CertificateTypeSubjects.Update(entity);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task RemoveByIdAsync(int id, CancellationToken ct = default)
+		public async Task RemoveByIdAsync(int id)
 		{
-			var entity = await _ctx.CertificateTypeSubjects.FindAsync(new object?[] { id }, ct);
+			var entity = await _ctx.CertificateTypeSubjects.FindAsync(new object?[] { id });
 			if (entity != null)
 			{
 				_ctx.CertificateTypeSubjects.Remove(entity);
-				await _ctx.SaveChangesAsync(ct);
+				await _ctx.SaveChangesAsync();
 			}
 		}
 	}

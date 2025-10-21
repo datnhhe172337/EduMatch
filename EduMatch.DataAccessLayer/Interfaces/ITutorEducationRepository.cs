@@ -7,7 +7,7 @@ namespace EduMatch.DataAccessLayer.Interfaces
 	{
 		Task<TutorEducation?> GetByIdFullAsync(int id, CancellationToken ct = default);
 		Task<TutorEducation?> GetByTutorIdFullAsync(int tutorId, CancellationToken ct = default);
-		Task<IReadOnlyList<TutorEducation>> GetByTutorIdAsync(int tutorId, CancellationToken ct = default);
+		Task<IReadOnlyList<TutorEducation>> GetByTutorIdAsync(int tutorId);
 		Task<IReadOnlyList<TutorEducation>> GetByInstitutionIdAsync(int institutionId, CancellationToken ct = default);
 		Task<IReadOnlyList<TutorEducation>> GetByVerifiedStatusAsync(VerifyStatus verified, CancellationToken ct = default);
 		Task<IReadOnlyList<TutorEducation>> GetPendingVerificationsAsync(CancellationToken ct = default);

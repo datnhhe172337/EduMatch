@@ -16,7 +16,6 @@ namespace EduMatch.DataAccessLayer.Repositories
 
 		private IQueryable<TutorProfile> IncludeAll() =>
 	_ctx.TutorProfiles
-		.AsNoTracking()
 		.AsSplitQuery()
 
 		// Availabilities + Slot
@@ -47,37 +46,37 @@ namespace EduMatch.DataAccessLayer.Repositories
 
 
 
-		public async Task<TutorProfile?> GetByIdFullAsync(int id, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == id, ct);
+		public async Task<TutorProfile?> GetByIdFullAsync(int id)
+			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == id);
 
-		public async Task<TutorProfile?> GetByTutorIdFullAsync(int tutorId, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == tutorId, ct);
+		public async Task<TutorProfile?> GetByTutorIdFullAsync(int tutorId)
+			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == tutorId);
 
-		public async Task<TutorProfile?> GetByEmailFullAsync(string email, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(t => t.UserEmail == email, ct);
+		public async Task<TutorProfile?> GetByEmailFullAsync(string email)
+			=> await IncludeAll().FirstOrDefaultAsync(t => t.UserEmail == email);
 
-		public async Task<IReadOnlyList<TutorProfile>> GetAllFullAsync(CancellationToken ct = default)
+		public async Task<IReadOnlyList<TutorProfile>> GetAllFullAsync()
 			=> await IncludeAll().ToListAsync();
 
-		public async Task AddAsync(TutorProfile entity, CancellationToken ct = default)
+		public async Task AddAsync(TutorProfile entity)
 		{
-			await _ctx.TutorProfiles.AddAsync(entity, ct);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.TutorProfiles.AddAsync(entity);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task UpdateAsync(TutorProfile entity, CancellationToken ct = default)
+		public async Task UpdateAsync(TutorProfile entity)
 		{
 			_ctx.TutorProfiles.Update(entity);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task RemoveByIdAsync(int id, CancellationToken ct = default)
+		public async Task RemoveByIdAsync(int id)
 		{
-			var entity = await _ctx.TutorProfiles.FindAsync(new object?[] { id }, ct);
+			var entity = await _ctx.TutorProfiles.FindAsync(new object?[] { id });
 			if (entity != null)
 			{
 				_ctx.TutorProfiles.Remove(entity);
-				await _ctx.SaveChangesAsync(ct);
+				await _ctx.SaveChangesAsync();
 			}
 		}
 

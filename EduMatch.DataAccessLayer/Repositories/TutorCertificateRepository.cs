@@ -17,63 +17,62 @@ namespace EduMatch.DataAccessLayer.Repositories
 
 		private IQueryable<TutorCertificate> IncludeAll() =>
 			_ctx.TutorCertificates
-			.AsNoTracking()
 			.Include(t => t.CertificateType)
 			.Include(t => t.Tutor);
 
-		public async Task<TutorCertificate?> GetByIdFullAsync(int id, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == id, ct);
+		public async Task<TutorCertificate?> GetByIdFullAsync(int id)
+			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == id);
 
-		public async Task<TutorCertificate?> GetByTutorIdFullAsync(int tutorId, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(t => t.TutorId == tutorId, ct);
+		public async Task<TutorCertificate?> GetByTutorIdFullAsync(int tutorId)
+			=> await IncludeAll().FirstOrDefaultAsync(t => t.TutorId == tutorId);
 
 	public async Task<IReadOnlyList<TutorCertificate>> GetByTutorIdAsync(int tutorId)
 		=> await IncludeAll().Where(t => t.TutorId == tutorId).ToListAsync();
 
-		public async Task<IReadOnlyList<TutorCertificate>> GetByCertificateTypeAsync(int certificateTypeId, CancellationToken ct = default)
-			=> await IncludeAll().Where(t => t.CertificateTypeId == certificateTypeId).ToListAsync(ct);
+		public async Task<IReadOnlyList<TutorCertificate>> GetByCertificateTypeAsync(int certificateTypeId)
+			=> await IncludeAll().Where(t => t.CertificateTypeId == certificateTypeId).ToListAsync();
 
-		public async Task<IReadOnlyList<TutorCertificate>> GetByVerifiedStatusAsync(VerifyStatus verified, CancellationToken ct = default)
-			=> await IncludeAll().Where(t => t.Verified == verified).ToListAsync(ct);
+		public async Task<IReadOnlyList<TutorCertificate>> GetByVerifiedStatusAsync(VerifyStatus verified)
+			=> await IncludeAll().Where(t => t.Verified == verified).ToListAsync();
 
-		public async Task<IReadOnlyList<TutorCertificate>> GetExpiredCertificatesAsync(CancellationToken ct = default)
-			=> await IncludeAll().Where(t => t.ExpiryDate.HasValue && t.ExpiryDate.Value < DateTime.Now).ToListAsync(ct);
+		public async Task<IReadOnlyList<TutorCertificate>> GetExpiredCertificatesAsync()
+			=> await IncludeAll().Where(t => t.ExpiryDate.HasValue && t.ExpiryDate.Value < DateTime.Now).ToListAsync();
 
-		public async Task<IReadOnlyList<TutorCertificate>> GetExpiringCertificatesAsync(DateTime beforeDate, CancellationToken ct = default)
-			=> await IncludeAll().Where(t => t.ExpiryDate.HasValue && t.ExpiryDate.Value <= beforeDate).ToListAsync(ct);
+		public async Task<IReadOnlyList<TutorCertificate>> GetExpiringCertificatesAsync(DateTime beforeDate)
+			=> await IncludeAll().Where(t => t.ExpiryDate.HasValue && t.ExpiryDate.Value <= beforeDate).ToListAsync();
 
-		public async Task<IReadOnlyList<TutorCertificate>> GetAllFullAsync(CancellationToken ct = default)
-			=> await IncludeAll().ToListAsync(ct);
+		public async Task<IReadOnlyList<TutorCertificate>> GetAllFullAsync()
+			=> await IncludeAll().ToListAsync();
 
-		public async Task AddAsync(TutorCertificate entity, CancellationToken ct = default)
+		public async Task AddAsync(TutorCertificate entity)
 		{
-			await _ctx.TutorCertificates.AddAsync(entity, ct);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.TutorCertificates.AddAsync(entity);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task UpdateAsync(TutorCertificate entity, CancellationToken ct = default)
+		public async Task UpdateAsync(TutorCertificate entity)
 		{
 			_ctx.TutorCertificates.Update(entity);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task RemoveByIdAsync(int id, CancellationToken ct = default)
+		public async Task RemoveByIdAsync(int id)
 		{
-			var entity = await _ctx.TutorCertificates.FindAsync(new object?[] { id }, ct);
+			var entity = await _ctx.TutorCertificates.FindAsync(new object?[] { id });
 			if (entity != null)
 			{
 				_ctx.TutorCertificates.Remove(entity);
-				await _ctx.SaveChangesAsync(ct);
+				await _ctx.SaveChangesAsync();
 			}
 		}
 
-		public async Task RemoveByTutorIdAsync(int tutorId, CancellationToken ct = default)
+		public async Task RemoveByTutorIdAsync(int tutorId)
 		{
-			var entities = await _ctx.TutorCertificates.Where(t => t.TutorId == tutorId).ToListAsync(ct);
+			var entities = await _ctx.TutorCertificates.Where(t => t.TutorId == tutorId).ToListAsync();
 			if (entities.Any())
 			{
 				_ctx.TutorCertificates.RemoveRange(entities);
-				await _ctx.SaveChangesAsync(ct);
+				await _ctx.SaveChangesAsync();
 			}
 		}
 

@@ -17,48 +17,47 @@ namespace EduMatch.DataAccessLayer.Repositories
 
 		private IQueryable<TutorAvailability> IncludeAll() =>
 			_ctx.TutorAvailabilities
-			.AsNoTracking()
 			.Include(t => t.Slot)
 			.Include(t => t.Tutor);
 
-		public async Task<TutorAvailability?> GetByIdFullAsync(int id, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == id, ct);
+		public async Task<TutorAvailability?> GetByIdFullAsync(int id)
+			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == id);
 
-		public async Task<IReadOnlyList<TutorAvailability>> GetByTutorIdAsync(int tutorId, CancellationToken ct = default)
-			=> await IncludeAll().Where(t => t.TutorId == tutorId).ToListAsync(ct);
-
-
-		public async Task<IReadOnlyList<TutorAvailability>> GetByStatusAsync(TutorAvailabilityStatus status, CancellationToken ct = default)
-			=> await IncludeAll().Where(t => t.Status == status).ToListAsync(ct);
+		public async Task<IReadOnlyList<TutorAvailability>> GetByTutorIdAsync(int tutorId)
+			=> await IncludeAll().Where(t => t.TutorId == tutorId).ToListAsync();
 
 
-		public async Task<IReadOnlyList<TutorAvailability>> GetAllFullAsync(CancellationToken ct = default)
-			=> await IncludeAll().ToListAsync(ct);
+		public async Task<IReadOnlyList<TutorAvailability>> GetByStatusAsync(TutorAvailabilityStatus status)
+			=> await IncludeAll().Where(t => t.Status == status).ToListAsync();
 
-		public async Task AddAsync(TutorAvailability entity, CancellationToken ct = default)
+
+		public async Task<IReadOnlyList<TutorAvailability>> GetAllFullAsync()
+			=> await IncludeAll().ToListAsync();
+
+		public async Task AddAsync(TutorAvailability entity)
 		{
-			await _ctx.TutorAvailabilities.AddAsync(entity, ct);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.TutorAvailabilities.AddAsync(entity);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task AddRangeAsync(IEnumerable<TutorAvailability> entity, CancellationToken ct = default)
+		public async Task AddRangeAsync(IEnumerable<TutorAvailability> entity)
 		{
-			await _ctx.TutorAvailabilities.AddRangeAsync(entity, ct);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.TutorAvailabilities.AddRangeAsync(entity);
+			await _ctx.SaveChangesAsync();
 		}
-		public async Task UpdateAsync(TutorAvailability entity, CancellationToken ct = default)
+		public async Task UpdateAsync(TutorAvailability entity)
 		{
 			_ctx.TutorAvailabilities.Update(entity);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task RemoveByIdAsync(int id, CancellationToken ct = default)
+		public async Task RemoveByIdAsync(int id)
 		{
-			var entity = await _ctx.TutorAvailabilities.FindAsync(new object?[] { id }, ct);
+			var entity = await _ctx.TutorAvailabilities.FindAsync(new object?[] { id });
 			if (entity != null)
 			{
 				_ctx.TutorAvailabilities.Remove(entity);
-				await _ctx.SaveChangesAsync(ct);
+				await _ctx.SaveChangesAsync();
 			}
 		}
 
