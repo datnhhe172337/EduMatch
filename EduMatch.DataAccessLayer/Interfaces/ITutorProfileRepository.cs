@@ -9,15 +9,12 @@ namespace EduMatch.DataAccessLayer.Interfaces
 {
 	public interface ITutorProfileRepository
 	{
-		Task<TutorProfile?> GetByIdFullAsync(int id, CancellationToken ct = default);
-		Task<TutorProfile?> GetByEmailFullAsync(string email, CancellationToken ct = default);
-		Task<IReadOnlyList<TutorProfile>> GetAllFullAsync(CancellationToken ct = default);
+		Task<TutorProfile?> GetByIdFullAsync(int id);
+		Task<TutorProfile?> GetByEmailFullAsync(string email);
+		Task<IReadOnlyList<TutorProfile>> GetAllFullAsync();
 
-		Task AddAsync(TutorProfile entity, CancellationToken ct = default);
-		Task UpdateAsync(TutorProfile entity, CancellationToken ct = default);
-		Task RemoveByIdAsync(int id, CancellationToken ct = default);
-
-
-
+		Task AddAsync(TutorProfile entity);
+		Task UpdateAsync(TutorProfile entity);
+		Task RemoveByIdAsync(int id);
 	}
 }

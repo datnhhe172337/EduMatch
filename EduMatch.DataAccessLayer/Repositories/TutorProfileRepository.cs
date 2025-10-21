@@ -18,8 +18,8 @@ namespace EduMatch.DataAccessLayer.Repositories
 	_ctx.TutorProfiles
 		.AsSplitQuery()
 
-		// Availabilities + Slot
-		.Include(t => t.TutorAvailabilities)
+		// Availabilities + Slot (chỉ lấy những availability còn tồn tại)
+		.Include(t => t.TutorAvailabilities.Where(a => a.StartDate >= DateTime.Now && (a.EndDate == null || a.EndDate >= DateTime.Now)))
 			.ThenInclude(a => a.Slot)
 
 		// Certificates + CertificateType
