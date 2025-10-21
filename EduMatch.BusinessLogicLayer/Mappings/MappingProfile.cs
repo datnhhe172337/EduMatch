@@ -116,6 +116,7 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 							CreatedAt = c.CreatedAt,
 							Verified = c.Verified,
 							CertificateUrl = c.CertificateUrl,
+							RejectReason = c.RejectReason,
 							CertificateType = c.CertificateType != null
 								? new CertificateTypeDto { Id = c.CertificateType.Id, Name = c.CertificateType.Name }
 								: null
@@ -130,6 +131,7 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 							IssueDate = e.IssueDate,
 							CreatedAt = e.CreatedAt,
 							Verified = e.Verified,
+							RejectReason = e.RejectReason,
 
 							Institution = e.Institution != null
 								? new EducationInstitutionDto { Id = e.Institution.Id, Name = e.Institution.Name }

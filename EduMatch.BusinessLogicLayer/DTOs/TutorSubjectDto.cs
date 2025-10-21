@@ -16,6 +16,7 @@ namespace EduMatch.BusinessLogicLayer.DTOs
 		public int? LevelId { get; set; }
 		public LevelDto? Level { get; set; }
 		public SubjectDto? Subject { get; set; }
+		[JsonIgnore]
 		public TutorProfileDto? Tutor { get; set; }
 	}
 }

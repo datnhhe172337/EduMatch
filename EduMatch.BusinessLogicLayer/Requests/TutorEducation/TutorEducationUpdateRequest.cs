@@ -15,7 +15,6 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorEducation
 		[Range(1, int.MaxValue, ErrorMessage = "Tutor ID must be greater than 0")]
 		public int TutorId { get; set; }
 
-		[Required(ErrorMessage = "Institution ID is required")]
 		[Range(1, int.MaxValue, ErrorMessage = "Institution ID must be greater than 0")]
 		public int InstitutionId { get; set; }
 

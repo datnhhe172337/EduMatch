@@ -15,7 +15,6 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorCertificate
 		[Range(1, int.MaxValue, ErrorMessage = "Tutor ID must be greater than 0")]
 		public int TutorId { get; set; }
 
-		[Required(ErrorMessage = "Certificate type ID is required")]
 		[Range(1, int.MaxValue, ErrorMessage = "Certificate type ID must be greater than 0")]
 		public int CertificateTypeId { get; set; }
 

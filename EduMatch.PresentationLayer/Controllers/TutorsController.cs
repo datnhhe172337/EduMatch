@@ -150,75 +150,75 @@ namespace EduMatch.PresentationLayer.Controllers
 
 
 		// Update tutor education (partial)
-		[Authorize]
-		[HttpPut("update-education/{id}")]
-		[Consumes("multipart/form-data")]
-		[ProducesResponseType(typeof(ApiResponse<TutorEducationDto>), StatusCodes.Status200OK)]
-		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
-		public async Task<IActionResult> UpdateEducation([FromRoute] int id, [FromForm] TutorEducationUpdateRequest request)
-		{
-			try
-			{
-				var existing = await _tutorEducationService.GetByIdFullAsync(id);
-				if (existing == null)
-					return NotFound(ApiResponse<string>.Fail("Not found", $"Education #{id} not found"));
+		//[Authorize]
+		//[HttpPut("update-education/{id}")]
+		//[Consumes("multipart/form-data")]
+		//[ProducesResponseType(typeof(ApiResponse<TutorEducationDto>), StatusCodes.Status200OK)]
+		//[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		//[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		//public async Task<IActionResult> UpdateEducation([FromRoute] int id, [FromForm] TutorEducationUpdateRequest request)
+		//{
+		//	try
+		//	{
+		//		var existing = await _tutorEducationService.GetByIdFullAsync(id);
+		//		if (existing == null)
+		//			return NotFound(ApiResponse<string>.Fail("Not found", $"Education #{id} not found"));
 
-				var merged = new TutorEducationUpdateRequest
-				{
-					Id = id,
-					TutorId = request.TutorId != 0 ? request.TutorId : existing.TutorId,
-					InstitutionId = request.InstitutionId != 0 ? request.InstitutionId : existing.InstitutionId,
-					IssueDate = request.IssueDate ?? existing.IssueDate,
-					CertificateEducation = request.CertificateEducation,
-					Verified = request.Verified != 0 ? request.Verified : existing.Verified,
-					RejectReason = string.IsNullOrWhiteSpace(request.RejectReason) ? existing.RejectReason : request.RejectReason
-				};
+		//		var merged = new TutorEducationUpdateRequest
+		//		{
+		//			Id = id,
+		//			TutorId = request.TutorId != 0 ? request.TutorId : existing.TutorId,
+		//			InstitutionId = request.InstitutionId != 0 ? request.InstitutionId : existing.InstitutionId,
+		//			IssueDate = request.IssueDate ?? existing.IssueDate,
+		//			CertificateEducation = request.CertificateEducation,
+		//			Verified = request.Verified != 0 ? request.Verified : existing.Verified,
+		//			RejectReason = string.IsNullOrWhiteSpace(request.RejectReason) ? existing.RejectReason : request.RejectReason
+		//		};
 
-				var updated = await _tutorEducationService.UpdateAsync(merged);
-				return Ok(ApiResponse<TutorEducationDto>.Ok(updated, "Updated"));
-			}
-			catch (ArgumentException ex)
-			{
-				return BadRequest(ApiResponse<string>.Fail("Bad request", ex.Message));
-			}
-		}
+		//		var updated = await _tutorEducationService.UpdateAsync(merged);
+		//		return Ok(ApiResponse<TutorEducationDto>.Ok(updated, "Updated"));
+		//	}
+		//	catch (ArgumentException ex)
+		//	{
+		//		return BadRequest(ApiResponse<string>.Fail("Bad request", ex.Message));
+		//	}
+		//}
 
 		// Update tutor certificate (partial)
-		[Authorize]
-		[HttpPut("update-certificate/{id}")]
-		[Consumes("multipart/form-data")]
-		[ProducesResponseType(typeof(ApiResponse<TutorCertificateDto>), StatusCodes.Status200OK)]
-		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
-		public async Task<IActionResult> UpdateCertificate([FromRoute] int id, [FromForm] TutorCertificateUpdateRequest request)
-		{
-			try
-			{
-				var existing = await _tutorCertificateService.GetByIdFullAsync(id);
-				if (existing == null)
-					return NotFound(ApiResponse<string>.Fail("Not found", $"Certificate #{id} not found"));
+		//[Authorize]
+		//[HttpPut("update-certificate/{id}")]
+		//[Consumes("multipart/form-data")]
+		//[ProducesResponseType(typeof(ApiResponse<TutorCertificateDto>), StatusCodes.Status200OK)]
+		//[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		//[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		//public async Task<IActionResult> UpdateCertificate([FromRoute] int id, [FromForm] TutorCertificateUpdateRequest request)
+		//{
+		//	try
+		//	{
+		//		var existing = await _tutorCertificateService.GetByIdFullAsync(id);
+		//		if (existing == null)
+		//			return NotFound(ApiResponse<string>.Fail("Not found", $"Certificate #{id} not found"));
 
-				var merged = new TutorCertificateUpdateRequest
-				{
-					Id = id,
-					TutorId = request.TutorId != 0 ? request.TutorId : existing.TutorId,
-					CertificateTypeId = request.CertificateTypeId != 0 ? request.CertificateTypeId : existing.CertificateTypeId,
-					IssueDate = request.IssueDate ?? existing.IssueDate,
-					ExpiryDate = request.ExpiryDate ?? existing.ExpiryDate,
-					Certificate = request.Certificate,
-					Verified = request.Verified != 0 ? request.Verified : existing.Verified,
-					RejectReason = string.IsNullOrWhiteSpace(request.RejectReason) ? existing.RejectReason : request.RejectReason
-				};
+		//		var merged = new TutorCertificateUpdateRequest
+		//		{
+		//			Id = id,
+		//			TutorId = request.TutorId != 0 ? request.TutorId : existing.TutorId,
+		//			CertificateTypeId = request.CertificateTypeId != 0 ? request.CertificateTypeId : existing.CertificateTypeId,
+		//			IssueDate = request.IssueDate ?? existing.IssueDate,
+		//			ExpiryDate = request.ExpiryDate ?? existing.ExpiryDate,
+		//			Certificate = request.Certificate,
+		//			Verified = request.Verified != 0 ? request.Verified : existing.Verified,
+		//			RejectReason = string.IsNullOrWhiteSpace(request.RejectReason) ? existing.RejectReason : request.RejectReason
+		//		};
 
-				var updated = await _tutorCertificateService.UpdateAsync(merged);
-				return Ok(ApiResponse<TutorCertificateDto>.Ok(updated, "Updated"));
-			}
-			catch (ArgumentException ex)
-			{
-				return BadRequest(ApiResponse<string>.Fail("Bad request", ex.Message));
-			}
-		}
+		//		var updated = await _tutorCertificateService.UpdateAsync(merged);
+		//		return Ok(ApiResponse<TutorCertificateDto>.Ok(updated, "Updated"));
+		//	}
+		//	catch (ArgumentException ex)
+		//	{
+		//		return BadRequest(ApiResponse<string>.Fail("Bad request", ex.Message));
+		//	}
+		//}
 
 		// Update tutor subject (partial)
 		[Authorize]

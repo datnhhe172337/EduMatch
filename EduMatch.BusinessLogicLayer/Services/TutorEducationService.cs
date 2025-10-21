@@ -153,6 +153,13 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Tutor education with ID {request.Id} not found");
 				}
 
+				// Validate InstitutionId exists
+				var institution = await _educationInstitutionRepository.GetByIdAsync(request.InstitutionId);
+				if (institution == null)
+				{
+					throw new ArgumentException($"Education institution with ID {request.InstitutionId} not found");
+				}
+
 				var oldPublicId = existingEntity.CertificatePublicId;
 				var hasNewFile = request.CertificateEducation != null && request.CertificateEducation.Length > 0 && !string.IsNullOrWhiteSpace(request.CertificateEducation.FileName);
 				if (hasNewFile)
@@ -173,8 +180,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 					existingEntity.CertificatePublicId = uploadResult.PublicId;
 				}
 
-				// Update only provided fields
+				// Update only provided fields (chỉ update khi có giá trị)
 				existingEntity.TutorId = request.TutorId;
+				// InstitutionId luôn được update vì có validation Required
 				existingEntity.InstitutionId = request.InstitutionId;
 				if (request.IssueDate.HasValue)
 					existingEntity.IssueDate = request.IssueDate.Value;
