@@ -31,8 +31,9 @@ namespace EduMatch.PresentationLayer.Controllers
 		private readonly ITutorEducationService _tutorEducationService;
 		private readonly EmailService _emailService;
 		private readonly IUserService _userService;
+        private readonly IManageTutorProfileService _manageTutorProfileService;
 
-		public TutorsController(
+        public TutorsController(
 			ITutorSubjectService tutorSubjectService,
 			ISubjectService subjectService,
 			ILevelService levelService,
@@ -43,7 +44,8 @@ namespace EduMatch.PresentationLayer.Controllers
 			EduMatchContext eduMatch,
 			ITutorEducationService tutorEducationService,
 			EmailService emailService,
-			IUserService userService 
+			IUserService userService ,
+            IManageTutorProfileService manageTutorProfileService
 
 			)
 		{
@@ -58,8 +60,10 @@ namespace EduMatch.PresentationLayer.Controllers
 			_tutorEducationService = tutorEducationService;
 			_emailService = emailService;
 			_userService = userService;
+			_manageTutorProfileService = manageTutorProfileService;
 
-		}
+
+        }
 
 
 		
@@ -397,6 +401,5 @@ namespace EduMatch.PresentationLayer.Controllers
 
 
 
-
-	}
+    }
 }
