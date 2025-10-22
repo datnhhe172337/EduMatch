@@ -28,6 +28,8 @@ public partial class TutorProfile
 
     public virtual ICollection<ChatRoom> ChatRooms { get; set; } = new List<ChatRoom>();
 
+    public virtual ICollection<FavoriteTutor> FavoriteTutors { get; set; } = new List<FavoriteTutor>();
+
     public virtual ICollection<TutorAvailability> TutorAvailabilities { get; set; } = new List<TutorAvailability>();
 
     public virtual ICollection<TutorCertificate> TutorCertificates { get; set; } = new List<TutorCertificate>();

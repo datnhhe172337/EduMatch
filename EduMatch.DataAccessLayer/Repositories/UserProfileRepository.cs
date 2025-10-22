@@ -28,8 +28,10 @@ namespace EduMatch.DataAccessLayer.Repositories
         public async Task<UserProfile?> GetByEmailAsync(string email)
         {
             return await _context.UserProfiles
-               .Include(up => up.UserEmailNavigation)  
-               .FirstOrDefaultAsync(up => up.UserEmail == email);
+                .Include(up => up.UserEmailNavigation)                
+                    .ThenInclude(u => u.FavoriteTutors)             
+                        .ThenInclude(ft => ft.Tutor)                 
+                .FirstOrDefaultAsync(up => up.UserEmail == email);
         }
 
         public async Task UpdateAsync(UserProfile profile)

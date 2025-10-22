@@ -20,17 +20,23 @@ namespace EduMatch.DataAccessLayer.Repositories
         {
             return await _context.TutorProfiles
                 .Include(tp => tp.UserEmailNavigation)
-                .ThenInclude(u => u!.UserProfile)
+                    .ThenInclude(u => u!.UserProfile)
+                .Include(tp => tp.FavoriteTutors)               
+                    .ThenInclude(ft => ft.UserEmailNavigation)  
                 .FirstOrDefaultAsync(tp => tp.UserEmail == email);
         }
+
 
         public async Task<TutorProfile?> GetByIdAsync(int id)
         {
             return await _context.TutorProfiles
                 .Include(tp => tp.UserEmailNavigation)
-                .ThenInclude(u => u!.UserProfile)
+                    .ThenInclude(u => u!.UserProfile)
+                .Include(tp => tp.FavoriteTutors)               
+                    .ThenInclude(ft => ft.UserEmailNavigation)  
                 .FirstOrDefaultAsync(tp => tp.Id == id);
         }
+
 
         public async Task<bool> UpdateTutorProfileAsync(string email, TutorProfile updatedProfile, UserProfile updatedUserProfile)
         {

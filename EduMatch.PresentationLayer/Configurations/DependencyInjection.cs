@@ -44,6 +44,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ISubjectRepository, SubjectRepository>();
             services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
             services.AddScoped<IUserProfileRepository, UserProfileRepository>();
+            services.AddScoped<IFavoriteTutorRepository, FavoriteTutorRepository>();
 
             // Services
             services.AddScoped<IUserService, UserService>();
@@ -60,8 +61,8 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ILevelService, LevelService>();
             services.AddScoped<ITimeSlotService, TimeSlotService>();
             services.AddScoped<IEducationInstitutionService, EducationInstitutionService>();
+            services.AddScoped<IFavoriteTutorService, FavoriteTutorService>();
 
-          
 
 
             // Bind "CloudinarySettings" 
