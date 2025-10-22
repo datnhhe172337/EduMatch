@@ -3,6 +3,7 @@ using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.PresentationLayer.Common;
 using EduMatch.DataAccessLayer.Entities;
+using EduMatch.BusinessLogicLayer.Requests;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -47,29 +48,65 @@ namespace EduMatch.PresentationLayer.Controllers
         /// <summary>
         /// Update user profile by email
         /// </summary>
+        //[HttpPut("{email}")]
+        //public async Task<IActionResult> UpdateUserProfile(string email, [FromBody] UpdateUserProfileDto dto)
+        //{
+        //    if (string.IsNullOrWhiteSpace(email))
+        //        return BadRequest(ApiResponse<string>.Fail("Email is required."));
+
+        //    if (dto == null)
+        //        return BadRequest(ApiResponse<string>.Fail("Invalid request body."));
+
+        //    try
+        //    {
+        //        var success = await _service.UpdateUserProfileAsync(email, dto);
+
+        //        if (!success)
+        //            return NotFound(ApiResponse<string>.Fail($"User profile with email '{email}' not found."));
+
+        //        return Ok(ApiResponse<string>.Ok("User profile updated successfully."));
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error updating user profile for email: {Email}", email);
+        //        return StatusCode(500, ApiResponse<string>.Fail("An error occurred while updating the user profile.", ex.Message));
+        //    }
+        //}
         [HttpPut("{email}")]
-        public async Task<IActionResult> UpdateUserProfile(string email, [FromBody] UpdateUserProfileDto dto)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UpdateUserProfile(
+    string email,
+    [FromForm] UpdateUserProfileRequest request)
         {
             if (string.IsNullOrWhiteSpace(email))
                 return BadRequest(ApiResponse<string>.Fail("Email is required."));
 
-            if (dto == null)
-                return BadRequest(ApiResponse<string>.Fail("Invalid request body."));
+            if (!ModelState.IsValid)
+                return BadRequest(ApiResponse<string>.Fail("Invalid data.", ModelState));
 
             try
             {
-                var success = await _service.UpdateUserProfileAsync(email, dto);
+                var success = await _service.UpdateUserProfileAsync(email, request);
 
                 if (!success)
                     return NotFound(ApiResponse<string>.Fail($"User profile with email '{email}' not found."));
 
                 return Ok(ApiResponse<string>.Ok("User profile updated successfully."));
             }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ApiResponse<string>.Fail(ex.Message));
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating user profile for email: {Email}", email);
-                return StatusCode(500, ApiResponse<string>.Fail("An error occurred while updating the user profile.", ex.Message));
+                return StatusCode(500, ApiResponse<string>.Fail("An unexpected error occurred.", ex.Message));
             }
         }
+
     }
 }

@@ -25,6 +25,8 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<EducationInstitution> EducationInstitutions { get; set; }
 
+    public virtual DbSet<FavoriteTutor> FavoriteTutors { get; set; }
+
     public virtual DbSet<Level> Levels { get; set; }
 
     public virtual DbSet<Province> Provinces { get; set; }
@@ -53,9 +55,9 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
 
-//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -162,6 +164,34 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.Name)
                 .HasMaxLength(300)
                 .HasColumnName("name");
+        });
+
+        modelBuilder.Entity<FavoriteTutor>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__favorite__3213E83F5994F48E");
+
+            entity.ToTable("favorite_tutors");
+
+            entity.HasIndex(e => new { e.UserEmail, e.TutorId }, "UQ_favorite_tutors_user_tutor").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("created_at");
+            entity.Property(e => e.TutorId).HasColumnName("tutor_id");
+            entity.Property(e => e.UserEmail)
+                .HasMaxLength(100)
+                .HasColumnName("user_email");
+
+            entity.HasOne(d => d.Tutor).WithMany(p => p.FavoriteTutors)
+                .HasForeignKey(d => d.TutorId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_favorite_tutors_tutor_profiles");
+
+            entity.HasOne(d => d.UserEmailNavigation).WithMany(p => p.FavoriteTutors)
+                .HasForeignKey(d => d.UserEmail)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_favorite_tutors_users");
         });
 
         modelBuilder.Entity<Level>(entity =>
@@ -283,8 +313,8 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnName("createdAt");
+            entity.Property(e => e.EndDate).HasColumnName("endDate");
             entity.Property(e => e.SlotId).HasColumnName("slotId");
-             entity.Property(e => e.EndDate).HasColumnName("endDate");
             entity.Property(e => e.StartDate).HasColumnName("startDate");
             entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.TutorId).HasColumnName("tutorId");
