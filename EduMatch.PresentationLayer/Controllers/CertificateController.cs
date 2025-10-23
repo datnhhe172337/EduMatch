@@ -52,8 +52,200 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
-		
+		// Get tutor certificate list by tutor ID
+		[HttpGet("get-{tutorId}-list-certificate")]
+		[ProducesResponseType(typeof(ApiResponse<List<TutorCertificateDto>>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]
+		public async Task<IActionResult> GetTutorCertificateList(int tutorId)
+		{
+			try
+			{
+				if (tutorId <= 0)
+				{
+					return BadRequest(ApiResponse<string>.Fail("Invalid tutor ID. Tutor ID must be greater than 0."));
+				}
 
+				var data = await _tutorCertificateService.GetByTutorIdAsync(tutorId);
+
+				if (data == null || !data.Any())
+				{
+					return Ok(ApiResponse<List<TutorCertificateDto>>.Ok(
+						new List<TutorCertificateDto>(),
+						"No certificate records found for this tutor."
+					));
+				}
+
+				return Ok(ApiResponse<List<TutorCertificateDto>>.Ok(
+					data.ToList(),
+					"Successfully retrieved the tutor's certificate records."
+				));
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(
+					StatusCodes.Status500InternalServerError,
+					ApiResponse<string>.Fail(
+						"An error occurred while retrieving the tutor's certificate records.",
+						new { error = ex.Message, stackTrace = ex.StackTrace }
+					)
+				);
+			}
+		}
+
+		// Create tutor certificate
+		[HttpPost("create-{tutorId}-certificate")]
+		[ProducesResponseType(typeof(ApiResponse<TutorCertificateDto>), StatusCodes.Status201Created)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]
+		public async Task<IActionResult> CreateTutorCertificate(int tutorId, [FromBody] TutorCertificateCreateRequest request)
+		{
+			try
+			{
+				if (tutorId <= 0)
+				{
+					return BadRequest(ApiResponse<string>.Fail("Invalid tutor ID. Tutor ID must be greater than 0."));
+				}
+
+				if (request == null)
+				{
+					return BadRequest(ApiResponse<string>.Fail("Request body cannot be null."));
+				}
+
+				// Set the tutor ID from the route parameter
+				request.TutorId = tutorId;
+
+				if (!ModelState.IsValid)
+				{
+					var errors = ModelState.Values
+						.SelectMany(v => v.Errors)
+						.Select(e => e.ErrorMessage)
+						.ToList();
+					return BadRequest(ApiResponse<string>.Fail("Validation failed.", new { errors }));
+				}
+
+				var result = await _tutorCertificateService.CreateAsync(request);
+
+				return CreatedAtAction(
+					nameof(GetTutorCertificateList),
+					new { tutorId = tutorId },
+					ApiResponse<TutorCertificateDto>.Ok(
+						result,
+						"Tutor certificate record created successfully."
+					)
+				);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(
+					StatusCodes.Status500InternalServerError,
+					ApiResponse<string>.Fail(
+						"An error occurred while creating the tutor certificate record.",
+						new { error = ex.Message, stackTrace = ex.StackTrace }
+					)
+				);
+			}
+		}
+
+		// Update tutor certificate
+		[HttpPut("update-{tutorId}-certificate")]
+		[ProducesResponseType(typeof(ApiResponse<TutorCertificateDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]
+		public async Task<IActionResult> UpdateTutorCertificate(int tutorId, [FromBody] TutorCertificateUpdateRequest request)
+		{
+			try
+			{
+				if (tutorId <= 0)
+				{
+					return BadRequest(ApiResponse<string>.Fail("Invalid tutor ID. Tutor ID must be greater than 0."));
+				}
+
+				if (request == null)
+				{
+					return BadRequest(ApiResponse<string>.Fail("Request body cannot be null."));
+				}
+
+				// Set the tutor ID from the route parameter
+				request.TutorId = tutorId;
+
+				if (!ModelState.IsValid)
+				{
+					var errors = ModelState.Values
+						.SelectMany(v => v.Errors)
+						.Select(e => e.ErrorMessage)
+						.ToList();
+					return BadRequest(ApiResponse<string>.Fail("Validation failed.", new { errors }));
+				}
+
+				var result = await _tutorCertificateService.UpdateAsync(request);
+
+				return Ok(ApiResponse<TutorCertificateDto>.Ok(
+					result,
+					"Tutor certificate record updated successfully."
+				));
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(
+					StatusCodes.Status500InternalServerError,
+					ApiResponse<string>.Fail(
+						"An error occurred while updating the tutor certificate record.",
+						new { error = ex.Message, stackTrace = ex.StackTrace }
+					)
+				);
+			}
+		}
+
+		// Delete tutor certificate
+		[HttpDelete("delete-{tutorId}-certificate")]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]
+		public async Task<IActionResult> DeleteTutorCertificate(int tutorId, [FromQuery] int? certificateId = null)
+		{
+			try
+			{
+				if (tutorId <= 0)
+				{
+					return BadRequest(ApiResponse<string>.Fail("Invalid tutor ID. Tutor ID must be greater than 0."));
+				}
+
+				if (certificateId.HasValue && certificateId <= 0)
+				{
+					return BadRequest(ApiResponse<string>.Fail("Invalid certificate ID. Certificate ID must be greater than 0."));
+				}
+
+				if (certificateId.HasValue)
+				{
+					// Delete specific certificate record
+					await _tutorCertificateService.DeleteAsync(certificateId.Value);
+					return Ok(ApiResponse<string>.Ok(
+						"Tutor certificate record deleted successfully."
+					));
+				}
+				else
+				{
+					// Delete all certificate records for the tutor
+					await _tutorCertificateService.DeleteByTutorIdAsync(tutorId);
+					return Ok(ApiResponse<string>.Ok(
+						"All tutor certificate records deleted successfully."
+					));
+				}
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(
+					StatusCodes.Status500InternalServerError,
+					ApiResponse<string>.Fail(
+						"An error occurred while deleting the tutor certificate record(s).",
+						new { error = ex.Message, stackTrace = ex.StackTrace }
+					)
+				);
+			}
+		}
 
 	}
 }
