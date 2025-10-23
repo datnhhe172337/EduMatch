@@ -512,13 +512,13 @@ namespace EduMatch.PresentationLayer.Controllers
 
 
 
-		
+	// ========== CERTIFICATE APIs ==========
 
 	[HttpPost("certificates")]
 	[Authorize]
 	[ProducesResponseType(typeof(ApiResponse<TutorCertificateDto>), StatusCodes.Status201Created)]
 	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-		public async Task<IActionResult> CreateCertificate([FromBody] TutorCertificateCreateRequest request)
+	public async Task<IActionResult> CreateCertificate([FromBody] TutorCertificateCreateRequest request)
 	{
 		try
 		{
@@ -536,16 +536,16 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 	}
 
-	[HttpPut("certificates/{id}")]
+	[HttpPut("certificates/{certificateId}")]
 	[Authorize]
 	[ProducesResponseType(typeof(ApiResponse<TutorCertificateDto>), StatusCodes.Status200OK)]
 	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
 	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
-		public async Task<IActionResult> UpdateCertificate([FromRoute] int id, [FromBody] TutorCertificateUpdateRequest request)
+	public async Task<IActionResult> UpdateCertificate([FromRoute] int certificateId, [FromBody] TutorCertificateUpdateRequest request)
 	{
 		try
 		{
-			request.Id = id;
+			request.Id = certificateId;
 			var result = await _tutorCertificateService.UpdateAsync(request);
 			return Ok(ApiResponse<TutorCertificateDto>.Ok(result, "Certificate updated successfully"));
 		}
@@ -559,11 +559,66 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 	}
 
+	[HttpGet("certificates/{certificateId}")]
+	[Authorize]
+	[ProducesResponseType(typeof(ApiResponse<TutorCertificateDto>), StatusCodes.Status200OK)]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+	public async Task<IActionResult> GetCertificateById([FromRoute] int certificateId)
+	{
+		try
+		{
+			var result = await _tutorCertificateService.GetByIdFullAsync(certificateId);
+			if (result == null)
+				return NotFound(ApiResponse<string>.Fail("Certificate not found"));
+
+			return Ok(ApiResponse<TutorCertificateDto>.Ok(result, "Certificate retrieved successfully"));
+		}
+		catch (Exception ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Failed to retrieve certificate", ex.Message));
+		}
+	}
+
+	[HttpGet("tutors/{tutorId}/certificates")]
+	[Authorize]
+	[ProducesResponseType(typeof(ApiResponse<List<TutorCertificateDto>>), StatusCodes.Status200OK)]
+	public async Task<IActionResult> GetCertificatesByTutorId([FromRoute] int tutorId)
+	{
+		try
+		{
+			var result = await _tutorCertificateService.GetByTutorIdAsync(tutorId);
+			return Ok(ApiResponse<List<TutorCertificateDto>>.Ok(result.ToList(), "Certificates retrieved successfully"));
+		}
+		catch (Exception ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Failed to retrieve certificates", ex.Message));
+		}
+	}
+
+	[HttpDelete("certificates/{certificateId}")]
+	[Authorize]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+	public async Task<IActionResult> DeleteCertificate([FromRoute] int certificateId)
+	{
+		try
+		{
+			await _tutorCertificateService.DeleteAsync(certificateId);
+			return Ok(ApiResponse<string>.Ok("Certificate deleted successfully"));
+		}
+		catch (Exception ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Failed to delete certificate", ex.Message));
+		}
+	}
+
+	// ========== EDUCATION APIs ==========
+
 	[HttpPost("educations")]
 	[Authorize]
 	[ProducesResponseType(typeof(ApiResponse<TutorEducationDto>), StatusCodes.Status201Created)]
 	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-		public async Task<IActionResult> CreateEducation([FromBody] TutorEducationCreateRequest request)
+	public async Task<IActionResult> CreateEducation([FromBody] TutorEducationCreateRequest request)
 	{
 		try
 		{
@@ -581,16 +636,16 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 	}
 
-	[HttpPut("educations/{id}")]
+	[HttpPut("educations/{educationId}")]
 	[Authorize]
 	[ProducesResponseType(typeof(ApiResponse<TutorEducationDto>), StatusCodes.Status200OK)]
 	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
 	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
-		public async Task<IActionResult> UpdateEducation([FromRoute] int id, [FromBody] TutorEducationUpdateRequest request)
+	public async Task<IActionResult> UpdateEducation([FromRoute] int educationId, [FromBody] TutorEducationUpdateRequest request)
 	{
 		try
 		{
-			request.Id = id;
+			request.Id = educationId;
 			var result = await _tutorEducationService.UpdateAsync(request);
 			return Ok(ApiResponse<TutorEducationDto>.Ok(result, "Education updated successfully"));
 		}
@@ -604,15 +659,15 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 	}
 
-	[HttpGet("educations/{id}")]
+	[HttpGet("educations/{educationId}")]
 	[Authorize]
 	[ProducesResponseType(typeof(ApiResponse<TutorEducationDto>), StatusCodes.Status200OK)]
 	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
-		public async Task<IActionResult> GetEducationById([FromRoute] int id)
+	public async Task<IActionResult> GetEducationById([FromRoute] int educationId)
 	{
 		try
 		{
-			var result = await _tutorEducationService.GetByIdFullAsync(id);
+			var result = await _tutorEducationService.GetByIdFullAsync(educationId);
 			if (result == null)
 				return NotFound(ApiResponse<string>.Fail("Education not found"));
 
@@ -624,15 +679,15 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 	}
 
-		[HttpDelete("educations/{id}")]
+	[HttpDelete("educations/{educationId}")]
 		[Authorize]
 	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
 	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-		public async Task<IActionResult> DeleteEducation([FromRoute] int id)
+	public async Task<IActionResult> DeleteEducation([FromRoute] int educationId)
 	{
 		try
 		{
-			await _tutorEducationService.DeleteAsync(id);
+			await _tutorEducationService.DeleteAsync(educationId);
 			return Ok(ApiResponse<string>.Ok("Education deleted successfully"));
 		}
 		catch (Exception ex)
@@ -641,13 +696,29 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 	}
 
-		
+	[HttpGet("tutors/{tutorId}/educations")]
+	[Authorize]
+	[ProducesResponseType(typeof(ApiResponse<List<TutorEducationDto>>), StatusCodes.Status200OK)]
+	public async Task<IActionResult> GetEducationsByTutorId([FromRoute] int tutorId)
+	{
+		try
+		{
+			var result = await _tutorEducationService.GetByTutorIdAsync(tutorId);
+			return Ok(ApiResponse<List<TutorEducationDto>>.Ok(result.ToList(), "Educations retrieved successfully"));
+		}
+		catch (Exception ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Failed to retrieve educations", ex.Message));
+		}
+	}
 
-	[HttpPost("subjects")]
+	// ========== TUTOR SUBJECT APIs ==========
+
+	[HttpPost("tutor-subjects")]
 	[Authorize]
 	[ProducesResponseType(typeof(ApiResponse<TutorSubjectDto>), StatusCodes.Status201Created)]
 	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-		public async Task<IActionResult> CreateTutorSubject([FromBody] TutorSubjectCreateRequest request)
+	public async Task<IActionResult> CreateTutorSubject([FromBody] TutorSubjectCreateRequest request)
 	{
 		try
 		{
@@ -665,15 +736,15 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 	}
 
-	[HttpGet("subjects/{id}")]
+	[HttpGet("tutor-subjects/{tutorSubjectId}")]
 	[Authorize]
 	[ProducesResponseType(typeof(ApiResponse<TutorSubjectDto>), StatusCodes.Status200OK)]
 	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
-		public async Task<IActionResult> GetTutorSubjectById([FromRoute] int id)
+	public async Task<IActionResult> GetTutorSubjectById([FromRoute] int tutorSubjectId)
 	{
 		try
 		{
-			var result = await _tutorSubjectService.GetByIdFullAsync(id);
+			var result = await _tutorSubjectService.GetByIdFullAsync(tutorSubjectId);
 			if (result == null)
 				return NotFound(ApiResponse<string>.Fail("Tutor subject not found"));
 
@@ -685,15 +756,31 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 	}
 
-	[HttpDelete("subjects/{id}")]
+	[HttpGet("tutors/{tutorId}/tutor-subjects")]
 	[Authorize]
-	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
-	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-		public async Task<IActionResult> DeleteTutorSubject([FromRoute] int id)
+	[ProducesResponseType(typeof(ApiResponse<List<TutorSubjectDto>>), StatusCodes.Status200OK)]
+	public async Task<IActionResult> GetTutorSubjectsByTutorId([FromRoute] int tutorId)
 	{
 		try
 		{
-			await _tutorSubjectService.DeleteAsync(id);
+			var result = await _tutorSubjectService.GetByTutorIdAsync(tutorId);
+			return Ok(ApiResponse<List<TutorSubjectDto>>.Ok(result.ToList(), "Tutor subjects retrieved successfully"));
+		}
+		catch (Exception ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Failed to retrieve tutor subjects", ex.Message));
+		}
+	}
+
+	[HttpDelete("tutor-subjects/{tutorSubjectId}")]
+	[Authorize]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+	public async Task<IActionResult> DeleteTutorSubject([FromRoute] int tutorSubjectId)
+	{
+		try
+		{
+			await _tutorSubjectService.DeleteAsync(tutorSubjectId);
 			return Ok(ApiResponse<string>.Ok("Tutor subject deleted successfully"));
 		}
 		catch (Exception ex)

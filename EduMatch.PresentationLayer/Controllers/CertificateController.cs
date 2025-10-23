@@ -1,6 +1,7 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests.CertificateType;
+using EduMatch.BusinessLogicLayer.Requests.TutorCertificate;
 using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,11 +15,13 @@ namespace EduMatch.PresentationLayer.Controllers
 	{
 		private readonly IHttpContextAccessor _httpContextAccessor;
 		private readonly ICertificateTypeService _certificateTypeService;
+		private readonly ITutorCertificateService _tutorCertificateService;
 
-		public CertificateController(IHttpContextAccessor httpContextAccessor, ICertificateTypeService certificateTypeService)
+		public CertificateController(IHttpContextAccessor httpContextAccessor, ICertificateTypeService certificateTypeService, ITutorCertificateService tutorCertificateService)
 		{
 			_httpContextAccessor = httpContextAccessor;
 			_certificateTypeService = certificateTypeService;
+			_tutorCertificateService = tutorCertificateService;
 		}
 
 
