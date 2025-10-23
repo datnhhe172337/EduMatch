@@ -118,14 +118,6 @@ namespace EduMatch.PresentationLayer.Controllers
 				// Set the tutor ID from the route parameter
 				request.TutorId = tutorId;
 
-				if (!ModelState.IsValid)
-				{
-					var errors = ModelState.Values
-						.SelectMany(v => v.Errors)
-						.Select(e => e.ErrorMessage)
-						.ToList();
-					return BadRequest(ApiResponse<string>.Fail("Validation failed.", new { errors }));
-				}
 
 				var result = await _tutorEducationService.CreateAsync(request);
 
@@ -173,14 +165,6 @@ namespace EduMatch.PresentationLayer.Controllers
 				// Set the tutor ID from the route parameter
 				request.TutorId = tutorId;
 
-				if (!ModelState.IsValid)
-				{
-					var errors = ModelState.Values
-						.SelectMany(v => v.Errors)
-						.Select(e => e.ErrorMessage)
-						.ToList();
-					return BadRequest(ApiResponse<string>.Fail("Validation failed.", new { errors }));
-				}
 
 				var result = await _tutorEducationService.UpdateAsync(request);
 
