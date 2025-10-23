@@ -512,5 +512,194 @@ namespace EduMatch.PresentationLayer.Controllers
 
 
 
+		
+
+	[HttpPost("certificates")]
+	[Authorize]
+	[ProducesResponseType(typeof(ApiResponse<TutorCertificateDto>), StatusCodes.Status201Created)]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		public async Task<IActionResult> CreateCertificate([FromBody] TutorCertificateCreateRequest request)
+	{
+		try
+		{
+			var result = await _tutorCertificateService.CreateAsync(request);
+			return CreatedAtAction(nameof(GetCertificateById), new { id = result.Id }, 
+				ApiResponse<TutorCertificateDto>.Ok(result, "Certificate created successfully"));
+		}
+		catch (ArgumentException ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Invalid request", ex.Message));
+		}
+		catch (Exception ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Failed to create certificate", ex.Message));
+		}
+	}
+
+	[HttpPut("certificates/{id}")]
+	[Authorize]
+	[ProducesResponseType(typeof(ApiResponse<TutorCertificateDto>), StatusCodes.Status200OK)]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		public async Task<IActionResult> UpdateCertificate([FromRoute] int id, [FromBody] TutorCertificateUpdateRequest request)
+	{
+		try
+		{
+			request.Id = id;
+			var result = await _tutorCertificateService.UpdateAsync(request);
+			return Ok(ApiResponse<TutorCertificateDto>.Ok(result, "Certificate updated successfully"));
+		}
+		catch (ArgumentException ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Invalid request", ex.Message));
+		}
+		catch (Exception ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Failed to update certificate", ex.Message));
+		}
+	}
+
+	[HttpPost("educations")]
+	[Authorize]
+	[ProducesResponseType(typeof(ApiResponse<TutorEducationDto>), StatusCodes.Status201Created)]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		public async Task<IActionResult> CreateEducation([FromBody] TutorEducationCreateRequest request)
+	{
+		try
+		{
+			var result = await _tutorEducationService.CreateAsync(request);
+			return CreatedAtAction(nameof(GetEducationById), new { id = result.Id }, 
+				ApiResponse<TutorEducationDto>.Ok(result, "Education created successfully"));
+		}
+		catch (ArgumentException ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Invalid request", ex.Message));
+		}
+		catch (Exception ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Failed to create education", ex.Message));
+		}
+	}
+
+	[HttpPut("educations/{id}")]
+	[Authorize]
+	[ProducesResponseType(typeof(ApiResponse<TutorEducationDto>), StatusCodes.Status200OK)]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		public async Task<IActionResult> UpdateEducation([FromRoute] int id, [FromBody] TutorEducationUpdateRequest request)
+	{
+		try
+		{
+			request.Id = id;
+			var result = await _tutorEducationService.UpdateAsync(request);
+			return Ok(ApiResponse<TutorEducationDto>.Ok(result, "Education updated successfully"));
+		}
+		catch (ArgumentException ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Invalid request", ex.Message));
+		}
+		catch (Exception ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Failed to update education", ex.Message));
+		}
+	}
+
+	[HttpGet("educations/{id}")]
+	[Authorize]
+	[ProducesResponseType(typeof(ApiResponse<TutorEducationDto>), StatusCodes.Status200OK)]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		public async Task<IActionResult> GetEducationById([FromRoute] int id)
+	{
+		try
+		{
+			var result = await _tutorEducationService.GetByIdFullAsync(id);
+			if (result == null)
+				return NotFound(ApiResponse<string>.Fail("Education not found"));
+
+			return Ok(ApiResponse<TutorEducationDto>.Ok(result, "Education retrieved successfully"));
+		}
+		catch (Exception ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Failed to retrieve education", ex.Message));
+		}
+	}
+
+		[HttpDelete("educations/{id}")]
+		[Authorize]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		public async Task<IActionResult> DeleteEducation([FromRoute] int id)
+	{
+		try
+		{
+			await _tutorEducationService.DeleteAsync(id);
+			return Ok(ApiResponse<string>.Ok("Education deleted successfully"));
+		}
+		catch (Exception ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Failed to delete education", ex.Message));
+		}
+	}
+
+		
+
+	[HttpPost("subjects")]
+	[Authorize]
+	[ProducesResponseType(typeof(ApiResponse<TutorSubjectDto>), StatusCodes.Status201Created)]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		public async Task<IActionResult> CreateTutorSubject([FromBody] TutorSubjectCreateRequest request)
+	{
+		try
+		{
+			var result = await _tutorSubjectService.CreateAsync(request);
+			return CreatedAtAction(nameof(GetTutorSubjectById), new { id = result.Id }, 
+				ApiResponse<TutorSubjectDto>.Ok(result, "Tutor subject created successfully"));
+		}
+		catch (ArgumentException ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Invalid request", ex.Message));
+		}
+		catch (Exception ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Failed to create tutor subject", ex.Message));
+		}
+	}
+
+	[HttpGet("subjects/{id}")]
+	[Authorize]
+	[ProducesResponseType(typeof(ApiResponse<TutorSubjectDto>), StatusCodes.Status200OK)]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		public async Task<IActionResult> GetTutorSubjectById([FromRoute] int id)
+	{
+		try
+		{
+			var result = await _tutorSubjectService.GetByIdFullAsync(id);
+			if (result == null)
+				return NotFound(ApiResponse<string>.Fail("Tutor subject not found"));
+
+			return Ok(ApiResponse<TutorSubjectDto>.Ok(result, "Tutor subject retrieved successfully"));
+		}
+		catch (Exception ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Failed to retrieve tutor subject", ex.Message));
+		}
+	}
+
+	[HttpDelete("subjects/{id}")]
+	[Authorize]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		public async Task<IActionResult> DeleteTutorSubject([FromRoute] int id)
+	{
+		try
+		{
+			await _tutorSubjectService.DeleteAsync(id);
+			return Ok(ApiResponse<string>.Ok("Tutor subject deleted successfully"));
+		}
+		catch (Exception ex)
+		{
+			return BadRequest(ApiResponse<string>.Fail("Failed to delete tutor subject", ex.Message));
+		}
+	}
 	}
 }
