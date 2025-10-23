@@ -87,6 +87,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 			return _mapper.Map<IReadOnlyList<TutorCertificateDto>>(entities);
 		}
 
+	
+		/*
 		public async Task<TutorCertificateDto> CreateAsync(TutorCertificateCreateRequest request)
 		{
 			try
@@ -155,7 +157,59 @@ namespace EduMatch.BusinessLogicLayer.Services
 				throw new InvalidOperationException($"Failed to create tutor certificate: {ex.Message}", ex);
 			}
 		}
+		*/
 
+		
+		public async Task<TutorCertificateDto> CreateAsync(TutorCertificateCreateRequest request)
+		{
+			try
+			{
+				// VALIDATE REQUEST 
+				var validationContext = new ValidationContext(request);
+				var validationResults = new List<ValidationResult>();
+				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+				{
+					throw new ArgumentException(
+						$"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}"
+					);
+				}
+
+				var tutor = await _tutorProfileRepository.GetByIdFullAsync(request.TutorId);
+				if (tutor is null)
+					throw new ArgumentException($"Tutor with ID {request.TutorId} not found.");
+
+				var certificateType = await _certificateTypeRepository.GetByIdAsync(request.CertificateTypeId);
+				if (certificateType is null)
+					throw new ArgumentException($"CertificateType with ID {request.CertificateTypeId} not found.");
+
+				if (string.IsNullOrWhiteSpace(request.CertificateUrl))
+					throw new ArgumentException("Certificate URL is required.");
+
+				// MAP  -> ENTITY
+				var entity = new TutorCertificate
+				{
+					TutorId = request.TutorId,
+					CertificateTypeId = request.CertificateTypeId,
+					IssueDate = request.IssueDate,
+					ExpiryDate = request.ExpiryDate,
+					CertificateUrl = request.CertificateUrl,
+					CertificatePublicId = null, // No public ID for external URLs
+					CreatedAt = DateTime.UtcNow,
+					Verified = VerifyStatus.Pending,
+					RejectReason = null
+				};
+
+				await _repository.AddAsync(entity);
+				return _mapper.Map<TutorCertificateDto>(entity);
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to create tutor certificate: {ex.Message}", ex);
+			}
+		}
+
+		
+		/*
 		public async Task<TutorCertificateDto> UpdateAsync(TutorCertificateUpdateRequest request)
 		{
 			try
@@ -202,7 +256,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 					existingEntity.CertificatePublicId = uploadResult.PublicId;
 				}
 
-				// Update only provided fields (chỉ update khi có giá trị)
+				// Update only provided fields 
 				existingEntity.TutorId = request.TutorId;
 				// CertificateTypeId luôn được update vì có validation Required
 				existingEntity.CertificateTypeId = request.CertificateTypeId;
@@ -245,6 +299,75 @@ namespace EduMatch.BusinessLogicLayer.Services
 						});
 				}
 
+				return _mapper.Map<TutorCertificateDto>(existingEntity);
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to update tutor certificate: {ex.Message}", ex);
+			}
+		}
+		*/
+
+		
+		public async Task<TutorCertificateDto> UpdateAsync(TutorCertificateUpdateRequest request)
+		{
+			try
+			{
+				// Validate request
+				var validationContext = new ValidationContext(request);
+				var validationResults = new List<ValidationResult>();
+				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+				{
+					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
+				}
+
+				// Check if entity exists
+				var existingEntity = await _repository.GetByIdFullAsync(request.Id);
+				if (existingEntity == null)
+				{
+					throw new ArgumentException($"Tutor certificate with ID {request.Id} not found");
+				}
+
+				// Validate CertificateTypeId exists
+				var certificateType = await _certificateTypeRepository.GetByIdAsync(request.CertificateTypeId);
+				if (certificateType == null)
+				{
+					throw new ArgumentException($"CertificateType with ID {request.CertificateTypeId} not found");
+				}
+
+				// Update only provided fields 
+				existingEntity.TutorId = request.TutorId;
+				// CertificateTypeId luôn được update vì có validation Required
+				existingEntity.CertificateTypeId = request.CertificateTypeId;
+				if (request.IssueDate.HasValue) 
+					existingEntity.IssueDate = request.IssueDate.Value;
+				if (request.ExpiryDate.HasValue) 
+					existingEntity.ExpiryDate = request.ExpiryDate.Value;
+
+				// Update certificate URL if provided
+				if (!string.IsNullOrWhiteSpace(request.CertificateUrl))
+				{
+					existingEntity.CertificateUrl = request.CertificateUrl;
+					existingEntity.CertificatePublicId = null; // No public ID for external URLs
+				}
+
+				// Handle Verified status
+				if (request.Verified.HasValue)
+				{
+					existingEntity.Verified = request.Verified.Value;
+					if (request.Verified.Value == VerifyStatus.Rejected)
+					{
+						if (string.IsNullOrWhiteSpace(request.RejectReason))
+							throw new ArgumentException("Reject reason is required when verification status is Rejected.");
+						existingEntity.RejectReason = request.RejectReason!.Trim();
+					}
+					else
+					{
+						existingEntity.RejectReason = null;
+					}
+				}
+
+				await _repository.UpdateAsync(existingEntity);
 				return _mapper.Map<TutorCertificateDto>(existingEntity);
 			}
 			catch (Exception ex)

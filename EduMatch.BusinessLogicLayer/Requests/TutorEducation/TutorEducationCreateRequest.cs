@@ -17,10 +17,10 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorEducation
 		public DateTime? IssueDate { get; set; }
 
 		// Allow either file upload or remote URL. Only one is required.
-		public IFormFile? CertificateEducation { get; set; }
+		//public IFormFile? CertificateEducation { get; set; }
 
-		//[Url(ErrorMessage = "Certificate URL must be a valid URL.")]
-		//public string? CertificateEducationUrl { get; set; }
+		[Url(ErrorMessage = "Certificate URL must be a valid URL.")]
+		public string? CertificateEducationUrl { get; set; }
 
 
 	}

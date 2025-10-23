@@ -68,6 +68,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 
 
+		
+		/*
 		public async Task<TutorProfileDto> CreateAsync(TutorProfileCreateRequest request)
 		{
 			try
@@ -192,7 +194,82 @@ namespace EduMatch.BusinessLogicLayer.Services
 				throw new InvalidOperationException($"Failed to create tutor profile: {ex.Message}", ex);
 			}
 		}
+		*/
 
+		
+		public async Task<TutorProfileDto> CreateAsync(TutorProfileCreateRequest request)
+		{
+			try
+			{
+				// VALIDATE REQUEST 
+				var validationContext = new ValidationContext(request);
+				var validationResults = new List<ValidationResult>();
+				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+				{
+					throw new ArgumentException(
+						$"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}"
+					);
+				}
+
+				//  CHECK IF TUTOR PROFILE EXISTS
+				if (string.IsNullOrWhiteSpace(_currentUserService.Email))
+					throw new ArgumentException("Current user email not found.");
+				var userEmail = _currentUserService.Email!;
+				var existing = await _repository.GetByEmailFullAsync(userEmail);
+				if (existing is not null)
+					throw new ArgumentException($"Tutor profile for email {userEmail} already exists.");
+
+				// Validate URLs
+				if (string.IsNullOrWhiteSpace(request.VideoIntroUrl))
+					throw new ArgumentException("VideoIntroUrl is required.");
+				
+				if (string.IsNullOrWhiteSpace(request.AvatarUrl))
+					throw new ArgumentException("AvatarUrl is required.");
+
+				// Normalize YouTube URL
+				//var normalizedVideoUrl = NormalizeYouTubeEmbedUrlOrNull(request.VideoIntroUrl!);
+				//if (normalizedVideoUrl is null)
+				//	throw new ArgumentException("VideoIntroUrl must be a valid YouTube link.");
+
+				// Update user profile with avatar URL
+				var userProfileUpdate = new UserProfileUpdateRequest
+				{
+					UserEmail = _currentUserService.Email,
+					Dob = request.DateOfBirth,
+					CityId = request.ProvinceId,
+					SubDistrictId = request.SubDistrictId,
+					AvatarUrl = request.AvatarUrl,
+					AvatarUrlPublicId = null // No public ID for external URLs
+				};
+				await _userProfileService.UpdateAsync(userProfileUpdate);
+
+				await _userService.UpdateUserNameAndPhoneAsync(_currentUserService.Email, request.Phone, request.UserName);
+
+				// MAP  -> ENTITY
+				var entity = new TutorProfile
+				{
+					UserEmail = userEmail,
+					Bio = request.Bio,
+					TeachingExp = request.TeachingExp,
+					VideoIntroUrl = request.VideoIntroUrl,
+					VideoIntroPublicId = null, // No public ID for external URLs
+					TeachingModes = request.TeachingModes,
+					Status = TutorStatus.Pending,
+					CreatedAt = DateTime.UtcNow,
+					UpdatedAt = DateTime.UtcNow
+				};
+
+				await _repository.AddAsync(entity);
+				return _mapper.Map<TutorProfileDto>(entity);
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to create tutor profile: {ex.Message}", ex);
+			}
+		}
+
+		
+		/*
 		public async Task<TutorProfileDto> UpdateAsync(TutorProfileUpdateRequest request)
 		{
 			try
@@ -265,6 +342,51 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 
 
+				return _mapper.Map<TutorProfileDto>(existing);
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to update tutor profile: {ex.Message}", ex);
+			}
+		}
+		*/
+
+		// NEW METHOD - USING URL
+		public async Task<TutorProfileDto> UpdateAsync(TutorProfileUpdateRequest request)
+		{
+			try
+			{
+				ValidateRequest(request);
+
+				var existing = await _repository.GetByIdFullAsync(request.Id);
+				if (existing is null)
+					throw new ArgumentException($"Tutor profile with ID {request.Id} not found.");
+
+				// Update only provided fields
+				if (!string.IsNullOrWhiteSpace(request.Bio))
+					existing.Bio = request.Bio;
+				if (!string.IsNullOrWhiteSpace(request.TeachingExp))
+					existing.TeachingExp = request.TeachingExp;
+
+				// Update video URL if provided
+				if (!string.IsNullOrWhiteSpace(request.VideoIntroUrl))
+				{
+					var normalized = NormalizeYouTubeEmbedUrlOrNull(request.VideoIntroUrl!);
+					if (normalized is null)
+						throw new ArgumentException("VideoIntroUrl must be a valid YouTube link.");
+					existing.VideoIntroUrl = normalized;
+					existing.VideoIntroPublicId = null; // No public ID for external URLs
+				}
+
+				if (request.TeachingModes.HasValue)
+					existing.TeachingModes = request.TeachingModes.Value;
+
+				if (request.Status.HasValue)
+					existing.Status = request.Status.Value;
+
+				existing.UpdatedAt = DateTime.UtcNow;
+
+				await _repository.UpdateAsync(existing);
 				return _mapper.Map<TutorProfileDto>(existing);
 			}
 			catch (Exception ex)

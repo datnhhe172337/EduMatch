@@ -23,7 +23,10 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorCertificate
 		public DateTime? ExpiryDate { get; set; }
 
 		// Optional: either provide a new file or keep/update URL
-		public IFormFile? Certificate { get; set; }
+		//public IFormFile? Certificate { get; set; }
+
+		[Url(ErrorMessage = "Certificate URL must be a valid URL.")]
+		public string? CertificateUrl { get; set; }
 
 
 		[EnumDataType(typeof(VerifyStatus), ErrorMessage = "Invalid verify status")]

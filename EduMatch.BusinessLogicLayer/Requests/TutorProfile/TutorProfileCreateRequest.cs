@@ -28,7 +28,10 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 		[DataType(DataType.Date)]
 		public DateTime? DateOfBirth { get; set; }
 
-		public IFormFile? AvatarFile { get; set; }
+		//public IFormFile? AvatarFile { get; set; }
+
+		[Url(ErrorMessage = "Avatar URL must be a valid URL.")]
+		public string? AvatarUrl { get; set; }
 
 		[Required]
 		[Range(1, int.MaxValue, ErrorMessage = "ProvinceId must be a positive number.")]
@@ -44,7 +47,7 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 		
 
 		// Either provide a file or a URL (e.g., YouTube). Only one is required.
-		public IFormFile? VideoIntro { get; set; }
+		//public IFormFile? VideoIntro { get; set; }
 
 
 		[Url(ErrorMessage = "Video URL must be a valid URL.")]

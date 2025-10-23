@@ -71,11 +71,10 @@ namespace EduMatch.PresentationLayer.Controllers
 		// beacme tutor
 		[Authorize]
 		[HttpPost("become-tutor")]
-		[Consumes("multipart/form-data")]
 		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
-		public async Task<IActionResult> BecomeTutor([FromForm] BecomeTutorRequest request)
+		public async Task<IActionResult> BecomeTutor([FromBody] BecomeTutorRequest request)
 		{
 			if (!ModelState.IsValid)
 				return BadRequest(ApiResponse<string>.Fail("Invalid request."));

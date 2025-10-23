@@ -82,6 +82,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 			return _mapper.Map<IReadOnlyList<TutorEducationDto>>(entities);
 		}
 
+	
+		/*
 		public async Task<TutorEducationDto> CreateAsync(TutorEducationCreateRequest request)
 		{
 			try
@@ -140,8 +142,49 @@ namespace EduMatch.BusinessLogicLayer.Services
 				throw new InvalidOperationException($"Failed to create tutor education: {ex.Message}", ex);
 			}
 		}
+		*/
+
+	
+		public async Task<TutorEducationDto> CreateAsync(TutorEducationCreateRequest request)
+		{
+			try
+			{
+				var tutor = await _tutorProfileRepository.GetByIdFullAsync(request.TutorId);
+				if (tutor is null)
+					throw new ArgumentException($"Tutor with ID {request.TutorId} not found.");
+
+				var institution = await _educationInstitutionRepository.GetByIdAsync(request.InstitutionId);
+				if (institution is null)
+					throw new ArgumentException($"Education institution with ID {request.InstitutionId} not found.");
+
+				if (string.IsNullOrWhiteSpace(request.CertificateEducationUrl))
+					throw new ArgumentException("Certificate education URL is required.");
+
+				// MAP  -> ENTITY
+				var entity = new TutorEducation
+				{
+					TutorId = request.TutorId,
+					InstitutionId = request.InstitutionId,
+					IssueDate = request.IssueDate,
+					CertificateUrl = request.CertificateEducationUrl,
+					CertificatePublicId = null, // No public ID for external URLs
+					CreatedAt = DateTime.UtcNow,
+					Verified = VerifyStatus.Pending,
+					RejectReason = null
+				};
+
+				await _repository.AddAsync(entity);
+				return _mapper.Map<TutorEducationDto>(entity);
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to create tutor education: {ex.Message}", ex);
+			}
+		}
 
 
+	
+		/*
 		public async Task<TutorEducationDto> UpdateAsync(TutorEducationUpdateRequest request)
 		{
 			try
@@ -222,6 +265,66 @@ namespace EduMatch.BusinessLogicLayer.Services
 						});
 				}
 
+				return _mapper.Map<TutorEducationDto>(existingEntity);
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to update tutor education: {ex.Message}", ex);
+			}
+		}
+		*/
+
+		// NEW METHOD - USING URL
+		public async Task<TutorEducationDto> UpdateAsync(TutorEducationUpdateRequest request)
+		{
+			try
+			{
+				// Check if entity exists
+				var existingEntity = await _repository.GetByIdFullAsync(request.Id);
+				if (existingEntity == null)
+				{
+					throw new ArgumentException($"Tutor education with ID {request.Id} not found");
+				}
+
+				// Validate InstitutionId exists
+				var institution = await _educationInstitutionRepository.GetByIdAsync(request.InstitutionId);
+				if (institution == null)
+				{
+					throw new ArgumentException($"Education institution with ID {request.InstitutionId} not found");
+				}
+
+				// Update only provided fields (chỉ update khi có giá trị)
+				existingEntity.TutorId = request.TutorId;
+				// InstitutionId luôn được update vì có validation Required
+				existingEntity.InstitutionId = request.InstitutionId;
+				if (request.IssueDate.HasValue)
+					existingEntity.IssueDate = request.IssueDate.Value;
+
+				// Update certificate URL if provided
+				if (!string.IsNullOrWhiteSpace(request.CertificateEducationUrl))
+				{
+					existingEntity.CertificateUrl = request.CertificateEducationUrl;
+					existingEntity.CertificatePublicId = null; // No public ID for external URLs
+				}
+
+				// Handle Verified status
+				if (request.Verified.HasValue)
+				{
+					existingEntity.Verified = request.Verified.Value;
+					if (request.Verified.Value == VerifyStatus.Rejected)
+					{
+						var reason = request.RejectReason ?? existingEntity.RejectReason;
+						if (string.IsNullOrWhiteSpace(reason))
+							throw new ArgumentException("Reject reason is required when verification status is Rejected.");
+						existingEntity.RejectReason = reason.Trim();
+					}
+					else
+					{
+						existingEntity.RejectReason = null;
+					}
+				}
+
+				await _repository.UpdateAsync(existingEntity);
 				return _mapper.Map<TutorEducationDto>(existingEntity);
 			}
 			catch (Exception ex)
