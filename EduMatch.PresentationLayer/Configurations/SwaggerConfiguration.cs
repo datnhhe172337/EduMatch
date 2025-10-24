@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi.Models;
+using System.Reflection;
 
 namespace EduMatch.PresentationLayer.Configurations
 {
@@ -16,6 +17,14 @@ namespace EduMatch.PresentationLayer.Configurations
 					Version = "v1",
 					Description = "EduMatch"
 				});
+
+				var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+				var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
+				options.IncludeXmlComments(xmlPath);
+
+
+
+
 
 				// JWT Bearer Auth in Swagger
 				var jwtSecurityScheme = new OpenApiSecurityScheme

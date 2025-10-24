@@ -4,6 +4,13 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+
+     <!--  Tạo file XML comment -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+      <!-- Ẩn warning khi chưa viết comment XML -->
+    <NoWarn>$(NoWarn);1591</NoWarn>
+
   </PropertyGroup>
 
   <ItemGroup>

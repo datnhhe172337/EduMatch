@@ -45,8 +45,13 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
             services.AddScoped<IUserProfileRepository, UserProfileRepository>();
 
-            // Services
-            services.AddScoped<IUserService, UserService>();
+			services.AddScoped<IChatRepository, ChatRepository>();
+			services.AddScoped<UserProfileRepository, UserProfileRepository>();
+			services.AddScoped<IManageTutorProfileRepository, ManageTutorProfileRepository>();
+			services.AddScoped<IFindTutorRepository, FindTutorRepository>();
+
+			// Services
+			services.AddScoped<IUserService, UserService>();
             services.AddScoped<CurrentUserService>();
 			services.AddTransient<EmailService>();
             services.AddScoped<IGoogleAuthService, GoogleAuthService>();
@@ -61,11 +66,19 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ITimeSlotService, TimeSlotService>();
             services.AddScoped<IEducationInstitutionService, EducationInstitutionService>();
 
-          
 
 
-            // Bind "CloudinarySettings" 
-            services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
+			
+			services.AddScoped<IUserProfileService, UserProfileService>();
+			services.AddScoped<IManageTutorProfileService, ManageTutorProfileService>();
+			services.AddScoped<IFindTutorService, FindTutorService>();
+			services.AddScoped<IChatService, ChatService>();
+
+
+
+
+			// Bind "CloudinarySettings" 
+			services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
 
 			services.AddSingleton(sp => {
 				var opts = sp.GetRequiredService<IOptionsMonitor<CloudinaryRootOptions>>().CurrentValue;

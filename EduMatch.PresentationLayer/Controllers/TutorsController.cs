@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -240,8 +241,13 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 
-		// Get all tutors by status
-		
+
+
+		/// <summary>
+		/// lấy list tutotr theo Status
+		/// </summary>
+
+
 		[HttpGet("get-all-tutor-by-status")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorProfileDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
