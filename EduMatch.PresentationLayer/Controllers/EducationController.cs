@@ -4,6 +4,9 @@ using EduMatch.BusinessLogicLayer.Requests.TutorEducation;
 using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using EduMatch.DataAccessLayer.Enum;
+using EduMatch.BusinessLogicLayer.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -13,11 +16,13 @@ namespace EduMatch.PresentationLayer.Controllers
 	{
 		private readonly IEducationInstitutionService _educationInstitutionService;
 		private readonly ITutorEducationService _tutorEducationService;
+		private readonly CurrentUserService _currentUserService;
 
-		public EducationController(IEducationInstitutionService educationInstitutionService, ITutorEducationService tutorEducationService)
+		public EducationController(IEducationInstitutionService educationInstitutionService, ITutorEducationService tutorEducationService, CurrentUserService currentUserService)
 		{
 			_educationInstitutionService = educationInstitutionService;
 			_tutorEducationService = tutorEducationService;
+			_currentUserService = currentUserService;
 		}
 
 		/// <summary>
@@ -243,6 +248,99 @@ namespace EduMatch.PresentationLayer.Controllers
 					StatusCodes.Status500InternalServerError,
 					ApiResponse<string>.Fail(
 						"An error occurred while deleting the tutor education record(s).",
+						new { error = ex.Message, stackTrace = ex.StackTrace }
+					)
+				);
+			}
+		}
+
+		/// <summary>
+		/// Lấy danh sách các cơ sở giáo dục theo trạng thái verify
+		/// </summary>
+		[HttpGet("get-education-institutions-by-verify-status/{verifyStatus}")]
+		[ProducesResponseType(typeof(ApiResponse<List<EducationInstitutionDto>>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]
+		public async Task<IActionResult> GetEducationInstitutionsByVerifyStatus(VerifyStatus verifyStatus)
+		{
+			try
+			{
+				var allInstitutions = await _educationInstitutionService.GetAllAsync();
+				var filteredInstitutions = allInstitutions?.Where(ei => ei.Verified == verifyStatus).ToList() ?? new List<EducationInstitutionDto>();
+
+				if (!filteredInstitutions.Any())
+				{
+					return Ok(ApiResponse<List<EducationInstitutionDto>>.Ok(
+						new List<EducationInstitutionDto>(),
+						$"No education institutions found with {verifyStatus} status."
+					));
+				}
+
+				return Ok(ApiResponse<List<EducationInstitutionDto>>.Ok(
+					filteredInstitutions,
+					$"Successfully retrieved education institutions with {verifyStatus} status."
+				));
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(
+					StatusCodes.Status500InternalServerError,
+					ApiResponse<string>.Fail(
+						"An error occurred while retrieving education institutions by verify status.",
+						new { error = ex.Message, stackTrace = ex.StackTrace }
+					)
+				);
+			}
+		}
+
+		/// <summary>
+		/// Verify cơ sở giáo dục từ Pending sang Verified
+		/// </summary>
+		[Authorize]
+		[HttpPut("verify-education-institution/{educationInstitutionId}")]
+		[ProducesResponseType(typeof(ApiResponse<EducationInstitutionDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]
+		public async Task<IActionResult> VerifyEducationInstitution(int educationInstitutionId)
+		{
+			try
+			{
+				if (educationInstitutionId <= 0)
+				{
+					return BadRequest(ApiResponse<string>.Fail("Invalid education institution ID. Education institution ID must be greater than 0."));
+				}
+
+				// Get current user email for verification
+				var currentUserEmail = _currentUserService.Email ?? "System";
+
+				// Get the education institution to check current status
+				var educationInstitution = await _educationInstitutionService.GetByIdAsync(educationInstitutionId);
+
+				if (educationInstitution == null)
+				{
+					return NotFound(ApiResponse<string>.Fail($"Education institution with ID {educationInstitutionId} not found."));
+				}
+
+				if (educationInstitution.Verified != VerifyStatus.Pending)
+				{
+					return BadRequest(ApiResponse<string>.Fail($"Education institution with ID {educationInstitutionId} is not in Pending status for verification."));
+				}
+
+				// Verify the education institution
+				var result = await _educationInstitutionService.VerifyAsync(educationInstitutionId, currentUserEmail);
+
+				return Ok(ApiResponse<EducationInstitutionDto>.Ok(
+					result,
+					$"Education institution verified successfully by {currentUserEmail}."
+				));
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(
+					StatusCodes.Status500InternalServerError,
+					ApiResponse<string>.Fail(
+						"An error occurred while verifying the education institution.",
 						new { error = ex.Message, stackTrace = ex.StackTrace }
 					)
 				);

@@ -6,6 +6,9 @@ using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
+using EduMatch.DataAccessLayer.Enum;
+using EduMatch.BusinessLogicLayer.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -13,15 +16,15 @@ namespace EduMatch.PresentationLayer.Controllers
 	[ApiController]
 	public class CertificateController : ControllerBase
 	{
-		private readonly IHttpContextAccessor _httpContextAccessor;
 		private readonly ICertificateTypeService _certificateTypeService;
 		private readonly ITutorCertificateService _tutorCertificateService;
+		private readonly CurrentUserService _currentUserService;
 
-		public CertificateController(IHttpContextAccessor httpContextAccessor, ICertificateTypeService certificateTypeService, ITutorCertificateService tutorCertificateService)
+		public CertificateController(ICertificateTypeService certificateTypeService, ITutorCertificateService tutorCertificateService, CurrentUserService currentUserService)
 		{
-			_httpContextAccessor = httpContextAccessor;
 			_certificateTypeService = certificateTypeService;
 			_tutorCertificateService = tutorCertificateService;
+			_currentUserService = currentUserService;
 		}
 
 
