@@ -1,5 +1,4 @@
-﻿using EduMatch.DataAccessLayer.Enum;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace EduMatch.DataAccessLayer.Entities;
@@ -12,9 +11,15 @@ public partial class EducationInstitution
 
     public string Name { get; set; } = null!;
 
-    public int InstitutionType { get; set; }
+    public int? InstitutionType { get; set; }
 
     public DateTime? CreatedAt { get; set; }
+
+    public int Verified { get; set; }
+
+    public string? VerifiedBy { get; set; }
+
+    public DateTime? VerifiedAt { get; set; }
 
     public virtual ICollection<TutorEducation> TutorEducations { get; set; } = new List<TutorEducation>();
 }

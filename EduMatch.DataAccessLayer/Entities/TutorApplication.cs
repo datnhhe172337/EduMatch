@@ -3,17 +3,15 @@ using System.Collections.Generic;
 
 namespace EduMatch.DataAccessLayer.Entities;
 
-public partial class TutorAvailability
+public partial class TutorApplication
 {
     public int Id { get; set; }
 
+    public int ClassRequestId { get; set; }
+
     public int TutorId { get; set; }
 
-    public int SlotId { get; set; }
-
-    public DateTime StartDate { get; set; }
-
-    public DateTime? EndDate { get; set; }
+    public string Message { get; set; } = null!;
 
     public int Status { get; set; }
 
@@ -21,7 +19,7 @@ public partial class TutorAvailability
 
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual TimeSlot Slot { get; set; } = null!;
+    public virtual ClassRequest ClassRequest { get; set; } = null!;
 
     public virtual TutorProfile Tutor { get; set; } = null!;
 }

@@ -16,5 +16,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		Task<EducationInstitutionDto> CreateAsync(EducationInstitutionCreateRequest request);
 		Task<EducationInstitutionDto> UpdateAsync(EducationInstitutionUpdateRequest request);
 		Task DeleteAsync(int id);
+		Task<EducationInstitutionDto> VerifyAsync(int id, string verifiedBy);
 	}
 }

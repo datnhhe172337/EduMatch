@@ -14,5 +14,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		Task<CertificateTypeDto> CreateAsync(CertificateTypeCreateRequest request);
 		Task<CertificateTypeDto> UpdateAsync(CertificateTypeUpdateRequest request);
 		Task DeleteAsync(int id);
+		Task<CertificateTypeDto> VerifyAsync(int id, string verifiedBy);
 	}
 }

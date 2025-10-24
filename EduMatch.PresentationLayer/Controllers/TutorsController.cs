@@ -437,12 +437,11 @@ namespace EduMatch.PresentationLayer.Controllers
 
 			try
 			{
-				// Update tutor status to Approved using service layer
-				await _tutorProfileService.UpdateAsync(new TutorProfileUpdateRequest
-				{
-					Id = tutorId,
-					Status = TutorStatus.Approved
-				});
+				// Get current user email from CurrentUserService
+				var currentUserEmail = _currentUserService.Email ?? "System";
+				
+				// Use VerifyAsync to update status and track verification info
+				await _tutorProfileService.VerifyAsync(tutorId, currentUserEmail);
 
 				// Verify all certificates using service layer
 				var certs = await _tutorCertificateService.GetByTutorIdAsync(tutorId);
@@ -479,7 +478,7 @@ namespace EduMatch.PresentationLayer.Controllers
 				await _userService.UpdateRoleUserAsync(existingProfile.UserEmail, 2); // Role 2 = Tutor
 
 				var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
-				return Ok(ApiResponse<TutorProfileDto>.Ok(fullProfile!, "Tutor approved and all certificates/educations verified."));
+				return Ok(ApiResponse<TutorProfileDto>.Ok(fullProfile!, $"Tutor approved and all certificates/educations verified by {currentUserEmail}."));
 			}
 			catch (Exception ex)
 			{
@@ -507,21 +506,38 @@ namespace EduMatch.PresentationLayer.Controllers
 
 			try
 			{
-				// Update tutor status using service layer
-				await _tutorProfileService.UpdateAsync(new TutorProfileUpdateRequest
+				// Check if changing from Pending to Approved - use VerifyAsync to track who verified
+				if (existingProfile.Status == (int)TutorStatus.Pending && request.Status == TutorStatus.Approved)
 				{
-					Id = tutorId,
-					Status = request.Status
-				});
-
-				// If status is Approved, update user role to tutor
-				if (request.Status == TutorStatus.Approved)
-				{
+					// Get current user email from CurrentUserService
+					var currentUserEmail = _currentUserService.Email ?? "System";
+					
+					// Use VerifyAsync to update status and track verification info
+					var verifiedProfile = await _tutorProfileService.VerifyAsync(tutorId, currentUserEmail);
+					
+					// Update user role to tutor since status is Approved
 					await _userService.UpdateRoleUserAsync(existingProfile.UserEmail, 2); // Role 2 = Tutor
+					
+					return Ok(ApiResponse<TutorProfileDto>.Ok(verifiedProfile, $"Tutor verified and approved by {currentUserEmail}."));
 				}
+				else
+				{
+					// For other status changes, use regular UpdateAsync
+					await _tutorProfileService.UpdateAsync(new TutorProfileUpdateRequest
+					{
+						Id = tutorId,
+						Status = request.Status
+					});
 
-				var updatedProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
-				return Ok(ApiResponse<TutorProfileDto>.Ok(updatedProfile!, $"Tutor status updated to {request.Status}."));
+					// If status is Approved, update user role to tutor
+					if (request.Status == TutorStatus.Approved)
+					{
+						await _userService.UpdateRoleUserAsync(existingProfile.UserEmail, 2); // Role 2 = Tutor
+					}
+
+					var updatedProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
+					return Ok(ApiResponse<TutorProfileDto>.Ok(updatedProfile!, $"Tutor status updated to {request.Status}."));
+				}
 			}
 			catch (Exception ex)
 			{

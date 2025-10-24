@@ -1,12 +1,11 @@
-﻿using EduMatch.DataAccessLayer.Enum;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace EduMatch.DataAccessLayer.Entities;
 
 public partial class TutorProfile
 {
-    public int? Id { get; set; }
+    public int Id { get; set; }
 
     public string UserEmail { get; set; } = null!;
 
@@ -26,7 +25,15 @@ public partial class TutorProfile
 
     public DateTime? UpdatedAt { get; set; }
 
+    public string? VerifiedBy { get; set; }
+
+    public DateTime? VerifiedAt { get; set; }
+
     public virtual ICollection<ChatRoom> ChatRooms { get; set; } = new List<ChatRoom>();
+
+    public virtual ICollection<FavoriteTutor> FavoriteTutors { get; set; } = new List<FavoriteTutor>();
+
+    public virtual ICollection<TutorApplication> TutorApplications { get; set; } = new List<TutorApplication>();
 
     public virtual ICollection<TutorAvailability> TutorAvailabilities { get; set; } = new List<TutorAvailability>();
 

@@ -17,5 +17,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		Task<TutorProfileDto> CreateAsync(TutorProfileCreateRequest request);
 		Task<TutorProfileDto> UpdateAsync(TutorProfileUpdateRequest request);
 		Task DeleteAsync(int id);
+		Task<TutorProfileDto> VerifyAsync(int id, string verifiedBy);
 	}
 }

@@ -3,6 +3,7 @@ using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests.CertificateType;
 using EduMatch.DataAccessLayer.Entities;
+using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -70,7 +71,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 				{
 					Code = request.Code,
 					Name = request.Name,
-					CreatedAt = DateTime.UtcNow
+					CreatedAt = DateTime.UtcNow,
+					Verified = (int)VerifyStatus.Pending
 				};
 				await _repository.AddAsync(entity);
 				return _mapper.Map<CertificateTypeDto>(entity);
@@ -123,6 +125,43 @@ namespace EduMatch.BusinessLogicLayer.Services
 		public async Task DeleteAsync(int id)
 		{
 			await _repository.RemoveByIdAsync(id);
+		}
+
+		public async Task<CertificateTypeDto> VerifyAsync(int id, string verifiedBy)
+		{
+			try
+			{
+				if (id <= 0)
+					throw new ArgumentException("ID must be greater than 0");
+
+				if (string.IsNullOrWhiteSpace(verifiedBy))
+					throw new ArgumentException("VerifiedBy is required");
+
+				// Check if entity exists
+				var existingEntity = await _repository.GetByIdAsync(id);
+				if (existingEntity == null)
+				{
+					throw new ArgumentException($"Certificate type with ID {id} not found");
+				}
+
+				// Check if current status is Pending
+				if (existingEntity.Verified != (int)VerifyStatus.Pending)
+				{
+					throw new InvalidOperationException($"Certificate type with ID {id} is not in Pending status for verification");
+				}
+
+				// Update verification status
+				existingEntity.Verified = (int)VerifyStatus.Verified;
+				existingEntity.VerifiedBy = verifiedBy;
+				existingEntity.VerifiedAt = DateTime.UtcNow;
+
+				await _repository.UpdateAsync(existingEntity);
+				return _mapper.Map<CertificateTypeDto>(existingEntity);
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to verify certificate type: {ex.Message}", ex);
+			}
 		}
 	}
 }

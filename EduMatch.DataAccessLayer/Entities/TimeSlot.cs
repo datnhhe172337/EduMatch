@@ -11,5 +11,7 @@ public partial class TimeSlot
 
     public TimeOnly EndTime { get; set; }
 
+    public virtual ICollection<ClassRequestSlotsAvailability> ClassRequestSlotsAvailabilities { get; set; } = new List<ClassRequestSlotsAvailability>();
+
     public virtual ICollection<TutorAvailability> TutorAvailabilities { get; set; } = new List<TutorAvailability>();
 }

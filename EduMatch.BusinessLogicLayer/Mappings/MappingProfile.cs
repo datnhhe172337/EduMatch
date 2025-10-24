@@ -22,6 +22,7 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 		{
 			// CertificateType mappings
 			CreateMap<CertificateType, CertificateTypeDto>()
+				.ForMember(dest => dest.Verified, opt => opt.MapFrom(src => (VerifyStatus)src.Verified))
 				.ForMember(d => d.Subjects, o => o.MapFrom(s =>
 					s.CertificateTypeSubjects.Select(x => new SubjectDto
 					{
@@ -42,7 +43,8 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 
 			// EducationInstitution mappings
 			CreateMap<EducationInstitution, EducationInstitutionDto>()
-				.ForMember(dest => dest.InstitutionType, opt => opt.MapFrom(src => (InstitutionType)src.InstitutionType));
+				.ForMember(dest => dest.InstitutionType, opt => opt.MapFrom(src => (InstitutionType)src.InstitutionType))
+				.ForMember(dest => dest.Verified, opt => opt.MapFrom(src => (VerifyStatus)src.Verified));
 
 
 

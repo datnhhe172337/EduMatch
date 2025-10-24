@@ -403,6 +403,44 @@ namespace EduMatch.BusinessLogicLayer.Services
 			await _repository.RemoveByIdAsync(id);
 		}
 
+		public async Task<TutorProfileDto> VerifyAsync(int id, string verifiedBy)
+		{
+			try
+			{
+				if (id <= 0)
+					throw new ArgumentException("ID must be greater than 0");
+
+				if (string.IsNullOrWhiteSpace(verifiedBy))
+					throw new ArgumentException("VerifiedBy is required");
+
+				// Check if entity exists
+				var existingEntity = await _repository.GetByIdFullAsync(id);
+				if (existingEntity == null)
+				{
+					throw new ArgumentException($"Tutor profile with ID {id} not found");
+				}
+
+				// Check if current status is Pending
+				if (existingEntity.Status != (int)TutorStatus.Pending)
+				{
+					throw new InvalidOperationException($"Tutor profile with ID {id} is not in Pending status for verification");
+				}
+
+				// Update verification status
+				existingEntity.Status = (int)TutorStatus.Approved;
+				existingEntity.VerifiedBy = verifiedBy;
+				existingEntity.VerifiedAt = DateTime.UtcNow;
+				existingEntity.UpdatedAt = DateTime.UtcNow;
+
+				await _repository.UpdateAsync(existingEntity);
+				return _mapper.Map<TutorProfileDto>(existingEntity);
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to verify tutor profile: {ex.Message}", ex);
+			}
+		}
+
 		
 
 		private static string? NormalizeYouTubeEmbedUrlOrNull(string rawUrl)

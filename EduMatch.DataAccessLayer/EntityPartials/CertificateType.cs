@@ -8,20 +8,12 @@ using System.Threading.Tasks;
 
 namespace EduMatch.DataAccessLayer.Entities;
 
-
-public partial class EducationInstitution
+public partial class CertificateType
 {
-	[NotMapped]
-	public InstitutionType? InstitutionTypeEnum
-	{
-		get =>(InstitutionType) InstitutionType;
-		set => InstitutionType =(int) value;
-	}
-
 	[NotMapped]
 	public VerifyStatus VerifiedStatus
 	{
 		get => (VerifyStatus)Verified;
-		set => Verified = (int)value;	
+		set => Verified = (int)value;
 	}
 }

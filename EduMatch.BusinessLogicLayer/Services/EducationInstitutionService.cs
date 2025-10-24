@@ -119,7 +119,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 					Code = request.Code,
 					Name = request.Name,
 					InstitutionType = request.InstitutionType.HasValue ? (int)request.InstitutionType.Value : 0,
-					CreatedAt = DateTime.UtcNow
+					CreatedAt = DateTime.UtcNow,
+					Verified = (int)VerifyStatus.Pending
 				};
 
 				await _repository.AddAsync(entity);
@@ -193,6 +194,43 @@ namespace EduMatch.BusinessLogicLayer.Services
 			catch (Exception ex)
 			{
 				throw new InvalidOperationException($"Failed to delete education institution: {ex.Message}", ex);
+			}
+		}
+
+		public async Task<EducationInstitutionDto> VerifyAsync(int id, string verifiedBy)
+		{
+			try
+			{
+				if (id <= 0)
+					throw new ArgumentException("ID must be greater than 0");
+
+				if (string.IsNullOrWhiteSpace(verifiedBy))
+					throw new ArgumentException("VerifiedBy is required");
+
+				// Check if entity exists
+				var existingEntity = await _repository.GetByIdAsync(id);
+				if (existingEntity == null)
+				{
+					throw new ArgumentException($"Education institution with ID {id} not found");
+				}
+
+				// Check if current status is Pending
+				if (existingEntity.Verified != (int)VerifyStatus.Pending)
+				{
+					throw new InvalidOperationException($"Education institution with ID {id} is not in Pending status for verification");
+				}
+
+				// Update verification status
+				existingEntity.Verified = (int)VerifyStatus.Verified;
+				existingEntity.VerifiedBy = verifiedBy;
+				existingEntity.VerifiedAt = DateTime.UtcNow;
+
+				await _repository.UpdateAsync(existingEntity);
+				return _mapper.Map<EducationInstitutionDto>(existingEntity);
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to verify education institution: {ex.Message}", ex);
 			}
 		}
 	}

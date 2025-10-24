@@ -6,15 +6,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EduMatch.DataAccessLayer.Entities
+namespace EduMatch.DataAccessLayer.Entities;
+
+public partial class TutorCertificate
 {
-	public partial class TutorCertificate
+	[NotMapped]
+	public VerifyStatus VerifiedStatus
 	{
-		[NotMapped]
-		public VerifyStatus VerifiedStatus
-		{
-			get => (VerifyStatus)Verified;
-			set => Verified = (int)value;
-		}
+		get => (VerifyStatus)Verified;
+		set => Verified = (int)value;
 	}
 }

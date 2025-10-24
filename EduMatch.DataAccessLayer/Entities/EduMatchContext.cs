@@ -23,7 +23,13 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<ChatRoom> ChatRooms { get; set; }
 
+    public virtual DbSet<ClassRequest> ClassRequests { get; set; }
+
+    public virtual DbSet<ClassRequestSlotsAvailability> ClassRequestSlotsAvailabilities { get; set; }
+
     public virtual DbSet<EducationInstitution> EducationInstitutions { get; set; }
+
+    public virtual DbSet<FavoriteTutor> FavoriteTutors { get; set; }
 
     public virtual DbSet<Level> Levels { get; set; }
 
@@ -39,6 +45,8 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<TimeSlot> TimeSlots { get; set; }
 
+    public virtual DbSet<TutorApplication> TutorApplications { get; set; }
+
     public virtual DbSet<TutorAvailability> TutorAvailabilities { get; set; }
 
     public virtual DbSet<TutorCertificate> TutorCertificates { get; set; }
@@ -53,10 +61,6 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
 
-//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<CertificateType>(entity =>
@@ -64,6 +68,8 @@ public partial class EduMatchContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__certific__3213E83FC9E555E2");
 
             entity.ToTable("certificate_types");
+
+            entity.HasIndex(e => e.Verified, "IX_certificate_types_verified");
 
             entity.HasIndex(e => e.Code, "UQ__certific__357D4CF92A8BE488").IsUnique();
 
@@ -75,6 +81,11 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.Name)
                 .HasMaxLength(200)
                 .HasColumnName("name");
+            entity.Property(e => e.Verified).HasColumnName("verified");
+            entity.Property(e => e.VerifiedAt).HasColumnName("verifiedAt");
+            entity.Property(e => e.VerifiedBy)
+                .HasMaxLength(255)
+                .HasColumnName("verifiedBy");
         });
 
         modelBuilder.Entity<CertificateTypeSubject>(entity =>
@@ -145,11 +156,108 @@ public partial class EduMatchContext : DbContext
             entity.HasOne(d => d.UserEmailNavigation).WithMany(p => p.ChatRooms).HasForeignKey(d => d.UserEmail);
         });
 
+        modelBuilder.Entity<ClassRequest>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__class_re__3213E83F6A32D7FD");
+
+            entity.ToTable("class_requests");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AddressLine)
+                .HasMaxLength(500)
+                .HasColumnName("addressLine");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysdatetime())")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.ExpectedSessions)
+                .HasDefaultValue(1)
+                .HasColumnName("expectedSessions");
+            entity.Property(e => e.ExpectedStartDate).HasColumnName("expectedStartDate");
+            entity.Property(e => e.Latitude)
+                .HasColumnType("decimal(9, 6)")
+                .HasColumnName("latitude");
+            entity.Property(e => e.LearnerEmail)
+                .HasMaxLength(100)
+                .HasColumnName("learnerEmail");
+            entity.Property(e => e.LearningGoal)
+                .HasMaxLength(300)
+                .HasColumnName("learningGoal");
+            entity.Property(e => e.LevelId).HasColumnName("levelId");
+            entity.Property(e => e.Longitude)
+                .HasColumnType("decimal(9, 6)")
+                .HasColumnName("longitude");
+            entity.Property(e => e.Mode).HasColumnName("mode");
+            entity.Property(e => e.ProvinceId).HasColumnName("provinceId");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.SubDistrictId).HasColumnName("sub_district_id");
+            entity.Property(e => e.SubjectId).HasColumnName("subjectId");
+            entity.Property(e => e.TargetUnitPriceMax)
+                .HasColumnType("decimal(10, 2)")
+                .HasColumnName("targetUnitPriceMax");
+            entity.Property(e => e.TargetUnitPriceMin)
+                .HasColumnType("decimal(10, 2)")
+                .HasColumnName("targetUnitPriceMin");
+            entity.Property(e => e.Title)
+                .HasMaxLength(100)
+                .HasColumnName("title");
+            entity.Property(e => e.TutorRequirement)
+                .HasMaxLength(500)
+                .HasColumnName("tutorRequirement");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updatedAt");
+
+            entity.HasOne(d => d.LearnerEmailNavigation).WithMany(p => p.ClassRequests)
+                .HasForeignKey(d => d.LearnerEmail)
+                .HasConstraintName("FK_class_requests_users");
+
+            entity.HasOne(d => d.Level).WithMany(p => p.ClassRequests)
+                .HasForeignKey(d => d.LevelId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_class_requests_levels");
+
+            entity.HasOne(d => d.Province).WithMany(p => p.ClassRequests)
+                .HasForeignKey(d => d.ProvinceId)
+                .HasConstraintName("FK_class_requests_provinces");
+
+            entity.HasOne(d => d.SubDistrict).WithMany(p => p.ClassRequests)
+                .HasForeignKey(d => d.SubDistrictId)
+                .HasConstraintName("FK_class_requests_sub_district");
+
+            entity.HasOne(d => d.Subject).WithMany(p => p.ClassRequests)
+                .HasForeignKey(d => d.SubjectId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_class_requests_subjects");
+        });
+
+        modelBuilder.Entity<ClassRequestSlotsAvailability>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__class_re__3213E83F6E46DF3C");
+
+            entity.ToTable("class_request_slots_availability");
+
+            entity.HasIndex(e => new { e.ClassRequestId, e.DayOfWeek, e.SlotId }, "UQ_class_request_slot").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ClassRequestId).HasColumnName("classRequestId");
+            entity.Property(e => e.DayOfWeek).HasColumnName("dayOfWeek");
+            entity.Property(e => e.SlotId).HasColumnName("slotId");
+
+            entity.HasOne(d => d.ClassRequest).WithMany(p => p.ClassRequestSlotsAvailabilities)
+                .HasForeignKey(d => d.ClassRequestId)
+                .HasConstraintName("FK_class_request_slots_class_requests");
+
+            entity.HasOne(d => d.Slot).WithMany(p => p.ClassRequestSlotsAvailabilities)
+                .HasForeignKey(d => d.SlotId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_class_request_slots_time_slots");
+        });
+
         modelBuilder.Entity<EducationInstitution>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__educatio__3213E83FFF7331E8");
 
             entity.ToTable("education_institutions");
+
+            entity.HasIndex(e => e.Verified, "IX_education_institutions_verified");
 
             entity.HasIndex(e => e.Code, "UQ__educatio__357D4CF90B73C71D").IsUnique();
 
@@ -162,6 +270,39 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.Name)
                 .HasMaxLength(300)
                 .HasColumnName("name");
+            entity.Property(e => e.Verified).HasColumnName("verified");
+            entity.Property(e => e.VerifiedAt).HasColumnName("verifiedAt");
+            entity.Property(e => e.VerifiedBy)
+                .HasMaxLength(255)
+                .HasColumnName("verifiedBy");
+        });
+
+        modelBuilder.Entity<FavoriteTutor>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__favorite__3213E83F5994F48E");
+
+            entity.ToTable("favorite_tutors");
+
+            entity.HasIndex(e => new { e.UserEmail, e.TutorId }, "UQ_favorite_tutors_user_tutor").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("created_at");
+            entity.Property(e => e.TutorId).HasColumnName("tutor_id");
+            entity.Property(e => e.UserEmail)
+                .HasMaxLength(100)
+                .HasColumnName("user_email");
+
+            entity.HasOne(d => d.Tutor).WithMany(p => p.FavoriteTutors)
+                .HasForeignKey(d => d.TutorId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_favorite_tutors_tutor_profiles");
+
+            entity.HasOne(d => d.UserEmailNavigation).WithMany(p => p.FavoriteTutors)
+                .HasForeignKey(d => d.UserEmail)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_favorite_tutors_users");
         });
 
         modelBuilder.Entity<Level>(entity =>
@@ -273,6 +414,33 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.StartTime).HasColumnName("startTime");
         });
 
+        modelBuilder.Entity<TutorApplication>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__tutor_ap__3213E83F85FF0752");
+
+            entity.ToTable("tutor_application");
+
+            entity.HasIndex(e => new { e.ClassRequestId, e.TutorId }, "UQ_tutor_application").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ClassRequestId).HasColumnName("classRequestId");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysdatetime())")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.Message).HasColumnName("message");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.TutorId).HasColumnName("tutorId");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updatedAt");
+
+            entity.HasOne(d => d.ClassRequest).WithMany(p => p.TutorApplications)
+                .HasForeignKey(d => d.ClassRequestId)
+                .HasConstraintName("FK_tutor_application_class_request");
+
+            entity.HasOne(d => d.Tutor).WithMany(p => p.TutorApplications)
+                .HasForeignKey(d => d.TutorId)
+                .HasConstraintName("FK_tutor_application_tutor_profiles");
+        });
+
         modelBuilder.Entity<TutorAvailability>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__tutor_av__3213E83FAAA63124");
@@ -283,8 +451,8 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnName("createdAt");
+            entity.Property(e => e.EndDate).HasColumnName("endDate");
             entity.Property(e => e.SlotId).HasColumnName("slotId");
-             entity.Property(e => e.EndDate).HasColumnName("endDate");
             entity.Property(e => e.StartDate).HasColumnName("startDate");
             entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.TutorId).HasColumnName("tutorId");
@@ -387,6 +555,10 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.UserEmail)
                 .HasMaxLength(100)
                 .HasColumnName("userEmail");
+            entity.Property(e => e.VerifiedAt).HasColumnName("verifiedAt");
+            entity.Property(e => e.VerifiedBy)
+                .HasMaxLength(255)
+                .HasColumnName("verifiedBy");
             entity.Property(e => e.VideoIntroPublicId)
                 .HasMaxLength(200)
                 .HasColumnName("videoIntroPublicId");
