@@ -1,6 +1,7 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests.TutorEducation;
+using EduMatch.BusinessLogicLayer.Requests.EducationInstitution;
 using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -57,6 +58,50 @@ namespace EduMatch.PresentationLayer.Controllers
 					StatusCodes.Status500InternalServerError,
 					ApiResponse<string>.Fail(
 						"An error occurred while retrieving the list of education institutions.",
+						new { error = ex.Message, stackTrace = ex.StackTrace }
+					)
+				);
+			}
+		}
+
+		/// <summary>
+		/// Tạo mới cơ sở giáo dục
+		/// </summary>
+		[Authorize]
+		[HttpPost("create-education-institution")]
+		[ProducesResponseType(typeof(ApiResponse<EducationInstitutionDto>), StatusCodes.Status201Created)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]
+		public async Task<IActionResult> CreateEducationInstitution([FromBody] EducationInstitutionCreateRequest request)
+		{
+			try
+			{
+				if (request == null)
+				{
+					return BadRequest(ApiResponse<string>.Fail("Request body cannot be null."));
+				}
+
+				if (!ModelState.IsValid)
+				{
+					return BadRequest(ApiResponse<string>.Fail("Validation failed"));
+				}
+
+				// Create the education institution
+				var result = await _educationInstitutionService.CreateAsync(request);
+
+				return Ok(
+					ApiResponse<EducationInstitutionDto>.Ok(
+						result,
+						"Education institution created successfully with Pending status."
+					)
+				);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(
+					StatusCodes.Status500InternalServerError,
+					ApiResponse<string>.Fail(
+						"An error occurred while creating the education institution.",
 						new { error = ex.Message, stackTrace = ex.StackTrace }
 					)
 				);
@@ -160,6 +205,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Cập nhật thông tin bằng cấp học vấn của gia sư
 		/// </summary>
 		// Update tutor education
+		[Authorize]
 		[HttpPut("update-{tutorId}-education")]
 		[ProducesResponseType(typeof(ApiResponse<TutorEducationDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -206,6 +252,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Xóa bằng cấp học vấn của gia sư (có thể xóa một bằng cụ thể)
 		/// </summary>
 		// Delete tutor education
+		[Authorize]
 		[HttpDelete("delete-{tutorId}-education")]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -257,6 +304,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy danh sách các cơ sở giáo dục theo trạng thái verify
 		/// </summary>
+			
 		[HttpGet("get-education-institutions-by-verify-status/{verifyStatus}")]
 		[ProducesResponseType(typeof(ApiResponse<List<EducationInstitutionDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -346,6 +394,9 @@ namespace EduMatch.PresentationLayer.Controllers
 				);
 			}
 		}
+
+
+
 
 	}
 }

@@ -163,7 +163,12 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 						: new List<TutorSubjectDto>()))
 
 				// mapping from UserProfile
-				.ForMember(d => d.Gender, opt => opt.MapFrom(src =>(Gender) src.UserEmailNavigation.UserProfile.Gender))
+				.ForMember(d => d.Gender, opt => opt.MapFrom(src =>
+					src.UserEmailNavigation.UserProfile.Gender == null
+						? null
+						: (Gender?)src.UserEmailNavigation.UserProfile.Gender
+				))
+
 				.ForMember(d => d.Province, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.City))
 				.ForMember(d => d.SubDistrict, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.SubDistrict))
 				.ForMember(d => d.Dob, opt => opt.MapFrom(src => src.UserEmailNavigation.UserProfile.Dob))
