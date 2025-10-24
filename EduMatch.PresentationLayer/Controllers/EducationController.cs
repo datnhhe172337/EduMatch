@@ -20,6 +20,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			_tutorEducationService = tutorEducationService;
 		}
 
+		/// <summary>
+		/// Lấy danh sách tất cả các cơ sở giáo dục có sẵn trong hệ thống
+		/// </summary>
 		// get all education institutions
 		[HttpGet("get-all-education-institution")]
 		[ProducesResponseType(typeof(ApiResponse<List<EducationInstitutionDto>>), StatusCodes.Status200OK)]
@@ -55,6 +58,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Lấy danh sách các bằng cấp học vấn của một gia sư
+		/// </summary>
 		// Get tutor education list by tutor ID
 		[HttpGet("get-{tutorId}-list-education")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorEducationDto>>), StatusCodes.Status200OK)]
@@ -96,6 +102,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Thêm bằng cấp học vấn mới cho gia sư
+		/// </summary>
 		// Create tutor education
 		[HttpPost("create-{tutorId}-education")]
 		[ProducesResponseType(typeof(ApiResponse<TutorEducationDto>), StatusCodes.Status201Created)]
@@ -142,6 +151,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Cập nhật thông tin bằng cấp học vấn của gia sư
+		/// </summary>
 		// Update tutor education
 		[HttpPut("update-{tutorId}-education")]
 		[ProducesResponseType(typeof(ApiResponse<TutorEducationDto>), StatusCodes.Status200OK)]
@@ -185,6 +197,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Xóa bằng cấp học vấn của gia sư (có thể xóa một bằng cụ thể)
+		/// </summary>
 		// Delete tutor education
 		[HttpDelete("delete-{tutorId}-education")]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]

@@ -20,6 +20,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			_tutorSubjectService = tutorSubjectService;
 		}
 
+		/// <summary>
+		/// Lấy danh sách tất cả các môn học có sẵn trong hệ thống
+		/// </summary>
 		[HttpGet("get-all-subject")]
 		[ProducesResponseType(typeof(ApiResponse<List<SubjectDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]
@@ -56,6 +59,9 @@ namespace EduMatch.PresentationLayer.Controllers
 
 
 
+		/// <summary>
+		/// Lấy thông tin chi tiết của một môn học theo ID
+		/// </summary>
 		[HttpGet("get-subject-by-id/{id:int}")]
 		[ProducesResponseType(typeof(ApiResponse<SubjectDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
@@ -88,7 +94,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
-		// Get tutor subject list by tutor ID
+		/// <summary>
+		/// Lấy danh sách các môn học mà một gia sư có thể dạy
+		/// </summary>
 		[HttpGet("get-{tutorId}-list-subject")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorSubjectDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -129,7 +137,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
-		// Create tutor subject
+		/// <summary>
+		/// Thêm môn học mới cho gia sư với mức giá và cấp độ
+		/// </summary>
 		[HttpPost("create-{tutorId}-subject")]
 		[ProducesResponseType(typeof(ApiResponse<TutorSubjectDto>), StatusCodes.Status201Created)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -175,7 +185,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
-		// Update tutor subject
+		/// <summary>
+		/// Cập nhật thông tin môn học của gia sư (giá, cấp độ)
+		/// </summary>
 		[HttpPut("update-{tutorId}-subject")]
 		[ProducesResponseType(typeof(ApiResponse<TutorSubjectDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -218,7 +230,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
-		// Delete tutor subject
+		/// <summary>
+		/// Xóa môn học của gia sư (có thể xóa một môn cụ thể hoặc tất cả)
+		/// </summary>
 		[HttpDelete("delete-{tutorId}-subject")]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]

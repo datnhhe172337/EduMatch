@@ -18,7 +18,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
-using Swashbuckle.AspNetCore.Annotations;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -69,7 +68,9 @@ namespace EduMatch.PresentationLayer.Controllers
 
 
 		
-		// beacme tutor
+		/// <summary>
+		/// Đăng ký trở thành gia sư với đầy đủ thông tin profile, education, certificate, subject và availability
+		/// </summary>
 		[Authorize]
 		[HttpPost("become-tutor")]
 		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
@@ -147,7 +148,82 @@ namespace EduMatch.PresentationLayer.Controllers
 
 
 
-		// Update tutor subject (partial)
+
+
+		// Update tutor education (partial)
+		//[Authorize]
+		//[HttpPut("update-education/{id}")]
+		//[Consumes("multipart/form-data")]
+		//[ProducesResponseType(typeof(ApiResponse<TutorEducationDto>), StatusCodes.Status200OK)]
+		//[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		//[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		//public async Task<IActionResult> UpdateEducation([FromRoute] int id, [FromForm] TutorEducationUpdateRequest request)
+		//{
+		//	try
+		//	{
+		//		var existing = await _tutorEducationService.GetByIdFullAsync(id);
+		//		if (existing == null)
+		//			return NotFound(ApiResponse<string>.Fail("Not found", $"Education #{id} not found"));
+
+		//		var merged = new TutorEducationUpdateRequest
+		//		{
+		//			Id = id,
+		//			TutorId = request.TutorId != 0 ? request.TutorId : existing.TutorId,
+		//			InstitutionId = request.InstitutionId != 0 ? request.InstitutionId : existing.InstitutionId,
+		//			IssueDate = request.IssueDate ?? existing.IssueDate,
+		//			CertificateEducation = request.CertificateEducation,
+		//			Verified = request.Verified != 0 ? request.Verified : existing.Verified,
+		//			RejectReason = string.IsNullOrWhiteSpace(request.RejectReason) ? existing.RejectReason : request.RejectReason
+		//		};
+
+		//		var updated = await _tutorEducationService.UpdateAsync(merged);
+		//		return Ok(ApiResponse<TutorEducationDto>.Ok(updated, "Updated"));
+		//	}
+		//	catch (ArgumentException ex)
+		//	{
+		//		return BadRequest(ApiResponse<string>.Fail("Bad request", ex.Message));
+		//	}
+		//}
+
+		// Update tutor certificate (partial)
+		//[Authorize]
+		//[HttpPut("update-certificate/{id}")]
+		//[Consumes("multipart/form-data")]
+		//[ProducesResponseType(typeof(ApiResponse<TutorCertificateDto>), StatusCodes.Status200OK)]
+		//[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		//[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		//public async Task<IActionResult> UpdateCertificate([FromRoute] int id, [FromForm] TutorCertificateUpdateRequest request)
+		//{
+		//	try
+		//	{
+		//		var existing = await _tutorCertificateService.GetByIdFullAsync(id);
+		//		if (existing == null)
+		//			return NotFound(ApiResponse<string>.Fail("Not found", $"Certificate #{id} not found"));
+
+		//		var merged = new TutorCertificateUpdateRequest
+		//		{
+		//			Id = id,
+		//			TutorId = request.TutorId != 0 ? request.TutorId : existing.TutorId,
+		//			CertificateTypeId = request.CertificateTypeId != 0 ? request.CertificateTypeId : existing.CertificateTypeId,
+		//			IssueDate = request.IssueDate ?? existing.IssueDate,
+		//			ExpiryDate = request.ExpiryDate ?? existing.ExpiryDate,
+		//			Certificate = request.Certificate,
+		//			Verified = request.Verified != 0 ? request.Verified : existing.Verified,
+		//			RejectReason = string.IsNullOrWhiteSpace(request.RejectReason) ? existing.RejectReason : request.RejectReason
+		//		};
+
+		//		var updated = await _tutorCertificateService.UpdateAsync(merged);
+		//		return Ok(ApiResponse<TutorCertificateDto>.Ok(updated, "Updated"));
+		//	}
+		//	catch (ArgumentException ex)
+		//	{
+		//		return BadRequest(ApiResponse<string>.Fail("Bad request", ex.Message));
+		//	}
+		//}
+
+		/// <summary>
+		/// Cập nhật thông tin môn học của gia sư (hourly rate, level)
+		/// </summary>
 		[Authorize]
 		[HttpPut("update-tutor-subject/{tutorSubjectId}")]
 		[ProducesResponseType(typeof(ApiResponse<TutorSubjectDto>), StatusCodes.Status200OK)]
@@ -181,7 +257,9 @@ namespace EduMatch.PresentationLayer.Controllers
 
 		
 
-		// Batch verify: education
+		/// <summary>
+		/// Xác thực hàng loạt các bằng cấp học vấn của gia sư
+		/// </summary>
 		[Authorize]
 		[HttpPut("verify-list-education/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorEducationDto>>), StatusCodes.Status200OK)]
@@ -210,7 +288,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			return Ok(ApiResponse<List<TutorEducationDto>>.Ok(results, "Batch verification applied"));
 		}
 
-		// Batch verify: certificate
+		/// <summary>
+		/// Xác thực hàng loạt các chứng chỉ của gia sư
+		/// </summary>
 		[Authorize]
 		[HttpPut("verify-list-certificate/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorCertificateDto>>), StatusCodes.Status200OK)]
@@ -243,11 +323,11 @@ namespace EduMatch.PresentationLayer.Controllers
 
 
 
+
+		
 		/// <summary>
-		/// lấy list tutotr theo Status
+		/// Lấy danh sách gia sư theo trạng thái (Pending, Approved, Rejected)
 		/// </summary>
-
-
 		[HttpGet("get-all-tutor-by-status")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorProfileDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -265,6 +345,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Lấy danh sách tất cả gia sư trong hệ thống
+		/// </summary>
 		[HttpGet("get-all-tutor")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorProfileDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -282,8 +365,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
-		// Get all certificates and educations of a tutor filtered by verify status
-		
+		/// <summary>
+		/// Lấy tất cả chứng chỉ và bằng cấp học vấn của một gia sư
+		/// </summary>
 		[HttpGet("get-all-tutor-certificate-education/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -306,6 +390,9 @@ namespace EduMatch.PresentationLayer.Controllers
 
 
 		
+		/// <summary>
+		/// Lấy thông tin chi tiết của một gia sư theo ID
+		/// </summary>
 		[HttpGet("get-tutor-by-id/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -330,7 +417,9 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 
-		// Approve tutor and verify all certificates/educations by tutorId
+		/// <summary>
+		/// Phê duyệt gia sư và xác thực tất cả chứng chỉ, bằng cấp của gia sư
+		/// </summary>
 		[Authorize]
 		[HttpPut("approve-and-verify-all/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
@@ -398,7 +487,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
-		// Update only tutor status
+		/// <summary>
+		/// Cập nhật trạng thái của gia sư (Pending, Approved, Rejected)
+		/// </summary>
 		[Authorize]
 		[HttpPut("update-tutor-status/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
@@ -445,5 +536,6 @@ namespace EduMatch.PresentationLayer.Controllers
 
 
 
+	
 	}
 }

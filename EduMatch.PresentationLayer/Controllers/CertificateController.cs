@@ -26,6 +26,9 @@ namespace EduMatch.PresentationLayer.Controllers
 
 
 
+		/// <summary>
+		/// Lấy danh sách tất cả các loại chứng chỉ kèm theo môn học
+		/// </summary>
 		// get all certificate types with subjects 
 		[HttpGet("get-all-certificatetypes-with-subjects")]
 		[ProducesResponseType(typeof(ApiResponse<List<CertificateTypeDto>>), StatusCodes.Status200OK)]
@@ -52,6 +55,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Lấy danh sách các chứng chỉ của một gia sư
+		/// </summary>
 		// Get tutor certificate list by tutor ID
 		[HttpGet("get-{tutorId}-list-certificate")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorCertificateDto>>), StatusCodes.Status200OK)]
@@ -93,6 +99,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Thêm chứng chỉ mới cho gia sư
+		/// </summary>
 		// Create tutor certificate
 		[HttpPost("create-{tutorId}-certificate")]
 		[ProducesResponseType(typeof(ApiResponse<TutorCertificateDto>), StatusCodes.Status201Created)]
@@ -139,6 +148,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Cập nhật thông tin chứng chỉ của gia sư
+		/// </summary>
 		// Update tutor certificate
 		[HttpPut("update-{tutorId}-certificate")]
 		[ProducesResponseType(typeof(ApiResponse<TutorCertificateDto>), StatusCodes.Status200OK)]
@@ -182,6 +194,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Xóa chứng chỉ của gia sư (có thể xóa một chứng chỉ cụ)
+		/// </summary>
 		// Delete tutor certificate
 		[HttpDelete("delete-{tutorId}-certificate")]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
