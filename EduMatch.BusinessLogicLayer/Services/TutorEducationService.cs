@@ -130,7 +130,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 					CertificateUrl = certUrl,
 					CertificatePublicId = certPublicId,
 					CreatedAt = DateTime.UtcNow,
-					Verified = VerifyStatus.Pending,
+					Verified = (int)VerifyStatus.Pending,
 					RejectReason = null
 				};
 
@@ -169,7 +169,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 					CertificateUrl = request.CertificateEducationUrl,
 					CertificatePublicId = null, // No public ID for external URLs
 					CreatedAt = DateTime.UtcNow,
-					Verified = VerifyStatus.Pending,
+					Verified = (int)VerifyStatus.Pending,
 					RejectReason = null
 				};
 
@@ -233,7 +233,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				// Handle Verified status
 				if (request.Verified.HasValue)
 				{
-					existingEntity.Verified = request.Verified.Value;
+					existingEntity.Verified = (int)request.Verified.Value;
 					if (request.Verified.Value == VerifyStatus.Rejected)
 					{
 						var reason = request.RejectReason ?? existingEntity.RejectReason;
@@ -310,7 +310,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				// Handle Verified status
 				if (request.Verified.HasValue)
 				{
-					existingEntity.Verified = request.Verified.Value;
+					existingEntity.Verified = (int)request.Verified.Value;
 					if (request.Verified.Value == VerifyStatus.Rejected)
 					{
 						var reason = request.RejectReason ?? existingEntity.RejectReason;

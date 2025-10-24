@@ -177,8 +177,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 					TeachingExp = request.TeachingExp,
 					VideoIntroUrl = videoUrl,
 					VideoIntroPublicId = videoPublicId,
-					TeachingModes = request.TeachingModes,
-					Status = TutorStatus.Pending,
+					TeachingModes = (int?)request.TeachingModes,
+					Status = (int?)TutorStatus.Pending,
 					CreatedAt = DateTime.UtcNow,
 					UpdatedAt = DateTime.UtcNow
 				};
@@ -227,9 +227,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException("AvatarUrl is required.");
 
 				// Normalize YouTube URL
-				//var normalizedVideoUrl = NormalizeYouTubeEmbedUrlOrNull(request.VideoIntroUrl!);
-				//if (normalizedVideoUrl is null)
-				//	throw new ArgumentException("VideoIntroUrl must be a valid YouTube link.");
+				var normalizedVideoUrl = NormalizeYouTubeEmbedUrlOrNull(request.VideoIntroUrl!);
+				if (normalizedVideoUrl is null)
+					throw new ArgumentException("VideoIntroUrl must be a valid YouTube link.");
 
 				// Update user profile with avatar URL
 				var userProfileUpdate = new UserProfileUpdateRequest
@@ -251,10 +251,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 					UserEmail = userEmail,
 					Bio = request.Bio,
 					TeachingExp = request.TeachingExp,
-					VideoIntroUrl = request.VideoIntroUrl,
+					VideoIntroUrl = normalizedVideoUrl,
 					VideoIntroPublicId = null, // No public ID for external URLs
-					TeachingModes = request.TeachingModes,
-					Status = TutorStatus.Pending,
+					TeachingModes = (int)request.TeachingModes,
+					Status = (int)TutorStatus.Pending,
 					CreatedAt = DateTime.UtcNow,
 					UpdatedAt = DateTime.UtcNow
 				};
@@ -316,10 +316,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 
 				if (request.TeachingModes.HasValue)
-					existing.TeachingModes = request.TeachingModes.Value;
+					existing.TeachingModes = (int?)request.TeachingModes.Value;
 
 				if (request.Status.HasValue)
-					existing.Status = request.Status.Value;
+					existing.Status = (int?)request.Status.Value;
 
 				existing.UpdatedAt = DateTime.UtcNow;
 
@@ -351,7 +351,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		}
 		*/
 
-		// NEW METHOD - USING URL
+	
 		public async Task<TutorProfileDto> UpdateAsync(TutorProfileUpdateRequest request)
 		{
 			try
@@ -379,10 +379,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 
 				if (request.TeachingModes.HasValue)
-					existing.TeachingModes = request.TeachingModes.Value;
+					existing.TeachingModes = (int)request.TeachingModes.Value;
 
 				if (request.Status.HasValue)
-					existing.Status = request.Status.Value;
+					existing.Status = (int)request.Status.Value;
 
 				existing.UpdatedAt = DateTime.UtcNow;
 

@@ -28,7 +28,7 @@ namespace EduMatch.DataAccessLayer.Repositories
 
 
 		public async Task<IReadOnlyList<TutorAvailability>> GetByStatusAsync(TutorAvailabilityStatus status)
-			=> await IncludeAll().Where(t => t.Status == status).ToListAsync();
+			=> await IncludeAll().Where(t => t.Status == (int)status).ToListAsync();
 
 
 		public async Task<IReadOnlyList<TutorAvailability>> GetAllFullAsync()

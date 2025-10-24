@@ -71,7 +71,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 profile.Dob = dto.Dob.Value;
 
             if (dto.Gender.HasValue)
-                profile.Gender = dto.Gender.Value;
+				profile.Gender = (int?)dto.Gender.Value;
 
             if (!string.IsNullOrEmpty(dto.AvatarUrl))
                 profile.AvatarUrl = dto.AvatarUrl;

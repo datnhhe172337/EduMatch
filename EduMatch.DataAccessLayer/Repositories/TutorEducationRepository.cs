@@ -33,10 +33,10 @@ namespace EduMatch.DataAccessLayer.Repositories
 			=> await IncludeAll().Where(t => t.InstitutionId == institutionId).ToListAsync();
 
 		public async Task<IReadOnlyList<TutorEducation>> GetByVerifiedStatusAsync(VerifyStatus verified)
-			=> await IncludeAll().Where(t => t.Verified == verified).ToListAsync();
+			=> await IncludeAll().Where(t => t.Verified == (int)verified).ToListAsync();
 
 		public async Task<IReadOnlyList<TutorEducation>> GetPendingVerificationsAsync()
-			=> await IncludeAll().Where(t => t.Verified == VerifyStatus.Pending).ToListAsync();
+			=> await IncludeAll().Where(t => t.Verified == (int)VerifyStatus.Pending).ToListAsync();
 
 		public async Task<IReadOnlyList<TutorEducation>> GetAllFullAsync()
 			=> await IncludeAll().ToListAsync();

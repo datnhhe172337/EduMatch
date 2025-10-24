@@ -12,7 +12,7 @@ public partial class TutorAvailability
 
     public int SlotId { get; set; }
     
-    public TutorAvailabilityStatus? Status { get; set; }
+    public int Status { get; set; }
 
     public DateTime StartDate { get; set; }
 

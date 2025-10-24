@@ -29,7 +29,7 @@ namespace EduMatch.DataAccessLayer.Repositories
 			=> await IncludeAll().Where(e => e.Name.Contains(name)).ToListAsync();
 
 		public async Task<IReadOnlyList<EducationInstitution>> GetByInstitutionTypeAsync(InstitutionType institutionType)
-			=> await IncludeAll().Where(e => e.InstitutionType == institutionType).ToListAsync();
+			=> await IncludeAll().Where(e => e.InstitutionType == (int)institutionType).ToListAsync();
 
 		public async Task AddAsync(EducationInstitution entity)
 		{

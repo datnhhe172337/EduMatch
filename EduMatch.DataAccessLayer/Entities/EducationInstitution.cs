@@ -12,7 +12,7 @@ public partial class EducationInstitution
 
     public string Name { get; set; } = null!;
 
-    public InstitutionType? InstitutionType { get; set; }
+    public int InstitutionType { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 

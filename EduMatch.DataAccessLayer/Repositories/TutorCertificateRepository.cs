@@ -33,7 +33,7 @@ namespace EduMatch.DataAccessLayer.Repositories
 			=> await IncludeAll().Where(t => t.CertificateTypeId == certificateTypeId).ToListAsync();
 
 		public async Task<IReadOnlyList<TutorCertificate>> GetByVerifiedStatusAsync(VerifyStatus verified)
-			=> await IncludeAll().Where(t => t.Verified == verified).ToListAsync();
+			=> await IncludeAll().Where(t => t.Verified == (int)verified).ToListAsync();
 
 		public async Task<IReadOnlyList<TutorCertificate>> GetExpiredCertificatesAsync()
 			=> await IncludeAll().Where(t => t.ExpiryDate.HasValue && t.ExpiryDate.Value < DateTime.Now).ToListAsync();

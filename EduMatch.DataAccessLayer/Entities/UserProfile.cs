@@ -10,7 +10,7 @@ public partial class UserProfile
 
     public DateTime? Dob { get; set; }
 
-    public Gender? Gender { get; set; }
+    public int? Gender { get; set; }
 
     public string? AvatarUrl { get; set; }
 

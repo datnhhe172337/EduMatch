@@ -78,7 +78,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				{
 					TutorId = request.TutorId,
 					SlotId = request.SlotId,
-					Status = TutorAvailabilityStatus.Available,
+					Status = (int)TutorAvailabilityStatus.Available,
 					CreatedAt = DateTime.UtcNow,
 					StartDate = request.StartDate.Date.Add(timeSlot.StartTime.ToTimeSpan()),
 					EndDate = request.StartDate.Date.Add(timeSlot.EndTime.ToTimeSpan())
@@ -116,7 +116,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				existingEntity.TutorId = request.TutorId;
 				existingEntity.SlotId = request.SlotId;
 				if (request.Status.HasValue)
-					existingEntity.Status = request.Status.Value;
+					existingEntity.Status = (int)request.Status.Value;
 
 				// Update StartDate and EndDate based on SlotId
 				var timeSlot = await _timeSlotRepository.GetByIdAsync(request.SlotId);
