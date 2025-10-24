@@ -9,6 +9,7 @@ using EduMatch.PresentationLayer.Hubs;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,7 +35,8 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.WriteIndented = true;
-    });
+		options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+	});
 
 builder.Services.AddDbContext<EduMatchContext>(options =>
   options.UseSqlServer(builder.Configuration.GetConnectionString("EduMatch")));
