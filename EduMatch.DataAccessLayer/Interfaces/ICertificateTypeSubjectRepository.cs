@@ -12,5 +12,7 @@ namespace EduMatch.DataAccessLayer.Interfaces
 		Task AddAsync(CertificateTypeSubject entity);
 		Task UpdateAsync(CertificateTypeSubject entity);
 		Task RemoveByIdAsync(int id);
+		Task AddRangeAsync(IEnumerable<CertificateTypeSubject> entities);
+		Task RemoveByCertificateTypeIdAsync(int certificateTypeId);
 	}
 }

@@ -16,11 +16,13 @@ namespace EduMatch.BusinessLogicLayer.Services
 	public class CertificateTypeService : ICertificateTypeService
 	{
 		private readonly ICertificateTypeRepository _repository;
+		private readonly ICertificateTypeSubjectRepository _certificateTypeSubjectRepository;
 		private readonly IMapper _mapper;
 
-		public CertificateTypeService(ICertificateTypeRepository repository, IMapper mapper)
+		public CertificateTypeService(ICertificateTypeRepository repository, ICertificateTypeSubjectRepository certificateTypeSubjectRepository, IMapper mapper)
 		{
 			_repository = repository;
+			_certificateTypeSubjectRepository = certificateTypeSubjectRepository;
 			_mapper = mapper;
 		}
 
@@ -161,6 +163,50 @@ namespace EduMatch.BusinessLogicLayer.Services
 			catch (Exception ex)
 			{
 				throw new InvalidOperationException($"Failed to verify certificate type: {ex.Message}", ex);
+			}
+		}
+
+		public async Task<CertificateTypeDto> AddSubjectsToCertificateTypeAsync(int certificateTypeId, List<int> subjectIds)
+		{
+			try
+			{
+				if (certificateTypeId <= 0)
+					throw new ArgumentException("Certificate type ID must be greater than 0");
+
+				if (subjectIds == null || !subjectIds.Any())
+					throw new ArgumentException("Subject IDs list cannot be null or empty");
+
+				// Check if certificate type exists
+				var certificateType = await _repository.GetByIdAsync(certificateTypeId);
+				if (certificateType == null)
+					throw new ArgumentException($"Certificate type with ID {certificateTypeId} not found");
+
+				// Get existing relationships to avoid duplicates
+				var existingRelationships = await _certificateTypeSubjectRepository.GetByCertificateTypeIdAsync(certificateTypeId);
+				var existingSubjectIds = existingRelationships.Select(r => r.SubjectId).ToList();
+
+				// Filter out subjects that are already associated
+				var newSubjectIds = subjectIds.Where(id => !existingSubjectIds.Contains(id)).ToList();
+
+				if (newSubjectIds.Any())
+				{
+					// Create new relationships only for subjects that aren't already associated
+					var certificateTypeSubjects = newSubjectIds.Select(subjectId => new CertificateTypeSubject
+					{
+						CertificateTypeId = certificateTypeId,
+						SubjectId = subjectId
+					}).ToList();
+
+					await _certificateTypeSubjectRepository.AddRangeAsync(certificateTypeSubjects);
+				}
+
+				// Return updated certificate type with all relationships
+				var updatedCertificateType = await _repository.GetByIdAsync(certificateTypeId);
+				return _mapper.Map<CertificateTypeDto>(updatedCertificateType);
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to add subjects to certificate type: {ex.Message}", ex);
 			}
 		}
 	}

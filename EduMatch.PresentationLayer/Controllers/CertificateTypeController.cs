@@ -144,7 +144,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// </summary>
 		[Authorize]
 		[HttpPost("add-subjects-to-certificate-type/{certificateTypeId}")]
-		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<CertificateTypeDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]
@@ -180,11 +180,11 @@ namespace EduMatch.PresentationLayer.Controllers
 				}
 
 				// Add subjects to certificate type
-				// Note: This would require a service method to handle the many-to-many relationship
-				// For now, we'll return a success message indicating the operation would be performed
+				var result = await _certificateTypeService.AddSubjectsToCertificateTypeAsync(certificateTypeId, subjectIds);
 				
-				return Ok(ApiResponse<string>.Ok(
-					$"Successfully added {subjectIds.Count} subjects to certificate type {certificateTypeId}."
+				return Ok(ApiResponse<CertificateTypeDto>.Ok(
+					result,
+					$"Successfully added subjects to certificate type {certificateTypeId}."
 				));
 			}
 			catch (Exception ex)

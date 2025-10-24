@@ -51,5 +51,24 @@ namespace EduMatch.DataAccessLayer.Repositories
 				await _ctx.SaveChangesAsync();
 			}
 		}
+
+		public async Task AddRangeAsync(IEnumerable<CertificateTypeSubject> entities)
+		{
+			await _ctx.CertificateTypeSubjects.AddRangeAsync(entities);
+			await _ctx.SaveChangesAsync();
+		}
+
+		public async Task RemoveByCertificateTypeIdAsync(int certificateTypeId)
+		{
+			var entities = await _ctx.CertificateTypeSubjects
+				.Where(c => c.CertificateTypeId == certificateTypeId)
+				.ToListAsync();
+			
+			if (entities.Any())
+			{
+				_ctx.CertificateTypeSubjects.RemoveRange(entities);
+				await _ctx.SaveChangesAsync();
+			}
+		}
 	}
 }

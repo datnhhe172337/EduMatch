@@ -44,9 +44,16 @@ namespace EduMatch.DataAccessLayer.Repositories
 
 		public async Task RemoveByIdAsync(int id)
 		{
-			var entity = await _ctx.CertificateTypes.FindAsync(new object?[] { id });
+			var entity = await _ctx.CertificateTypes
+				.Include(c => c.CertificateTypeSubjects)
+				.FirstOrDefaultAsync(c => c.Id == id);
+			
 			if (entity != null)
 			{
+				// Remove all related CertificateTypeSubjects first
+				_ctx.CertificateTypeSubjects.RemoveRange(entity.CertificateTypeSubjects);
+				
+				// Then remove the CertificateType
 				_ctx.CertificateTypes.Remove(entity);
 				await _ctx.SaveChangesAsync();
 			}
