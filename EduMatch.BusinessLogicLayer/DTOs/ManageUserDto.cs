@@ -14,7 +14,5 @@ namespace EduMatch.BusinessLogicLayer.DTOs
         public string? Phone { get; set; }
         public DateTime CreateAt { get; set; }
         public bool? IsActive { get; set; }
-        public List<string> Subjects { get; set; } = new();
-        public List<decimal?> HourlyRate { get; set; } = new();
     }
 }

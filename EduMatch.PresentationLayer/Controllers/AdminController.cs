@@ -72,7 +72,7 @@ namespace EduMatch.PresentationLayer.Controllers
             }
             try
             {
-                var ad = await _userService.CreateAdminAccAsync(admin.Email);
+                var ad = await _userService.CreateAdminAccAsync(admin.Email, admin.Password);
                 return Ok(ApiResponse<object>.Ok(ad, "Tạo tài khoản admin thành công."));
             }
             catch(InvalidOperationException ex)

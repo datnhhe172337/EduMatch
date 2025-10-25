@@ -44,6 +44,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ISubjectRepository, SubjectRepository>();
             services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
             services.AddScoped<IUserProfileRepository, UserProfileRepository>();
+            services.AddScoped<IFavoriteTutorRepository, FavoriteTutorRepository>();
 
 			services.AddScoped<IChatRepository, ChatRepository>();
 			services.AddScoped<UserProfileRepository, UserProfileRepository>();
@@ -65,6 +66,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ILevelService, LevelService>();
             services.AddScoped<ITimeSlotService, TimeSlotService>();
             services.AddScoped<IEducationInstitutionService, EducationInstitutionService>();
+            services.AddScoped<IFavoriteTutorService, FavoriteTutorService>();
 
 
 

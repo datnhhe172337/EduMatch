@@ -47,8 +47,6 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .Where(u => u.RoleId == 2)
                 .Include(u => u.Role)
                 .Include(u => u.TutorProfile)
-                .ThenInclude(tp => tp.TutorSubjects)
-                .ThenInclude(ts => ts.Subject)
                 .OrderByDescending(u => u.TutorProfile != null
                 ? u.TutorProfile.CreatedAt
                 : u.CreatedAt)
@@ -95,10 +93,9 @@ namespace EduMatch.DataAccessLayer.Repositories
         public async Task<IEnumerable<User>> GetAllUsers()
         {
             return await _context.Users
+                .Include(u => u.Role)
                 .Include(u => u.UserProfile)
                 .Include(u => u.TutorProfile)
-                .ThenInclude(tp => tp.TutorSubjects)
-                .ThenInclude(tp => tp.Subject)
                 .OrderByDescending(u => u.TutorProfile != null
                 ? u.TutorProfile.CreatedAt
                 : u.CreatedAt)
