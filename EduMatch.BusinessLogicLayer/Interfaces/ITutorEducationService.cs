@@ -21,7 +21,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task DeleteByTutorIdAsync(int tutorId);
         Task<TutorEducationDto> UpdateAsync(TutorEducationUpdateRequest request);
 
-        Task<TutorEducationDto> UpdateAsync(UpdateTutorEducationRequest request);
-        Task ReconcileAsync(int tutorId, List<UpdateTutorEducationRequest> incomingEducations);
+
     }
 }

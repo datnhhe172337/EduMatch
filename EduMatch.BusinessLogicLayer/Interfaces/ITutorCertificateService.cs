@@ -23,10 +23,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		Task DeleteAsync(int id);
 		Task DeleteByTutorIdAsync(int tutorId);
 
-        Task<TutorCertificateDto> UpdateAsync(UpdateTutorCertificateRequest request);
-
-        // --- NEW RECONCILIATION METHOD ---
-        Task ReconcileAsync(int tutorId, List<UpdateTutorCertificateRequest> incomingCertificates);
+    
     }
 }
 

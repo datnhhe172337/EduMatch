@@ -88,77 +88,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		}
 
 	
-		/*
-		public async Task<TutorCertificateDto> CreateAsync(TutorCertificateCreateRequest request)
-		{
-			try
-			{
-				// VALIDATE REQUEST 
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException(
-						$"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}"
-					);
-				}
-
-				var tutor = await _tutorProfileRepository.GetByIdFullAsync(request.TutorId);
-				if (tutor is null)
-					throw new ArgumentException($"Tutor with ID {request.TutorId} not found.");
-
-				var certificateType = await _certificateTypeRepository.GetByIdAsync(request.CertificateTypeId);
-				if (certificateType is null)
-					throw new ArgumentException($"CertificateType with ID {request.CertificateTypeId} not found.");
-
-				if(_currentUserService.Email is null)
-					throw new ArgumentException("Current user email not found.");
-
-				string? certUrl = null;
-				string? certPublicId = null;
-				var hasFile = request.Certificate != null && request.Certificate.Length > 0 && !string.IsNullOrWhiteSpace(request.Certificate.FileName);
-				if (hasFile)
-				{
-					using var stream = request.Certificate!.OpenReadStream();
-					var uploadRequest = new UploadToCloudRequest(
-						Content: stream,
-						FileName: request.Certificate!.FileName,
-						ContentType: request.Certificate!.ContentType ?? "application/octet-stream",
-						LengthBytes: request.Certificate!.Length,
-						OwnerEmail: _currentUserService.Email!,
-						MediaType: MediaType.Image
-					);
-					var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
-					if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
-						throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
-					certUrl = uploadResult.SecureUrl;
-					certPublicId = uploadResult.PublicId;
-				}
-
-				// MAP  -> ENTITY
-				var entity = new TutorCertificate
-				{
-					TutorId = request.TutorId,
-					CertificateTypeId = request.CertificateTypeId,
-					IssueDate = request.IssueDate,
-					ExpiryDate = request.ExpiryDate,
-					CertificateUrl = certUrl,
-					CertificatePublicId = certPublicId,
-					CreatedAt = DateTime.UtcNow,
-					Verified = (int)VerifyStatus.Pending,
-					RejectReason = null
-				};
-
-				await _repository.AddAsync(entity);
-				return _mapper.Map<TutorCertificateDto>(entity);
-			}
-			catch (Exception ex)
-			{
-				throw new InvalidOperationException($"Failed to create tutor certificate: {ex.Message}", ex);
-			}
-		}
-		*/
-
+		
 		
 		public async Task<TutorCertificateDto> CreateAsync(TutorCertificateCreateRequest request)
 		{
@@ -209,105 +139,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		}
 
 		
-		/*
-		public async Task<TutorCertificateDto> UpdateAsync(TutorCertificateUpdateRequest request)
-		{
-			try
-			{
-				// Validate request
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-				}
-
-				// Check if entity exists
-				var existingEntity = await _repository.GetByIdFullAsync(request.Id);
-				if (existingEntity == null)
-				{
-					throw new ArgumentException($"Tutor certificate with ID {request.Id} not found");
-				}
-
-				// Validate CertificateTypeId exists
-				var certificateType = await _certificateTypeRepository.GetByIdAsync(request.CertificateTypeId);
-				if (certificateType == null)
-				{
-					throw new ArgumentException($"CertificateType with ID {request.CertificateTypeId} not found");
-				}
-
-				var oldPublicId = existingEntity.CertificatePublicId;
-				var hasNewFile = request.Certificate != null && request.Certificate.Length > 0 && !string.IsNullOrWhiteSpace(request.Certificate.FileName);
-				if (hasNewFile)
-				{
-					using var stream = request.Certificate!.OpenReadStream();
-					var uploadRequest = new UploadToCloudRequest(
-						Content: stream,
-						FileName: request.Certificate!.FileName,
-						ContentType: request.Certificate!.ContentType ?? "application/octet-stream",
-						LengthBytes: request.Certificate!.Length,
-						OwnerEmail: _currentUserService.Email!,
-						MediaType: MediaType.Image
-					);
-					var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
-					if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
-						throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
-					existingEntity.CertificateUrl = uploadResult.SecureUrl;
-					existingEntity.CertificatePublicId = uploadResult.PublicId;
-				}
-
-				// Update only provided fields 
-				existingEntity.TutorId = request.TutorId;
-				// CertificateTypeId luôn được update vì có validation Required
-				existingEntity.CertificateTypeId = request.CertificateTypeId;
-				if (request.IssueDate.HasValue) 
-					existingEntity.IssueDate = request.IssueDate.Value;
-				if (request.ExpiryDate.HasValue) 
-					existingEntity.ExpiryDate = request.ExpiryDate.Value;
-
-				// Handle Verified status
-				if (request.Verified.HasValue)
-				{
-					existingEntity.Verified = (int)request.Verified.Value;
-					if (request.Verified.Value == VerifyStatus.Rejected)
-					{
-						if (string.IsNullOrWhiteSpace(request.RejectReason))
-							throw new ArgumentException("Reject reason is required when verification status is Rejected.");
-						existingEntity.RejectReason = request.RejectReason!.Trim();
-					}
-					else
-					{
-						existingEntity.RejectReason = null;
-					}
-				}
-
-				await _repository.UpdateAsync(existingEntity);
-
-				if (hasNewFile && !string.IsNullOrWhiteSpace(oldPublicId))
-				{
-					_ = _cloudMedia.DeleteByPublicIdAsync(oldPublicId, MediaType.Image)
-						.ContinueWith(t =>
-						{
-							if (t.IsCompletedSuccessfully)
-							{
-								Console.WriteLine($" Xóa ảnh {oldPublicId} thành công.");
-							}
-							else if (t.IsFaulted)
-							{
-								Console.WriteLine($" Xóa ảnh {oldPublicId} thất bại: {t.Exception?.GetBaseException().Message}");
-							}
-						});
-				}
-
-				return _mapper.Map<TutorCertificateDto>(existingEntity);
-			}
-			catch (Exception ex)
-			{
-				throw new InvalidOperationException($"Failed to update tutor certificate: {ex.Message}", ex);
-			}
-		}
-		*/
-
+		
 		
 		public async Task<TutorCertificateDto> UpdateAsync(TutorCertificateUpdateRequest request)
 		{
@@ -403,5 +235,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		{
 			await _repository.RemoveByTutorIdAsync(tutorId);
 		}
+
+		
 	}
 }

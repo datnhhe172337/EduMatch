@@ -1,5 +1,5 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.User;
 using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.Interfaces

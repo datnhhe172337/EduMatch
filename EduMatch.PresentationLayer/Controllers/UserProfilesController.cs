@@ -3,7 +3,7 @@ using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.PresentationLayer.Common;
 using EduMatch.DataAccessLayer.Entities;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.User;
 
 namespace EduMatch.PresentationLayer.Controllers
 {

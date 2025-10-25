@@ -3,7 +3,7 @@ using EduMatch.DataAccessLayer.Enum;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace EduMatch.BusinessLogicLayer.Requests
+namespace EduMatch.BusinessLogicLayer.Requests.User
 {
     // The main request object that wraps everything
     public class UpdateTutorProfileRequest

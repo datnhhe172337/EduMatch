@@ -17,8 +17,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task DeleteAsync(int id);
         Task<TutorAvailabilityDto> UpdateAsync(TutorAvailabilityUpdateRequest request);
 
-        // --- NEW/UPDATED METHODS ---
-        Task<TutorAvailabilityDto> UpdateAsync(UpdateTutorAvailabilityRequest request);
-        Task ReconcileAsync(int tutorId, List<UpdateTutorAvailabilityRequest> incomingAvailabilities);
+
     }
 }

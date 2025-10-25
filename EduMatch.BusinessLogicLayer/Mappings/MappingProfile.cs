@@ -106,7 +106,7 @@ namespace EduMatch.BusinessLogicLayer.Mappings
                             Id = a.Id,
                             StartDate = a.StartDate,
                             EndDate = a.EndDate,
-                            Status = a.Status,
+                            Status =(TutorAvailabilityStatus) a.Status,
                             CreatedAt = a.CreatedAt,
                             UpdatedAt = a.UpdatedAt,
                             Slot = a.Slot != null
@@ -122,7 +122,7 @@ namespace EduMatch.BusinessLogicLayer.Mappings
                             IssueDate = c.IssueDate,
                             ExpiryDate = c.ExpiryDate,
                             CreatedAt = c.CreatedAt,
-                            Verified = c.Verified,
+                            Verified =(VerifyStatus) c.Verified,
                             CertificateUrl = c.CertificateUrl,
                             CertificateType = c.CertificateType != null
                                 ? new CertificateTypeDto { Id = c.CertificateType.Id, Name = c.CertificateType.Name }
@@ -137,7 +137,7 @@ namespace EduMatch.BusinessLogicLayer.Mappings
                             CertificateUrl = e.CertificateUrl,
                             IssueDate = e.IssueDate,
                             CreatedAt = e.CreatedAt,
-                            Verified = e.Verified,
+                            Verified = (VerifyStatus)e.Verified,
                             Institution = e.Institution != null
                                 ? new EducationInstitutionDto { Id = e.Institution.Id, Name = e.Institution.Name }
                                 : null
@@ -191,27 +191,9 @@ namespace EduMatch.BusinessLogicLayer.Mappings
             CreateMap<Province, ProvinceDto>();
             CreateMap<SubDistrict, SubDistrictDto>();
 
-            // -----------------------------------------------------------------
-            // ----- NEW MAPPINGS FOR TUTOR PROFILE UPDATE (FIXED) -----
-            // -----------------------------------------------------------------
+          
 
-            // 1. Map UpdateCoreTutorProfileRequest -> Entities
-            CreateMap<UpdateCoreTutorProfileRequest, TutorProfile>()
-                // --- FIXED: ---
-                // Video properties are on TutorProfile, so we ignore them here.
-                .ForMember(dest => dest.VideoIntroUrl, opt => opt.Condition(src => src.VideoIntroUrl != null)) // Allow setting to ""
-                .ForMember(dest => dest.VideoIntroPublicId, opt => opt.Ignore()) // Ignore files
-                                                                                 // --- FIXED: ---
-                                                                                 // Removed Avatar properties, they are not on TutorProfile
-                                                                                 // --- FIXED: ---
-                                                                                 // Replaced 'opts' with the direct lambda
-                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
-
-            CreateMap<UpdateCoreTutorProfileRequest, User>()
-                // --- FIXED: ---
-                // Replaced 'opts' with the direct lambda
-                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
-
+        
 
 			// EducationInstitution mappings
 			CreateMap<EducationInstitution, EducationInstitutionDto>()
@@ -399,40 +381,7 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 		
 
 
-            CreateMap<UpdateCoreTutorProfileRequest, UserProfile>()
-                .ForMember(dest => dest.Dob, opt => opt.MapFrom(src => src.DateOfBirth))
-                .ForMember(dest => dest.CityId, opt => opt.MapFrom(src => src.ProvinceId))
-                // --- FIXED: ---
-                // Avatar properties are on UserProfile, so we ignore them here.
-                .ForMember(dest => dest.AvatarUrl, opt => opt.Ignore()) // Ignore files
-                .ForMember(dest => dest.AvatarUrlPublicId, opt => opt.Ignore()) // Ignore files
-                                                                                // --- FIXED: ---
-                                                                                // Replaced 'opts' with the direct lambda
-                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
-
-
-            // 2. Map Child Update DTOs -> Child Create DTOs (for creating new items)
-            CreateMap<UpdateTutorEducationRequest, TutorEducationCreateRequest>()
-                .ForMember(dest => dest.CertificateEducation, opt => opt.MapFrom(src => src.CertificateEducation));
-
-            CreateMap<UpdateTutorCertificateRequest, TutorCertificateCreateRequest>()
-                .ForMember(dest => dest.Certificate, opt => opt.MapFrom(src => src.Certificate));
-
-            CreateMap<UpdateTutorSubjectRequest, TutorSubjectCreateRequest>();
-            CreateMap<UpdateTutorAvailabilityRequest, TutorAvailabilityCreateRequest>();
-
-
-            // 3. Map Child Update DTOs -> Entities (for updating existing items)
-            CreateMap<UpdateTutorEducationRequest, TutorEducation>()
-                .ForMember(dest => dest.CertificateUrl, opt => opt.Ignore()) // Ignore files
-                .ForMember(dest => dest.CertificatePublicId, opt => opt.Ignore()); // Ignore files
-
-            CreateMap<UpdateTutorCertificateRequest, TutorCertificate>()
-                .ForMember(dest => dest.CertificateUrl, opt => opt.Ignore()) // Ignore files
-                .ForMember(dest => dest.CertificatePublicId, opt => opt.Ignore()); // Ignore files
-
-            // This mapping is for the "simple" reconciliation pattern
-            CreateMap<UpdateTutorAvailabilityRequest, TutorAvailability>();
+        
         }
     }
 }
