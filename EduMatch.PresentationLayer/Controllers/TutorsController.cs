@@ -418,6 +418,38 @@ namespace EduMatch.PresentationLayer.Controllers
 
 
 		/// <summary>
+		/// Cập nhật thông cơ bản (không có chứng chỉ, bằng cấp học vấn, status) tin gia sư
+		/// </summary>
+		[Authorize]
+		[HttpPut("update-tutor-profile")]
+		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
+		public async Task<IActionResult> UpdateTutorProfile([FromBody] TutorProfileUpdateRequest request)
+		{
+			try
+			{
+				if (!ModelState.IsValid)
+					return BadRequest(ApiResponse<string>.Fail("Invalid request."));
+
+				var updatedProfile = await _tutorProfileService.UpdateAsync(request);
+				return Ok(ApiResponse<TutorProfileDto>.Ok(updatedProfile, "Tutor profile updated successfully."));
+			}
+			catch (ArgumentException ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail(ex.Message));
+			}
+			catch (InvalidOperationException ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail(ex.Message));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail("Failed to update tutor profile.", ex.Message));
+			}
+		}
+
+		/// <summary>
 		/// Phê duyệt gia sư và xác thực tất cả chứng chỉ, bằng cấp của gia sư
 		/// </summary>
 		[Authorize]
