@@ -200,9 +200,27 @@ namespace EduMatch.BusinessLogicLayer.Services
 			// Update teaching modes if provided
 			existing.TeachingModes = (int)request.TeachingModes;
 
-			// Update status if provided
+			// Update status if provided - only allow progression from Pending to other statuses
 			if (request.Status.HasValue)
-				existing.Status = (int)request.Status.Value;
+			{
+				var currentStatus = (TutorStatus)existing.Status;
+				var newStatus = request.Status.Value;
+				
+				// Only allow status progression: Pending -> Approved/Rejected, not backwards
+				if (currentStatus == TutorStatus.Pending && (newStatus == TutorStatus.Approved || newStatus == TutorStatus.Rejected))
+				{
+					existing.Status = (int)newStatus;
+				}
+				else if (currentStatus != TutorStatus.Pending)
+				{
+					// If not Pending, don't allow status changes
+					throw new ArgumentException($"Cannot change status from {currentStatus} to {newStatus}. Status can only be changed from Pending to Approved/Rejected.");
+				}
+				else
+				{
+					throw new ArgumentException($"Invalid status change from {currentStatus} to {newStatus}. Only Pending -> Approved/Rejected is allowed.");
+				}
+			}
 
 			existing.UpdatedAt = DateTime.UtcNow;
 
