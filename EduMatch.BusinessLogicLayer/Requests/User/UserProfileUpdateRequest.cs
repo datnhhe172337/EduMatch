@@ -1,19 +1,21 @@
 ﻿using EduMatch.DataAccessLayer.Enum;
-using Microsoft.AspNetCore.Http;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.Requests.User
 {
 	public class UserProfileUpdateRequest
-	{       
-
-        [Required, EmailAddress(ErrorMessage = "Invalid email address")]
+	{
+		[Required(ErrorMessage = "Email is required")]
+		[EmailAddress(ErrorMessage = "Invalid email address")]
 		public string UserEmail { get; set; } = null!;
+
+		[StringLength(100, ErrorMessage = "Username cannot exceed 100 characters")]
+		public string? UserName { get; set; }
+
+		[Phone(ErrorMessage = "Invalid phone number")]
+		[RegularExpression(@"^(?:0\d{9}|(?:\+?84)\d{9,10})$", ErrorMessage = "Phone is not a valid VN number.")]
+		public string? Phone { get; set; }
 
 		[DataType(DataType.Date)]
 		public DateTime? Dob { get; set; }
@@ -23,8 +25,6 @@ namespace EduMatch.BusinessLogicLayer.Requests.User
 
 		[Url(ErrorMessage = "Invalid URL format")]
 		public string? AvatarUrl { get; set; }
-
-		public string? AvatarUrlPublicId { get; set; }
 
 		[Range(1, int.MaxValue, ErrorMessage = "CityId must be a positive integer")]
 		public int? CityId { get; set; }

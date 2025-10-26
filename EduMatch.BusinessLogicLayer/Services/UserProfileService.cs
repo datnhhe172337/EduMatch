@@ -13,21 +13,22 @@ namespace EduMatch.BusinessLogicLayer.Services
     {
         private readonly UserProfileRepository _repo;
         private readonly IMapper _mapper;
-       
         private readonly ICloudMediaService _cloudMedia;
         private readonly CurrentUserService _currentUserService;
+        private readonly IUserService _userService;
      
-        public UserProfileService( UserProfileRepository repo,
-        IMapper mapper,
-       
-        ICloudMediaService cloudMedia,
-       CurrentUserService currentUserService)
+        public UserProfileService( 
+            UserProfileRepository repo,
+            IMapper mapper,
+            ICloudMediaService cloudMedia,
+            CurrentUserService currentUserService,
+            IUserService userService)
         {
             _repo = repo;
             _mapper = mapper;
             _cloudMedia = cloudMedia;
             _currentUserService = currentUserService;
-          
+            _userService = userService;
         }
 
         public async Task<UserProfile?> GetByEmailAsync(string email)
@@ -49,28 +50,57 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 
 
-		public async Task<UserProfileDto?> UpdateAsync(UserProfileUpdateRequest request)
-		{
-			if (string.IsNullOrWhiteSpace(request.UserEmail))
-				throw new ArgumentException("User email is required.");
+	public async Task<UserProfileDto?> UpdateAsync(UserProfileUpdateRequest request)
+	{
+		// Get email from request (passed from TutorProfileService)
+		var userEmail = request.UserEmail;
+		if (string.IsNullOrWhiteSpace(userEmail))
+			throw new ArgumentException("User email is required.");
 
-			var existingProfile = await _repo.GetByEmailAsync(request.UserEmail);
-			if (existingProfile == null)
-				throw new InvalidOperationException($"User profile with email '{request.UserEmail}' not found.");
+		var existingProfile = await _repo.GetByEmailAsync(userEmail);
+		if (existingProfile == null)
+			throw new InvalidOperationException($"User profile with email '{userEmail}' not found.");
 
-			
-			_mapper.Map(request, existingProfile);
+		// Manual mapping: Request -> Entity
+		if (request.Dob.HasValue)
+			existingProfile.Dob = request.Dob;
+		
+		if (request.Gender.HasValue)
+			existingProfile.Gender = (int)request.Gender;
+		
+		if (!string.IsNullOrWhiteSpace(request.AvatarUrl))
+			existingProfile.AvatarUrl = request.AvatarUrl;
+		
+		if (request.CityId.HasValue)
+			existingProfile.CityId = request.CityId;
+		
+		if (request.SubDistrictId.HasValue)
+			existingProfile.SubDistrictId = request.SubDistrictId;
+		
+		if (!string.IsNullOrWhiteSpace(request.AddressLine))
+			existingProfile.AddressLine = request.AddressLine;
+		
+		if (request.Latitude.HasValue)
+			existingProfile.Latitude = request.Latitude;
+		
+		if (request.Longitude.HasValue)
+			existingProfile.Longitude = request.Longitude;
 
-			await _repo.UpdateAsync(existingProfile);
+	await _repo.UpdateAsync(existingProfile);
 
-			return _mapper.Map<UserProfileDto>(existingProfile);
-		}
-
-
-		public Task<bool> UpdateUserProfileAsync(string email, UpdateUserProfileRequest request)
-		{
-			throw new NotImplementedException();
-		}
-
+	// Update User table (UserName, Phone) if provided
+	if (!string.IsNullOrWhiteSpace(request.UserName) || !string.IsNullOrWhiteSpace(request.Phone))
+	{
+		await _userService.UpdateUserNameAndPhoneAsync(
+			userEmail,
+			request.Phone,
+			request.UserName
+		);
 	}
+
+	return _mapper.Map<UserProfileDto>(existingProfile);
+}
+
+		
+		
 }

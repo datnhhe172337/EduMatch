@@ -7,8 +7,6 @@ using EduMatch.DataAccessLayer.Interfaces;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
@@ -41,19 +39,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 			return _mapper.Map<IReadOnlyList<SubjectDto>>(entities);
 		}
 
-		public async Task<SubjectDto> CreateAsync(SubjectCreateRequest request)
+	public async Task<SubjectDto> CreateAsync(SubjectCreateRequest request)
+	{
+		try
 		{
-			try
-			{
-				// Validate request
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-				}
-
-				var entity = new Subject
+			var entity = new Subject
 				{
 					SubjectName = request.SubjectName
 				};
@@ -66,19 +56,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
-		public async Task<SubjectDto> UpdateAsync(SubjectUpdateRequest request)
+	public async Task<SubjectDto> UpdateAsync(SubjectUpdateRequest request)
+	{
+		try
 		{
-			try
-			{
-				// Validate request
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-				}
-
-				// Check if entity exists
+			// Check if entity exists
 				var existingEntity = await _repository.GetByIdAsync(request.Id);
 				if (existingEntity == null)
 				{

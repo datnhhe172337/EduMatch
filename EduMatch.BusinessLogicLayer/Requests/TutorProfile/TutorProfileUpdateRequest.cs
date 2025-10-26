@@ -15,6 +15,10 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 		[Range(1, int.MaxValue, ErrorMessage = "ID must be greater than 0.")]
 		public int Id { get; set; }
 
+		[JsonIgnore]
+		[EmailAddress(ErrorMessage = "Invalid email address")]
+		public string UserEmail { get; set; } = null!;
+
 		[Required]
 		[MaxLength(100, ErrorMessage = "User name cannot exceed 100 characters.")]
 		public string? UserName { get; set; }

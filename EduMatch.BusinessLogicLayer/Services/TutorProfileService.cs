@@ -8,11 +8,6 @@ using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
@@ -73,17 +68,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		{
 			try
 			{
-				// VALIDATE REQUEST 
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException(
-						$"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}"
-					);
-				}
-
-				//  CHECK IF TUTOR PROFILE EXISTS
+				// CHECK IF TUTOR PROFILE EXISTS
 				if (string.IsNullOrWhiteSpace(_currentUserService.Email))
 					throw new ArgumentException("Current user email not found.");
 				var userEmail = _currentUserService.Email!;
@@ -117,18 +102,17 @@ namespace EduMatch.BusinessLogicLayer.Services
 				// Update user profile with avatar URL
 				var userProfileUpdate = new UserProfileUpdateRequest
 				{
-					UserEmail = _currentUserService.Email,
+					UserEmail = userEmail, 
+					UserName = request.UserName,
+					Phone = request.Phone,
 					Dob = request.DateOfBirth,
 					CityId = request.ProvinceId,
 					SubDistrictId = request.SubDistrictId,
 					AvatarUrl = request.AvatarUrl,
-					AvatarUrlPublicId = null, // No public ID for external URLs
 					Latitude = request.Latitude,
 					Longitude = request.Longitude
 				};
 				await _userProfileService.UpdateAsync(userProfileUpdate);
-
-				await _userService.UpdateUserNameAndPhoneAsync(_currentUserService.Email, request.Phone, request.UserName);
 
 				// MAP  -> ENTITY
 				var entity = new TutorProfile
@@ -161,30 +145,29 @@ namespace EduMatch.BusinessLogicLayer.Services
 		{
 			try
 			{
-				var existing = await _repository.GetByIdFullAsync(request.Id);
-				if (existing is null)
-					throw new ArgumentException($"Tutor profile with ID {request.Id} not found.");
+			// Get email from current user service
+			var userEmail = _currentUserService.Email;
+			if (string.IsNullOrWhiteSpace(userEmail))
+				throw new ArgumentException("Current user email not found.");
 
-				// Update user profile with new data if provided
-				var userProfileUpdate = new UserProfileUpdateRequest
-				{
-					UserEmail = existing.UserEmail,
-					Dob = request.DateOfBirth ?? existing.UserEmailNavigation?.UserProfile?.Dob,
-					CityId = request.ProvinceId ?? existing.UserEmailNavigation?.UserProfile?.CityId,
-					SubDistrictId = request.SubDistrictId ?? existing.UserEmailNavigation?.UserProfile?.SubDistrictId,
-					AvatarUrl = request.AvatarUrl ?? existing.UserEmailNavigation?.UserProfile?.AvatarUrl,
-					AvatarUrlPublicId = null, // No public ID for external URLs
-					Latitude = request.Latitude ?? existing.UserEmailNavigation?.UserProfile?.Latitude,
-					Longitude = request.Longitude ?? existing.UserEmailNavigation?.UserProfile?.Longitude
-				};
-				await _userProfileService.UpdateAsync(userProfileUpdate);
+			var existing = await _repository.GetByIdFullAsync(request.Id);
+			if (existing is null)
+				throw new ArgumentException($"Tutor profile with ID {request.Id} not found.");
 
-				// Update user name and phone if provided
-				await _userService.UpdateUserNameAndPhoneAsync(
-					existing.UserEmail, 
-					request.Phone ?? existing.UserEmailNavigation?.Phone, 
-					request.UserName ?? existing.UserEmailNavigation?.UserName
-				);
+			// Update user profile with new data if provided
+			var userProfileUpdate = new UserProfileUpdateRequest
+			{
+				UserEmail = userEmail,  
+				UserName = request.UserName ?? existing.UserEmailNavigation?.UserName,
+				Phone = request.Phone ?? existing.UserEmailNavigation?.Phone,
+				Dob = request.DateOfBirth ?? existing.UserEmailNavigation?.UserProfile?.Dob,
+				CityId = request.ProvinceId ?? existing.UserEmailNavigation?.UserProfile?.CityId,
+				SubDistrictId = request.SubDistrictId ?? existing.UserEmailNavigation?.UserProfile?.SubDistrictId,
+				AvatarUrl = request.AvatarUrl ?? existing.UserEmailNavigation?.UserProfile?.AvatarUrl,
+				Latitude = request.Latitude ?? existing.UserEmailNavigation?.UserProfile?.Latitude,
+				Longitude = request.Longitude ?? existing.UserEmailNavigation?.UserProfile?.Longitude
+			};
+			await _userProfileService.UpdateAsync(userProfileUpdate);
 
 				// Update tutor profile fields - only if provided
 				if (!string.IsNullOrWhiteSpace(request.Bio))
@@ -316,15 +299,5 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
-		private static void ValidateRequest(object request)
-		{
-			var ctx = new ValidationContext(request);
-			var results = new List<ValidationResult>();
-			if (!Validator.TryValidateObject(request, ctx, results, true))
-			{
-				var msg = string.Join(", ", results.Select(r => r.ErrorMessage));
-				throw new ArgumentException($"Validation failed: {msg}");
-			}
-		}
 	}
 }

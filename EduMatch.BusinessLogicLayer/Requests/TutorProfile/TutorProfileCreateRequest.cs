@@ -12,6 +12,10 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 	public class TutorProfileCreateRequest
 	{
 
+		[JsonIgnore]
+		[EmailAddress(ErrorMessage = "Invalid email address")]
+		public string UserEmail { get; set; } = null!;
+
 		[Required]
 		[MaxLength(100, ErrorMessage = "User name cannot exceed 100 characters.")]
 		public string? UserName { get; set; }
@@ -24,7 +28,6 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 		[MaxLength(2000, ErrorMessage = "Bio cannot exceed 2000 characters.")]
 		public string? Bio { get; set; }
 
-		
 
 		[Required]
 		[DataType(DataType.Date)]
