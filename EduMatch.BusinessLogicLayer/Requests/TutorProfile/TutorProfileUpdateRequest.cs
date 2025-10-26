@@ -55,6 +55,9 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 		[Required(ErrorMessage = "Teaching mode is required.")]
 		[EnumDataType(typeof(TeachingMode))]
 		public TeachingMode TeachingModes { get; set; }
+
+		[EnumDataType(typeof(TutorStatus))]
+		public TutorStatus? Status { get; set; }
 	}
 
 }

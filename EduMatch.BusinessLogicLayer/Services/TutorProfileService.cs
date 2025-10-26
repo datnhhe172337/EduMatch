@@ -197,13 +197,17 @@ namespace EduMatch.BusinessLogicLayer.Services
 					existing.VideoIntroPublicId = null; // No public ID for external URLs
 				}
 
-				// Update teaching modes if provided
-				existing.TeachingModes = (int)request.TeachingModes;
+			// Update teaching modes if provided
+			existing.TeachingModes = (int)request.TeachingModes;
 
-				existing.UpdatedAt = DateTime.UtcNow;
+			// Update status if provided
+			if (request.Status.HasValue)
+				existing.Status = (int)request.Status.Value;
 
-				await _repository.UpdateAsync(existing);
-				return _mapper.Map<TutorProfileDto>(existing);
+			existing.UpdatedAt = DateTime.UtcNow;
+
+			await _repository.UpdateAsync(existing);
+			return _mapper.Map<TutorProfileDto>(existing);
 			}
 			catch (Exception ex)
 			{
