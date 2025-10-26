@@ -135,7 +135,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		}
 
 
-		// --- NO CHANGES to your CreateBulkAsync (it's correct) ---
+		
 		public async Task<List<TutorAvailabilityDto>> CreateBulkAsync(List<TutorAvailabilityCreateRequest> requests)
         {
             try
@@ -154,7 +154,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             }
         }
 
-        // --- NO CHANGES to your DeleteAsync ---
+       
         public async Task DeleteAsync(int id)
         {
             await _repository.RemoveByIdAsync(id);

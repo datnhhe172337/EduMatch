@@ -46,10 +46,6 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 		public string? TeachingExp { get; set; }
 		
 
-		// Either provide a file or a URL (e.g., YouTube). Only one is required.
-		//public IFormFile? VideoIntro { get; set; }
-
-
 		[Url(ErrorMessage = "Video URL must be a valid URL.")]
 		public string? VideoIntroUrl { get; set; }
 
