@@ -24,11 +24,12 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 		[MaxLength(2000, ErrorMessage = "Bio cannot exceed 2000 characters.")]
 		public string? Bio { get; set; }
 
+		
+
 		[Required]
 		[DataType(DataType.Date)]
 		public DateTime? DateOfBirth { get; set; }
 
-		//public IFormFile? AvatarFile { get; set; }
 
 		[Url(ErrorMessage = "Avatar URL must be a valid URL.")]
 		public string? AvatarUrl { get; set; }
@@ -48,6 +49,13 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 
 		[Url(ErrorMessage = "Video URL must be a valid URL.")]
 		public string? VideoIntroUrl { get; set; }
+
+
+		[Range(-90, 90, ErrorMessage = "Latitude must be between -90 and 90")]
+		public decimal? Latitude { get; set; }
+
+		[Range(-180, 180, ErrorMessage = "Longitude must be between -180 and 180")]
+		public decimal? Longitude { get; set; }
 
 
 		[Required(ErrorMessage = "Teaching mode is required.")]

@@ -11,12 +11,6 @@ namespace EduMatch.BusinessLogicLayer.Requests.User
 {
 	public class UserProfileUpdateRequest
 	{       
-        [MaxLength(100, ErrorMessage = "User name cannot exceed 100 characters.")]
-        public string? UserName { get; set; }
-
-        [MaxLength(30)]
-        [RegularExpression(@"^(?:0\d{9}|(?:\+?84)\d{9,10})$", ErrorMessage = "Phone is not a valid VN number.")]
-        public string? Phone { get; set; }
 
         [Required, EmailAddress(ErrorMessage = "Invalid email address")]
 		public string UserEmail { get; set; } = null!;
@@ -30,10 +24,9 @@ namespace EduMatch.BusinessLogicLayer.Requests.User
 		[Url(ErrorMessage = "Invalid URL format")]
 		public string? AvatarUrl { get; set; }
 
-		[StringLength(200, ErrorMessage = "AvatarUrlPublicId cannot exceed 200 characters")]
 		public string? AvatarUrlPublicId { get; set; }
 
-		[Range(1, int.MaxValue, ErrorMessage = "CountryId must be a positive integer")]
+		[Range(1, int.MaxValue, ErrorMessage = "CityId must be a positive integer")]
 		public int? CityId { get; set; }
 
 		[Range(1, int.MaxValue, ErrorMessage = "SubDistrictId must be a positive integer")]
@@ -48,7 +41,6 @@ namespace EduMatch.BusinessLogicLayer.Requests.User
 		[Range(-180, 180, ErrorMessage = "Longitude must be between -180 and 180")]
 		public decimal? Longitude { get; set; }
 
-        public IFormFile? AvatarFile { get; set; }
     }
 
 }
