@@ -86,21 +86,22 @@ namespace EduMatch.BusinessLogicLayer.Services
 		if (request.Longitude.HasValue)
 			existingProfile.Longitude = request.Longitude;
 
-	await _repo.UpdateAsync(existingProfile);
+		await _repo.UpdateAsync(existingProfile);
 
-	// Update User table (UserName, Phone) if provided
-	if (!string.IsNullOrWhiteSpace(request.UserName) || !string.IsNullOrWhiteSpace(request.Phone))
-	{
-		await _userService.UpdateUserNameAndPhoneAsync(
-			userEmail,
-			request.Phone,
-			request.UserName
-		);
+		// Update User table (UserName, Phone) if provided
+		if (!string.IsNullOrWhiteSpace(request.UserName) || !string.IsNullOrWhiteSpace(request.Phone))
+		{
+			await _userService.UpdateUserNameAndPhoneAsync(
+				userEmail,
+				request.Phone,
+				request.UserName
+			);
+		}
+
+		return _mapper.Map<UserProfileDto>(existingProfile);
 	}
 
-	return _mapper.Map<UserProfileDto>(existingProfile);
-}
-
 		
 		
+	}
 }
