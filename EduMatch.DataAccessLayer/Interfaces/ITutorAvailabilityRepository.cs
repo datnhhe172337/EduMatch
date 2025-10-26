@@ -5,16 +5,16 @@ namespace EduMatch.DataAccessLayer.Interfaces
 {
 	public interface ITutorAvailabilityRepository
 	{
-		Task<TutorAvailability?> GetByIdFullAsync(int id, CancellationToken ct = default);
-		Task<IReadOnlyList<TutorAvailability>> GetByTutorIdAsync(int tutorId, CancellationToken ct = default);
-		Task<IReadOnlyList<TutorAvailability>> GetByStatusAsync(TutorAvailabilityStatus status, CancellationToken ct = default);
-		Task<IReadOnlyList<TutorAvailability>> GetAllFullAsync(CancellationToken ct = default);
+		Task<TutorAvailability?> GetByIdFullAsync(int id);
+		Task<IReadOnlyList<TutorAvailability>> GetByTutorIdAsync(int tutorId);
+		Task<IReadOnlyList<TutorAvailability>> GetByStatusAsync(TutorAvailabilityStatus status);
+		Task<IReadOnlyList<TutorAvailability>> GetAllFullAsync();
 
-		Task AddAsync(TutorAvailability entity, CancellationToken ct = default);
-		Task AddRangeAsync(IEnumerable<TutorAvailability> entity, CancellationToken ct = default);
+		Task AddAsync(TutorAvailability entity);
+		Task AddRangeAsync(IEnumerable<TutorAvailability> entity);
 
-		Task UpdateAsync(TutorAvailability entity, CancellationToken ct = default);
+		Task UpdateAsync(TutorAvailability entity);
 
-		Task RemoveByIdAsync(int id, CancellationToken ct = default);
+		Task RemoveByIdAsync(int id);
 	}
 }

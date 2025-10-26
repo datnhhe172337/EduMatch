@@ -16,6 +16,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			_timeSlotService = timeSlotService;
 		}
 
+		/// <summary>
+		/// Lấy danh sách tất cả các khung giờ học có sẵn trong hệ thống
+		/// </summary>
 		[HttpGet("get-all-time-slots")]
 		[ProducesResponseType(typeof(ApiResponse<List<TimeSlotDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status500InternalServerError)]

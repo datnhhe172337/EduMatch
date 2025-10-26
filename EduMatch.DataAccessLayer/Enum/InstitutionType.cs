@@ -8,24 +8,14 @@ namespace EduMatch.DataAccessLayer.Enum
 {
 	 public enum InstitutionType 
     {
-      
-        /// Trung cấp / Vocational
-       
-        Vocational = 0,
 
-       
-        /// Cao đẳng / College
-      
-        College = 1,
-
-        
         /// Đại học / University
    
-        University = 2,
+        University = 0,
 
         
         /// Khác / Other types
        
-        Other = 3
+        Other = 1
     }
 }

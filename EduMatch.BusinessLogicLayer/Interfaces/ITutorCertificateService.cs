@@ -1,5 +1,5 @@
 using EduMatch.BusinessLogicLayer.DTOs;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.TutorCertificate;
 using EduMatch.DataAccessLayer.Enum;
 using System;
 using System.Collections.Generic;
@@ -23,10 +23,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		Task DeleteAsync(int id);
 		Task DeleteByTutorIdAsync(int tutorId);
 
-        Task<TutorCertificateDto> UpdateAsync(UpdateTutorCertificateRequest request);
-
-        // --- NEW RECONCILIATION METHOD ---
-        Task ReconcileAsync(int tutorId, List<UpdateTutorCertificateRequest> incomingCertificates);
+    
     }
 }
 

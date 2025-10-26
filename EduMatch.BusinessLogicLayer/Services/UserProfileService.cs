@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.User;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
@@ -67,57 +67,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 		}
 
 
+		public Task<bool> UpdateUserProfileAsync(string email, UpdateUserProfileRequest request)
+		{
+			throw new NotImplementedException();
+		}
 
-
-        public async Task<bool> UpdateUserProfileAsync(string email, UpdateUserProfileRequest request)
-        {
-            var profile = await _repo.GetByEmailAsync(email);
-            if (profile == null)
-                throw new InvalidOperationException("User profile not found.");
-
-            var user = profile.UserEmailNavigation;
-            if (user == null)
-                throw new InvalidOperationException("Associated user record not found.");
-
-            if (request.AvatarFile != null && request.AvatarFile.Length > 0)
-            {
-                var userEmail = email;
-                using var stream = request.AvatarFile.OpenReadStream();
-                var uploadRequest = new UploadToCloudRequest(
-                    Content: stream,
-                    FileName: request.AvatarFile.FileName,
-                    ContentType: request.AvatarFile.ContentType ?? "application/octet-stream",
-                    LengthBytes: request.AvatarFile.Length,
-                    OwnerEmail: userEmail,
-                    MediaType: MediaType.Image
-                );
-                var uploadResult = await _cloudMedia.UploadAsync(uploadRequest);
-                if (!uploadResult.Ok || string.IsNullOrEmpty(uploadResult.SecureUrl))
-                    throw new InvalidOperationException($"Failed to upload file: {uploadResult.ErrorMessage}");
-
-                profile.AvatarUrl = uploadResult.SecureUrl;
-                profile.AvatarUrlPublicId = uploadResult.PublicId;
-            }
-
-
-            // Update UserProfile fields
-            profile.Dob = request.Dob ?? profile.Dob;
-            profile.Gender = request.Gender ?? profile.Gender;
-            profile.CityId = request.CityId ?? profile.CityId;
-            profile.SubDistrictId = request.SubDistrictId ?? profile.SubDistrictId;
-            profile.AddressLine = request.AddressLine ?? profile.AddressLine;
-
-
-            // Update User fields
-            if (!string.IsNullOrEmpty(request.UserName))
-                user.UserName = request.UserName;
-            if (!string.IsNullOrEmpty(request.Phone))
-                user.Phone = request.Phone;
-
-            // Save both with ONE transaction
-            await _repo.UpdateUserProfileAndUserAsync(profile, user);
-            return true;
-        }
-
-    }
+	}
 }

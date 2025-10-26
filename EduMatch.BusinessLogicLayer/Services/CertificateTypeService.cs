@@ -1,8 +1,9 @@
 using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.CertificateType;
 using EduMatch.DataAccessLayer.Entities;
+using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -15,11 +16,13 @@ namespace EduMatch.BusinessLogicLayer.Services
 	public class CertificateTypeService : ICertificateTypeService
 	{
 		private readonly ICertificateTypeRepository _repository;
+		private readonly ICertificateTypeSubjectRepository _certificateTypeSubjectRepository;
 		private readonly IMapper _mapper;
 
-		public CertificateTypeService(ICertificateTypeRepository repository, IMapper mapper)
+		public CertificateTypeService(ICertificateTypeRepository repository, ICertificateTypeSubjectRepository certificateTypeSubjectRepository, IMapper mapper)
 		{
 			_repository = repository;
+			_certificateTypeSubjectRepository = certificateTypeSubjectRepository;
 			_mapper = mapper;
 		}
 
@@ -66,7 +69,13 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Certificate type with code '{request.Code}' already exists");
 				}
 
-				var entity = _mapper.Map<CertificateType>(request);
+				var entity = new CertificateType
+				{
+					Code = request.Code,
+					Name = request.Name,
+					CreatedAt = DateTime.UtcNow,
+					Verified = (int)VerifyStatus.Pending
+				};
 				await _repository.AddAsync(entity);
 				return _mapper.Map<CertificateTypeDto>(entity);
 			}
@@ -102,9 +111,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Certificate type with code '{request.Code}' already exists");
 				}
 
-				var entity = _mapper.Map<CertificateType>(request);
-				await _repository.UpdateAsync(entity);
-				return _mapper.Map<CertificateTypeDto>(entity);
+				// Update only provided fields
+				existingEntity.Code = request.Code;
+				existingEntity.Name = request.Name;
+
+				await _repository.UpdateAsync(existingEntity);
+				return _mapper.Map<CertificateTypeDto>(existingEntity);
 			}
 			catch (Exception ex)
 			{
@@ -115,6 +127,87 @@ namespace EduMatch.BusinessLogicLayer.Services
 		public async Task DeleteAsync(int id)
 		{
 			await _repository.RemoveByIdAsync(id);
+		}
+
+		public async Task<CertificateTypeDto> VerifyAsync(int id, string verifiedBy)
+		{
+			try
+			{
+				if (id <= 0)
+					throw new ArgumentException("ID must be greater than 0");
+
+				if (string.IsNullOrWhiteSpace(verifiedBy))
+					throw new ArgumentException("VerifiedBy is required");
+
+				// Check if entity exists
+				var existingEntity = await _repository.GetByIdAsync(id);
+				if (existingEntity == null)
+				{
+					throw new ArgumentException($"Certificate type with ID {id} not found");
+				}
+
+				// Check if current status is Pending
+				if (existingEntity.Verified != (int)VerifyStatus.Pending)
+				{
+					throw new InvalidOperationException($"Certificate type with ID {id} is not in Pending status for verification");
+				}
+
+				// Update verification status
+				existingEntity.Verified = (int)VerifyStatus.Verified;
+				existingEntity.VerifiedBy = verifiedBy;
+				existingEntity.VerifiedAt = DateTime.UtcNow;
+
+				await _repository.UpdateAsync(existingEntity);
+				return _mapper.Map<CertificateTypeDto>(existingEntity);
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to verify certificate type: {ex.Message}", ex);
+			}
+		}
+
+		public async Task<CertificateTypeDto> AddSubjectsToCertificateTypeAsync(int certificateTypeId, List<int> subjectIds)
+		{
+			try
+			{
+				if (certificateTypeId <= 0)
+					throw new ArgumentException("Certificate type ID must be greater than 0");
+
+				if (subjectIds == null || !subjectIds.Any())
+					throw new ArgumentException("Subject IDs list cannot be null or empty");
+
+				// Check if certificate type exists
+				var certificateType = await _repository.GetByIdAsync(certificateTypeId);
+				if (certificateType == null)
+					throw new ArgumentException($"Certificate type with ID {certificateTypeId} not found");
+
+				// Get existing relationships to avoid duplicates
+				var existingRelationships = await _certificateTypeSubjectRepository.GetByCertificateTypeIdAsync(certificateTypeId);
+				var existingSubjectIds = existingRelationships.Select(r => r.SubjectId).ToList();
+
+				// Filter out subjects that are already associated
+				var newSubjectIds = subjectIds.Where(id => !existingSubjectIds.Contains(id)).ToList();
+
+				if (newSubjectIds.Any())
+				{
+					// Create new relationships only for subjects that aren't already associated
+					var certificateTypeSubjects = newSubjectIds.Select(subjectId => new CertificateTypeSubject
+					{
+						CertificateTypeId = certificateTypeId,
+						SubjectId = subjectId
+					}).ToList();
+
+					await _certificateTypeSubjectRepository.AddRangeAsync(certificateTypeSubjects);
+				}
+
+				// Return updated certificate type with all relationships
+				var updatedCertificateType = await _repository.GetByIdAsync(certificateTypeId);
+				return _mapper.Map<CertificateTypeDto>(updatedCertificateType);
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to add subjects to certificate type: {ex.Message}", ex);
+			}
 		}
 	}
 }

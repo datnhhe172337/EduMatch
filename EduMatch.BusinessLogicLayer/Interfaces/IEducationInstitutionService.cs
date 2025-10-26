@@ -1,4 +1,5 @@
 using EduMatch.BusinessLogicLayer.DTOs;
+using EduMatch.BusinessLogicLayer.Requests.EducationInstitution;
 using EduMatch.DataAccessLayer.Enum;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,8 +13,9 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		Task<IReadOnlyList<EducationInstitutionDto>> GetAllAsync();
 		Task<IReadOnlyList<EducationInstitutionDto>> GetByNameAsync(string name);
 		Task<IReadOnlyList<EducationInstitutionDto>> GetByInstitutionTypeAsync(InstitutionType institutionType);
-		Task<EducationInstitutionDto> CreateAsync(string code, string name, InstitutionType? institutionType = null);
-		Task<EducationInstitutionDto> UpdateAsync(int id, string code, string name, InstitutionType? institutionType = null);
+		Task<EducationInstitutionDto> CreateAsync(EducationInstitutionCreateRequest request);
+		Task<EducationInstitutionDto> UpdateAsync(EducationInstitutionUpdateRequest request);
 		Task DeleteAsync(int id);
+		Task<EducationInstitutionDto> VerifyAsync(int id, string verifiedBy);
 	}
 }

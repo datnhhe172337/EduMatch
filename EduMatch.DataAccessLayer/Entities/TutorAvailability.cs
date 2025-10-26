@@ -1,5 +1,4 @@
-﻿using EduMatch.DataAccessLayer.Enum;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace EduMatch.DataAccessLayer.Entities;
@@ -16,7 +15,7 @@ public partial class TutorAvailability
 
     public DateTime? EndDate { get; set; }
 
-    public TutorAvailabilityStatus? Status { get; set; }
+    public int Status { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

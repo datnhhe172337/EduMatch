@@ -1,5 +1,7 @@
 using EduMatch.BusinessLogicLayer.DTOs;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.TutorAvailability;
+using EduMatch.DataAccessLayer.Enum;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -15,8 +17,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task DeleteAsync(int id);
         Task<TutorAvailabilityDto> UpdateAsync(TutorAvailabilityUpdateRequest request);
 
-        // --- NEW/UPDATED METHODS ---
-        Task<TutorAvailabilityDto> UpdateAsync(UpdateTutorAvailabilityRequest request);
-        Task ReconcileAsync(int tutorId, List<UpdateTutorAvailabilityRequest> incomingAvailabilities);
+
     }
 }

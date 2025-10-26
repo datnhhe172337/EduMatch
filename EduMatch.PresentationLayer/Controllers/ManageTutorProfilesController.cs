@@ -3,9 +3,9 @@ using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.PresentationLayer.Common;
-using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.BusinessLogicLayer.Services;
 using Microsoft.AspNetCore.Authorization;
+using EduMatch.BusinessLogicLayer.Requests.User;
 
 
 namespace EduMatch.PresentationLayer.Controllers

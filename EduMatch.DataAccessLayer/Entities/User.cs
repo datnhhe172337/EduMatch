@@ -25,6 +25,8 @@ public partial class User
 
     public virtual ICollection<ChatRoom> ChatRooms { get; set; } = new List<ChatRoom>();
 
+    public virtual ICollection<ClassRequest> ClassRequests { get; set; } = new List<ClassRequest>();
+
     public virtual ICollection<FavoriteTutor> FavoriteTutors { get; set; } = new List<FavoriteTutor>();
 
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
