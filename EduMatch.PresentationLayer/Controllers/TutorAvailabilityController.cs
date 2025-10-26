@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
-using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Requests.TutorAvailability;
-using EduMatch.PresentationLayer.Common;
-using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Entities;
+using EduMatch.DataAccessLayer.Enum;
+using EduMatch.PresentationLayer.Common;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -33,6 +34,8 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Tạo nhiều lịch trình cùng lúc cho gia sư
 		/// </summary>
+
+		[Authorize]
 		[HttpPost("tutor-availability-create-list")]
 		public async Task<IActionResult> TutorAvailabilityCreateList([FromBody] List<TutorAvailabilityCreateRequest> requests)
 		{
@@ -69,6 +72,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Cập nhật nhiều lịch trình cùng lúc
 		/// </summary>
+		[Authorize]
 		[HttpPut("tutor-availability-update-list")]
 		public async Task<IActionResult> TutorAvailabilityUpdateList([FromBody] List<TutorAvailabilityUpdateRequest> requests)
 		{
@@ -105,6 +109,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Xóa nhiều lịch trình cùng lúc (chỉ được xóa khi status là Available)
 		/// </summary>
+		[Authorize]
 		[HttpDelete("tutor-availability-delete-list")]
 		public async Task<IActionResult> TutorAvailabilityDeleteList([FromBody] List<int> ids)
 		{
@@ -148,12 +153,12 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy tất cả lịch trình của gia sư với những ngày chưa bắt đầu
 		/// </summary>
-		[HttpGet("tutor-availability-get-all")]
-		public async Task<IActionResult> TutorAvailabilityGetAll()
+		[HttpGet("tutor-availability-get-all/{tutorId}")]
+		public async Task<IActionResult> TutorAvailabilityGetAll(int tutorId)
 		{
 			try
 			{
-				var allAvailabilities = await _tutorAvailabilityService.GetAllFullAsync();
+				var allAvailabilities = await _tutorAvailabilityService.GetByTutorIdFullAsync(tutorId);
 				
 				// Lọc những ngày chưa bắt đầu (StartDate > DateTime.Now)
 				var futureAvailabilities = allAvailabilities
@@ -162,7 +167,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
 				return Ok(ApiResponse<IReadOnlyList<TutorAvailabilityDto>>.Ok(
 					futureAvailabilities, 
-					$"Lấy danh sách lịch trình thành công. Tìm thấy {futureAvailabilities.Count} lịch trình chưa bắt đầu"));
+					$"Lấy danh sách lịch trình của gia sư {tutorId} thành công. Tìm thấy {futureAvailabilities.Count} lịch trình chưa bắt đầu"));
 			}
 			catch (Exception ex)
 			{
@@ -173,12 +178,12 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy lịch trình theo trạng thái với những ngày chưa bắt đầu
 		/// </summary>
-		[HttpGet("tutor-availability-get-list-by-status/{status}")]
-		public async Task<IActionResult> TutorAvailabilityGetListByStatus(TutorAvailabilityStatus status)
+		[HttpGet("tutor-availability-get-list-by-status/{tutorId}/{status}")]
+		public async Task<IActionResult> TutorAvailabilityGetListByStatus(int tutorId, TutorAvailabilityStatus status)
 		{
 			try
 			{
-				var allAvailabilities = await _tutorAvailabilityService.GetAllFullAsync();
+				var allAvailabilities = await _tutorAvailabilityService.GetByTutorIdFullAsync(tutorId);
 				
 				// Lọc những ngày chưa bắt đầu (StartDate > DateTime.Now) và theo trạng thái
 				var filteredAvailabilities = allAvailabilities
@@ -187,7 +192,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
 				return Ok(ApiResponse<IReadOnlyList<TutorAvailabilityDto>>.Ok(
 					filteredAvailabilities, 
-					$"Lấy danh sách lịch trình theo trạng thái {status} thành công. Tìm thấy {filteredAvailabilities.Count} lịch trình chưa bắt đầu"));
+					$"Lấy danh sách lịch trình của gia sư {tutorId} theo trạng thái {status} thành công. Tìm thấy {filteredAvailabilities.Count} lịch trình chưa bắt đầu"));
 			}
 			catch (Exception ex)
 			{

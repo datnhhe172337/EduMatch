@@ -17,6 +17,7 @@ namespace EduMatch.BusinessLogicLayer.DTOs
 		public DateTime CreatedAt { get; set; }
 		public DateTime? UpdatedAt { get; set; }
 		public TimeSlotDto? Slot { get; set; }
+		[JsonIgnore]
 		public TutorProfileDto? Tutor { get; set; }
 	}
 }

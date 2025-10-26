@@ -7,6 +7,7 @@ namespace EduMatch.DataAccessLayer.Interfaces
 	{
 		Task<TutorAvailability?> GetByIdFullAsync(int id);
 		Task<IReadOnlyList<TutorAvailability>> GetByTutorIdAsync(int tutorId);
+		Task<IReadOnlyList<TutorAvailability>> GetByTutorIdFullAsync(int tutorId);
 		Task<IReadOnlyList<TutorAvailability>> GetByStatusAsync(TutorAvailabilityStatus status);
 		Task<IReadOnlyList<TutorAvailability>> GetAllFullAsync();
 

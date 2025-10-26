@@ -11,6 +11,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
     {
         Task<TutorAvailabilityDto?> GetByIdFullAsync(int id);
         Task<IReadOnlyList<TutorAvailabilityDto>> GetByTutorIdAsync(int tutorId);
+        Task<IReadOnlyList<TutorAvailabilityDto>> GetByTutorIdFullAsync(int tutorId);
         Task<IReadOnlyList<TutorAvailabilityDto>> GetAllFullAsync();
         Task<TutorAvailabilityDto> CreateAsync(TutorAvailabilityCreateRequest request);
         Task<List<TutorAvailabilityDto>> CreateBulkAsync(List<TutorAvailabilityCreateRequest> requests);

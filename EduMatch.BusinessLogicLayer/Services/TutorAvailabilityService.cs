@@ -46,6 +46,12 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
         }
 
+        public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByTutorIdFullAsync(int tutorId)
+        {
+            var entities = await _repository.GetByTutorIdFullAsync(tutorId);
+            return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
+        }
+
         public async Task<IReadOnlyList<TutorAvailabilityDto>> GetAllFullAsync()
         {
             var entities = await _repository.GetAllFullAsync();
