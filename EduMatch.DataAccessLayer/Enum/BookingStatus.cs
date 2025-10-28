@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace EduMatch.DataAccessLayer.Enum
 {
-	internal class BookingStatus
+	public enum BookingStatus
 	{
+		Pending = 0,       // Chờ xác nhận
+		Confirmed = 1,     // Đã xác nhận
+		Completed = 2,     // Hoàn thành
+		Cancelled = 3      // Đã hủy
 	}
 }
