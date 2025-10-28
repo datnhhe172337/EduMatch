@@ -1,4 +1,4 @@
-
+﻿
 using CloudinaryDotNet;
 using DotNetEnv;
 using EduMatch.BusinessLogicLayer.Interfaces;
@@ -92,6 +92,8 @@ namespace EduMatch.PresentationLayer.Configurations
 
 
 
+			// Cấu hình cho Google Calendar API
+			services.Configure<GoogleCalendarSettings>(configuration.GetSection("GoogleCalendarSettings"));
 
 
 			// HttpContextAccessor for CurrentUserService
