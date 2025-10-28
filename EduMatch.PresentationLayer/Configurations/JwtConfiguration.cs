@@ -32,12 +32,12 @@ namespace EduMatch.PresentationLayer.Configurations
                 options.RequireHttpsMetadata = true;
                 //lưu lại token JWT (từ header Authorization) vào HttpContext -> await HttpContext.GetTokenAsync("access_token");
                 options.SaveToken = true;
-				options.TokenValidationParameters = new TokenValidationParameters
+                options.TokenValidationParameters = new TokenValidationParameters
                 {
 
-					ValidateIssuer = true,
-					ValidateAudience = false,              
-					ValidateLifetime = true,
+                    ValidateIssuer = true,
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
 
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = jwtSettings.Issuer,
@@ -46,6 +46,24 @@ namespace EduMatch.PresentationLayer.Configurations
                     /*Nếu không set, token hết hạn vẫn dùng được thêm 5 phút mặc định*/
                     ClockSkew = TimeSpan.Zero // loại bỏ thời gian trễ hạn token mặc định 5 phút
                 };
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+
+                        // If the request is for our hub...
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) &&
+                            (path.StartsWithSegments("/chatHub"))) // Must match your app.MapHub
+                        {
+                            // ...read the token from the query string
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
+                ;
             });
 
             return services;
