@@ -19,6 +19,8 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 		public TutorProfileCreateRequest TutorProfile { get; set; } = new();
 
 		// ----- EDUCATION -----
+		
+		 [Required(ErrorMessage = "At least one education entry is required.")]
 		public List<TutorEducationCreateRequest>? Educations { get; set; } = new();
 
 		// ----- CERTIFICATES -----

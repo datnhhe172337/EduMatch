@@ -26,6 +26,9 @@ namespace EduMatch.DataAccessLayer.Repositories
 		public async Task<IReadOnlyList<TutorAvailability>> GetByTutorIdAsync(int tutorId)
 			=> await IncludeAll().Where(t => t.TutorId == tutorId).ToListAsync();
 
+		public async Task<IReadOnlyList<TutorAvailability>> GetByTutorIdFullAsync(int tutorId)
+			=> await IncludeAll().Where(t => t.TutorId == tutorId).ToListAsync();
+
 
 		public async Task<IReadOnlyList<TutorAvailability>> GetByStatusAsync(TutorAvailabilityStatus status)
 			=> await IncludeAll().Where(t => t.Status == (int)status).ToListAsync();
@@ -60,8 +63,5 @@ namespace EduMatch.DataAccessLayer.Repositories
 				await _ctx.SaveChangesAsync();
 			}
 		}
-
-	
-		
 	}
 }

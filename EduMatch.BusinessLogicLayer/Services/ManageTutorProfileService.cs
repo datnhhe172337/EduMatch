@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.Requests.TutorProfile;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
@@ -68,7 +69,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 
 
-		public Task<TutorProfileDto> UpdateTutorProfileAsync(int tutorId, UpdateTutorProfileRequest request)
+		public Task<TutorProfileDto> UpdateTutorProfileAsync(int tutorId, TutorProfileUpdateRequest request)
 		{
 			throw new NotImplementedException();
 		}

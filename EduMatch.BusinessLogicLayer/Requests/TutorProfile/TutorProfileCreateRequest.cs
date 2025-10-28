@@ -1,16 +1,14 @@
 ﻿using EduMatch.DataAccessLayer.Enum;
-using Microsoft.AspNetCore.Http;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 {
 	public class TutorProfileCreateRequest
 	{
+	
+		[Required, EmailAddress(ErrorMessage = "Invalid email address")]
+		public string UserEmail { get; set; } = null!;
 
 		[Required]
 		[MaxLength(100, ErrorMessage = "User name cannot exceed 100 characters.")]
@@ -24,11 +22,11 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 		[MaxLength(2000, ErrorMessage = "Bio cannot exceed 2000 characters.")]
 		public string? Bio { get; set; }
 
+
 		[Required]
 		[DataType(DataType.Date)]
 		public DateTime? DateOfBirth { get; set; }
 
-		//public IFormFile? AvatarFile { get; set; }
 
 		[Url(ErrorMessage = "Avatar URL must be a valid URL.")]
 		public string? AvatarUrl { get; set; }
@@ -46,12 +44,15 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 		public string? TeachingExp { get; set; }
 		
 
-		// Either provide a file or a URL (e.g., YouTube). Only one is required.
-		//public IFormFile? VideoIntro { get; set; }
-
-
 		[Url(ErrorMessage = "Video URL must be a valid URL.")]
 		public string? VideoIntroUrl { get; set; }
+
+
+		[Range(-90, 90, ErrorMessage = "Latitude must be between -90 and 90")]
+		public decimal? Latitude { get; set; }
+
+		[Range(-180, 180, ErrorMessage = "Longitude must be between -180 and 180")]
+		public decimal? Longitude { get; set; }
 
 
 		[Required(ErrorMessage = "Teaching mode is required.")]

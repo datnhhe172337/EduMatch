@@ -9,6 +9,7 @@ using EduMatch.BusinessLogicLayer.Mappings;
 using Microsoft.Extensions.Options;
 using EduMatch.DataAccessLayer.Interfaces;
 using EduMatch.DataAccessLayer.Repositories;
+using Microsoft.AspNetCore.SignalR;
 
 
 namespace EduMatch.PresentationLayer.Configurations
@@ -75,12 +76,12 @@ namespace EduMatch.PresentationLayer.Configurations
 			services.AddScoped<IManageTutorProfileService, ManageTutorProfileService>();
 			services.AddScoped<IFindTutorService, FindTutorService>();
 			services.AddScoped<IChatService, ChatService>();
+            services.AddSingleton<IUserIdProvider, EmailUserIdProvider>();
 
 
 
-
-			// Bind "CloudinarySettings" 
-			services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
+            // Bind "CloudinarySettings" 
+            services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
 
 			services.AddSingleton(sp => {
 				var opts = sp.GetRequiredService<IOptionsMonitor<CloudinaryRootOptions>>().CurrentValue;

@@ -46,6 +46,12 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
         }
 
+        public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByTutorIdFullAsync(int tutorId)
+        {
+            var entities = await _repository.GetByTutorIdFullAsync(tutorId);
+            return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
+        }
+
         public async Task<IReadOnlyList<TutorAvailabilityDto>> GetAllFullAsync()
         {
             var entities = await _repository.GetAllFullAsync();
@@ -135,7 +141,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		}
 
 
-		// --- NO CHANGES to your CreateBulkAsync (it's correct) ---
+		
 		public async Task<List<TutorAvailabilityDto>> CreateBulkAsync(List<TutorAvailabilityCreateRequest> requests)
         {
             try
@@ -154,7 +160,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             }
         }
 
-        // --- NO CHANGES to your DeleteAsync ---
+       
         public async Task DeleteAsync(int id)
         {
             await _repository.RemoveByIdAsync(id);

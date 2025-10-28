@@ -219,23 +219,12 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 			CreateMap<TimeSlotCreateRequest, TimeSlot>();
 			CreateMap<TimeSlotUpdateRequest, TimeSlot>();
 
-			// TutorAvailability mappings
-			CreateMap<TutorAvailability, TutorAvailabilityDto>()
-				.ForMember(dest => dest.Slot, opt => opt.MapFrom(src => src.Slot))
-				.ForMember(dest => dest.Tutor, opt => opt.MapFrom(src => src.Tutor))
-				.ForMember(dest => dest.Status, opt => opt.MapFrom(src => (TutorAvailabilityStatus)src.Status))
-				.ReverseMap();
-			CreateMap<TutorAvailabilityCreateRequest, TutorAvailability>()
-				.ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Now))
-				.ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
-				.ForMember(dest => dest.Status, opt => opt.Ignore())
-				.ForMember(dest => dest.Slot, opt => opt.Ignore())
-				.ForMember(dest => dest.Tutor, opt => opt.Ignore());
-			CreateMap<TutorAvailabilityUpdateRequest, TutorAvailability>()
-				.ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => DateTime.Now))
-				.ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-				.ForMember(dest => dest.Slot, opt => opt.Ignore())
-				.ForMember(dest => dest.Tutor, opt => opt.Ignore());
+            // TutorAvailability mappings
+            CreateMap<TutorAvailability, TutorAvailabilityDto>()
+                .ForMember(dest => dest.Slot, opt => opt.MapFrom(src => src.Slot))
+                .ForMember(dest => dest.Tutor, opt => opt.MapFrom(src => src.Tutor))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (TutorAvailabilityStatus)src.Status));
+
 
 			// TutorCertificate mappings
 			CreateMap<TutorCertificate, TutorCertificateDto>()

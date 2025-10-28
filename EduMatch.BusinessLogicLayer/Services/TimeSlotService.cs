@@ -7,8 +7,6 @@ using EduMatch.DataAccessLayer.Interfaces;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
@@ -51,14 +49,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 		{
 			try
 			{
-				// Validate request
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-				}
-
 				// Check if time slot already exists
 				var existingSlot = await _repository.GetByExactTimeAsync(request.StartTime, request.EndTime);
 				if (existingSlot != null)
@@ -80,19 +70,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
-		public async Task<TimeSlotDto> UpdateAsync(TimeSlotUpdateRequest request)
+	public async Task<TimeSlotDto> UpdateAsync(TimeSlotUpdateRequest request)
+	{
+		try
 		{
-			try
-			{
-				// Validate request
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-				}
-
-				// Check if entity exists
+			// Check if entity exists
 				var existingEntity = await _repository.GetByIdAsync(request.Id);
 				if (existingEntity == null)
 				{
