@@ -15,6 +15,12 @@ namespace EduMatch.DataAccessLayer.Repositories
 		private readonly EduMatchContext _context;
 		public GoogleTokenRepository(EduMatchContext context) => _context = context;
 
+		public async Task CreateAsync(GoogleToken token)
+		{
+			_context.GoogleTokens.AddAsync(token);
+			await _context.SaveChangesAsync();
+		}
+
 		public async Task<GoogleToken?> GetByEmailAsync(string accountEmail)
 		{
 			return await _context.GoogleTokens

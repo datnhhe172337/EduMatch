@@ -11,5 +11,7 @@ namespace EduMatch.DataAccessLayer.Interfaces
 	{
 		Task<GoogleToken?> GetByEmailAsync(string accountEmail);
 		Task UpdateAsync(GoogleToken token);
+
+		Task CreateAsync(GoogleToken token);
 	}
 }

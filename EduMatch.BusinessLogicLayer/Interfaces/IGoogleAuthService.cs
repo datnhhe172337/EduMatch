@@ -1,4 +1,6 @@
-﻿using EduMatch.BusinessLogicLayer.Responses.GoogleCalendar;
+﻿using EduMatch.BusinessLogicLayer.Requests.GoogleCalendar;
+using EduMatch.BusinessLogicLayer.Responses.GoogleCalendar;
+using EduMatch.DataAccessLayer.Entities;
 using Google.Apis.Auth;
 using System;
 using System.Collections.Generic;
@@ -8,11 +10,10 @@ using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.Interfaces
 {
-	public interface IGoogleCalendarService
+	public interface IGoogleAuthService
 	{
-		Task<GoogleEventResponse> CreateMeetingAsync(GoogleEventRequest req);
-		Task<GoogleEventResponse> UpdateMeetingAsync(string eventId, GoogleEventRequest req);
-		Task<bool> DeleteMeetingAsync(string eventId);
-		Task<string> GetValidAccessTokenAsync(string accountEmail);
+		Task<GoogleJsonWebSignature.Payload?> VerifyGoogleTokenAsync(string idToken);
+		string GenerateAuthUrlDat();
+		Task<GoogleToken> ExchangeCodeForTokenDatAsync(string code);
 	}
 }
