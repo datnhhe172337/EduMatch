@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EduMatch.BusinessLogicLayer.Responses.Common
+namespace EduMatch.BusinessLogicLayer.Responses.GoogleCalendar
 {
-	public class GoogleEventResponse
+	public class GoogleTokenResponse
 	{
 		[JsonProperty("access_token")]
 		public string AccessToken { get; set; } = string.Empty;
