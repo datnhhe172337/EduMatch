@@ -1,11 +1,13 @@
 ﻿using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests.GoogleCalendar;
+using EduMatch.BusinessLogicLayer.Requests.GoogleMeeting;
 using EduMatch.BusinessLogicLayer.Responses.GoogleCalendar;
 using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -86,15 +88,17 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// <summary>
 		/// Tạo mới sự kiện (buổi học meeting) trong Calendar
 		/// </summary>
-		public async Task<GoogleEventCreatedResponse?> CreateEventAsync(GoogleEventRequest request)
+		public async Task<GoogleEventCreatedResponse?> CreateEventAsync(CreateMeetingRequest request)
 		{
+			var eventRequest = BuildGoogleEvent(request);
+
 			string accessToken = await GetAccessTokenAsync();
 			_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
 			string calendarId = _googleCalendarSettings.SystemAccountEmail;
 			string endpoint = $"{_googleCalendarSettings.CalendarApiBaseUrl}/calendars/{calendarId}/events?conferenceDataVersion=1";
 
-			var jsonBody = JsonConvert.SerializeObject(request);
+			var jsonBody = JsonConvert.SerializeObject(eventRequest);
 			var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
 
 			var response = await _httpClient.PostAsync(endpoint, content);
@@ -109,15 +113,18 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// <summary>
 		/// Cập nhật sự kiện hiện có (ví dụ thay đổi giờ học, người tham gia, mô tả,...)
 		/// </summary>
-		public async Task<GoogleEventCreatedResponse?> UpdateEventAsync(string eventId, GoogleEventRequest request)
+		public async Task<GoogleEventCreatedResponse?> UpdateEventAsync(string eventId, CreateMeetingRequest request)
 		{
+
+			var eventRequest = BuildGoogleEvent(request);
+
 			string accessToken = await GetAccessTokenAsync();
 			_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
 			string calendarId = _googleCalendarSettings.SystemAccountEmail;
 			string endpoint = $"{_googleCalendarSettings.CalendarApiBaseUrl}/calendars/{calendarId}/events/{eventId}?conferenceDataVersion=1";
 
-			var jsonBody = JsonConvert.SerializeObject(request);
+			var jsonBody = JsonConvert.SerializeObject(eventRequest);
 			var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
 
 			var response = await _httpClient.PutAsync(endpoint, content);
@@ -143,5 +150,43 @@ namespace EduMatch.BusinessLogicLayer.Services
 			var response = await _httpClient.DeleteAsync(endpoint);
 			return response.IsSuccessStatusCode;
 		}
+
+		/// <summary>
+		/// Mappping create meeting request sang google event request
+		/// </summary>
+		private GoogleEventRequest BuildGoogleEvent(CreateMeetingRequest req)
+		{
+			return new GoogleEventRequest
+			{
+				OrganizerEmail = _googleCalendarSettings.SystemAccountEmail,
+				Summary = req.Summary,
+				Description = req.Description ?? string.Empty,
+				Start = new GoogleEventDateTime
+				{
+					DateTime = req.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+					TimeZone = "Asia/Ho_Chi_Minh"
+				},
+				End = new GoogleEventDateTime
+				{
+					DateTime = req.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+					TimeZone = "Asia/Ho_Chi_Minh"
+				},
+				Attendees = req.AttendeeEmails
+					.Select(e => new GoogleAttendee { Email = e })
+					.ToList(),
+				ConferenceData = new GoogleConferenceData
+				{
+					CreateRequest = new GoogleConferenceCreateRequest
+					{
+						RequestId = Guid.NewGuid().ToString(),
+						ConferenceSolutionKey = new ConferenceSolutionKey
+						{
+							Type = "hangoutsMeet"
+						}
+					}
+				}
+			};
+		}
+
 	}
 }

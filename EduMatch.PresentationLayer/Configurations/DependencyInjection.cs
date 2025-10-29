@@ -55,7 +55,8 @@ namespace EduMatch.PresentationLayer.Configurations
 			services.AddScoped<IUserService, UserService>();
             services.AddScoped<CurrentUserService>();
 			services.AddTransient<EmailService>();
-            services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+			services.AddScoped<IGoogleTokenRepository, GoogleTokenRepository>();
+			services.AddScoped<IGoogleAuthService, GoogleAuthService>();
             services.AddScoped<ITutorAvailabilityService, TutorAvailabilityService>();
             services.AddScoped<ITutorCertificateService, TutorCertificateService>();
             services.AddScoped<ITutorEducationService, TutorEducationService>();
