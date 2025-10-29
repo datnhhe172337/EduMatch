@@ -45,6 +45,12 @@ public partial class ClassRequest
 
     public DateTime? UpdatedAt { get; set; }
 
+    public DateTime? ApprovedAt { get; set; }
+
+    public string? ApprovedBy { get; set; }
+
+    public string? RejectionReason { get; set; }
+
     public virtual ICollection<ClassRequestSlotsAvailability> ClassRequestSlotsAvailabilities { get; set; } = new List<ClassRequestSlotsAvailability>();
 
     public virtual User LearnerEmailNavigation { get; set; } = null!;

@@ -23,6 +23,8 @@ public partial class User
 
     public int RoleId { get; set; }
 
+    public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+
     public virtual ICollection<ChatRoom> ChatRooms { get; set; } = new List<ChatRoom>();
 
     public virtual ICollection<ClassRequest> ClassRequests { get; set; } = new List<ClassRequest>();
@@ -35,5 +37,9 @@ public partial class User
 
     public virtual TutorProfile? TutorProfile { get; set; }
 
+    public virtual ICollection<UserBankAccount> UserBankAccounts { get; set; } = new List<UserBankAccount>();
+
     public virtual UserProfile? UserProfile { get; set; }
+
+    public virtual Wallet? Wallet { get; set; }
 }
