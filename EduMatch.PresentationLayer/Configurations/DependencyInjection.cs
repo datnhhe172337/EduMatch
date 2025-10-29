@@ -68,10 +68,11 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ITimeSlotService, TimeSlotService>();
             services.AddScoped<IEducationInstitutionService, EducationInstitutionService>();
             services.AddScoped<IFavoriteTutorService, FavoriteTutorService>();
+			services.AddScoped<IGoogleCalendarService, GoogleCalendarService>();
 
 
 
-			
+
 			services.AddScoped<IUserProfileService, UserProfileService>();
 			services.AddScoped<IManageTutorProfileService, ManageTutorProfileService>();
 			services.AddScoped<IFindTutorService, FindTutorService>();
@@ -96,6 +97,9 @@ namespace EduMatch.PresentationLayer.Configurations
 			// Cấu hình cho Google Calendar API
 			services.Configure<GoogleCalendarSettings>(configuration.GetSection("GoogleCalendarSettings"));
 
+
+			//  HttpClient 
+			services.AddHttpClient();
 
 			// HttpContextAccessor for CurrentUserService
 			services.AddHttpContextAccessor();
