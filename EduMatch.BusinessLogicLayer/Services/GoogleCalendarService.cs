@@ -163,12 +163,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 				Description = req.Description ?? string.Empty,
 				Start = new GoogleEventDateTime
 				{
-					DateTime = req.StartTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+					DateTime = req.StartTime.AddMinutes(-15).ToString("yyyy-MM-ddTHH:mm:ss"),
 					TimeZone = "Asia/Ho_Chi_Minh"
 				},
 				End = new GoogleEventDateTime
 				{
-					DateTime = req.EndTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+					DateTime = req.EndTime.AddMinutes(15).ToString("yyyy-MM-ddTHH:mm:ss"),
 					TimeZone = "Asia/Ho_Chi_Minh"
 				},
 				Attendees = req.AttendeeEmails
