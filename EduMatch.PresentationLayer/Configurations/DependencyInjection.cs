@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using EduMatch.DataAccessLayer.Interfaces;
 using EduMatch.DataAccessLayer.Repositories;
 using Microsoft.AspNetCore.SignalR;
+using PayOS;
 
 
 namespace EduMatch.PresentationLayer.Configurations
@@ -21,11 +22,11 @@ namespace EduMatch.PresentationLayer.Configurations
             //// Mail Settings
             services.Configure<MailSettings>(configuration.GetSection("MailSettings"));
 
+            services.Configure<PayosSettings>(configuration.GetSection("PayosSettings"));
 
 
-
-			// AutoMapper
-			services.AddAutoMapper(typeof(MappingProfile).Assembly);
+            // AutoMapper
+            services.AddAutoMapper(typeof(MappingProfile).Assembly);
 
 			// inject HttpClient
 			services.AddHttpClient();
@@ -46,14 +47,17 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
             services.AddScoped<IUserProfileRepository, UserProfileRepository>();
             services.AddScoped<IFavoriteTutorRepository, FavoriteTutorRepository>();
-
-			services.AddScoped<IChatRepository, ChatRepository>();
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped<IChatRepository, ChatRepository>();
 			services.AddScoped<UserProfileRepository, UserProfileRepository>();
 			services.AddScoped<IManageTutorProfileRepository, ManageTutorProfileRepository>();
 			services.AddScoped<IFindTutorRepository, FindTutorRepository>();
-
-			// Services
-			services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IWalletRepository, WalletRepository>();
+            services.AddScoped<IBankRepository, BankRepository>();
+            services.AddScoped<IUserBankAccountRepository, UserBankAccountRepository>();
+            services.AddScoped<IDepositRepository, DepositRepository>();
+            // Services
+            services.AddScoped<IUserService, UserService>();
             services.AddScoped<CurrentUserService>();
 			services.AddTransient<EmailService>();
             services.AddScoped<IGoogleAuthService, GoogleAuthService>();
@@ -68,17 +72,30 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ITimeSlotService, TimeSlotService>();
             services.AddScoped<IEducationInstitutionService, EducationInstitutionService>();
             services.AddScoped<IFavoriteTutorService, FavoriteTutorService>();
+            
 
 
 
-			
-			services.AddScoped<IUserProfileService, UserProfileService>();
+            services.AddScoped<IUserProfileService, UserProfileService>();
 			services.AddScoped<IManageTutorProfileService, ManageTutorProfileService>();
 			services.AddScoped<IFindTutorService, FindTutorService>();
 			services.AddScoped<IChatService, ChatService>();
             services.AddSingleton<IUserIdProvider, EmailUserIdProvider>();
 
+            services.AddScoped<IWalletService, WalletService>();
+            services.AddScoped<IBankService, BankService>();
+            services.AddScoped<IUserBankAccountService, UserBankAccountService>();
+            services.AddScoped<IDepositService, DepositService>();
 
+            services.AddSingleton(sp => {
+                var settings = sp.GetRequiredService<IOptions<PayosSettings>>().Value;
+                if (settings == null || string.IsNullOrEmpty(settings.ClientId) ||
+                    string.IsNullOrEmpty(settings.ApiKey) || string.IsNullOrEmpty(settings.ChecksumKey))
+                {
+                    throw new InvalidOperationException("PayOS settings are missing or incomplete in configuration.");
+                }
+                return new PayOSClient(settings.ClientId, settings.ApiKey, settings.ChecksumKey);
+            });
 
             // Bind "CloudinarySettings" 
             services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
