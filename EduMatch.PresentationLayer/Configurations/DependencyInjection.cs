@@ -1,4 +1,4 @@
-
+﻿
 using CloudinaryDotNet;
 using DotNetEnv;
 using EduMatch.BusinessLogicLayer.Interfaces;
@@ -56,7 +56,8 @@ namespace EduMatch.PresentationLayer.Configurations
 			services.AddScoped<IUserService, UserService>();
             services.AddScoped<CurrentUserService>();
 			services.AddTransient<EmailService>();
-            services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+			services.AddScoped<IGoogleTokenRepository, GoogleTokenRepository>();
+			services.AddScoped<IGoogleAuthService, GoogleAuthService>();
             services.AddScoped<ITutorAvailabilityService, TutorAvailabilityService>();
             services.AddScoped<ITutorCertificateService, TutorCertificateService>();
             services.AddScoped<ITutorEducationService, TutorEducationService>();
@@ -68,10 +69,11 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ITimeSlotService, TimeSlotService>();
             services.AddScoped<IEducationInstitutionService, EducationInstitutionService>();
             services.AddScoped<IFavoriteTutorService, FavoriteTutorService>();
+			services.AddScoped<IGoogleCalendarService, GoogleCalendarService>();
 
 
 
-			
+
 			services.AddScoped<IUserProfileService, UserProfileService>();
 			services.AddScoped<IManageTutorProfileService, ManageTutorProfileService>();
 			services.AddScoped<IFindTutorService, FindTutorService>();
@@ -93,7 +95,12 @@ namespace EduMatch.PresentationLayer.Configurations
 
 
 
+			// Cấu hình cho Google Calendar API
+			services.Configure<GoogleCalendarSettings>(configuration.GetSection("GoogleCalendarSettings"));
 
+
+			//  HttpClient 
+			services.AddHttpClient();
 
 			// HttpContextAccessor for CurrentUserService
 			services.AddHttpContextAccessor();

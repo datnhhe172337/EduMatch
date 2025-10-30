@@ -324,7 +324,29 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 				.ForMember(d => d.Phone, opt => opt.MapFrom(src => src.UserEmailNavigation.Phone));
 
 
+			//  Booking
+			CreateMap<Booking, BookingDto>()
+				.ForMember(dest => dest.PaymentStatus,
+					opt => opt.MapFrom(src => (PaymentStatus)src.PaymentStatus))
+				.ForMember(dest => dest.Status,
+					opt => opt.MapFrom(src => (BookingStatus)src.Status))
+				.ForMember(dest => dest.Schedules,
+					opt => opt.MapFrom(src => src.Schedules));
 
+			//Schedule 
+			CreateMap<Schedule, ScheduleDto>()
+				.ForMember(dest => dest.Status,
+					opt => opt.MapFrom(src => (ScheduleStatus)src.Status))
+				.ForMember(dest => dest.MeetingSessions,
+					opt => opt.MapFrom(src => src.MeetingSessions));
+
+			// MeetingSession 
+			CreateMap<MeetingSession, MeetingSessionDto>()
+				.ForMember(dest => dest.MeetingType,
+					opt => opt.MapFrom(src => (MeetingType)src.MeetingType));
+
+			// GoogleToken 
+			CreateMap<GoogleToken, GoogleTokenDto>();
 
 
 
