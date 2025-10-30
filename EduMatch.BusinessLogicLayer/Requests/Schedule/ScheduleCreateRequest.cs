@@ -12,9 +12,6 @@ namespace EduMatch.BusinessLogicLayer.Requests.Schedule
         [Required(ErrorMessage = "BookingId là bắt buộc")]
         public int BookingId { get; set; }
 
-        [EnumDataType(typeof(ScheduleStatus), ErrorMessage = "Status phải là giá trị hợp lệ của ScheduleStatus")]
-        public ScheduleStatus Status { get; set; } = ScheduleStatus.Upcoming;
-
         public string? AttendanceNote { get; set; }
     }
 }

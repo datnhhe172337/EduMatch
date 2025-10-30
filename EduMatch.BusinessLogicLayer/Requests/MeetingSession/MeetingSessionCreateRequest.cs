@@ -25,7 +25,5 @@ namespace EduMatch.BusinessLogicLayer.Requests.MeetingSession
         [Required(ErrorMessage = "EndTime là bắt buộc")]
         public DateTime EndTime { get; set; }
 
-        [EnumDataType(typeof(MeetingType), ErrorMessage = "MeetingType phải là giá trị hợp lệ của MeetingType")]
-        public MeetingType MeetingType { get; set; } = MeetingType.Main;
     }
 }
