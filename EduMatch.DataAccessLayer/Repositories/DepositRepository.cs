@@ -20,5 +20,16 @@ namespace EduMatch.DataAccessLayer.Repositories
         {
             await _dbSet.AddAsync(entity);
         }
+        public async Task<Deposit?> GetByIdAsync(int id)
+        {
+            return await _dbSet
+                .Include(d => d.Wallet)
+                .FirstOrDefaultAsync(d => d.Id == id);
+        }
+
+        public void Update(Deposit entity)
+        {
+            _dbSet.Update(entity);
+        }
     }
 }

@@ -7,10 +7,11 @@ using System.Threading.Tasks;
 
 namespace EduMatch.DataAccessLayer.Interfaces
 {
-    public interface IDepositRepository
+    public interface IWithdrawalRepository
     {
-        Task AddAsync(Deposit entity);
-        Task<Deposit?> GetByIdAsync(int id);
-        void Update(Deposit entity);
+        Task AddAsync(Withdrawal entity);
+
+        Task<Withdrawal?> GetByIdAsync(int id);
+        void Update(Withdrawal entity);
     }
 }

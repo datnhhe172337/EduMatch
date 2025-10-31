@@ -16,6 +16,8 @@ namespace EduMatch.DataAccessLayer.Repositories
         public IBankRepository Banks { get; private set; }
         public IUserBankAccountRepository UserBankAccounts { get; private set; }
         public IDepositRepository Deposits { get; private set; }
+        public IWalletTransactionRepository WalletTransactions { get; private set; }
+        public IWithdrawalRepository Withdrawals { get; private set; }
         public UnitOfWork(EduMatchContext context)
         {
             _context = context;
@@ -23,6 +25,8 @@ namespace EduMatch.DataAccessLayer.Repositories
             Banks = new BankRepository(_context);
             UserBankAccounts = new UserBankAccountRepository(_context);
             Deposits = new DepositRepository(_context);
+            WalletTransactions = new WalletTransactionRepository(_context);
+            Withdrawals = new WithdrawalRepository(_context);
         }
 
         public async Task<int> CompleteAsync()

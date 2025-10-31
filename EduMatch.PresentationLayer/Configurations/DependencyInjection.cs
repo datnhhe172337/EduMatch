@@ -56,6 +56,8 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IBankRepository, BankRepository>();
             services.AddScoped<IUserBankAccountRepository, UserBankAccountRepository>();
             services.AddScoped<IDepositRepository, DepositRepository>();
+            services.AddScoped<IWalletTransactionRepository, WalletTransactionRepository>();
+            services.AddScoped<IWithdrawalRepository, WithdrawalRepository>();
             // Services
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<CurrentUserService>();
@@ -86,17 +88,17 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IBankService, BankService>();
             services.AddScoped<IUserBankAccountService, UserBankAccountService>();
             services.AddScoped<IDepositService, DepositService>();
-
             services.AddSingleton(sp => {
                 var settings = sp.GetRequiredService<IOptions<PayosSettings>>().Value;
                 if (settings == null || string.IsNullOrEmpty(settings.ClientId) ||
                     string.IsNullOrEmpty(settings.ApiKey) || string.IsNullOrEmpty(settings.ChecksumKey))
                 {
-                    throw new InvalidOperationException("PayOS settings are missing or incomplete in configuration.");
+                    throw new InvalidOperationException("PayOS settings are missing or incomplete.");
                 }
+
+                // This constructor uses the default Production URL: https://api-merchant.payos.vn
                 return new PayOSClient(settings.ClientId, settings.ApiKey, settings.ChecksumKey);
             });
-
             // Bind "CloudinarySettings" 
             services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
 

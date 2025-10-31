@@ -7,10 +7,8 @@ using System.Threading.Tasks;
 
 namespace EduMatch.DataAccessLayer.Interfaces
 {
-    public interface IDepositRepository
+    public interface IWalletTransactionRepository
     {
-        Task AddAsync(Deposit entity);
-        Task<Deposit?> GetByIdAsync(int id);
-        void Update(Deposit entity);
+        Task AddAsync(WalletTransaction entity);
     }
 }
