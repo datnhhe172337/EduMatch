@@ -37,5 +37,9 @@ public partial class User
 
     public virtual TutorProfile? TutorProfile { get; set; }
 
+    public virtual ICollection<UserBankAccount> UserBankAccounts { get; set; } = new List<UserBankAccount>();
+
     public virtual UserProfile? UserProfile { get; set; }
+
+    public virtual Wallet? Wallet { get; set; }
 }

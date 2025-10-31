@@ -29,9 +29,17 @@ public partial class Booking
 
     public DateTime? UpdatedAt { get; set; }
 
+    public int SystemFeeId { get; set; }
+
+    public decimal SystemFeeAmount { get; set; }
+
     public virtual User LearnerEmailNavigation { get; set; } = null!;
 
     public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
 
+    public virtual SystemFee SystemFee { get; set; } = null!;
+
     public virtual TutorSubject TutorSubject { get; set; } = null!;
+
+    public virtual ICollection<WalletTransaction> WalletTransactions { get; set; } = new List<WalletTransaction>();
 }
