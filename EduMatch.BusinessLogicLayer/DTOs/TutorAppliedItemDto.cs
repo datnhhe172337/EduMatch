@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.DTOs
 {
-    public class ClassRequestItemDto
+    public class TutorAppliedItemDto
     {
         public int Id { get; set; }
         //public string LearnerEmail { get; set; }
+        public int ClassRequestId { get; set; }
         public string LearnerName { get; set; }
-
         public string? AvatarUrl { get; set; }
         public string Title { get; set; }
         public string SubjectName { get; set; }
@@ -28,7 +28,9 @@ namespace EduMatch.BusinessLogicLayer.DTOs
         public int ExpectedSessions { get; set; }
         public decimal? TargetUnitPriceMin { get; set; }
         public decimal? TargetUnitPriceMax { get; set; }
-        public string Status { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public string Message { get; set; }
+        public string ClassRequestStatus { get; set; }
+        public int TutorApplicationStatus { get; set; }
+        public DateTime AppliedAt { get; set; }
     }
 }

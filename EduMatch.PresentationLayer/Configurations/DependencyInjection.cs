@@ -47,6 +47,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IFindTutorRepository, FindTutorRepository>();
             services.AddScoped<IChatRepository, ChatRepository>();
             services.AddScoped<IClassRequestRepository, ClassRequestRepository>();
+            services.AddScoped<ITutorApplicationRepository, TutorApplicationRepository>();
 
             // Services
             services.AddScoped<IUserService, UserService>();
@@ -69,6 +70,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IFindTutorService, FindTutorService>();
             services.AddScoped<IChatService, ChatService>();
             services.AddScoped<IClassRequestService, ClassRequestService>();
+            services.AddScoped<ITutorApplicationService, TutorApplicationService>();
 
             // Bind "CloudinarySettings" 
             services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
