@@ -32,7 +32,7 @@ namespace EduMatch.DataAccessLayer.Repositories
         }
 
 
- public async Task<IEnumerable<User>> GetLearnerAsync()
+        public async Task<IEnumerable<User>> GetLearnerAsync()
         {
             return await _context.Users
                 .Where(u => u.RoleId == 1)

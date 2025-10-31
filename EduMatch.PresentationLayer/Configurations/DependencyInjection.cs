@@ -20,9 +20,6 @@ namespace EduMatch.PresentationLayer.Configurations
             //// Mail Settings
             services.Configure<MailSettings>(configuration.GetSection("MailSettings"));
 
-
-
-
 			// AutoMapper
 			services.AddAutoMapper(typeof(MappingProfile).Assembly);
 
@@ -45,6 +42,11 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
             services.AddScoped<IUserProfileRepository, UserProfileRepository>();
             services.AddScoped<IFavoriteTutorRepository, FavoriteTutorRepository>();
+            services.AddScoped<UserProfileRepository, UserProfileRepository>();
+            services.AddScoped<IManageTutorProfileRepository, ManageTutorProfileRepository>();
+            services.AddScoped<IFindTutorRepository, FindTutorRepository>();
+            services.AddScoped<IChatRepository, ChatRepository>();
+            services.AddScoped<IClassRequestRepository, ClassRequestRepository>();
 
             // Services
             services.AddScoped<IUserService, UserService>();
@@ -62,8 +64,11 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ITimeSlotService, TimeSlotService>();
             services.AddScoped<IEducationInstitutionService, EducationInstitutionService>();
             services.AddScoped<IFavoriteTutorService, FavoriteTutorService>();
-
-
+            services.AddScoped<IUserProfileService, UserProfileService>();
+            services.AddScoped<IManageTutorProfileService, ManageTutorProfileService>();
+            services.AddScoped<IFindTutorService, FindTutorService>();
+            services.AddScoped<IChatService, ChatService>();
+            services.AddScoped<IClassRequestService, ClassRequestService>();
 
             // Bind "CloudinarySettings" 
             services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
@@ -75,9 +80,6 @@ namespace EduMatch.PresentationLayer.Configurations
 			});
 			services.AddSingleton<IMediaValidator, MediaValidator>();
 			services.AddScoped<ICloudMediaService, CloudinaryMediaService>();
-
-
-
 
 
 			// HttpContextAccessor for CurrentUserService

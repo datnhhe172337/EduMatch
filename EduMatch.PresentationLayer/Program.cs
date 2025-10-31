@@ -21,20 +21,12 @@ builder.Configuration
 
 // Add services to the container.
 builder.Services.AddControllers();
-builder.Services.AddScoped<UserProfileRepository, UserProfileRepository>();
-builder.Services.AddScoped<IManageTutorProfileRepository, ManageTutorProfileRepository>();
 builder.Services.ConfigureApplication(builder.Configuration);
-builder.Services.AddScoped<IFindTutorRepository, FindTutorRepository>();
-builder.Services.AddScoped<IUserProfileService, UserProfileService>();
-builder.Services.AddScoped<IManageTutorProfileService, ManageTutorProfileService>();
-builder.Services.AddScoped<IFindTutorService, FindTutorService>();
-builder.Services.AddScoped<IChatRepository, ChatRepository>();
-builder.Services.AddScoped<IChatService, ChatService>();
 
-
+// Background Service
+builder.Services.AddHostedService<ClassRequestExpireBackgroundService>();
 
 // Add services to the container.
-
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {

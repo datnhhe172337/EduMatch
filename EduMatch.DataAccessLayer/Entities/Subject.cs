@@ -11,5 +11,7 @@ public partial class Subject
 
     public virtual ICollection<CertificateTypeSubject> CertificateTypeSubjects { get; set; } = new List<CertificateTypeSubject>();
 
+    public virtual ICollection<ClassRequest> ClassRequests { get; set; } = new List<ClassRequest>();
+
     public virtual ICollection<TutorSubject> TutorSubjects { get; set; } = new List<TutorSubject>();
 }

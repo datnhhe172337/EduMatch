@@ -15,6 +15,8 @@ public partial class TutorSubject
 
     public int? LevelId { get; set; }
 
+    public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+
     public virtual Level? Level { get; set; }
 
     public virtual Subject Subject { get; set; } = null!;

@@ -16,5 +16,11 @@ public partial class EducationInstitution
 
     public DateTime? CreatedAt { get; set; }
 
+    public int Verified { get; set; }
+
+    public string? VerifiedBy { get; set; }
+
+    public DateTime? VerifiedAt { get; set; }
+
     public virtual ICollection<TutorEducation> TutorEducations { get; set; } = new List<TutorEducation>();
 }

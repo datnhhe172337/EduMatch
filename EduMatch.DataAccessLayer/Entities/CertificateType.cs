@@ -13,6 +13,12 @@ public partial class CertificateType
 
     public DateTime? CreatedAt { get; set; }
 
+    public int Verified { get; set; }
+
+    public string? VerifiedBy { get; set; }
+
+    public DateTime? VerifiedAt { get; set; }
+
     public virtual ICollection<CertificateTypeSubject> CertificateTypeSubjects { get; set; } = new List<CertificateTypeSubject>();
 
     public virtual ICollection<TutorCertificate> TutorCertificates { get; set; } = new List<TutorCertificate>();

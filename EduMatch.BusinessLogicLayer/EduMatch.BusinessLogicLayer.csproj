@@ -12,7 +12,6 @@
     <PackageReference Include="CloudinaryDotNet" Version="1.27.8" />
 
     <Folder Include="Mappings\" />
-    <Folder Include="DTOs\" />
   </ItemGroup>
 
   <ItemGroup>

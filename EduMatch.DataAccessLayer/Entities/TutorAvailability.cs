@@ -16,11 +16,13 @@ public partial class TutorAvailability
 
     public DateTime? EndDate { get; set; }
 
-    public TutorAvailabilityStatus? Status { get; set; }
+    public TutorAvailabilityStatus Status { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
+
+    public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
 
     public virtual TimeSlot Slot { get; set; } = null!;
 
