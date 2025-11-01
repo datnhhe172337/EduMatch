@@ -15,6 +15,7 @@ public partial class EduMatchContext : DbContext
     {
     }
 
+
     public virtual DbSet<Bank> Banks { get; set; }
 
     public virtual DbSet<Booking> Bookings { get; set; }
@@ -30,6 +31,7 @@ public partial class EduMatchContext : DbContext
     public virtual DbSet<ClassRequest> ClassRequests { get; set; }
 
     public virtual DbSet<ClassRequestSlotsAvailability> ClassRequestSlotsAvailabilities { get; set; }
+
 
     public virtual DbSet<Deposit> Deposits { get; set; }
 
@@ -82,6 +84,7 @@ public partial class EduMatchContext : DbContext
     public virtual DbSet<WalletTransaction> WalletTransactions { get; set; }
 
     public virtual DbSet<Withdrawal> Withdrawals { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -1084,6 +1087,30 @@ public partial class EduMatchContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_withdrawals_wallets");
         });
+
+        modelBuilder.Entity<Bank>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__banks__3213E83FD8904DBA");
+
+            entity.ToTable("banks");
+
+            entity.HasIndex(e => e.Code, "UQ__banks__357D4CF9377AEDED").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Code)
+                .HasMaxLength(50)
+                .HasColumnName("code");
+            entity.Property(e => e.LogoUrl)
+                .HasMaxLength(255)
+                .HasColumnName("logoUrl");
+            entity.Property(e => e.Name)
+                .HasMaxLength(200)
+                .HasColumnName("name");
+            entity.Property(e => e.ShortName)
+                .HasMaxLength(100)
+                .HasColumnName("shortName");
+        });
+
 
         OnModelCreatingPartial(modelBuilder);
     }
