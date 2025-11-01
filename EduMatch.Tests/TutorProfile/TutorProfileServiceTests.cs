@@ -200,9 +200,9 @@ public class TutorProfileServiceTests
 			.Returns(Task.CompletedTask)
 			.Callback<TutorProfile>(tp => tp.Id = 1);
 
-		_userProfileServiceMock
-			.Setup(s => s.UpdateAsync(It.IsAny<UserProfileUpdateRequest>()))
-			.Returns(Task.CompletedTask);
+		//_userProfileServiceMock
+		//	.Setup(s => s.UpdateAsync(It.IsAny<UserProfileUpdateRequest>()))
+		//	.Returns(Task.CompletedTask);
 
 		var result = await _service.CreateAsync(request);
 
@@ -285,9 +285,9 @@ public class TutorProfileServiceTests
 			.Setup(r => r.UpdateAsync(It.IsAny<TutorProfile>()))
 			.Returns(Task.CompletedTask);
 
-		_userProfileServiceMock
-			.Setup(s => s.UpdateAsync(It.IsAny<UserProfileUpdateRequest>()))
-			.Returns(Task.CompletedTask);
+		//_userProfileServiceMock
+		//	.Setup(s => s.UpdateAsync(It.IsAny<UserProfileUpdateRequest>()))
+		//	.Returns(Task.CompletedTask);
 
 		var result = await _service.UpdateAsync(request);
 
@@ -345,9 +345,9 @@ public class TutorProfileServiceTests
 			.Setup(r => r.UpdateAsync(It.IsAny<TutorProfile>()))
 			.Returns(Task.CompletedTask);
 
-		_userProfileServiceMock
-			.Setup(s => s.UpdateAsync(It.IsAny<UserProfileUpdateRequest>()))
-			.Returns(Task.CompletedTask);
+		//_userProfileServiceMock
+		//	.Setup(s => s.UpdateAsync(It.IsAny<UserProfileUpdateRequest>()))
+		//	.Returns(Task.CompletedTask);
 
 		var result = await _service.UpdateAsync(request);
 
