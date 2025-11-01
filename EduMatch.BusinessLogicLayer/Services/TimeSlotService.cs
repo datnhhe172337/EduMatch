@@ -1,14 +1,12 @@
 using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.TimeSlot;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
@@ -47,18 +45,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 			return entity != null ? _mapper.Map<TimeSlotDto>(entity) : null;
 		}
 
-		public async Task<TimeSlotDto> CreateAsync(TimeSlotCreateRequest request)
+        public async Task<TimeSlotDto> CreateAsync(TimeSlotCreateRequest request)
 		{
 			try
 			{
-				// Validate request
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-				}
-
 				// Check if time slot already exists
 				var existingSlot = await _repository.GetByExactTimeAsync(request.StartTime, request.EndTime);
 				if (existingSlot != null)
@@ -66,7 +56,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Time slot with start time {request.StartTime} and end time {request.EndTime} already exists");
 				}
 
-				var entity = _mapper.Map<TimeSlot>(request);
+                var entity = new TimeSlot
+                {
+                    StartTime = request.StartTime,
+                    EndTime = request.EndTime
+                };
 				await _repository.AddAsync(entity);
 				return _mapper.Map<TimeSlotDto>(entity);
 			}
@@ -76,19 +70,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
-		public async Task<TimeSlotDto> UpdateAsync(TimeSlotUpdateRequest request)
+	public async Task<TimeSlotDto> UpdateAsync(TimeSlotUpdateRequest request)
+	{
+		try
 		{
-			try
-			{
-				// Validate request
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-				}
-
-				// Check if entity exists
+			// Check if entity exists
 				var existingEntity = await _repository.GetByIdAsync(request.Id);
 				if (existingEntity == null)
 				{
@@ -102,9 +88,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Time slot with start time {request.StartTime} and end time {request.EndTime} already exists");
 				}
 
-				var entity = _mapper.Map<TimeSlot>(request);
-				await _repository.UpdateAsync(entity);
-				return _mapper.Map<TimeSlotDto>(entity);
+                // Update only provided fields
+                existingEntity.StartTime = request.StartTime;
+                existingEntity.EndTime = request.EndTime;
+
+                await _repository.UpdateAsync(existingEntity);
+                return _mapper.Map<TimeSlotDto>(existingEntity);
 			}
 			catch (Exception ex)
 			{

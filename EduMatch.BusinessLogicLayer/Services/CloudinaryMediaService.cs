@@ -2,8 +2,8 @@
 using CloudinaryDotNet.Actions;
 using EduMatch.BusinessLogicLayer.Helper;
 using EduMatch.BusinessLogicLayer.Interfaces;
-using EduMatch.BusinessLogicLayer.Requests;
-using EduMatch.BusinessLogicLayer.Responses;
+using EduMatch.BusinessLogicLayer.Requests.Common;
+using EduMatch.BusinessLogicLayer.Responses.Common;
 using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Enum;
 using Microsoft.Extensions.Options;

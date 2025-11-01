@@ -4,13 +4,15 @@ namespace EduMatch.DataAccessLayer.Interfaces
 {
 	public interface ICertificateTypeSubjectRepository
 	{
-		Task<CertificateTypeSubject?> GetByIdAsync(int id, CancellationToken ct = default);
-		Task<IReadOnlyList<CertificateTypeSubject>> GetByCertificateTypeIdAsync(int certificateTypeId, CancellationToken ct = default);
-		Task<IReadOnlyList<CertificateTypeSubject>> GetBySubjectIdAsync(int subjectId, CancellationToken ct = default);
-		Task<CertificateTypeSubject?> GetByCertificateTypeAndSubjectAsync(int certificateTypeId, int subjectId, CancellationToken ct = default);
-		Task<IReadOnlyList<CertificateTypeSubject>> GetAllAsync(CancellationToken ct = default);
-		Task AddAsync(CertificateTypeSubject entity, CancellationToken ct = default);
-		Task UpdateAsync(CertificateTypeSubject entity, CancellationToken ct = default);
-		Task RemoveByIdAsync(int id, CancellationToken ct = default);
+		Task<CertificateTypeSubject?> GetByIdAsync(int id);
+		Task<IReadOnlyList<CertificateTypeSubject>> GetByCertificateTypeIdAsync(int certificateTypeId);
+		Task<IReadOnlyList<CertificateTypeSubject>> GetBySubjectIdAsync(int subjectId);
+		Task<CertificateTypeSubject?> GetByCertificateTypeAndSubjectAsync(int certificateTypeId, int subjectId);
+		Task<IReadOnlyList<CertificateTypeSubject>> GetAllAsync();
+		Task AddAsync(CertificateTypeSubject entity);
+		Task UpdateAsync(CertificateTypeSubject entity);
+		Task RemoveByIdAsync(int id);
+		Task AddRangeAsync(IEnumerable<CertificateTypeSubject> entities);
+		Task RemoveByCertificateTypeIdAsync(int certificateTypeId);
 	}
 }

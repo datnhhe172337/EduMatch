@@ -34,7 +34,12 @@ namespace EduMatch.BusinessLogicLayer.DTOs
 		[JsonIgnore]
 		public string? VideoIntroPublicId { get; set; }
 		public TeachingMode TeachingModes { get; set; }
-		public TutorStatus Status { get; set; }
+        public TutorStatus Status { get; set; }
+
+		public string? VerifiedBy { get; set; }
+
+		public DateTime? VerifiedAt { get; set; }
+
 		public DateTime CreatedAt { get; set; }
 		public DateTime? UpdatedAt { get; set; }
 		public ICollection<TutorAvailabilityDto>? TutorAvailabilities { get; set; }

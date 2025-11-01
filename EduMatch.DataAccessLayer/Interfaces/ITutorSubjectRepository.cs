@@ -4,17 +4,17 @@ namespace EduMatch.DataAccessLayer.Interfaces
 {
 	public interface ITutorSubjectRepository
 	{
-		Task<TutorSubject?> GetByIdFullAsync(int id, CancellationToken ct = default);
-		Task<TutorSubject?> GetByTutorIdFullAsync(int tutorId, CancellationToken ct = default);
-		Task<IReadOnlyList<TutorSubject>> GetByTutorIdAsync(int tutorId, CancellationToken ct = default);
-		Task<IReadOnlyList<TutorSubject>> GetBySubjectIdAsync(int subjectId, CancellationToken ct = default);
-		Task<IReadOnlyList<TutorSubject>> GetByLevelIdAsync(int levelId, CancellationToken ct = default);
-		Task<IReadOnlyList<TutorSubject>> GetByHourlyRateRangeAsync(decimal minRate, decimal maxRate, CancellationToken ct = default);
-		Task<IReadOnlyList<TutorSubject>> GetTutorsBySubjectAndLevelAsync(int subjectId, int levelId, CancellationToken ct = default);
-		Task<IReadOnlyList<TutorSubject>> GetAllFullAsync(CancellationToken ct = default);
-		Task AddAsync(TutorSubject entity, CancellationToken ct = default);
-		Task UpdateAsync(TutorSubject entity, CancellationToken ct = default);
-		Task RemoveByIdAsync(int id, CancellationToken ct = default);
-		Task RemoveByTutorIdAsync(int tutorId, CancellationToken ct = default);
+		Task<TutorSubject?> GetByIdFullAsync(int id);
+		Task<TutorSubject?> GetByTutorIdFullAsync(int tutorId);
+		Task<IReadOnlyList<TutorSubject>> GetByTutorIdAsync(int tutorId);
+		Task<IReadOnlyList<TutorSubject>> GetBySubjectIdAsync(int subjectId);
+		Task<IReadOnlyList<TutorSubject>> GetByLevelIdAsync(int levelId);
+		Task<IReadOnlyList<TutorSubject>> GetByHourlyRateRangeAsync(decimal minRate, decimal maxRate);
+		Task<IReadOnlyList<TutorSubject>> GetTutorsBySubjectAndLevelAsync(int subjectId, int levelId);
+		Task<IReadOnlyList<TutorSubject>> GetAllFullAsync();
+		Task AddAsync(TutorSubject entity);
+		Task UpdateAsync(TutorSubject entity);
+		Task RemoveByIdAsync(int id);
+		Task RemoveByTutorIdAsync(int tutorId);
 	}
 }

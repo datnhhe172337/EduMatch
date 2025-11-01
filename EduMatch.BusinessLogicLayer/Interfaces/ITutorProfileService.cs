@@ -1,5 +1,5 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.TutorProfile;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,5 +17,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		Task<TutorProfileDto> CreateAsync(TutorProfileCreateRequest request);
 		Task<TutorProfileDto> UpdateAsync(TutorProfileUpdateRequest request);
 		Task DeleteAsync(int id);
+		Task<TutorProfileDto> VerifyAsync(int id, string verifiedBy);
 	}
 }

@@ -1,7 +1,7 @@
 using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.Level;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using System.Collections.Generic;
@@ -53,7 +53,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
 				}
 
-				var entity = _mapper.Map<Level>(request);
+				var entity = new Level
+				{
+					Name = request.Name
+				};
 				await _repository.AddAsync(entity);
 				return _mapper.Map<LevelDto>(entity);
 			}
@@ -82,9 +85,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Level with ID {request.Id} not found");
 				}
 
-				var entity = _mapper.Map<Level>(request);
-				await _repository.UpdateAsync(entity);
-				return _mapper.Map<LevelDto>(entity);
+				// Update only provided fields
+				existingEntity.Name = request.Name;
+
+				await _repository.UpdateAsync(existingEntity);
+				return _mapper.Map<LevelDto>(existingEntity);
 			}
 			catch (Exception ex)
 			{

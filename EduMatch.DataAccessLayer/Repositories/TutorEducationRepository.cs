@@ -17,60 +17,59 @@ namespace EduMatch.DataAccessLayer.Repositories
 
 		private IQueryable<TutorEducation> IncludeAll() =>
 			_ctx.TutorEducations
-			.AsNoTracking()
 			.Include(t => t.Institution)
 			.Include(t => t.Tutor);
 
-		public async Task<TutorEducation?> GetByIdFullAsync(int id, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == id, ct);
+		public async Task<TutorEducation?> GetByIdFullAsync(int id)
+			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == id);
 
-		public async Task<TutorEducation?> GetByTutorIdFullAsync(int tutorId, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(t => t.TutorId == tutorId, ct);
+		public async Task<TutorEducation?> GetByTutorIdFullAsync(int tutorId)
+			=> await IncludeAll().FirstOrDefaultAsync(t => t.TutorId == tutorId);
 
-		public async Task<IReadOnlyList<TutorEducation>> GetByTutorIdAsync(int tutorId, CancellationToken ct = default)
-			=> await IncludeAll().Where(t => t.TutorId == tutorId).ToListAsync(ct);
+	public async Task<IReadOnlyList<TutorEducation>> GetByTutorIdAsync(int tutorId)
+		=> await IncludeAll().Where(t => t.TutorId == tutorId).ToListAsync();
 
-		public async Task<IReadOnlyList<TutorEducation>> GetByInstitutionIdAsync(int institutionId, CancellationToken ct = default)
-			=> await IncludeAll().Where(t => t.InstitutionId == institutionId).ToListAsync(ct);
+		public async Task<IReadOnlyList<TutorEducation>> GetByInstitutionIdAsync(int institutionId)
+			=> await IncludeAll().Where(t => t.InstitutionId == institutionId).ToListAsync();
 
-		public async Task<IReadOnlyList<TutorEducation>> GetByVerifiedStatusAsync(VerifyStatus verified, CancellationToken ct = default)
-			=> await IncludeAll().Where(t => t.Verified == verified).ToListAsync(ct);
+		public async Task<IReadOnlyList<TutorEducation>> GetByVerifiedStatusAsync(VerifyStatus verified)
+			=> await IncludeAll().Where(t => t.Verified == (int)verified).ToListAsync();
 
-		public async Task<IReadOnlyList<TutorEducation>> GetPendingVerificationsAsync(CancellationToken ct = default)
-			=> await IncludeAll().Where(t => t.Verified == VerifyStatus.Pending).ToListAsync(ct);
+		public async Task<IReadOnlyList<TutorEducation>> GetPendingVerificationsAsync()
+			=> await IncludeAll().Where(t => t.Verified == (int)VerifyStatus.Pending).ToListAsync();
 
-		public async Task<IReadOnlyList<TutorEducation>> GetAllFullAsync(CancellationToken ct = default)
-			=> await IncludeAll().ToListAsync(ct);
+		public async Task<IReadOnlyList<TutorEducation>> GetAllFullAsync()
+			=> await IncludeAll().ToListAsync();
 
-		public async Task AddAsync(TutorEducation entity, CancellationToken ct = default)
+		public async Task AddAsync(TutorEducation entity)
 		{
-			await _ctx.TutorEducations.AddAsync(entity, ct);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.TutorEducations.AddAsync(entity);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task UpdateAsync(TutorEducation entity, CancellationToken ct = default)
+		public async Task UpdateAsync(TutorEducation entity)
 		{
 			_ctx.TutorEducations.Update(entity);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task RemoveByIdAsync(int id, CancellationToken ct = default)
+		public async Task RemoveByIdAsync(int id)
 		{
-			var entity = await _ctx.TutorEducations.FindAsync(new object?[] { id }, ct);
+			var entity = await _ctx.TutorEducations.FindAsync(new object?[] { id });
 			if (entity != null)
 			{
 				_ctx.TutorEducations.Remove(entity);
-				await _ctx.SaveChangesAsync(ct);
+				await _ctx.SaveChangesAsync();
 			}
 		}
 
-		public async Task RemoveByTutorIdAsync(int tutorId, CancellationToken ct = default)
+		public async Task RemoveByTutorIdAsync(int tutorId)
 		{
-			var entities = await _ctx.TutorEducations.Where(t => t.TutorId == tutorId).ToListAsync(ct);
+			var entities = await _ctx.TutorEducations.Where(t => t.TutorId == tutorId).ToListAsync();
 			if (entities.Any())
 			{
 				_ctx.TutorEducations.RemoveRange(entities);
-				await _ctx.SaveChangesAsync(ct);
+				await _ctx.SaveChangesAsync();
 			}
 		}
 	}

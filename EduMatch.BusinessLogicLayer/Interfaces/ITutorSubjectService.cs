@@ -1,5 +1,5 @@
 using EduMatch.BusinessLogicLayer.DTOs;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.TutorSubject;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -22,6 +22,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		Task DeleteAsync(int id);
 		Task DeleteByTutorIdAsync(int tutorId);
 
-        Task ReconcileAsync(int tutorId, List<UpdateTutorSubjectRequest> incomingSubjects);
+       
     }
 }

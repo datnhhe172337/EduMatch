@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.Requests.TutorProfile;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.PresentationLayer.Common;
-using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.BusinessLogicLayer.Services;
 using Microsoft.AspNetCore.Authorization;
+using EduMatch.BusinessLogicLayer.Requests.User;
 
 
 namespace EduMatch.PresentationLayer.Controllers
@@ -80,58 +81,7 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
 
-        //[Authorize]
-        // --- CHANGED: Added email parameter to the route ---
-        [HttpPut("update-profile/{email}")]
-        [Consumes("multipart/form-data")]
-        [ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)] // Added NotFound
-                                                                                           // --- CHANGED: Added email parameter to the method ---
-        public async Task<IActionResult> UpdateTutorProfile([FromRoute] string email, [FromForm] UpdateTutorProfileRequest request)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ApiResponse<string>.Fail("Invalid request.", ModelState));
-
-            // --- CHANGED: Use the email from the route parameter ---
-            var userEmail = email;
-
-            // Validate the provided email (optional but good practice)
-            if (string.IsNullOrWhiteSpace(userEmail))
-                return BadRequest(ApiResponse<string>.Fail("Email parameter cannot be empty."));
-
-            // --- You might want to compare the route email with the logged-in user for security ---
-            // var loggedInUserEmail = _currentUserService.Email;
-            // if (!string.Equals(userEmail, loggedInUserEmail, StringComparison.OrdinalIgnoreCase))
-            // {
-            //     return Forbid("You are not authorized to update this profile."); // Or Unauthorized
-            // }
-
-            var existingProfile = await _manageTutorProfileService.GetByEmailAsync(userEmail);
-            if (existingProfile == null)
-                return NotFound(ApiResponse<string>.Fail($"Tutor profile for email '{userEmail}' not found."));
-
-            await using var tx = await _eduMatch.Database.BeginTransactionAsync();
-            try
-            {
-                var updatedProfile = await _manageTutorProfileService.UpdateTutorProfileAsync(existingProfile.Id, request);
-
-                await tx.CommitAsync();
-
-                return Ok(ApiResponse<object>.Ok(new
-                {
-                    profile = updatedProfile
-                }, "Tutor profile updated successfully."));
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ApiResponse<string>.Fail(
-                    "Failed to update tutor profile.",
-                    new { exception = ex.Message, innerException = ex.InnerException?.Message }
-                ));
-            }
-        }
+       
     }
 }
 

@@ -1,5 +1,5 @@
-﻿using EduMatch.BusinessLogicLayer.Requests;
-using EduMatch.BusinessLogicLayer.Responses;
+﻿using EduMatch.BusinessLogicLayer.Requests.Common;
+using EduMatch.BusinessLogicLayer.Responses.Common;
 using EduMatch.DataAccessLayer.Enum;
 using System;
 using System.Collections.Generic;

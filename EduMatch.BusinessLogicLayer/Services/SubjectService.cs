@@ -1,14 +1,12 @@
 using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.Subject;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
@@ -41,19 +39,14 @@ namespace EduMatch.BusinessLogicLayer.Services
 			return _mapper.Map<IReadOnlyList<SubjectDto>>(entities);
 		}
 
-		public async Task<SubjectDto> CreateAsync(SubjectCreateRequest request)
+	public async Task<SubjectDto> CreateAsync(SubjectCreateRequest request)
+	{
+		try
 		{
-			try
-			{
-				// Validate request
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+			var entity = new Subject
 				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-				}
-
-				var entity = _mapper.Map<Subject>(request);
+					SubjectName = request.SubjectName
+				};
 				await _repository.AddAsync(entity);
 				return _mapper.Map<SubjectDto>(entity);
 			}
@@ -63,28 +56,22 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
-		public async Task<SubjectDto> UpdateAsync(SubjectUpdateRequest request)
+	public async Task<SubjectDto> UpdateAsync(SubjectUpdateRequest request)
+	{
+		try
 		{
-			try
-			{
-				// Validate request
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-				}
-
-				// Check if entity exists
+			// Check if entity exists
 				var existingEntity = await _repository.GetByIdAsync(request.Id);
 				if (existingEntity == null)
 				{
 					throw new ArgumentException($"Subject with ID {request.Id} not found");
 				}
 
-				var entity = _mapper.Map<Subject>(request);
-				await _repository.UpdateAsync(entity);
-				return _mapper.Map<SubjectDto>(entity);
+				// Update only provided fields
+				existingEntity.SubjectName = request.SubjectName;
+
+				await _repository.UpdateAsync(existingEntity);
+				return _mapper.Map<SubjectDto>(existingEntity);
 			}
 			catch (Exception ex)
 			{

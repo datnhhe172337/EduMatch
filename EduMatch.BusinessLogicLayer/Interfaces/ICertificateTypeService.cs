@@ -1,5 +1,5 @@
 using EduMatch.BusinessLogicLayer.DTOs;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.CertificateType;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -14,5 +14,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		Task<CertificateTypeDto> CreateAsync(CertificateTypeCreateRequest request);
 		Task<CertificateTypeDto> UpdateAsync(CertificateTypeUpdateRequest request);
 		Task DeleteAsync(int id);
+		Task<CertificateTypeDto> VerifyAsync(int id, string verifiedBy);
+		Task<CertificateTypeDto> AddSubjectsToCertificateTypeAsync(int certificateTypeId, List<int> subjectIds);
 	}
 }
