@@ -13,10 +13,7 @@ using Moq;
 
 namespace EduMatch.Tests;
 
-/// <summary>
-/// Unit tests for TutorProfileService.
-/// Covers CRUD operations (Get, Create, Update, Delete), verification, validation, and status change scenarios.
-/// </summary>
+
 public class TutorProfileServiceTests
 {
 
@@ -58,6 +55,9 @@ public class TutorProfileServiceTests
 	}
 
 
+	/// <summary>
+	/// Test GetByEmailFullAsync returns mapped DTO when tutor profile exists.
+	/// </summary>
 	[Test]
 	public async Task GetByEmailFullAsync_WhenExists_ReturnsMappedDto()
 	{
@@ -76,6 +76,9 @@ public class TutorProfileServiceTests
 		Assert.That(result.TutorSubjects.First().Subject.SubjectName, Is.EqualTo("Math"));
 	}
 
+	/// <summary>
+	/// Test GetByEmailFullAsync returns null when tutor profile does not exist.
+	/// </summary>
 	[Test]
 	public async Task GetByEmailFullAsync_WhenNotExists_ReturnsNull()
 	{
@@ -90,12 +93,18 @@ public class TutorProfileServiceTests
 		Assert.That(result, Is.Null);
 	}
 
+	/// <summary>
+	/// Test GetByEmailFullAsync throws ArgumentException when email is empty.
+	/// </summary>
 	[Test]
 	public void GetByEmailFullAsync_WhenEmailIsEmpty_ThrowsArgumentException()
 	{
 		Assert.ThrowsAsync<ArgumentException>(async () => await _service.GetByEmailFullAsync(""));
 	}
 
+	/// <summary>
+	/// Test GetByIdFullAsync returns mapped DTO when tutor profile exists.
+	/// </summary>
 	[Test]
 	public async Task GetByIdFullAsync_WhenExists_ReturnsMappedDto()
 	{
@@ -115,6 +124,9 @@ public class TutorProfileServiceTests
 		Assert.That(result.UserEmail, Is.EqualTo(email));
 	}
 
+	/// <summary>
+	/// Test GetByIdFullAsync returns null when tutor profile does not exist.
+	/// </summary>
 	[Test]
 	public async Task GetByIdFullAsync_WhenNotExists_ReturnsNull()
 	{
@@ -129,6 +141,9 @@ public class TutorProfileServiceTests
 		Assert.That(result, Is.Null);
 	}
 
+	/// <summary>
+	/// Test GetAllFullAsync returns list of mapped DTOs.
+	/// </summary>
 	[Test]
 	public async Task GetAllFullAsync_ReturnsListOfDtos()
 	{
@@ -152,6 +167,9 @@ public class TutorProfileServiceTests
 		Assert.That(result.Select(r => r.UserEmail), Contains.Item(email2));
 	}
 
+	/// <summary>
+	/// Test CreateAsync successfully creates tutor profile and returns DTO.
+	/// </summary>
 	[Test]
 	public async Task CreateAsync_WhenValid_ReturnsCreatedDto()
 	{
@@ -193,6 +211,9 @@ public class TutorProfileServiceTests
 		_repositoryMock.Verify(r => r.AddAsync(It.IsAny<TutorProfile>()), Times.Once);
 	}
 
+	/// <summary>
+	/// Test CreateAsync throws ArgumentException when profile already exists.
+	/// </summary>
 	[Test]
 	public void CreateAsync_WhenProfileAlreadyExists_ThrowsArgumentException()
 	{
@@ -214,6 +235,9 @@ public class TutorProfileServiceTests
 		Assert.ThrowsAsync<ArgumentException>(async () => await _service.CreateAsync(request));
 	}
 
+	/// <summary>
+	/// Test CreateAsync throws ArgumentException when VideoIntroUrl is missing.
+	/// </summary>
 	[Test]
 	public void CreateAsync_WhenVideoIntroUrlMissing_ThrowsArgumentException()
 	{
@@ -232,6 +256,9 @@ public class TutorProfileServiceTests
 		Assert.ThrowsAsync<ArgumentException>(async () => await _service.CreateAsync(request));
 	}
 
+	/// <summary>
+	/// Test UpdateAsync successfully updates tutor profile and returns DTO.
+	/// </summary>
 	[Test]
 	public async Task UpdateAsync_WhenValid_ReturnsUpdatedDto()
 	{
@@ -269,6 +296,9 @@ public class TutorProfileServiceTests
 		_repositoryMock.Verify(r => r.UpdateAsync(It.IsAny<TutorProfile>()), Times.Once);
 	}
 
+	/// <summary>
+	/// Test UpdateAsync throws ArgumentException when tutor profile not found.
+	/// </summary>
 	[Test]
 	public void UpdateAsync_WhenNotFound_ThrowsArgumentException()
 	{
@@ -287,6 +317,9 @@ public class TutorProfileServiceTests
 		Assert.ThrowsAsync<ArgumentException>(async () => await _service.UpdateAsync(request));
 	}
 
+	/// <summary>
+	/// Test UpdateAsync allows status change from Pending to Approved.
+	/// </summary>
 	[Test]
 	public async Task UpdateAsync_WhenStatusPendingToApproved_UpdatesStatus()
 	{
@@ -322,6 +355,9 @@ public class TutorProfileServiceTests
 		Assert.That((TutorStatus)existingProfile.Status, Is.EqualTo(TutorStatus.Approved));
 	}
 
+	/// <summary>
+	/// Test UpdateAsync throws ArgumentException when status is not Pending.
+	/// </summary>
 	[Test]
 	public void UpdateAsync_WhenStatusNotPending_ThrowsArgumentException()
 	{
@@ -346,6 +382,9 @@ public class TutorProfileServiceTests
 		Assert.ThrowsAsync<ArgumentException>(async () => await _service.UpdateAsync(request));
 	}
 
+	/// <summary>
+	/// Test DeleteAsync calls repository to remove tutor profile.
+	/// </summary>
 	[Test]
 	public async Task DeleteAsync_WhenValid_CallsRepository()
 	{
@@ -360,6 +399,9 @@ public class TutorProfileServiceTests
 		_repositoryMock.Verify(r => r.RemoveByIdAsync(id), Times.Once);
 	}
 
+	/// <summary>
+	/// Test VerifyAsync updates status to Approved and sets verification info.
+	/// </summary>
 	[Test]
 	public async Task VerifyAsync_WhenValid_UpdatesStatusToApproved()
 	{
@@ -386,6 +428,9 @@ public class TutorProfileServiceTests
 		Assert.That(existingProfile.VerifiedAt, Is.Not.Null);
 	}
 
+	/// <summary>
+	/// Test VerifyAsync throws ArgumentException when tutor profile not found.
+	/// </summary>
 	[Test]
 	public void VerifyAsync_WhenNotFound_ThrowsArgumentException()
 	{
@@ -399,6 +444,9 @@ public class TutorProfileServiceTests
 		Assert.ThrowsAsync<ArgumentException>(async () => await _service.VerifyAsync(id, verifiedBy));
 	}
 
+	/// <summary>
+	/// Test VerifyAsync throws InvalidOperationException when status is not Pending.
+	/// </summary>
 	[Test]
 	public void VerifyAsync_WhenNotPending_ThrowsInvalidOperationException()
 	{
@@ -416,6 +464,9 @@ public class TutorProfileServiceTests
 		Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.VerifyAsync(id, verifiedBy));
 	}
 
+	/// <summary>
+	/// Test VerifyAsync throws ArgumentException when verifiedBy is empty.
+	/// </summary>
 	[Test]
 	public void VerifyAsync_WhenVerifiedByIsEmpty_ThrowsArgumentException()
 	{
