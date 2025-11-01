@@ -348,6 +348,9 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 			// GoogleToken 
 			CreateMap<GoogleToken, GoogleTokenDto>();
 
+            // SystemFee -> SystemFeeDto
+            CreateMap<SystemFee, SystemFeeDto>();
+
 
 
 

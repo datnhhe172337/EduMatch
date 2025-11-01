@@ -15,6 +15,9 @@ public partial class EduMatchContext : DbContext
     {
     }
 
+
+    public virtual DbSet<Bank> Banks { get; set; }
+
     public virtual DbSet<Booking> Bookings { get; set; }
 
     public virtual DbSet<CertificateType> CertificateTypes { get; set; }
@@ -28,6 +31,9 @@ public partial class EduMatchContext : DbContext
     public virtual DbSet<ClassRequest> ClassRequests { get; set; }
 
     public virtual DbSet<ClassRequestSlotsAvailability> ClassRequestSlotsAvailabilities { get; set; }
+
+
+    public virtual DbSet<Deposit> Deposits { get; set; }
 
     public virtual DbSet<EducationInstitution> EducationInstitutions { get; set; }
 
@@ -51,6 +57,8 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<Subject> Subjects { get; set; }
 
+    public virtual DbSet<SystemFee> SystemFees { get; set; }
+
     public virtual DbSet<TimeSlot> TimeSlots { get; set; }
 
     public virtual DbSet<TutorApplication> TutorApplications { get; set; }
@@ -67,10 +75,42 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<UserBankAccount> UserBankAccounts { get; set; }
+
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
+
+    public virtual DbSet<Wallet> Wallets { get; set; }
+
+    public virtual DbSet<WalletTransaction> WalletTransactions { get; set; }
+
+    public virtual DbSet<Withdrawal> Withdrawals { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Bank>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__banks__3213E83FD8904DBA");
+
+            entity.ToTable("banks");
+
+            entity.HasIndex(e => e.Code, "UQ__banks__357D4CF9377AEDED").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Code)
+                .HasMaxLength(50)
+                .HasColumnName("code");
+            entity.Property(e => e.LogoUrl)
+                .HasMaxLength(255)
+                .HasColumnName("logoUrl");
+            entity.Property(e => e.Name)
+                .HasMaxLength(200)
+                .HasColumnName("name");
+            entity.Property(e => e.ShortName)
+                .HasMaxLength(100)
+                .HasColumnName("shortName");
+        });
+
         modelBuilder.Entity<Booking>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__bookings__3213E83F075704F9");
@@ -88,6 +128,10 @@ public partial class EduMatchContext : DbContext
                 .HasColumnType("decimal(12, 2)")
                 .HasColumnName("refundedAmount");
             entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.SystemFeeAmount)
+                .HasColumnType("decimal(12, 2)")
+                .HasColumnName("systemFeeAmount");
+            entity.Property(e => e.SystemFeeId).HasColumnName("systemFeeId");
             entity.Property(e => e.TotalAmount)
                 .HasColumnType("decimal(12, 2)")
                 .HasColumnName("totalAmount");
@@ -104,6 +148,11 @@ public partial class EduMatchContext : DbContext
                 .HasForeignKey(d => d.LearnerEmail)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Bookings_Users");
+
+            entity.HasOne(d => d.SystemFee).WithMany(p => p.Bookings)
+                .HasForeignKey(d => d.SystemFeeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_bookings_system_fees");
 
             entity.HasOne(d => d.TutorSubject).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.TutorSubjectId)
@@ -214,6 +263,13 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.AddressLine)
                 .HasMaxLength(500)
                 .HasColumnName("addressLine");
+            entity.Property(e => e.ApprovedAt).HasColumnName("approvedAt");
+            entity.Property(e => e.ApprovedBy)
+                .HasMaxLength(255)
+                .HasColumnName("approvedBy");
+            entity.Property(e => e.CancelReason)
+                .HasMaxLength(500)
+                .HasColumnName("cancelReason");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(sysdatetime())")
                 .HasColumnName("createdAt");
@@ -236,6 +292,9 @@ public partial class EduMatchContext : DbContext
                 .HasColumnName("longitude");
             entity.Property(e => e.Mode).HasColumnName("mode");
             entity.Property(e => e.ProvinceId).HasColumnName("provinceId");
+            entity.Property(e => e.RejectionReason)
+                .HasMaxLength(500)
+                .HasColumnName("rejectionReason");
             entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.SubDistrictId).HasColumnName("sub_district_id");
             entity.Property(e => e.SubjectId).HasColumnName("subjectId");
@@ -297,6 +356,37 @@ public partial class EduMatchContext : DbContext
                 .HasForeignKey(d => d.SlotId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_class_request_slots_time_slots");
+        });
+
+        modelBuilder.Entity<Deposit>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__deposits__3213E83F5D423D1C");
+
+            entity.ToTable("deposits");
+
+            entity.HasIndex(e => e.GatewayTransactionCode, "UQ__deposits__24392C0D39A9253B").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Amount)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("amount");
+            entity.Property(e => e.CompletedAt).HasColumnName("completedAt");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.GatewayTransactionCode)
+                .HasMaxLength(100)
+                .HasColumnName("gatewayTransactionCode");
+            entity.Property(e => e.PaymentGateway)
+                .HasMaxLength(50)
+                .HasColumnName("paymentGateway");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.WalletId).HasColumnName("walletId");
+
+            entity.HasOne(d => d.Wallet).WithMany(p => p.Deposits)
+                .HasForeignKey(d => d.WalletId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_deposits_wallets");
         });
 
         modelBuilder.Entity<EducationInstitution>(entity =>
@@ -543,6 +633,35 @@ public partial class EduMatchContext : DbContext
                 .HasColumnName("subjectName");
         });
 
+        modelBuilder.Entity<SystemFee>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__system_f__3213E83F4A31982F");
+
+            entity.ToTable("system_fees");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysdatetime())")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.EffectiveFrom).HasColumnName("effectiveFrom");
+            entity.Property(e => e.EffectiveTo).HasColumnName("effectiveTo");
+            entity.Property(e => e.FixedAmount)
+                .HasDefaultValue(0m)
+                .HasColumnType("decimal(10, 2)")
+                .HasColumnName("fixedAmount");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("isActive");
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .HasColumnName("name");
+            entity.Property(e => e.Percentage)
+                .HasDefaultValue(0m)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("percentage");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updatedAt");
+        });
+
         modelBuilder.Entity<TimeSlot>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__time_slo__3213E83F26A39A86");
@@ -776,6 +895,41 @@ public partial class EduMatchContext : DbContext
                 .HasConstraintName("FK__users__roleId__5CD6CB2B");
         });
 
+        modelBuilder.Entity<UserBankAccount>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__user_ban__3213E83F754938F6");
+
+            entity.ToTable("user_bank_accounts");
+
+            entity.HasIndex(e => new { e.UserEmail, e.BankId, e.AccountNumber }, "UQ_user_bank_accounts").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AccountHolderName)
+                .HasMaxLength(200)
+                .HasColumnName("accountHolderName");
+            entity.Property(e => e.AccountNumber)
+                .HasMaxLength(50)
+                .HasColumnName("accountNumber");
+            entity.Property(e => e.BankId).HasColumnName("bankId");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.IsDefault).HasColumnName("isDefault");
+            entity.Property(e => e.UserEmail)
+                .HasMaxLength(100)
+                .HasColumnName("userEmail");
+
+            entity.HasOne(d => d.Bank).WithMany(p => p.UserBankAccounts)
+                .HasForeignKey(d => d.BankId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_user_bank_accounts_banks");
+
+            entity.HasOne(d => d.UserEmailNavigation).WithMany(p => p.UserBankAccounts)
+                .HasForeignKey(d => d.UserEmail)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_user_bank_accounts_users");
+        });
+
         modelBuilder.Entity<UserProfile>(entity =>
         {
             entity.HasKey(e => e.UserEmail).HasName("PK__user_pro__D54ADF5463AD4278");
@@ -818,6 +972,145 @@ public partial class EduMatchContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__user_prof__userE__628FA481");
         });
+
+        modelBuilder.Entity<Wallet>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__wallets__3213E83F7C1679AB");
+
+            entity.ToTable("wallets");
+
+            entity.HasIndex(e => e.UserEmail, "UQ__wallets__D54ADF5592575686").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Balance)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("balance");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.LockedBalance)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("lockedBalance");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updatedAt");
+            entity.Property(e => e.UserEmail)
+                .HasMaxLength(100)
+                .HasColumnName("userEmail");
+
+            entity.HasOne(d => d.UserEmailNavigation).WithOne(p => p.Wallet)
+                .HasForeignKey<Wallet>(d => d.UserEmail)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_wallets_users");
+        });
+
+        modelBuilder.Entity<WalletTransaction>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__wallet_t__3213E83F76711A91");
+
+            entity.ToTable("wallet_transactions");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Amount)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("amount");
+            entity.Property(e => e.BalanceAfter)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("balanceAfter");
+            entity.Property(e => e.BalanceBefore)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("balanceBefore");
+            entity.Property(e => e.BookingId).HasColumnName("bookingId");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.DepositId).HasColumnName("depositId");
+            entity.Property(e => e.Reason).HasColumnName("reason");
+            entity.Property(e => e.ReferenceCode)
+                .HasMaxLength(100)
+                .HasColumnName("referenceCode");
+            entity.Property(e => e.Status)
+                .HasDefaultValue(1)
+                .HasColumnName("status");
+            entity.Property(e => e.TransactionType).HasColumnName("transactionType");
+            entity.Property(e => e.WalletId).HasColumnName("walletId");
+            entity.Property(e => e.WithdrawalId).HasColumnName("withdrawalId");
+
+            entity.HasOne(d => d.Booking).WithMany(p => p.WalletTransactions)
+                .HasForeignKey(d => d.BookingId)
+                .HasConstraintName("FK_wallet_transactions_bookings");
+
+            entity.HasOne(d => d.Deposit).WithMany(p => p.WalletTransactions)
+                .HasForeignKey(d => d.DepositId)
+                .HasConstraintName("FK_wallet_transactions_deposits");
+
+            entity.HasOne(d => d.Wallet).WithMany(p => p.WalletTransactions)
+                .HasForeignKey(d => d.WalletId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_wallet_transactions_wallets");
+
+            entity.HasOne(d => d.Withdrawal).WithMany(p => p.WalletTransactions)
+                .HasForeignKey(d => d.WithdrawalId)
+                .HasConstraintName("FK_wallet_transactions_withdrawals");
+        });
+
+        modelBuilder.Entity<Withdrawal>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__withdraw__3213E83FF2862746");
+
+            entity.ToTable("withdrawals");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AdminEmail)
+                .HasMaxLength(100)
+                .HasColumnName("adminEmail");
+            entity.Property(e => e.Amount)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("amount");
+            entity.Property(e => e.CompletedAt).HasColumnName("completedAt");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.ProcessedAt).HasColumnName("processedAt");
+            entity.Property(e => e.RejectReason)
+                .HasMaxLength(500)
+                .HasColumnName("rejectReason");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.UserBankAccountId).HasColumnName("userBankAccountId");
+            entity.Property(e => e.WalletId).HasColumnName("walletId");
+
+            entity.HasOne(d => d.UserBankAccount).WithMany(p => p.Withdrawals)
+                .HasForeignKey(d => d.UserBankAccountId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_withdrawals_user_bank_accounts");
+
+            entity.HasOne(d => d.Wallet).WithMany(p => p.Withdrawals)
+                .HasForeignKey(d => d.WalletId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_withdrawals_wallets");
+        });
+
+        modelBuilder.Entity<Bank>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__banks__3213E83FD8904DBA");
+
+            entity.ToTable("banks");
+
+            entity.HasIndex(e => e.Code, "UQ__banks__357D4CF9377AEDED").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Code)
+                .HasMaxLength(50)
+                .HasColumnName("code");
+            entity.Property(e => e.LogoUrl)
+                .HasMaxLength(255)
+                .HasColumnName("logoUrl");
+            entity.Property(e => e.Name)
+                .HasMaxLength(200)
+                .HasColumnName("name");
+            entity.Property(e => e.ShortName)
+                .HasMaxLength(100)
+                .HasColumnName("shortName");
+        });
+
 
         OnModelCreatingPartial(modelBuilder);
     }
