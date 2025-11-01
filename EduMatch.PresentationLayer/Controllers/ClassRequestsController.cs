@@ -50,6 +50,11 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
 
+        /// <summary>
+        /// Lấy ra thông tin chi tiết yêu cầu tạo lớp đó theo id
+        /// </summary>
+        /// <param name="id"> Id của ClassRequest</param>
+        /// <returns></returns>
         [Authorize]
         [HttpGet("{id}", Name = "GetById")]
         public async Task<IActionResult> GetByIdAsync(int id)
@@ -61,6 +66,11 @@ namespace EduMatch.PresentationLayer.Controllers
             return Ok(request);
         }
 
+
+        /// <summary>
+        /// Lấy ra các yêu cầu tạo lớp với trạng thái là Pending cho Business Admin để BA duyệt/tự chối
+        /// </summary>
+        /// <returns></returns>
         [Authorize(Roles = "Business Admin")]
         [HttpGet("ListPending")]
         public async Task<IActionResult> GetPendingClassRequestsAsync()
@@ -95,7 +105,10 @@ namespace EduMatch.PresentationLayer.Controllers
 
         }
 
-
+        /// <summary>
+        /// Lấy ra các yêu cầu tạo lớp của Learner với Status = "Pending"
+        /// </summary>
+        /// <returns></returns>
         [Authorize(Roles = "Learner")]
         [HttpGet("ListPendingByLearnerEmail")]
         public async Task<IActionResult> GetPendingClassRequestsByLearnerEmailAsync()
@@ -143,6 +156,12 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
+
+        /// <summary>
+        /// Nếu yêu cầu tạo lớp đó chưa được BA duyệt (tức là trạng thái của yêu cầu đó đang là "Pending" -> thì xóa cứng luôn
+        /// </summary>
+        /// <param name="id"> id của class request</param>
+        /// <returns></returns>
         [Authorize(Roles = "Learner")]
         [HttpDelete("Delete/{id}")]
         public async Task<IActionResult> DeleteClassRequestAsync(int id)
@@ -163,6 +182,12 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
+        /// <summary>
+        /// Business Admin duyệt (true) hoặc từ chối (false) yêu cầu tạo lớp từ người học (Nếu từ chối thì phải ghi thêm lý do từ chối)
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="dto"></param>
+        /// <returns></returns>
         [Authorize(Roles = "Business Admin")]
         [HttpPut("ApproveOrReject/{id}")]
         public async Task<IActionResult> ApproveOrRejectClassRequestAsync(int id, [FromBody] IsApprovedClassRequestDto dto)
@@ -202,6 +227,10 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
+        /// <summary>
+        /// Lấy ra các yêu cầu tạo lớp của Learner với Status = "Open"
+        /// </summary>
+        /// <returns></returns>
         [Authorize(Roles = "Learner")]
         [HttpGet("ListOpenByLearnerEmail")]
         public async Task<IActionResult> GetOpenClassRequestsByLearnerEmailAsync()
@@ -222,6 +251,10 @@ namespace EduMatch.PresentationLayer.Controllers
 
         }
 
+        /// <summary>
+        /// Lấy ra các yêu cầu tạo lớp của Learner với Status = "Expired" -> yêu cầu tạo lớp đó đã quá hạn (hạn là 14 ngày kể từ ngày BA duyệt)
+        /// </summary>
+        /// <returns></returns>
         [Authorize(Roles = "Learner")]
         [HttpGet("ListExpiredByLearnerEmail")]
         public async Task<IActionResult> GetExpiredClassRequestsByLearnerEmailAsync()
@@ -242,6 +275,10 @@ namespace EduMatch.PresentationLayer.Controllers
 
         }
 
+        /// <summary>
+        /// Lấy ra các yêu cầu tạo lớp của Learner với Status = "Rejected" -> các yêu cầu đã bị BA từ chối
+        /// </summary>
+        /// <returns></returns>
         [Authorize(Roles = "Learner")]
         [HttpGet("ListRejectedByLearnerEmail")]
         public async Task<IActionResult> GetRejectedClassRequestsByLearnerEmailAsync()
@@ -281,6 +318,10 @@ namespace EduMatch.PresentationLayer.Controllers
             catch (Exception ex) { return StatusCode(500, new { message = ex.Message }); }
         }
 
+        /// <summary>
+        /// Lấy ra các yêu cầu tạo lớp của Learner với Status = "Canceled" -> các yêu cầu tạo lớp đã hủy bởi learner
+        /// </summary>
+        /// <returns></returns>
         [Authorize(Roles = "Learner")]
         [HttpGet("ListCanceledByLearnerEmail")]
         public async Task<IActionResult> GetCanceledClassRequestsByLearnerEmailAsync()

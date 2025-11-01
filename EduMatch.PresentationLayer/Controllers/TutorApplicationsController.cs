@@ -48,7 +48,7 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
         /// <summary>
-        /// Lấy ra các gia sư đã ứng tuyển theo từng class request
+        /// Lấy ra các gia sư đang ứng tuyển theo từng class request
         /// </summary>
         /// <param name="classRequestId"></param>
         /// <returns></returns>
@@ -87,7 +87,7 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
         /// <summary>
-        /// Lấy ra các ứng tuyển đã hủy bởi tutor (Status = 1)
+        /// Lấy ra các ứng tuyển đã hủy bởi tutor (Status = 1 -> Đã hủy)
         /// </summary>
         /// <returns></returns>
         [HttpGet("tutor/canceled")]
@@ -153,10 +153,6 @@ namespace EduMatch.PresentationLayer.Controllers
             catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
             catch (Exception ex) { return StatusCode(500, new { message = ex.Message }); }
         }
-
-
-
-
 
 
     }
