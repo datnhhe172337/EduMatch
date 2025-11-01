@@ -17,8 +17,8 @@ namespace EduMatch.Tests;
 public class TutorProfileServiceTests
 {
 
-	private Mock<ITutorProfileRepository> _repositoryMock;
-	private Mock<ICloudMediaService> _cloudMediaMock;
+	private Mock<ITutorProfileRepository> _tutorProfileRepositoryMock;
+	private Mock<ICloudMediaService> _cloudMediaServiceMock;
 	private Mock<IUserService> _userServiceMock;
 	private Mock<IUserProfileService> _userProfileServiceMock;
 	private IMapper _mapper;
@@ -28,8 +28,8 @@ public class TutorProfileServiceTests
 	[SetUp]
 	public void Setup()
 	{
-		_repositoryMock = new Mock<ITutorProfileRepository>();
-		_cloudMediaMock = new Mock<ICloudMediaService>();
+		_tutorProfileRepositoryMock = new Mock<ITutorProfileRepository>();
+		_cloudMediaServiceMock = new Mock<ICloudMediaService>();
 		_userServiceMock = new Mock<IUserService>();
 		_userProfileServiceMock = new Mock<IUserProfileService>();
 
@@ -44,9 +44,9 @@ public class TutorProfileServiceTests
 
 
 		_service = new TutorProfileService(
-			_repositoryMock.Object,
+			_tutorProfileRepositoryMock.Object,
 			_mapper,
-			_cloudMediaMock.Object,
+			_cloudMediaServiceMock.Object,
 			_currentUserService,
 			_userServiceMock.Object,
 			_userProfileServiceMock.Object
@@ -64,7 +64,7 @@ public class TutorProfileServiceTests
 		var email = "abc@gmail.com";
 		var fakeTutor = FakeDataFactory.CreateFakeTutorProfile(email);
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.GetByEmailFullAsync(email))
 			.ReturnsAsync(fakeTutor);
 
@@ -84,7 +84,7 @@ public class TutorProfileServiceTests
 	{
 		var email = "nonexistent@gmail.com";
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.GetByEmailFullAsync(email))
 			.ReturnsAsync((TutorProfile?)null);
 
@@ -113,7 +113,7 @@ public class TutorProfileServiceTests
 		var fakeTutor = FakeDataFactory.CreateFakeTutorProfile(email);
 		fakeTutor.Id = id;
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.GetByIdFullAsync(id))
 			.ReturnsAsync(fakeTutor);
 
@@ -132,7 +132,7 @@ public class TutorProfileServiceTests
 	{
 		var id = 999;
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.GetByIdFullAsync(id))
 			.ReturnsAsync((TutorProfile?)null);
 
@@ -155,7 +155,7 @@ public class TutorProfileServiceTests
 		tutor2.Id = 2;
 		var fakeTutors = new List<TutorProfile> { tutor1, tutor2 };
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.GetAllFullAsync())
 			.ReturnsAsync(fakeTutors);
 
@@ -173,7 +173,7 @@ public class TutorProfileServiceTests
 	[Test]
 	public async Task CreateAsync_WhenValid_ReturnsCreatedDto()
 	{
-		var email = "abc@gmail.com";
+		var email = "abc@gmail.com"; // Must match _currentUserService.Email from Setup
 		var request = new TutorProfileCreateRequest
 		{
 			UserEmail = email,
@@ -191,14 +191,20 @@ public class TutorProfileServiceTests
 			Longitude = 105.8542m
 		};
 
-		_repositoryMock
+		// Service uses _currentUserService.Email, not request.UserEmail
+		_tutorProfileRepositoryMock
 			.Setup(r => r.GetByEmailFullAsync(email))
 			.ReturnsAsync((TutorProfile?)null);
 
-		_repositoryMock
+		TutorProfile? capturedEntity = null;
+		_tutorProfileRepositoryMock
 			.Setup(r => r.AddAsync(It.IsAny<TutorProfile>()))
 			.Returns(Task.CompletedTask)
-			.Callback<TutorProfile>(tp => tp.Id = 1);
+			.Callback<TutorProfile>(tp =>
+			{
+				tp.Id = 1;
+				capturedEntity = tp;
+			});
 
 		_userProfileServiceMock
 			.Setup(s => s.UpdateAsync(It.IsAny<UserProfileUpdateRequest>()))
@@ -209,6 +215,10 @@ public class TutorProfileServiceTests
 		Assert.That(result, Is.Not.Null);
 		Assert.That(result.UserEmail, Is.EqualTo(email));
 		Assert.That(result.Status, Is.EqualTo(TutorStatus.Pending));
+		Assert.That(result.Bio, Is.EqualTo("Test Bio"));
+		Assert.That(result.TeachingExp, Is.EqualTo("5 years"));
+		// Video URL is normalized to embed format
+		Assert.That(result.VideoIntroUrl, Is.EqualTo("https://www.youtube.com/embed/dQw4w9WgXcQ"));
 	}
 
 	/// <summary>
@@ -228,7 +238,7 @@ public class TutorProfileServiceTests
 
 		var existingProfile = FakeDataFactory.CreateFakeTutorProfile(email);
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.GetByEmailFullAsync(email))
 			.ReturnsAsync(existingProfile);
 
@@ -249,7 +259,7 @@ public class TutorProfileServiceTests
 			TeachingModes = TeachingMode.Online
 		};
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.GetByEmailFullAsync(email))
 			.ReturnsAsync((TutorProfile?)null);
 
@@ -277,11 +287,11 @@ public class TutorProfileServiceTests
 			TeachingModes = TeachingMode.Hybrid
 		};
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.GetByIdFullAsync(id))
 			.ReturnsAsync(existingProfile);
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.UpdateAsync(It.IsAny<TutorProfile>()))
 			.Returns(Task.CompletedTask);
 
@@ -310,7 +320,7 @@ public class TutorProfileServiceTests
 			TeachingModes = TeachingMode.Online
 		};
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.GetByIdFullAsync(id))
 			.ReturnsAsync((TutorProfile?)null);
 
@@ -337,11 +347,11 @@ public class TutorProfileServiceTests
 			Status = TutorStatus.Approved
 		};
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.GetByIdFullAsync(id))
 			.ReturnsAsync(existingProfile);
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.UpdateAsync(It.IsAny<TutorProfile>()))
 			.Returns(Task.CompletedTask);
 
@@ -375,7 +385,7 @@ public class TutorProfileServiceTests
 			Status = TutorStatus.Rejected
 		};
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.GetByIdFullAsync(id))
 			.ReturnsAsync(existingProfile);
 
@@ -390,13 +400,13 @@ public class TutorProfileServiceTests
 	{
 		var id = 1;
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.RemoveByIdAsync(id))
 			.Returns(Task.CompletedTask);
 
 		await _service.DeleteAsync(id);
 
-		_repositoryMock.Verify(r => r.RemoveByIdAsync(id), Times.Once);
+		_tutorProfileRepositoryMock.Verify(r => r.RemoveByIdAsync(id), Times.Once);
 	}
 
 	/// <summary>
@@ -412,11 +422,11 @@ public class TutorProfileServiceTests
 		existingProfile.Id = id;
 		existingProfile.Status = (int)TutorStatus.Pending;
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.GetByIdFullAsync(id))
 			.ReturnsAsync(existingProfile);
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.UpdateAsync(It.IsAny<TutorProfile>()))
 			.Returns(Task.CompletedTask);
 
@@ -437,7 +447,7 @@ public class TutorProfileServiceTests
 		var id = 999;
 		var verifiedBy = "admin@example.com";
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.GetByIdFullAsync(id))
 			.ReturnsAsync((TutorProfile?)null);
 
@@ -457,7 +467,7 @@ public class TutorProfileServiceTests
 		existingProfile.Id = id;
 		existingProfile.Status = (int)TutorStatus.Approved;
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.GetByIdFullAsync(id))
 			.ReturnsAsync(existingProfile);
 
@@ -476,7 +486,7 @@ public class TutorProfileServiceTests
 		existingProfile.Id = id;
 		existingProfile.Status = (int)TutorStatus.Pending;
 
-		_repositoryMock
+		_tutorProfileRepositoryMock
 			.Setup(r => r.GetByIdFullAsync(id))
 			.ReturnsAsync(existingProfile);
 

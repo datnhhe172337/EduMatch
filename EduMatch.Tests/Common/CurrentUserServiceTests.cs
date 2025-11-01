@@ -17,6 +17,6 @@ namespace EduMatch.Tests.Common
 			_email = email ?? string.Empty;
 		}
 
-		public new string Email => _email ?? string.Empty;
+		public override string Email => _email ?? string.Empty;
 	}
 }
