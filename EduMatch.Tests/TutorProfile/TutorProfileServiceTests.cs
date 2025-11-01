@@ -149,11 +149,11 @@ public class TutorProfileServiceTests
 	{
 		var email1 = "abc@gmail.com";
 		var email2 = "xyz@gmail.com";
-		var fakeTutors = new List<TutorProfile>
-		{
-			FakeDataFactory.CreateFakeTutorProfile(email1),
-			FakeDataFactory.CreateFakeTutorProfile(email2)
-		};
+		var tutor1 = FakeDataFactory.CreateFakeTutorProfile(email1);
+		tutor1.Id = 1;
+		var tutor2 = FakeDataFactory.CreateFakeTutorProfile(email2);
+		tutor2.Id = 2;
+		var fakeTutors = new List<TutorProfile> { tutor1, tutor2 };
 
 		_repositoryMock
 			.Setup(r => r.GetAllFullAsync())
