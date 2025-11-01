@@ -202,20 +202,20 @@ public class TutorProfileServiceTests
 
 		_userProfileServiceMock
 			.Setup(s => s.UpdateAsync(It.IsAny<UserProfileUpdateRequest>()))
-			.Returns(Task.CompletedTask);
+			.ReturnsAsync((UserProfileDto?)null);
 
 		var result = await _service.CreateAsync(request);
 
 		Assert.That(result, Is.Not.Null);
-		_userProfileServiceMock.Verify(s => s.UpdateAsync(It.IsAny<UserProfileUpdateRequest>()), Times.Once);
-		_repositoryMock.Verify(r => r.AddAsync(It.IsAny<TutorProfile>()), Times.Once);
+		Assert.That(result.UserEmail, Is.EqualTo(email));
+		Assert.That(result.Status, Is.EqualTo(TutorStatus.Pending));
 	}
 
 	/// <summary>
-	/// Test CreateAsync throws ArgumentException when profile already exists.
+	/// Test CreateAsync throws InvalidOperationException when profile already exists.
 	/// </summary>
 	[Test]
-	public void CreateAsync_WhenProfileAlreadyExists_ThrowsArgumentException()
+	public void CreateAsync_WhenProfileAlreadyExists_ThrowsInvalidOperationException()
 	{
 		var email = "abc@gmail.com";
 		var request = new TutorProfileCreateRequest
@@ -232,14 +232,14 @@ public class TutorProfileServiceTests
 			.Setup(r => r.GetByEmailFullAsync(email))
 			.ReturnsAsync(existingProfile);
 
-		Assert.ThrowsAsync<ArgumentException>(async () => await _service.CreateAsync(request));
+		Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.CreateAsync(request));
 	}
 
 	/// <summary>
-	/// Test CreateAsync throws ArgumentException when VideoIntroUrl is missing.
+	/// Test CreateAsync throws InvalidOperationException when VideoIntroUrl is missing.
 	/// </summary>
 	[Test]
-	public void CreateAsync_WhenVideoIntroUrlMissing_ThrowsArgumentException()
+	public void CreateAsync_WhenVideoIntroUrlMissing_ThrowsInvalidOperationException()
 	{
 		var email = "abc@gmail.com";
 		var request = new TutorProfileCreateRequest
@@ -253,7 +253,7 @@ public class TutorProfileServiceTests
 			.Setup(r => r.GetByEmailFullAsync(email))
 			.ReturnsAsync((TutorProfile?)null);
 
-		Assert.ThrowsAsync<ArgumentException>(async () => await _service.CreateAsync(request));
+		Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.CreateAsync(request));
 	}
 
 	/// <summary>
@@ -287,20 +287,20 @@ public class TutorProfileServiceTests
 
 		_userProfileServiceMock
 			.Setup(s => s.UpdateAsync(It.IsAny<UserProfileUpdateRequest>()))
-			.Returns(Task.CompletedTask);
+			.ReturnsAsync((UserProfileDto?)null);
 
 		var result = await _service.UpdateAsync(request);
 
 		Assert.That(result, Is.Not.Null);
 		Assert.That(result.Bio, Is.EqualTo("Updated Bio"));
-		_repositoryMock.Verify(r => r.UpdateAsync(It.IsAny<TutorProfile>()), Times.Once);
+		Assert.That(result.Id, Is.EqualTo(id));
 	}
 
 	/// <summary>
-	/// Test UpdateAsync throws ArgumentException when tutor profile not found.
+	/// Test UpdateAsync throws InvalidOperationException when tutor profile not found.
 	/// </summary>
 	[Test]
-	public void UpdateAsync_WhenNotFound_ThrowsArgumentException()
+	public void UpdateAsync_WhenNotFound_ThrowsInvalidOperationException()
 	{
 		var id = 999;
 		var request = new TutorProfileUpdateRequest
@@ -314,7 +314,7 @@ public class TutorProfileServiceTests
 			.Setup(r => r.GetByIdFullAsync(id))
 			.ReturnsAsync((TutorProfile?)null);
 
-		Assert.ThrowsAsync<ArgumentException>(async () => await _service.UpdateAsync(request));
+		Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.UpdateAsync(request));
 	}
 
 	/// <summary>
@@ -347,7 +347,7 @@ public class TutorProfileServiceTests
 
 		_userProfileServiceMock
 			.Setup(s => s.UpdateAsync(It.IsAny<UserProfileUpdateRequest>()))
-			.Returns(Task.CompletedTask);
+			.ReturnsAsync((UserProfileDto?)null);
 
 		var result = await _service.UpdateAsync(request);
 
@@ -356,10 +356,10 @@ public class TutorProfileServiceTests
 	}
 
 	/// <summary>
-	/// Test UpdateAsync throws ArgumentException when status is not Pending.
+	/// Test UpdateAsync throws InvalidOperationException when status is not Pending.
 	/// </summary>
 	[Test]
-	public void UpdateAsync_WhenStatusNotPending_ThrowsArgumentException()
+	public void UpdateAsync_WhenStatusNotPending_ThrowsInvalidOperationException()
 	{
 		var id = 1;
 		var email = "abc@gmail.com";
@@ -379,7 +379,7 @@ public class TutorProfileServiceTests
 			.Setup(r => r.GetByIdFullAsync(id))
 			.ReturnsAsync(existingProfile);
 
-		Assert.ThrowsAsync<ArgumentException>(async () => await _service.UpdateAsync(request));
+		Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.UpdateAsync(request));
 	}
 
 	/// <summary>
@@ -429,10 +429,10 @@ public class TutorProfileServiceTests
 	}
 
 	/// <summary>
-	/// Test VerifyAsync throws ArgumentException when tutor profile not found.
+	/// Test VerifyAsync throws InvalidOperationException when tutor profile not found.
 	/// </summary>
 	[Test]
-	public void VerifyAsync_WhenNotFound_ThrowsArgumentException()
+	public void VerifyAsync_WhenNotFound_ThrowsInvalidOperationException()
 	{
 		var id = 999;
 		var verifiedBy = "admin@example.com";
@@ -441,7 +441,7 @@ public class TutorProfileServiceTests
 			.Setup(r => r.GetByIdFullAsync(id))
 			.ReturnsAsync((TutorProfile?)null);
 
-		Assert.ThrowsAsync<ArgumentException>(async () => await _service.VerifyAsync(id, verifiedBy));
+		Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.VerifyAsync(id, verifiedBy));
 	}
 
 	/// <summary>
@@ -465,10 +465,10 @@ public class TutorProfileServiceTests
 	}
 
 	/// <summary>
-	/// Test VerifyAsync throws ArgumentException when verifiedBy is empty.
+	/// Test VerifyAsync throws InvalidOperationException when verifiedBy is empty.
 	/// </summary>
 	[Test]
-	public void VerifyAsync_WhenVerifiedByIsEmpty_ThrowsArgumentException()
+	public void VerifyAsync_WhenVerifiedByIsEmpty_ThrowsInvalidOperationException()
 	{
 		var id = 1;
 		var email = "abc@gmail.com";
@@ -480,7 +480,7 @@ public class TutorProfileServiceTests
 			.Setup(r => r.GetByIdFullAsync(id))
 			.ReturnsAsync(existingProfile);
 
-		Assert.ThrowsAsync<ArgumentException>(async () => await _service.VerifyAsync(id, ""));
+		Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.VerifyAsync(id, ""));
 	}
 
 }

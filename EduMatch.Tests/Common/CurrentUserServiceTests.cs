@@ -9,15 +9,14 @@ namespace EduMatch.Tests.Common
 {
 	public class CurrentUserServiceFake : CurrentUserService
 	{
+		private readonly string _email;
+
 		public CurrentUserServiceFake(string email)
 			: base(null!)
 		{
-			Email = email;
-			
+			_email = email ?? string.Empty;
 		}
 
-	
-		public  string Email { get; }
-
+		public new string Email => _email ?? string.Empty;
 	}
 }
