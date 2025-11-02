@@ -18,6 +18,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IBookingRepository _bookingRepository;
         private readonly ITutorSubjectRepository _tutorSubjectRepository;
         private readonly ISystemFeeRepository _systemFeeRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
         private readonly EduMatchContext _context;
 
@@ -25,12 +26,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             IBookingRepository bookingRepository,
             ITutorSubjectRepository tutorSubjectRepository,
             ISystemFeeRepository systemFeeRepository,
+            IUserRepository userRepository,
             IMapper mapper,
             EduMatchContext context)
         {
             _bookingRepository = bookingRepository;
             _tutorSubjectRepository = tutorSubjectRepository;
             _systemFeeRepository = systemFeeRepository;
+            _userRepository = userRepository;
             _mapper = mapper;
             _context = context;
         }
@@ -56,6 +59,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task<BookingDto> CreateAsync(BookingCreateRequest request)
         {
+            // Validate LearnerEmail exists
+            var learner = await _userRepository.GetUserByEmailAsync(request.LearnerEmail)
+                ?? throw new Exception("LearnerEmail không tồn tại trong hệ thống");
+
             // Validate TutorSubject exists and get HourlyRate
             var tutorSubject = await _tutorSubjectRepository.GetByIdFullAsync(request.TutorSubjectId)
                 ?? throw new Exception("TutorSubject không tồn tại");
@@ -80,9 +87,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             var baseAmount = unitPrice * totalSessions;
 
             // Calculate SystemFeeAmount
-            // Phí % = tính trên tổng đơn hàng (baseAmount)
-            // Phí cố định = tính một lần trên tổng đơn hàng
-            // TotalAmount giữ nguyên giá gốc (baseAmount), không cộng phí vào
+
             decimal systemFeeAmount = 0;
             if (activeSystemFee.Percentage.HasValue)
             {
@@ -95,7 +100,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 systemFeeAmount += activeSystemFee.FixedAmount.Value;
             }
 
-            // TotalAmount giữ nguyên giá gốc, không cộng phí
+            // TotalAmount giữ nguyên giá gốc
             var totalAmount = baseAmount;
 
             // Create Booking entity
@@ -126,28 +131,64 @@ namespace EduMatch.BusinessLogicLayer.Services
                 ?? throw new Exception("Booking không tồn tại");
 
             if (!string.IsNullOrWhiteSpace(request.LearnerEmail))
+            {
+                // Validate LearnerEmail exists
+                var learner = await _userRepository.GetUserByEmailAsync(request.LearnerEmail)
+                    ?? throw new Exception("LearnerEmail không tồn tại trong hệ thống");
                 entity.LearnerEmail = request.LearnerEmail;
+            }
 
             if (request.TutorSubjectId.HasValue)
             {
                 var tutorSubject = await _tutorSubjectRepository.GetByIdFullAsync(request.TutorSubjectId.Value)
                     ?? throw new Exception("TutorSubject không tồn tại");
                 entity.TutorSubjectId = request.TutorSubjectId.Value;
+                // Update UnitPrice if TutorSubject changes
+                if (tutorSubject.HourlyRate.HasValue && tutorSubject.HourlyRate.Value > 0)
+                {
+                    entity.UnitPrice = tutorSubject.HourlyRate.Value;
+                }
             }
 
+            // Recalculate if TotalSessions changes
             if (request.TotalSessions.HasValue && request.TotalSessions.Value > 0)
             {
                 entity.TotalSessions = request.TotalSessions.Value;
-                // Recalculate TotalAmount if TotalSessions changes
+                
+                // Recalculate baseAmount and SystemFeeAmount
                 var baseAmount = entity.UnitPrice * entity.TotalSessions;
-                entity.TotalAmount = baseAmount + entity.SystemFeeAmount;
+                
+                // Get current SystemFee to recalculate fee
+                var systemFee = await _systemFeeRepository.GetByIdAsync(entity.SystemFeeId)
+                    ?? throw new Exception("SystemFee không tồn tại");
+                
+                // Recalculate SystemFeeAmount
+                decimal systemFeeAmount = 0;
+                if (systemFee.Percentage.HasValue)
+                {
+                    systemFeeAmount += baseAmount * (systemFee.Percentage.Value / 100);
+                }
+                if (systemFee.FixedAmount.HasValue)
+                {
+                    systemFeeAmount += systemFee.FixedAmount.Value;
+                }
+                
+                entity.SystemFeeAmount = systemFeeAmount;
+                // TotalAmount giữ nguyên giá gốc, không cộng phí
+                entity.TotalAmount = baseAmount;
             }
 
             if (request.PaymentStatus.HasValue)
                 entity.PaymentStatus = (int)request.PaymentStatus.Value;
 
             if (request.RefundedAmount.HasValue)
+            {
+                if (request.RefundedAmount.Value < 0)
+                    throw new Exception("RefundedAmount không được âm");
+                if (request.RefundedAmount.Value > entity.TotalAmount)
+                    throw new Exception("RefundedAmount không được vượt quá TotalAmount");
                 entity.RefundedAmount = request.RefundedAmount.Value;
+            }
 
             if (request.Status.HasValue)
                 entity.Status = (int)request.Status.Value;
