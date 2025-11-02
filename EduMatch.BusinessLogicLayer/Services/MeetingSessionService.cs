@@ -7,9 +7,11 @@ using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests.GoogleMeeting;
 using EduMatch.BusinessLogicLayer.Requests.MeetingSession;
+using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
+using Microsoft.Extensions.Options;
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
@@ -19,6 +21,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IScheduleRepository _scheduleRepository;
         private readonly IGoogleTokenRepository _googleTokenRepository;
         private readonly IGoogleCalendarService _googleCalendarService;
+        private readonly GoogleCalendarSettings _googleCalendarSettings;
         private readonly IMapper _mapper;
 
         public MeetingSessionService(
@@ -26,12 +29,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             IScheduleRepository scheduleRepository,
             IGoogleTokenRepository googleTokenRepository,
             IGoogleCalendarService googleCalendarService,
+            IOptions<GoogleCalendarSettings> googleCalendarSettings,
             IMapper mapper)
         {
             _meetingSessionRepository = meetingSessionRepository;
             _scheduleRepository = scheduleRepository;
             _googleTokenRepository = googleTokenRepository;
             _googleCalendarService = googleCalendarService;
+            _googleCalendarSettings = googleCalendarSettings.Value;
             _mapper = mapper;
         }
 
@@ -67,9 +72,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (existingMeetingSession != null)
                 throw new Exception("Schedule này đã có MeetingSession");
 
+            // Get OrganizerEmail from settings
+            var organizerEmail = _googleCalendarSettings.SystemAccountEmail;
+            if (string.IsNullOrWhiteSpace(organizerEmail))
+                throw new Exception("SystemAccountEmail không được cấu hình");
+
             // Validate OrganizerEmail exists in GoogleToken
-            var googleToken = await _googleTokenRepository.GetByEmailAsync(request.OrganizerEmail)
-                ?? throw new Exception("OrganizerEmail không tồn tại trong hệ thống GoogleToken");
+            var googleToken = await _googleTokenRepository.GetByEmailAsync(organizerEmail)
+                ?? throw new Exception("SystemAccountEmail không tồn tại trong hệ thống GoogleToken");
 
             // Calculate StartTime and EndTime from TutorAvailability
             var availability = schedule.Availabiliti;
@@ -111,7 +121,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 Description = description,
                 StartTime = startTime,
                 EndTime = endTime,
-                AttendeeEmails = new List<string> { booking.LearnerEmail, tutorEmail, request.OrganizerEmail }
+                AttendeeEmails = new List<string> { booking.LearnerEmail, tutorEmail, organizerEmail }
             };
 
             // Create Google Calendar Event and get response
@@ -129,7 +139,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             var entity = new MeetingSession
             {
                 ScheduleId = request.ScheduleId,
-                OrganizerEmail = request.OrganizerEmail,
+                OrganizerEmail = organizerEmail,
                 MeetLink = meetLink,
                 MeetCode = meetCode,
                 EventId = eventId,
@@ -149,11 +159,22 @@ namespace EduMatch.BusinessLogicLayer.Services
             var entity = await _meetingSessionRepository.GetByIdAsync(request.Id)
                 ?? throw new Exception("MeetingSession không tồn tại");
 
+            var shouldUpdateGoogleEvent = false;
+            var newScheduleId = entity.ScheduleId;
+            var newStartTime = entity.StartTime;
+            var newEndTime = entity.EndTime;
+
             // Validate Schedule if being updated
             if (request.ScheduleId.HasValue)
             {
                 var schedule = await _scheduleRepository.GetByIdAsync(request.ScheduleId.Value)
                     ?? throw new Exception("Schedule không tồn tại");
+
+                if (schedule.Availabiliti == null)
+                    throw new Exception("Schedule không có TutorAvailability");
+
+                if (schedule.Availabiliti.Slot == null)
+                    throw new Exception("TutorAvailability không có TimeSlot");
 
                 // Schedule chưa có MeetingSession 
                 var existingMeetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(request.ScheduleId.Value);
@@ -161,18 +182,87 @@ namespace EduMatch.BusinessLogicLayer.Services
                     throw new Exception("Schedule này đã có MeetingSession khác");
 
                 entity.ScheduleId = request.ScheduleId.Value;
+                newScheduleId = request.ScheduleId.Value;
+
+                // Recalculate StartTime and EndTime from new Schedule
+                var availability = schedule.Availabiliti;
+                var slot = availability.Slot;
+                newStartTime = availability.StartDate.Date.Add(slot.StartTime.ToTimeSpan());
+                newEndTime = availability.StartDate.Date.Add(slot.EndTime.ToTimeSpan());
+
+                if (newStartTime >= newEndTime)
+                    throw new Exception("Thời gian slot không hợp lệ: StartTime phải nhỏ hơn EndTime");
+
+                entity.StartTime = newStartTime;
+                entity.EndTime = newEndTime;
+                shouldUpdateGoogleEvent = true;
             }
 
-            // Validate OrganizerEmail if being updated
-            if (!string.IsNullOrWhiteSpace(request.OrganizerEmail))
-            {
-                var googleToken = await _googleTokenRepository.GetByEmailAsync(request.OrganizerEmail)
-                    ?? throw new Exception("OrganizerEmail không tồn tại trong hệ thống GoogleToken");
-                entity.OrganizerEmail = request.OrganizerEmail;
-            }
-
+            // If MeetingType is Makeup, update Google Calendar Event
             if (request.MeetingType.HasValue)
+            {
                 entity.MeetingType = (int)request.MeetingType.Value;
+                
+                // If changing to Makeup or is already Makeup and Schedule changed, update Google Event
+                if (request.MeetingType.Value == MeetingType.Makeup)
+                {
+                    shouldUpdateGoogleEvent = true;
+                }
+            }
+
+            // Update Google Calendar Event if needed
+            if (shouldUpdateGoogleEvent && !string.IsNullOrEmpty(entity.EventId))
+            {
+                // Get schedule for building meeting request
+                var schedule = await _scheduleRepository.GetByIdAsync(newScheduleId)
+                    ?? throw new Exception("Schedule không tồn tại");
+
+                var booking = schedule.Booking ?? throw new Exception("Schedule không có Booking");
+                var tutorSubject = booking.TutorSubject ?? throw new Exception("Booking không có TutorSubject");
+                var tutor = tutorSubject.Tutor ?? throw new Exception("TutorSubject không có Tutor");
+                var subject = tutorSubject.Subject ?? throw new Exception("TutorSubject không có Subject");
+                var level = tutorSubject.Level ?? throw new Exception("TutorSubject không có Level");
+
+                var tutorEmail = tutor.UserEmail;
+                var subjectName = subject.SubjectName;
+                var levelName = level?.Name ?? "Tất cả cấp độ";
+
+                var summary = $"Buổi học {subjectName} - {levelName}";
+                if (entity.MeetingType == (int)MeetingType.Makeup)
+                {
+                    summary = $"[HỌC BÙ] {summary}";
+                }
+
+                var description = $"Buổi học EduMatch\n" +
+                                 $"Môn học: {subjectName}\n" +
+                                 $"Cấp độ: {levelName}\n" +
+                                 $"Học viên: {booking.LearnerEmail}\n" +
+                                 $"Gia sư: {tutorEmail}\n" +
+                                 $"Schedule ID: {schedule.Id}";
+
+                var organizerEmail = _googleCalendarSettings.SystemAccountEmail;
+                var meetingRequest = new CreateMeetingRequest
+                {
+                    Summary = summary,
+                    Description = description,
+                    StartTime = newStartTime,
+                    EndTime = newEndTime,
+                    AttendeeEmails = new List<string> { booking.LearnerEmail, tutorEmail, organizerEmail }
+                };
+
+                var googleEventResponse = await _googleCalendarService.UpdateEventAsync(entity.EventId, meetingRequest);
+                if (googleEventResponse != null)
+                {
+                    // Update MeetLink and MeetCode if changed
+                    var newMeetLink = googleEventResponse.HangoutLink ?? googleEventResponse.HtmlLink;
+                    if (!string.IsNullOrEmpty(newMeetLink))
+                        entity.MeetLink = newMeetLink;
+
+                    var newMeetCode = googleEventResponse.ConferenceData?.ConferenceId;
+                    if (!string.IsNullOrEmpty(newMeetCode))
+                        entity.MeetCode = newMeetCode;
+                }
+            }
 
             entity.UpdatedAt = DateTime.UtcNow;
 

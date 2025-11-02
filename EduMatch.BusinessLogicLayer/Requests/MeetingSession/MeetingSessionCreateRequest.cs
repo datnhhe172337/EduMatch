@@ -8,9 +8,5 @@ namespace EduMatch.BusinessLogicLayer.Requests.MeetingSession
     {
         [Required(ErrorMessage = "ScheduleId là bắt buộc")]
         public int ScheduleId { get; set; }
-
-        [Required(ErrorMessage = "OrganizerEmail là bắt buộc")]
-        [EmailAddress(ErrorMessage = "OrganizerEmail không đúng định dạng email")]
-        public string OrganizerEmail { get; set; } = null!;
     }
 }
