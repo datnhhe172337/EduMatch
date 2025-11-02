@@ -56,6 +56,14 @@ namespace EduMatch.DataAccessLayer.Repositories
             var schedule = await _context.Schedules.FindAsync(id);
             if (schedule != null)
             {
+                // Xóa MeetingSession trước (foreign key constraint)
+                var meetingSession = await _context.MeetingSessions
+                    .FirstOrDefaultAsync(ms => ms.ScheduleId == id);
+                if (meetingSession != null)
+                {
+                    _context.MeetingSessions.Remove(meetingSession);
+                }
+
                 _context.Schedules.Remove(schedule);
                 await _context.SaveChangesAsync();
             }

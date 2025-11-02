@@ -76,20 +76,27 @@ namespace EduMatch.BusinessLogicLayer.Services
                 .FirstOrDefaultAsync()
                 ?? throw new Exception("Không tìm thấy SystemFee đang hoạt động");
 
+            // Calculate base amount (tổng đơn hàng)
+            var baseAmount = unitPrice * totalSessions;
+
             // Calculate SystemFeeAmount
+            // Phí % = tính trên tổng đơn hàng (baseAmount)
+            // Phí cố định = tính một lần trên tổng đơn hàng
+            // TotalAmount giữ nguyên giá gốc (baseAmount), không cộng phí vào
             decimal systemFeeAmount = 0;
             if (activeSystemFee.Percentage.HasValue)
             {
-                var baseAmount = unitPrice * totalSessions;
-                systemFeeAmount = baseAmount * (activeSystemFee.Percentage.Value / 100);
+                // Phí % tính trên tổng đơn hàng
+                systemFeeAmount += baseAmount * (activeSystemFee.Percentage.Value / 100);
             }
-            else if (activeSystemFee.FixedAmount.HasValue)
+            if (activeSystemFee.FixedAmount.HasValue)
             {
-                systemFeeAmount = activeSystemFee.FixedAmount.Value;
+                // Phí cố định tính một lần trên tổng đơn hàng
+                systemFeeAmount += activeSystemFee.FixedAmount.Value;
             }
 
-            // Calculate TotalAmount
-            var totalAmount = (unitPrice * totalSessions) + systemFeeAmount;
+            // TotalAmount giữ nguyên giá gốc, không cộng phí
+            var totalAmount = baseAmount;
 
             // Create Booking entity
             var entity = new Booking
