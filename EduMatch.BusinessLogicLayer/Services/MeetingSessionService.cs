@@ -103,11 +103,16 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (startTime >= endTime)
                 throw new Exception("Thời gian slot không hợp lệ: StartTime phải nhỏ hơn EndTime");
 
+            // Calculate session number
+            var allSchedules = (await _scheduleRepository.GetAllByBookingIdOrderedAsync(booking.Id)).ToList();
+            var sessionNumber = allSchedules.FindIndex(s => s.Id == schedule.Id) + 1;
+            var totalSessions = booking.TotalSessions;
+
             // Build summary and description
             var subjectName = subject.SubjectName;
             var levelName = level?.Name ?? "Tất cả cấp độ";
-            var summary = $"Buổi học {subjectName} - {levelName}";
-            var description = $"Buổi học EduMatch\n" +
+            var summary = $"Buổi {sessionNumber}/{totalSessions} - {subjectName} - {levelName}";
+            var description = $"Buổi học EduMatch - Buổi {sessionNumber}/{totalSessions}\n" +
                              $"Môn học: {subjectName}\n" +
                              $"Cấp độ: {levelName}\n" +
                              $"Học viên: {booking.LearnerEmail}\n" +
@@ -163,6 +168,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             var newScheduleId = entity.ScheduleId;
             var newStartTime = entity.StartTime;
             var newEndTime = entity.EndTime;
+            var oldAvailabilityId = 0;
+
+            // Get current schedule to check old AvailabilitiId
+            var currentSchedule = await _scheduleRepository.GetByIdAsync(entity.ScheduleId);
+            if (currentSchedule != null)
+            {
+                oldAvailabilityId = currentSchedule.AvailabilitiId;
+            }
 
             // Validate Schedule if being updated
             if (request.ScheduleId.HasValue)
@@ -184,18 +197,23 @@ namespace EduMatch.BusinessLogicLayer.Services
                 entity.ScheduleId = request.ScheduleId.Value;
                 newScheduleId = request.ScheduleId.Value;
 
-                // Recalculate StartTime and EndTime from new Schedule
-                var availability = schedule.Availabiliti;
-                var slot = availability.Slot;
-                newStartTime = availability.StartDate.Date.Add(slot.StartTime.ToTimeSpan());
-                newEndTime = availability.StartDate.Date.Add(slot.EndTime.ToTimeSpan());
+                // Nếu AvailabilitiId thay đổi, tính lại StartTime và EndTime từ Availability mới
+                var newAvailabilityId = schedule.AvailabilitiId;
+                if (oldAvailabilityId != newAvailabilityId || oldAvailabilityId == 0)
+                {
+                    // Recalculate StartTime and EndTime from new Schedule's Availability
+                    var availability = schedule.Availabiliti;
+                    var slot = availability.Slot;
+                    newStartTime = availability.StartDate.Date.Add(slot.StartTime.ToTimeSpan());
+                    newEndTime = availability.StartDate.Date.Add(slot.EndTime.ToTimeSpan());
 
-                if (newStartTime >= newEndTime)
-                    throw new Exception("Thời gian slot không hợp lệ: StartTime phải nhỏ hơn EndTime");
+                    if (newStartTime >= newEndTime)
+                        throw new Exception("Thời gian slot không hợp lệ: StartTime phải nhỏ hơn EndTime");
 
-                entity.StartTime = newStartTime;
-                entity.EndTime = newEndTime;
-                shouldUpdateGoogleEvent = true;
+                    entity.StartTime = newStartTime;
+                    entity.EndTime = newEndTime;
+                    shouldUpdateGoogleEvent = true;
+                }
             }
 
             // If MeetingType is Makeup, update Google Calendar Event
@@ -227,13 +245,18 @@ namespace EduMatch.BusinessLogicLayer.Services
                 var subjectName = subject.SubjectName;
                 var levelName = level?.Name ?? "Tất cả cấp độ";
 
-                var summary = $"Buổi học {subjectName} - {levelName}";
+                // Calculate session number
+                var allSchedules = (await _scheduleRepository.GetAllByBookingIdOrderedAsync(booking.Id)).ToList();
+                var sessionNumber = allSchedules.FindIndex(s => s.Id == schedule.Id) + 1;
+                var totalSessions = booking.TotalSessions;
+
+                var summary = $"Buổi {sessionNumber}/{totalSessions} - {subjectName} - {levelName}";
                 if (entity.MeetingType == (int)MeetingType.Makeup)
                 {
                     summary = $"[HỌC BÙ] {summary}";
                 }
 
-                var description = $"Buổi học EduMatch\n" +
+                var description = $"Buổi học EduMatch - Buổi {sessionNumber}/{totalSessions}\n" +
                                  $"Môn học: {subjectName}\n" +
                                  $"Cấp độ: {levelName}\n" +
                                  $"Học viên: {booking.LearnerEmail}\n" +

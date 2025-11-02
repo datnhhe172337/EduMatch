@@ -53,6 +53,14 @@ namespace EduMatch.DataAccessLayer.Repositories
                         .ThenInclude(ts => ts.Level)
                 .FirstOrDefaultAsync(s => s.Id == id);
         }
+        public async Task<IEnumerable<Schedule>> GetAllByBookingIdOrderedAsync(int bookingId)
+        {
+            return await _context.Schedules
+                .Where(s => s.BookingId == bookingId)
+                .OrderBy(s => s.CreatedAt)
+                .ThenBy(s => s.Id)
+                .ToListAsync();
+        }
         public async Task CreateAsync(Schedule schedule)
         {
             await _context.Schedules.AddAsync(schedule);
