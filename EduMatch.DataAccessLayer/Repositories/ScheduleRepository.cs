@@ -14,14 +14,21 @@ namespace EduMatch.DataAccessLayer.Repositories
 
         public async Task<IEnumerable<Schedule>> GetAllByBookingIdAndStatusAsync(int bookingId, int? status, int page, int pageSize)
         {
-            var query = _context.Schedules.Where(s => s.BookingId == bookingId);
+            var query = _context.Schedules
+            .AsSplitQuery()
+            .Include(s => s.Availabiliti)
+            .Include(s => s.Booking)
+            .Where(s => s.BookingId == bookingId);
             if (status.HasValue)
                 query = query.Where(s => s.Status == status.Value);
             return await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
         }
         public async Task<int> CountByBookingIdAndStatusAsync(int bookingId, int? status)
         {
-            var query = _context.Schedules.Where(s => s.BookingId == bookingId);
+            var query = _context.Schedules.AsSplitQuery()
+            .Include(s => s.Availabiliti)
+            .Include(s => s.Booking)
+            .Where(s => s.BookingId == bookingId);
             if (status.HasValue)
                 query = query.Where(s => s.Status == status.Value);
             return await query.CountAsync();
