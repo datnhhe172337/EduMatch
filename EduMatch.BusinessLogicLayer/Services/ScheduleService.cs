@@ -66,7 +66,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             var booking = await _bookingRepository.GetByIdAsync(request.BookingId)
                 ?? throw new Exception("Booking không tồn tại");
 
-            // Validate 1-1 relationship: AvailabilitiId chưa được sử dụng
+            // AvailabilitiId chưa được sử dụng
             var existingSchedule = await _scheduleRepository.GetByAvailabilityIdAsync(request.AvailabilitiId);
             if (existingSchedule != null)
                 throw new Exception("TutorAvailability này đã được sử dụng cho một Schedule khác");

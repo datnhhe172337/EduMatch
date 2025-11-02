@@ -16,9 +16,9 @@ namespace EduMatch.DataAccessLayer.Repositories
         {
             return await _context.MeetingSessions.FirstOrDefaultAsync(ms => ms.Id == id);
         }
-        public async Task<IEnumerable<MeetingSession>> GetByScheduleIdAsync(int scheduleId)
+        public async Task<MeetingSession?> GetByScheduleIdAsync(int scheduleId)
         {
-            return await _context.MeetingSessions.Where(ms => ms.ScheduleId == scheduleId).ToListAsync();
+            return await _context.MeetingSessions.FirstOrDefaultAsync(ms => ms.ScheduleId == scheduleId);
         }
         public async Task CreateAsync(MeetingSession meetingSession)
         {

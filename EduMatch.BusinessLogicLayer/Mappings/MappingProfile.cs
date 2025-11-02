@@ -337,8 +337,8 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 			CreateMap<Schedule, ScheduleDto>()
 				.ForMember(dest => dest.Status,
 					opt => opt.MapFrom(src => (ScheduleStatus)src.Status))
-				.ForMember(dest => dest.MeetingSessions,
-					opt => opt.MapFrom(src => src.MeetingSessions));
+				.ForMember(dest => dest.MeetingSession,
+					opt => opt.MapFrom(src => src.MeetingSession));
 
 			// MeetingSession 
 			CreateMap<MeetingSession, MeetingSessionDto>()

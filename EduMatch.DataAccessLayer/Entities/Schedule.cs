@@ -27,5 +27,5 @@ public partial class Schedule
 
     public virtual Booking Booking { get; set; } = null!;
 
-    public virtual ICollection<MeetingSession> MeetingSessions { get; set; } = new List<MeetingSession>();
+    public virtual MeetingSession? MeetingSession { get; set; }
 }
