@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.Requests.GoogleMeeting;
 using EduMatch.BusinessLogicLayer.Requests.MeetingSession;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
@@ -15,17 +18,20 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IMeetingSessionRepository _meetingSessionRepository;
         private readonly IScheduleRepository _scheduleRepository;
         private readonly IGoogleTokenRepository _googleTokenRepository;
+        private readonly IGoogleCalendarService _googleCalendarService;
         private readonly IMapper _mapper;
 
         public MeetingSessionService(
             IMeetingSessionRepository meetingSessionRepository,
             IScheduleRepository scheduleRepository,
             IGoogleTokenRepository googleTokenRepository,
+            IGoogleCalendarService googleCalendarService,
             IMapper mapper)
         {
             _meetingSessionRepository = meetingSessionRepository;
             _scheduleRepository = scheduleRepository;
             _googleTokenRepository = googleTokenRepository;
+            _googleCalendarService = googleCalendarService;
             _mapper = mapper;
         }
 
@@ -43,11 +49,20 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task<MeetingSessionDto> CreateAsync(MeetingSessionCreateRequest request)
         {
-            // Validate Schedule exists
+            // Validate Schedule exists and load related data
             var schedule = await _scheduleRepository.GetByIdAsync(request.ScheduleId)
                 ?? throw new Exception("Schedule không tồn tại");
 
-            // Validate 1-1 relationship: Schedule chưa có MeetingSession
+            if (schedule.Availabiliti == null)
+                throw new Exception("Schedule không có TutorAvailability");
+
+            if (schedule.Availabiliti.Slot == null)
+                throw new Exception("TutorAvailability không có TimeSlot");
+
+            if (schedule.Booking == null)
+                throw new Exception("Schedule không có Booking");
+
+            //  Schedule chưa có MeetingSession
             var existingMeetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(request.ScheduleId);
             if (existingMeetingSession != null)
                 throw new Exception("Schedule này đã có MeetingSession");
@@ -56,9 +71,57 @@ namespace EduMatch.BusinessLogicLayer.Services
             var googleToken = await _googleTokenRepository.GetByEmailAsync(request.OrganizerEmail)
                 ?? throw new Exception("OrganizerEmail không tồn tại trong hệ thống GoogleToken");
 
+            // Calculate StartTime and EndTime from TutorAvailability
+            var availability = schedule.Availabiliti;
+            var slot = availability.Slot;
+            var booking = schedule.Booking;
+            var tutorSubject = booking.TutorSubject ?? throw new Exception("Booking không có TutorSubject");
+            var tutor = tutorSubject.Tutor ?? throw new Exception("TutorSubject không có Tutor");
+            var subject = tutorSubject.Subject ?? throw new Exception("TutorSubject không có Subject");
+            var level = tutorSubject.Level ?? throw new Exception("TutorSubject không có Level");
+
+            // Get Tutor email
+            var tutorEmail = tutor.UserEmail;
+
+            // StartTime = StartDate + Slot.StartTime
+            var startTime = availability.StartDate.Date.Add(slot.StartTime.ToTimeSpan());
+            
+            // EndTime = StartDate + Slot.EndTime
+            var endTime = availability.StartDate.Date.Add(slot.EndTime.ToTimeSpan());
+
             // Validate StartTime < EndTime
-            if (request.StartTime >= request.EndTime)
-                throw new Exception("StartTime phải nhỏ hơn EndTime");
+            if (startTime >= endTime)
+                throw new Exception("Thời gian slot không hợp lệ: StartTime phải nhỏ hơn EndTime");
+
+            // Build summary and description
+            var subjectName = subject.SubjectName;
+            var levelName = level?.Name ?? "Tất cả cấp độ";
+            var summary = $"Buổi học {subjectName} - {levelName}";
+            var description = $"Buổi học EduMatch\n" +
+                             $"Môn học: {subjectName}\n" +
+                             $"Cấp độ: {levelName}\n" +
+                             $"Học viên: {booking.LearnerEmail}\n" +
+                             $"Gia sư: {tutorEmail}\n" +
+                             $"Schedule ID: {schedule.Id}";
+
+            // Create Google Meeting request
+            var meetingRequest = new CreateMeetingRequest
+            {
+                Summary = summary,
+                Description = description,
+                StartTime = startTime,
+                EndTime = endTime,
+                AttendeeEmails = new List<string> { booking.LearnerEmail, tutorEmail, request.OrganizerEmail }
+            };
+
+            // Create Google Calendar Event and get response
+            var googleEventResponse = await _googleCalendarService.CreateEventAsync(meetingRequest)
+                ?? throw new Exception("Không thể tạo Google Calendar Event");
+
+            // Extract data from Google response
+            var meetLink = googleEventResponse.HangoutLink ?? googleEventResponse.HtmlLink;
+            var meetCode = googleEventResponse.ConferenceData?.ConferenceId;
+            var eventId = googleEventResponse.EventId;
 
             var now = DateTime.UtcNow;
 
@@ -67,11 +130,11 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 ScheduleId = request.ScheduleId,
                 OrganizerEmail = request.OrganizerEmail,
-                MeetLink = request.MeetLink,
-                MeetCode = request.MeetCode,
-                EventId = request.EventId,
-                StartTime = request.StartTime,
-                EndTime = request.EndTime,
+                MeetLink = meetLink,
+                MeetCode = meetCode,
+                EventId = eventId,
+                StartTime = startTime,
+                EndTime = endTime,
                 MeetingType = (int)MeetingType.Main, // Default là Main
                 CreatedAt = now,
                 UpdatedAt = null
@@ -92,7 +155,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 var schedule = await _scheduleRepository.GetByIdAsync(request.ScheduleId.Value)
                     ?? throw new Exception("Schedule không tồn tại");
 
-                // Validate 1-1 relationship: Schedule chưa có MeetingSession (trừ chính nó)
+                // Schedule chưa có MeetingSession 
                 var existingMeetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(request.ScheduleId.Value);
                 if (existingMeetingSession != null && existingMeetingSession.Id != request.Id)
                     throw new Exception("Schedule này đã có MeetingSession khác");
@@ -107,25 +170,6 @@ namespace EduMatch.BusinessLogicLayer.Services
                     ?? throw new Exception("OrganizerEmail không tồn tại trong hệ thống GoogleToken");
                 entity.OrganizerEmail = request.OrganizerEmail;
             }
-
-            if (!string.IsNullOrWhiteSpace(request.MeetLink))
-                entity.MeetLink = request.MeetLink;
-
-            if (request.MeetCode != null)
-                entity.MeetCode = request.MeetCode;
-
-            if (request.EventId != null)
-                entity.EventId = request.EventId;
-
-            if (request.StartTime.HasValue)
-                entity.StartTime = request.StartTime.Value;
-
-            if (request.EndTime.HasValue)
-                entity.EndTime = request.EndTime.Value;
-
-            // Validate StartTime < EndTime after update
-            if (entity.StartTime >= entity.EndTime)
-                throw new Exception("StartTime phải nhỏ hơn EndTime");
 
             if (request.MeetingType.HasValue)
                 entity.MeetingType = (int)request.MeetingType.Value;

@@ -39,7 +39,19 @@ namespace EduMatch.DataAccessLayer.Repositories
         }
         public async Task<Schedule?> GetByIdAsync(int id)
         {
-            return await _context.Schedules.FirstOrDefaultAsync(s => s.Id == id);
+            return await _context.Schedules
+                .Include(s => s.Availabiliti)
+                    .ThenInclude(a => a.Slot)
+                .Include(s => s.Booking)
+                    .ThenInclude(b => b.TutorSubject)
+                        .ThenInclude(ts => ts.Tutor)
+                .Include(s => s.Booking)
+                    .ThenInclude(b => b.TutorSubject)
+                        .ThenInclude(ts => ts.Subject)
+                .Include(s => s.Booking)
+                    .ThenInclude(b => b.TutorSubject)
+                        .ThenInclude(ts => ts.Level)
+                .FirstOrDefaultAsync(s => s.Id == id);
         }
         public async Task CreateAsync(Schedule schedule)
         {
