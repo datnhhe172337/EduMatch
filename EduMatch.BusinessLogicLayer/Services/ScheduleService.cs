@@ -101,7 +101,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 var availability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.AvailabilitiId.Value)
                     ?? throw new Exception("TutorAvailability không tồn tại");
 
-                // Validate 1-1 relationship: AvailabilitiId chưa được sử dụng (trừ chính nó)
+                //  AvailabilitiId chưa được sử dụng 
                 var existingSchedule = await _scheduleRepository.GetByAvailabilityIdAsync(request.AvailabilitiId.Value);
                 if (existingSchedule != null && existingSchedule.Id != request.Id)
                     throw new Exception("TutorAvailability này đã được sử dụng cho một Schedule khác");
@@ -138,6 +138,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             await _scheduleRepository.UpdateAsync(entity);
             return _mapper.Map<ScheduleDto>(entity);
+        }
+
+        public async Task DeleteAsync(int id)
+        {
+            await _scheduleRepository.DeleteAsync(id);
         }
     }
 }

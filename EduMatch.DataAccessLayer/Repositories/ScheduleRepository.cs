@@ -51,5 +51,14 @@ namespace EduMatch.DataAccessLayer.Repositories
             _context.Schedules.Update(schedule);
             await _context.SaveChangesAsync();
         }
+        public async Task DeleteAsync(int id)
+        {
+            var schedule = await _context.Schedules.FindAsync(id);
+            if (schedule != null)
+            {
+                _context.Schedules.Remove(schedule);
+                await _context.SaveChangesAsync();
+            }
+        }
     }
 }

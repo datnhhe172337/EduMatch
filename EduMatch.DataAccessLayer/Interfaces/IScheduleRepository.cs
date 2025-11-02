@@ -12,5 +12,6 @@ namespace EduMatch.DataAccessLayer.Interfaces
         Task<Schedule?> GetByIdAsync(int id);
         Task CreateAsync(Schedule schedule);
         Task UpdateAsync(Schedule schedule);
+        Task DeleteAsync(int id);
     }
 }
