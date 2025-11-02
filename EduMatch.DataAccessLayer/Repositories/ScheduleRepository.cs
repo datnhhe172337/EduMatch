@@ -33,14 +33,9 @@ namespace EduMatch.DataAccessLayer.Repositories
                 query = query.Where(s => s.Status == status.Value);
             return await query.CountAsync();
         }
-        public async Task<IEnumerable<Schedule>> GetByAvailabilityIdAsync(int availabilitiId, int page, int pageSize)
+        public async Task<Schedule?> GetByAvailabilityIdAsync(int availabilitiId)
         {
-            return await _context.Schedules.Where(s => s.AvailabilitiId == availabilitiId)
-                .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-        }
-        public async Task<int> CountByAvailabilityIdAsync(int availabilitiId)
-        {
-            return await _context.Schedules.CountAsync(s => s.AvailabilitiId == availabilitiId);
+            return await _context.Schedules.FirstOrDefaultAsync(s => s.AvailabilitiId == availabilitiId);
         }
         public async Task<Schedule?> GetByIdAsync(int id)
         {

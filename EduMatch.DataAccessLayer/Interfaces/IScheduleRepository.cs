@@ -8,8 +8,7 @@ namespace EduMatch.DataAccessLayer.Interfaces
     {
         Task<IEnumerable<Schedule>> GetAllByBookingIdAndStatusAsync(int bookingId, int? status, int page, int pageSize);
         Task<int> CountByBookingIdAndStatusAsync(int bookingId, int? status);
-        Task<IEnumerable<Schedule>> GetByAvailabilityIdAsync(int availabilitiId, int page, int pageSize);
-        Task<int> CountByAvailabilityIdAsync(int availabilitiId);
+        Task<Schedule?> GetByAvailabilityIdAsync(int availabilitiId);
         Task<Schedule?> GetByIdAsync(int id);
         Task CreateAsync(Schedule schedule);
         Task UpdateAsync(Schedule schedule);
