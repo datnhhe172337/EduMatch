@@ -17,17 +17,20 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IScheduleRepository _scheduleRepository;
         private readonly IBookingRepository _bookingRepository;
         private readonly ITutorAvailabilityRepository _tutorAvailabilityRepository;
+        private readonly IMeetingSessionRepository _meetingSessionRepository;
         private readonly IMapper _mapper;
 
         public ScheduleService(
             IScheduleRepository scheduleRepository,
             IBookingRepository bookingRepository,
             ITutorAvailabilityRepository tutorAvailabilityRepository,
+            IMeetingSessionRepository meetingSessionRepository,
             IMapper mapper)
         {
             _scheduleRepository = scheduleRepository;
             _bookingRepository = bookingRepository;
             _tutorAvailabilityRepository = tutorAvailabilityRepository;
+            _meetingSessionRepository = meetingSessionRepository;
             _mapper = mapper;
         }
 
@@ -95,16 +98,28 @@ namespace EduMatch.BusinessLogicLayer.Services
             var entity = await _scheduleRepository.GetByIdAsync(request.Id)
                 ?? throw new Exception("Schedule không tồn tại");
 
+            var oldAvailabilityId = entity.AvailabilitiId;
+            var availabilityIdChanged = false;
+
             // Validate TutorAvailability if being updated
             if (request.AvailabilitiId.HasValue)
             {
                 var availability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.AvailabilitiId.Value)
                     ?? throw new Exception("TutorAvailability không tồn tại");
 
+                if (availability.Slot == null)
+                    throw new Exception("TutorAvailability không có TimeSlot");
+
                 //  AvailabilitiId chưa được sử dụng 
                 var existingSchedule = await _scheduleRepository.GetByAvailabilityIdAsync(request.AvailabilitiId.Value);
                 if (existingSchedule != null && existingSchedule.Id != request.Id)
                     throw new Exception("TutorAvailability này đã được sử dụng cho một Schedule khác");
+
+                // Check if AvailabilitiId changed
+                if (oldAvailabilityId != request.AvailabilitiId.Value)
+                {
+                    availabilityIdChanged = true;
+                }
 
                 entity.AvailabilitiId = request.AvailabilitiId.Value;
             }
@@ -137,6 +152,36 @@ namespace EduMatch.BusinessLogicLayer.Services
             entity.UpdatedAt = DateTime.UtcNow;
 
             await _scheduleRepository.UpdateAsync(entity);
+
+            // If AvailabilitiId changed, update MeetingSession's StartTime and EndTime
+            if (availabilityIdChanged && request.AvailabilitiId.HasValue)
+            {
+                var meetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(entity.Id);
+                if (meetingSession != null)
+                {
+                    // Get updated schedule with new Availability
+                    var updatedSchedule = await _scheduleRepository.GetByIdAsync(entity.Id);
+                    if (updatedSchedule?.Availabiliti != null && updatedSchedule.Availabiliti.Slot != null)
+                    {
+                        var availability = updatedSchedule.Availabiliti;
+                        var slot = availability.Slot;
+                        
+                        // Calculate new StartTime and EndTime from new Availability
+                        var newStartTime = availability.StartDate.Date.Add(slot.StartTime.ToTimeSpan());
+                        var newEndTime = availability.StartDate.Date.Add(slot.EndTime.ToTimeSpan());
+
+                        if (newStartTime >= newEndTime)
+                            throw new Exception("Thời gian slot không hợp lệ: StartTime phải nhỏ hơn EndTime");
+
+                        meetingSession.StartTime = newStartTime;
+                        meetingSession.EndTime = newEndTime;
+                        meetingSession.UpdatedAt = DateTime.UtcNow;
+
+                        await _meetingSessionRepository.UpdateAsync(meetingSession);
+                    }
+                }
+            }
+
             return _mapper.Map<ScheduleDto>(entity);
         }
 

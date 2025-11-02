@@ -165,9 +165,6 @@ namespace EduMatch.BusinessLogicLayer.Services
                 ?? throw new Exception("MeetingSession không tồn tại");
 
             var shouldUpdateGoogleEvent = false;
-            var newScheduleId = entity.ScheduleId;
-            var newStartTime = entity.StartTime;
-            var newEndTime = entity.EndTime;
             var oldAvailabilityId = 0;
 
             // Get current schedule to check old AvailabilitiId
@@ -195,7 +192,6 @@ namespace EduMatch.BusinessLogicLayer.Services
                     throw new Exception("Schedule này đã có MeetingSession khác");
 
                 entity.ScheduleId = request.ScheduleId.Value;
-                newScheduleId = request.ScheduleId.Value;
 
                 // Nếu AvailabilitiId thay đổi, tính lại StartTime và EndTime từ Availability mới
                 var newAvailabilityId = schedule.AvailabilitiId;
@@ -204,8 +200,8 @@ namespace EduMatch.BusinessLogicLayer.Services
                     // Recalculate StartTime and EndTime from new Schedule's Availability
                     var availability = schedule.Availabiliti;
                     var slot = availability.Slot;
-                    newStartTime = availability.StartDate.Date.Add(slot.StartTime.ToTimeSpan());
-                    newEndTime = availability.StartDate.Date.Add(slot.EndTime.ToTimeSpan());
+                    var newStartTime = availability.StartDate.Date.Add(slot.StartTime.ToTimeSpan());
+                    var newEndTime = availability.StartDate.Date.Add(slot.EndTime.ToTimeSpan());
 
                     if (newStartTime >= newEndTime)
                         throw new Exception("Thời gian slot không hợp lệ: StartTime phải nhỏ hơn EndTime");
@@ -231,8 +227,8 @@ namespace EduMatch.BusinessLogicLayer.Services
             // Update Google Calendar Event if needed
             if (shouldUpdateGoogleEvent && !string.IsNullOrEmpty(entity.EventId))
             {
-                // Get schedule for building meeting request
-                var schedule = await _scheduleRepository.GetByIdAsync(newScheduleId)
+                // Get schedule for building meeting request (use entity.ScheduleId - already updated if changed)
+                var schedule = await _scheduleRepository.GetByIdAsync(entity.ScheduleId)
                     ?? throw new Exception("Schedule không tồn tại");
 
                 var booking = schedule.Booking ?? throw new Exception("Schedule không có Booking");
@@ -268,8 +264,8 @@ namespace EduMatch.BusinessLogicLayer.Services
                 {
                     Summary = summary,
                     Description = description,
-                    StartTime = newStartTime,
-                    EndTime = newEndTime,
+                    StartTime = entity.StartTime, // Use entity's StartTime (already updated if AvailabilitiId changed)
+                    EndTime = entity.EndTime,     // Use entity's EndTime (already updated if AvailabilitiId changed)
                     AttendeeEmails = new List<string> { booking.LearnerEmail, tutorEmail, organizerEmail }
                 };
 
