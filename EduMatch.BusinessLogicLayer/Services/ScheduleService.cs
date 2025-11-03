@@ -73,6 +73,10 @@ namespace EduMatch.BusinessLogicLayer.Services
             var availability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.AvailabilitiId)
                 ?? throw new Exception("TutorAvailability không tồn tại");
 
+            // Availability phải đang trống
+            if (availability.Status != (int)TutorAvailabilityStatus.Available)
+                throw new Exception("TutorAvailability không ở trạng thái Available");
+
             // Validate Booking exists
             var booking = await _bookingRepository.GetByIdAsync(request.BookingId)
                 ?? throw new Exception("Booking không tồn tại");
@@ -98,6 +102,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             };
 
             await _scheduleRepository.CreateAsync(entity);
+
+            // Đánh dấu availability đã được đặt
+            await _tutorAvailabilityService.UpdateStatusAsync(request.AvailabilitiId, TutorAvailabilityStatus.Booked);
             return _mapper.Map<ScheduleDto>(entity);
         }
 
@@ -127,6 +134,10 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (oldAvailabilityId != request.AvailabilitiId.Value)
                 {
                     availabilityIdChanged = true;
+
+                    // Availability mới phải đang trống
+                    if (availability.Status != (int)TutorAvailabilityStatus.Available)
+                        throw new Exception("TutorAvailability mới không ở trạng thái Available");
                 }
 
                 entity.AvailabilitiId = request.AvailabilitiId.Value;
@@ -164,7 +175,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             // Nếu AvailabilitiId thay đổi: cập nhật MeetingSession qua service (đẩy Google) và cập nhật trạng thái Availability
             if (availabilityIdChanged && request.AvailabilitiId.HasValue)
             {
-                // 1) Update MeetingSession theo Schedule hiện tại (MeetingSessionService sẽ gửi update lên Google và đồng bộ Start/End từ response)
+                // Update MeetingSession theo Schedule hiện tại (MeetingSessionService sẽ gửi update lên Google và đồng bộ Start/End từ response)
                 var meetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(entity.Id);
                 if (meetingSession != null)
                 {
@@ -175,7 +186,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                     });
                 }
 
-                // 2) Cập nhật trạng thái Availability: old -> Available, new -> Booked
+                // Cập nhật trạng thái Availability: old -> Available, new -> Booked
                 await _tutorAvailabilityService.UpdateStatusAsync(oldAvailabilityId, TutorAvailabilityStatus.Available);
                 await _tutorAvailabilityService.UpdateStatusAsync(request.AvailabilitiId.Value, TutorAvailabilityStatus.Booked);
             }
