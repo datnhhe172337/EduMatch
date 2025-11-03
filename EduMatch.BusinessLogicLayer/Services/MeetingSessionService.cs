@@ -255,15 +255,15 @@ namespace EduMatch.BusinessLogicLayer.Services
                 {
                     Summary = summary,
                     Description = description,
-                    StartTime = entity.StartTime, // Use entity's StartTime (already updated if AvailabilitiId changed)
-                    EndTime = entity.EndTime,     // Use entity's EndTime (already updated if AvailabilitiId changed)
+                    StartTime = entity.StartTime, //  already updated if AvailabilitiId changed
+                    EndTime = entity.EndTime,     //  already updated if AvailabilitiId changed
                     AttendeeEmails = new List<string> { booking.LearnerEmail, tutorEmail, organizerEmail }
                 };
 
                 var googleEventResponse = await _googleCalendarService.UpdateEventAsync(entity.EventId, meetingRequest);
                 if (googleEventResponse != null)
                 {
-                    // Đồng bộ Start/End từ Google (nếu có)
+                    // Đồng bộ Start/End từ Google
                     if (!string.IsNullOrEmpty(googleEventResponse.Start?.DateTime) && DateTime.TryParse(googleEventResponse.Start.DateTime, out var gStart))
                         entity.StartTime = gStart;
                     if (!string.IsNullOrEmpty(googleEventResponse.End?.DateTime) && DateTime.TryParse(googleEventResponse.End.DateTime, out var gEnd))
@@ -288,6 +288,22 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task DeleteAsync(int id)
         {
+            var entity = await _meetingSessionRepository.GetByIdAsync(id);
+            if (entity == null)
+                return;
+
+            if (!string.IsNullOrEmpty(entity.EventId))
+            {
+                try
+                {
+                    await _googleCalendarService.DeleteEventAsync(entity.EventId);
+                }
+                catch
+                {
+                    // Swallow to ensure local delete proceeds even if Google delete fails
+                }
+            }
+
             await _meetingSessionRepository.DeleteAsync(id);
         }
     }

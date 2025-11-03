@@ -196,6 +196,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task DeleteAsync(int id)
         {
+            // Xóa MeetingSession trước qua service (service sẽ xóa Google Event rồi xóa DB)
+            var meetingSessionDto = await _meetingSessionService.GetByScheduleIdAsync(id);
+            if (meetingSessionDto != null)
+                await _meetingSessionService.DeleteAsync(meetingSessionDto.Id);
+
             await _scheduleRepository.DeleteAsync(id);
         }
     }
