@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.BusinessLogicLayer.Services;
 using Microsoft.AspNetCore.Authorization;
+using EduMatch.BusinessLogicLayer.Constants;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -68,6 +69,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Tạo mới cơ sở giáo dục
 		/// </summary>
 		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Learner + "," + Roles.Tutor)]
 		[HttpPost("create-education-institution")]
 		[ProducesResponseType(typeof(ApiResponse<EducationInstitutionDto>), StatusCodes.Status201Created)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
