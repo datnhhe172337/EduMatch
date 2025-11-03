@@ -160,6 +160,18 @@ namespace EduMatch.BusinessLogicLayer.Services
             }
         }
 
+        // Cập nhật trạng thái availability (Booked/Available/InProgress/Cancelled)
+        public async Task<TutorAvailabilityDto> UpdateStatusAsync(int id, TutorAvailabilityStatus status)
+        {
+            var existingEntity = await _repository.GetByIdFullAsync(id)
+                ?? throw new ArgumentException($"Tutor availability with ID {id} not found");
+
+            existingEntity.Status = (int)status;
+            existingEntity.UpdatedAt = DateTime.UtcNow;
+            await _repository.UpdateAsync(existingEntity);
+            return _mapper.Map<TutorAvailabilityDto>(existingEntity);
+        }
+
        
         public async Task DeleteAsync(int id)
         {

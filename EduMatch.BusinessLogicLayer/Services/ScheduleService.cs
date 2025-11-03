@@ -6,6 +6,8 @@ using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests.Schedule;
+using EduMatch.BusinessLogicLayer.Requests.MeetingSession;
+using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
@@ -19,18 +21,24 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly ITutorAvailabilityRepository _tutorAvailabilityRepository;
         private readonly IMeetingSessionRepository _meetingSessionRepository;
         private readonly IMapper _mapper;
+        private readonly IMeetingSessionService _meetingSessionService;
+        private readonly ITutorAvailabilityService _tutorAvailabilityService;
 
         public ScheduleService(
             IScheduleRepository scheduleRepository,
             IBookingRepository bookingRepository,
             ITutorAvailabilityRepository tutorAvailabilityRepository,
             IMeetingSessionRepository meetingSessionRepository,
+            IMeetingSessionService meetingSessionService,
+            ITutorAvailabilityService tutorAvailabilityService,
             IMapper mapper)
         {
             _scheduleRepository = scheduleRepository;
             _bookingRepository = bookingRepository;
             _tutorAvailabilityRepository = tutorAvailabilityRepository;
             _meetingSessionRepository = meetingSessionRepository;
+            _meetingSessionService = meetingSessionService;
+            _tutorAvailabilityService = tutorAvailabilityService;
             _mapper = mapper;
         }
 
@@ -153,33 +161,23 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             await _scheduleRepository.UpdateAsync(entity);
 
-            // If AvailabilitiId changed, update MeetingSession's StartTime and EndTime
+            // Nếu AvailabilitiId thay đổi: cập nhật MeetingSession qua service (đẩy Google) và cập nhật trạng thái Availability
             if (availabilityIdChanged && request.AvailabilitiId.HasValue)
             {
+                // 1) Update MeetingSession theo Schedule hiện tại (MeetingSessionService sẽ gửi update lên Google và đồng bộ Start/End từ response)
                 var meetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(entity.Id);
                 if (meetingSession != null)
                 {
-                    // Get updated schedule with new Availability
-                    var updatedSchedule = await _scheduleRepository.GetByIdAsync(entity.Id);
-                    if (updatedSchedule?.Availabiliti != null && updatedSchedule.Availabiliti.Slot != null)
+                    await _meetingSessionService.UpdateAsync(new MeetingSessionUpdateRequest
                     {
-                        var availability = updatedSchedule.Availabiliti;
-                        var slot = availability.Slot;
-                        
-                        // Calculate new StartTime and EndTime from new Availability
-                        var newStartTime = availability.StartDate.Date.Add(slot.StartTime.ToTimeSpan());
-                        var newEndTime = availability.StartDate.Date.Add(slot.EndTime.ToTimeSpan());
-
-                        if (newStartTime >= newEndTime)
-                            throw new Exception("Thời gian slot không hợp lệ: StartTime phải nhỏ hơn EndTime");
-
-                        meetingSession.StartTime = newStartTime;
-                        meetingSession.EndTime = newEndTime;
-                        meetingSession.UpdatedAt = DateTime.UtcNow;
-
-                        await _meetingSessionRepository.UpdateAsync(meetingSession);
-                    }
+                        Id = meetingSession.Id,
+                        ScheduleId = entity.Id
+                    });
                 }
+
+                // 2) Cập nhật trạng thái Availability: old -> Available, new -> Booked
+                await _tutorAvailabilityService.UpdateStatusAsync(oldAvailabilityId, TutorAvailabilityStatus.Available);
+                await _tutorAvailabilityService.UpdateStatusAsync(request.AvailabilitiId.Value, TutorAvailabilityStatus.Booked);
             }
 
             return _mapper.Map<ScheduleDto>(entity);
