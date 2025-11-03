@@ -138,6 +138,12 @@ namespace EduMatch.BusinessLogicLayer.Services
             var meetCode = googleEventResponse.ConferenceData?.ConferenceId;
             var eventId = googleEventResponse.EventId;
 
+            // Đồng bộ Start/End từ Google 
+            if (!string.IsNullOrEmpty(googleEventResponse.Start?.DateTime) && DateTime.TryParse(googleEventResponse.Start.DateTime, out var gStart))
+                startTime = gStart;
+            if (!string.IsNullOrEmpty(googleEventResponse.End?.DateTime) && DateTime.TryParse(googleEventResponse.End.DateTime, out var gEnd))
+                endTime = gEnd;
+
             var now = DateTime.UtcNow;
 
             // Create MeetingSession entity
@@ -166,20 +172,13 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             var shouldUpdateGoogleEvent = false;
 
-            // Khi request có ScheduleId, luôn tính lại StartTime/EndTime từ Schedule đó
+            // 1-1: Không cho phép đổi ScheduleId của MeetingSession; chỉ tính lại thời gian từ Schedule hiện tại
             if (request.ScheduleId.HasValue)
             {
-                var scheduleIdToUse = request.ScheduleId.Value;
+                if (request.ScheduleId.Value != entity.ScheduleId)
+                    throw new Exception("Không thể thay đổi ScheduleId của MeetingSession");
 
-                // Nếu đổi sang Schedule khác, kiểm tra Schedule đó chưa có MeetingSession khác
-                if (scheduleIdToUse != entity.ScheduleId)
-                {
-                    var existingMeetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(scheduleIdToUse);
-                    if (existingMeetingSession != null && existingMeetingSession.Id != request.Id)
-                        throw new Exception("Schedule này đã có MeetingSession khác");
-                }
-
-                var schedule = await _scheduleRepository.GetByIdAsync(scheduleIdToUse)
+                var schedule = await _scheduleRepository.GetByIdAsync(entity.ScheduleId)
                     ?? throw new Exception("Schedule không tồn tại");
 
                 if (schedule.Availabiliti == null)
@@ -188,7 +187,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (schedule.Availabiliti.Slot == null)
                     throw new Exception("TutorAvailability không có TimeSlot");
 
-                // Tính lại StartTime/EndTime từ Availability/Slot
+                // Tính lại StartTime/EndTime từ Availability/Slot hiện tại của Schedule
                 var availability = schedule.Availabiliti;
                 var slot = availability.Slot;
                 var newStartTime = availability.StartDate.Date.Add(slot.StartTime.ToTimeSpan());
@@ -197,17 +196,11 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (newStartTime >= newEndTime)
                     throw new Exception("Thời gian slot không hợp lệ: StartTime phải nhỏ hơn EndTime");
 
-                // Cập nhật ScheduleId nếu khác
-                if (scheduleIdToUse != entity.ScheduleId)
-                    entity.ScheduleId = scheduleIdToUse;
-
-                // Chỉ đánh dấu cần update Google khi thời gian thực sự thay đổi
-                if (entity.StartTime != newStartTime || entity.EndTime != newEndTime)
-                {
-                    entity.StartTime = newStartTime;
-                    entity.EndTime = newEndTime;
-                    shouldUpdateGoogleEvent = true;
-                }
+                // Luôn cập nhật Google Event theo thời gian từ Schedule
+                // Thời gian của MeetingSession sẽ lấy từ response của Google sau khi update thành công
+                entity.StartTime = newStartTime;
+                entity.EndTime = newEndTime;
+                shouldUpdateGoogleEvent = true;
             }
 
             // If MeetingType is Makeup, update Google Calendar Event
@@ -270,7 +263,13 @@ namespace EduMatch.BusinessLogicLayer.Services
                 var googleEventResponse = await _googleCalendarService.UpdateEventAsync(entity.EventId, meetingRequest);
                 if (googleEventResponse != null)
                 {
-                    // Update MeetLink and MeetCode if changed
+                    // Đồng bộ Start/End từ Google (nếu có)
+                    if (!string.IsNullOrEmpty(googleEventResponse.Start?.DateTime) && DateTime.TryParse(googleEventResponse.Start.DateTime, out var gStart))
+                        entity.StartTime = gStart;
+                    if (!string.IsNullOrEmpty(googleEventResponse.End?.DateTime) && DateTime.TryParse(googleEventResponse.End.DateTime, out var gEnd))
+                        entity.EndTime = gEnd;
+
+                    // Update MeetLink và MeetCode nếu có thay đổi
                     var newMeetLink = googleEventResponse.HangoutLink ?? googleEventResponse.HtmlLink;
                     if (!string.IsNullOrEmpty(newMeetLink))
                         entity.MeetLink = newMeetLink;
