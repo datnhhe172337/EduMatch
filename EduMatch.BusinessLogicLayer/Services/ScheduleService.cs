@@ -203,6 +203,30 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             await _scheduleRepository.DeleteAsync(id);
         }
+
+        // Hủy toàn bộ schedule theo bookingId: set Status=Cancelled, xóa MeetingSession (cùng Google), trả Availability về Available; trả về danh sách đã hủy
+        public async Task<List<ScheduleDto>> CancelAllByBookingAsync(int bookingId)
+        {
+            var schedules = (await _scheduleRepository.GetAllByBookingIdOrderedAsync(bookingId)).ToList();
+            var updated = new List<Schedule>();
+            foreach (var schedule in schedules)
+            {
+                // Delete meeting session first (includes Google event deletion)
+                var ms = await _meetingSessionService.GetByScheduleIdAsync(schedule.Id);
+                if (ms != null)
+                    await _meetingSessionService.DeleteAsync(ms.Id);
+
+                // Mark schedule as cancelled
+                schedule.Status = (int)ScheduleStatus.Cancelled;
+                schedule.UpdatedAt = DateTime.UtcNow;
+                await _scheduleRepository.UpdateAsync(schedule);
+                updated.Add(schedule);
+
+                // Return availability to Available
+                await _tutorAvailabilityService.UpdateStatusAsync(schedule.AvailabilitiId, TutorAvailabilityStatus.Available);
+            }
+            return _mapper.Map<List<ScheduleDto>>(updated);
+        }
     }
 }
 

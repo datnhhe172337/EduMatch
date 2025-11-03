@@ -14,5 +14,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task<ScheduleDto> CreateAsync(ScheduleCreateRequest request);
         Task<ScheduleDto> UpdateAsync(ScheduleUpdateRequest request);
         Task DeleteAsync(int id);
+        Task<List<ScheduleDto>> CancelAllByBookingAsync(int bookingId);
     }
 }

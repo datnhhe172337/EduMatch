@@ -300,7 +300,8 @@ namespace EduMatch.BusinessLogicLayer.Services
                 }
                 catch
                 {
-                    // Swallow to ensure local delete proceeds even if Google delete fails
+                    // Rethrow to ensure caller knows Google deletion failed
+                    throw;
                 }
             }
 
