@@ -166,10 +166,20 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             var shouldUpdateGoogleEvent = false;
 
-            // Validate Schedule if being updated (chuyển ngày học)
-            if (request.ScheduleId.HasValue && request.ScheduleId.Value != entity.ScheduleId)
+            // Khi request có ScheduleId, luôn tính lại StartTime/EndTime từ Schedule đó
+            if (request.ScheduleId.HasValue)
             {
-                var schedule = await _scheduleRepository.GetByIdAsync(request.ScheduleId.Value)
+                var scheduleIdToUse = request.ScheduleId.Value;
+
+                // Nếu đổi sang Schedule khác, kiểm tra Schedule đó chưa có MeetingSession khác
+                if (scheduleIdToUse != entity.ScheduleId)
+                {
+                    var existingMeetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(scheduleIdToUse);
+                    if (existingMeetingSession != null && existingMeetingSession.Id != request.Id)
+                        throw new Exception("Schedule này đã có MeetingSession khác");
+                }
+
+                var schedule = await _scheduleRepository.GetByIdAsync(scheduleIdToUse)
                     ?? throw new Exception("Schedule không tồn tại");
 
                 if (schedule.Availabiliti == null)
@@ -178,14 +188,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (schedule.Availabiliti.Slot == null)
                     throw new Exception("TutorAvailability không có TimeSlot");
 
-                // Schedule chưa có MeetingSession 
-                var existingMeetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(request.ScheduleId.Value);
-                if (existingMeetingSession != null && existingMeetingSession.Id != request.Id)
-                    throw new Exception("Schedule này đã có MeetingSession khác");
-
-                entity.ScheduleId = request.ScheduleId.Value;
-
-                // Tính lại StartTime và EndTime từ Schedule mới (chuyển ngày học)
+                // Tính lại StartTime/EndTime từ Availability/Slot
                 var availability = schedule.Availabiliti;
                 var slot = availability.Slot;
                 var newStartTime = availability.StartDate.Date.Add(slot.StartTime.ToTimeSpan());
@@ -194,9 +197,17 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (newStartTime >= newEndTime)
                     throw new Exception("Thời gian slot không hợp lệ: StartTime phải nhỏ hơn EndTime");
 
-                entity.StartTime = newStartTime;
-                entity.EndTime = newEndTime;
-                shouldUpdateGoogleEvent = true; // Update Google Event khi chuyển ngày học
+                // Cập nhật ScheduleId nếu khác
+                if (scheduleIdToUse != entity.ScheduleId)
+                    entity.ScheduleId = scheduleIdToUse;
+
+                // Chỉ đánh dấu cần update Google khi thời gian thực sự thay đổi
+                if (entity.StartTime != newStartTime || entity.EndTime != newEndTime)
+                {
+                    entity.StartTime = newStartTime;
+                    entity.EndTime = newEndTime;
+                    shouldUpdateGoogleEvent = true;
+                }
             }
 
             // If MeetingType is Makeup, update Google Calendar Event
