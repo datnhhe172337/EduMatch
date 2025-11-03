@@ -41,5 +41,18 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             return _mapper.Map<WalletDto>(wallet);
         }
+
+        public async Task<IEnumerable<WalletTransactionDto>> GetTransactionHistoryAsync(string userEmail)
+        {
+            var wallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(userEmail);
+            if (wallet == null)
+            {
+                return Enumerable.Empty<WalletTransactionDto>();
+            }
+
+            var transactions = await _unitOfWork.WalletTransactions.GetTransactionsByWalletIdAsync(wallet.Id);
+
+            return _mapper.Map<IEnumerable<WalletTransactionDto>>(transactions);
+        }
     }
 }

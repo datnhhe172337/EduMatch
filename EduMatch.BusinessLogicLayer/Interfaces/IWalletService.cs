@@ -11,5 +11,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
     public interface IWalletService
     {
         Task<WalletDto?> GetOrCreateWalletForUserAsync(string userEmail);
+        Task<IEnumerable<WalletTransactionDto>> GetTransactionHistoryAsync(string userEmail);
     }
 }

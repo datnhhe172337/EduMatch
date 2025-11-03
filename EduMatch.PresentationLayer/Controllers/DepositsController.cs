@@ -62,7 +62,7 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
         [HttpPost("admin/cleanup-expired")]
-        [Authorize(Roles = "Admin")] 
+        [Authorize(Roles = "3")] 
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CleanupExpiredDeposits()

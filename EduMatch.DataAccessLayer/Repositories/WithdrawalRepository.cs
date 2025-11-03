@@ -34,5 +34,32 @@ namespace EduMatch.DataAccessLayer.Repositories
         {
             _dbSet.Update(entity);
         }
+        public async Task<IEnumerable<Withdrawal>> GetWithdrawalsByUserEmailAsync(string userEmail)
+        {
+            return await _dbSet
+                .Include(w => w.Wallet)
+                .Include(w => w.UserBankAccount)
+                .ThenInclude(uba => uba.Bank)
+                .Where(w => w.Wallet.UserEmail == userEmail)
+                .OrderByDescending(w => w.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Withdrawal>> GetPendingWithdrawalsAsync()
+        {
+            return await _dbSet
+                .Include(w => w.Wallet) 
+                .Include(w => w.UserBankAccount) 
+                .ThenInclude(uba => uba.Bank)
+                .Where(w => w.Status == Enum.WithdrawalStatus.Pending)
+                .OrderBy(w => w.CreatedAt) 
+                .ToListAsync();
+        }
+        public async Task<Withdrawal?> GetWithdrawalByIdAsync(int id)
+        {
+            return await _dbSet
+                .Include(w => w.Wallet) // Include wallet
+                .FirstOrDefaultAsync(w => w.Id == id);
+        }
     }
 }

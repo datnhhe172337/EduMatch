@@ -21,7 +21,6 @@ namespace EduMatch.PresentationLayer.Configurations
             //// Mail Settings
             services.Configure<MailSettings>(configuration.GetSection("MailSettings"));
 
-            services.Configure<PayosSettings>(configuration.GetSection("PayosSettings"));
             services.Configure<VnpaySettings>(configuration.GetSection("VnpaySettings"));
 
             // AutoMapper
@@ -90,24 +89,6 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IVnpayService, VnpayService>();
             services.AddScoped<IWithdrawalService, WithdrawalService>();
 
-            services.AddSingleton(sp =>
-            {
-                var settings = sp.GetRequiredService<IOptions<PayosSettings>>().Value;
-                Console.WriteLine($"[PayOS DEBUG] ClientId={settings.ClientId}, ApiKey={settings.ApiKey}, ChecksumKey={settings.ChecksumKey}");
-                if (settings == null ||
-                    string.IsNullOrEmpty(settings.ClientId) ||
-                    string.IsNullOrEmpty(settings.ApiKey) ||
-                    string.IsNullOrEmpty(settings.ChecksumKey))
-                {
-                    throw new InvalidOperationException("PayOS settings are missing or incomplete.");
-                }
-
-                return new PayOSClient(
-                    settings.ClientId,
-                    settings.ApiKey,
-                    settings.ChecksumKey
-                );
-            });
             // Bind "CloudinarySettings" 
             services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
 

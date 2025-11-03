@@ -10,5 +10,10 @@ namespace EduMatch.DataAccessLayer.Interfaces
     public interface IWalletTransactionRepository
     {
         Task AddAsync(WalletTransaction entity);
+
+        Task<IEnumerable<WalletTransaction>> GetTransactionsByWalletIdAsync(int walletId);
+
+        Task<WalletTransaction?> GetPendingWithdrawalTransactionAsync(int withdrawalId);
+        void Update(WalletTransaction entity);
     }
 }

@@ -13,5 +13,10 @@ namespace EduMatch.DataAccessLayer.Interfaces
 
         Task<Withdrawal?> GetByIdAsync(int id);
         void Update(Withdrawal entity);
+        Task<IEnumerable<Withdrawal>> GetWithdrawalsByUserEmailAsync(string userEmail);
+
+        Task<IEnumerable<Withdrawal>> GetPendingWithdrawalsAsync();
+        Task<Withdrawal?> GetWithdrawalByIdAsync(int id);
+        
     }
 }

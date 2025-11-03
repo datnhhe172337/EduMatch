@@ -29,8 +29,6 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .ToListAsync();
         }
 
-        // --- NEW METHODS ---
-
         public async Task<UserBankAccount?> GetByIdAsync(int id)
         {
             return await _dbSet.FindAsync(id);
