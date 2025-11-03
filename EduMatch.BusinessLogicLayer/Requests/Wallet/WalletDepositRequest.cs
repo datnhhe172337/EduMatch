@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.Requests.Wallet
 {
-    public class CreateDepositRequest
+    public class WalletDepositRequest
     {
         [Required]
-        [Range(10000, 10000000, ErrorMessage = "Amount must be between 10,000 and 10,000,000 VND")]
+        [Range(50000, 5000000, ErrorMessage = "Amount must be between 5,000 and 10,000,000 VND")]
         public int Amount { get; set; }
     }
 }

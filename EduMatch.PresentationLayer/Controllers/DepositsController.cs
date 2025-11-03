@@ -1,7 +1,5 @@
-﻿// Filename: DepositsController.cs
-using EduMatch.BusinessLogicLayer.DTOs;
+﻿using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
-using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.BusinessLogicLayer.Requests.Wallet;
 using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.PresentationLayer.Common;
@@ -10,6 +8,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
+using EduMatch.DataAccessLayer.Entities; // Make sure this is here
+using EduMatch.DataAccessLayer.Enum; // Make sure this is here
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -19,20 +19,24 @@ namespace EduMatch.PresentationLayer.Controllers
     public class DepositsController : ControllerBase
     {
         private readonly IDepositService _depositService;
+        private readonly IVnpayService _vnpayService; 
         private readonly CurrentUserService _currentUserService;
 
-        public DepositsController(IDepositService depositService, CurrentUserService currentUserService)
+        public DepositsController(
+            IDepositService depositService,
+            IVnpayService vnpayService, 
+            CurrentUserService currentUserService)
         {
             _depositService = depositService;
+            _vnpayService = vnpayService;
             _currentUserService = currentUserService;
         }
 
-        // POST: api/deposits/create-request
-        [HttpPost("create-request")]
-        [ProducesResponseType(typeof(ApiResponse<CreateDepositResponseDto>), StatusCodes.Status201Created)]
+        [HttpPost("create-vnpay-request")]
+        [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> CreateDepositRequest([FromBody] CreateDepositRequest request)
+        public async Task<IActionResult> CreateVnpayDepositRequest([FromBody] WalletDepositRequest request)
         {
             try
             {
@@ -40,14 +44,65 @@ namespace EduMatch.PresentationLayer.Controllers
                 if (string.IsNullOrWhiteSpace(userEmail))
                     return Unauthorized(ApiResponse<string>.Fail("User email not found in token."));
 
-                var response = await _depositService.CreateDepositRequestAsync(request, userEmail);
+                var newDeposit = await _depositService.CreateDepositRequestAsync(request, userEmail);
 
-                // Return 201 Created status, which is standard for a successful POST
-                return StatusCode(StatusCodes.Status201Created, ApiResponse<CreateDepositResponseDto>.Ok(response));
+                string paymentUrl = _vnpayService.CreatePaymentUrl(
+                    newDeposit.Id.ToString(), 
+                    newDeposit.Amount,
+                    $"Nap tien {newDeposit.Id}",
+                    HttpContext // Pass HttpContext to get the IP address
+                );
+
+                return StatusCode(StatusCodes.Status201Created, ApiResponse<string>.Ok(paymentUrl));
             }
             catch (Exception ex)
             {
-                return BadRequest(ApiResponse<string>.Fail("Failed to create deposit request.", ex.Message));
+                return BadRequest(ApiResponse<string>.Fail($"Failed to create VNPay request: {ex.Message}"));
+            }
+        }
+
+        [HttpPost("admin/cleanup-expired")]
+        [Authorize(Roles = "Admin")] 
+        [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CleanupExpiredDeposits()
+        {
+            try
+            {
+                int count = await _depositService.CleanupExpiredDepositsAsync();
+                return Ok(ApiResponse<string>.Ok($"Successfully cleaned up {count} expired deposits."));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail($"Failed to clean up deposits: {ex.Message}"));
+            }
+        }
+
+        [HttpPost("{id}/cancel")]
+        [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> CancelDepositRequest(int id)
+        {
+            try
+            {
+                string? userEmail = _currentUserService.Email;
+                if (string.IsNullOrWhiteSpace(userEmail))
+                    return Unauthorized(ApiResponse<string>.Fail("User email not found in token."));
+
+                bool success = await _depositService.CancelDepositRequestAsync(id, userEmail);
+
+                if (!success)
+                {
+                    return BadRequest(ApiResponse<string>.Fail("Failed to cancel deposit request."));
+                }
+
+                return Ok(ApiResponse<string>.Ok("Deposit request cancelled successfully."));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
             }
         }
     }

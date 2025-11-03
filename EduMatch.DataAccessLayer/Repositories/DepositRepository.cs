@@ -2,6 +2,7 @@
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace EduMatch.DataAccessLayer.Repositories
 {
@@ -30,6 +31,11 @@ namespace EduMatch.DataAccessLayer.Repositories
         public void Update(Deposit entity)
         {
             _dbSet.Update(entity);
+        }
+
+        public async Task<IEnumerable<Deposit>> FindAsync(Expression<Func<Deposit, bool>> predicate)
+        {
+            return await _dbSet.Where(predicate).ToListAsync();
         }
     }
 }

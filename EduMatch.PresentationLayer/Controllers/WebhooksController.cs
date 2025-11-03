@@ -1,14 +1,11 @@
-﻿
-// Filename: WebhooksController.cs (REAL VERSION)
+﻿using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using MyApiResponse = EduMatch.PresentationLayer.Common.ApiResponse<string>;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using PayOS.Models;
 using System;
 using System.Threading.Tasks;
-using PayOS.Models.Webhooks;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -17,31 +14,47 @@ namespace EduMatch.PresentationLayer.Controllers
     public class WebhooksController : ControllerBase
     {
         private readonly IDepositService _depositService;
+        private readonly IVnpayService _vnpayService; // <-- ADD THIS
 
-        public WebhooksController(IDepositService depositService)
+        // --- UPDATE CONSTRUCTOR ---
+        public WebhooksController(
+            IDepositService depositService,
+            IVnpayService vnpayService) // <-- ADD THIS
         {
             _depositService = depositService;
+            _vnpayService = vnpayService; // <-- ADD THIS
         }
 
-        // POST: api/webhooks/payos
-        [HttpPost("payos")]
+        // --- THIS IS THE NEW VNPAY IPN ENDPOINT ---
+        [HttpGet("vnpay-ipn")] // VNPay sends confirmation via GET
         [AllowAnonymous]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(MyApiResponse), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> HandlePayosWebhook([FromBody] Webhook webhook)
+        public async Task<IActionResult> HandleVnpayIpn()
         {
-            // --- REAL CODE ---
             try
             {
-                bool success = await _depositService.ProcessPayosWebhookAsync(webhook);
-                return Ok();
+                // 1. Validate the response from VNPay
+                var response = _vnpayService.ValidatePaymentResponse(Request.Query);
+
+                if (response.IsSuccess && response.ResponseCode == "00")
+                {
+                    // 2. Signature is valid and payment was successful
+                    // Process the payment (This is your database logic)
+                    int depositId = int.Parse(response.OrderId);
+                    await _depositService.ProcessVnpayPaymentAsync(depositId, response.TransactionId, response.Amount);
+
+                    // --- MUST Return this JSON to VNPay to confirm ---
+                    return Ok(new { RspCode = "00", Message = "Confirm Success" });
+                }
+                else
+                {
+                    // Signature was invalid or payment failed
+                    return Ok(new { RspCode = "97", Message = "Invalid Signature or Failed Payment" });
+                }
             }
             catch (Exception ex)
             {
-                // This will catch signature failures or database errors
-                return BadRequest(MyApiResponse.Fail(ex.Message));
+                return BadRequest(new { RspCode = "99", Message = $"An error occurred: {ex.Message}" });
             }
-            // -----------------
         }
     }
 }

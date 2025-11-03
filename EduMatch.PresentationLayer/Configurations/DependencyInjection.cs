@@ -1,5 +1,4 @@
-
-using CloudinaryDotNet;
+﻿using CloudinaryDotNet;
 using DotNetEnv;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Services;
@@ -23,7 +22,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.Configure<MailSettings>(configuration.GetSection("MailSettings"));
 
             services.Configure<PayosSettings>(configuration.GetSection("PayosSettings"));
-
+            services.Configure<VnpaySettings>(configuration.GetSection("VnpaySettings"));
 
             // AutoMapper
             services.AddAutoMapper(typeof(MappingProfile).Assembly);
@@ -74,10 +73,10 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ITimeSlotService, TimeSlotService>();
             services.AddScoped<IEducationInstitutionService, EducationInstitutionService>();
             services.AddScoped<IFavoriteTutorService, FavoriteTutorService>();
-            
 
 
 
+            services.AddScoped<ChatService>();
             services.AddScoped<IUserProfileService, UserProfileService>();
 			services.AddScoped<IManageTutorProfileService, ManageTutorProfileService>();
 			services.AddScoped<IFindTutorService, FindTutorService>();
@@ -88,16 +87,26 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IBankService, BankService>();
             services.AddScoped<IUserBankAccountService, UserBankAccountService>();
             services.AddScoped<IDepositService, DepositService>();
-            services.AddSingleton(sp => {
+            services.AddScoped<IVnpayService, VnpayService>();
+            services.AddScoped<IWithdrawalService, WithdrawalService>();
+
+            services.AddSingleton(sp =>
+            {
                 var settings = sp.GetRequiredService<IOptions<PayosSettings>>().Value;
-                if (settings == null || string.IsNullOrEmpty(settings.ClientId) ||
-                    string.IsNullOrEmpty(settings.ApiKey) || string.IsNullOrEmpty(settings.ChecksumKey))
+                Console.WriteLine($"[PayOS DEBUG] ClientId={settings.ClientId}, ApiKey={settings.ApiKey}, ChecksumKey={settings.ChecksumKey}");
+                if (settings == null ||
+                    string.IsNullOrEmpty(settings.ClientId) ||
+                    string.IsNullOrEmpty(settings.ApiKey) ||
+                    string.IsNullOrEmpty(settings.ChecksumKey))
                 {
                     throw new InvalidOperationException("PayOS settings are missing or incomplete.");
                 }
 
-                // This constructor uses the default Production URL: https://api-merchant.payos.vn
-                return new PayOSClient(settings.ClientId, settings.ApiKey, settings.ChecksumKey);
+                return new PayOSClient(
+                    settings.ClientId,
+                    settings.ApiKey,
+                    settings.ChecksumKey
+                );
             });
             // Bind "CloudinarySettings" 
             services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
