@@ -92,6 +92,13 @@ namespace EduMatch.BusinessLogicLayer.Services
 				if (timeSlot is null)
 					throw new ArgumentException($"timeSlot with ID {request.SlotId} not found.");
 
+				// Kiểm tra trùng: cùng TutorId + cùng ngày (Date) + cùng SlotId đã tồn tại
+				var desiredDate = request.StartDate.Date;
+				var existingForTutor = await _repository.GetByTutorIdAsync(request.TutorId);
+				var isDuplicate = existingForTutor.Any(a => a.SlotId == request.SlotId && a.StartDate.Date == desiredDate);
+				if (isDuplicate)
+					throw new InvalidOperationException("TutorAvailability đã tồn tại cho ngày và slot này");
+
 				var entity = new TutorAvailability
 				{
 					TutorId = request.TutorId,
@@ -143,6 +150,14 @@ namespace EduMatch.BusinessLogicLayer.Services
 				var timeSlot = await _timeSlotRepository.GetByIdAsync(request.SlotId);
 				if (timeSlot is null)
 					throw new ArgumentException($"timeSlot with ID {request.SlotId} not found.");
+
+				// Kiểm tra trùng trước khi set ngày/giờ mới
+				var desiredDate = request.StartDate.Date;
+				var existingForTutor = await _repository.GetByTutorIdAsync(request.TutorId);
+				var isDuplicate = existingForTutor.Any(a => a.Id != request.Id && a.SlotId == request.SlotId && a.StartDate.Date == desiredDate);
+				if (isDuplicate)
+					throw new InvalidOperationException("TutorAvailability đã tồn tại cho ngày và slot này");
+
 				existingEntity.StartDate = request.StartDate.Date.Add(timeSlot.StartTime.ToTimeSpan());
 				existingEntity.EndDate = request.StartDate.Date.Add(timeSlot.EndTime.ToTimeSpan());
 				existingEntity.UpdatedAt = DateTime.UtcNow;
