@@ -13,7 +13,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 {
 	public sealed class TutorProfileService : ITutorProfileService
 	{
-		private readonly ITutorProfileRepository _repository;
+		private readonly ITutorProfileRepository _tutorProfileRepository;
 		private readonly ICloudMediaService _cloudMedia;
 		private readonly IMapper _mapper;
 		private readonly CurrentUserService _currentUserService;
@@ -21,7 +21,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		private readonly IUserProfileService _userProfileService;
 
 		public TutorProfileService(
-			 ITutorProfileRepository repository,
+			ITutorProfileRepository repository,
 			 IMapper mapper,
 			 ICloudMediaService cloudMedia,
 			 CurrentUserService currentUserService,
@@ -29,7 +29,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 			 IUserProfileService userProfileService
 			 ) 
 		{
-			_repository = repository;
+			_tutorProfileRepository = repository;
 			_mapper = mapper;
 			_cloudMedia = cloudMedia; 
 			_currentUserService = currentUserService ;
@@ -44,7 +44,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<TutorProfileDto?> GetByIdFullAsync(int id)
 		{
-			var entity = await _repository.GetByIdFullAsync(id);
+			var entity = await _tutorProfileRepository.GetByIdFullAsync(id);
 			return entity is null ? null : _mapper.Map<TutorProfileDto>(entity);
 		}
 
@@ -56,7 +56,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 			if (string.IsNullOrWhiteSpace(email))
 				throw new ArgumentException("Email is required.");
 
-			var entity = await _repository.GetByEmailFullAsync(email);
+			var entity = await _tutorProfileRepository.GetByEmailFullAsync(email);
 			return entity is null ? null : _mapper.Map<TutorProfileDto>(entity);
 		}
 
@@ -65,7 +65,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<IReadOnlyList<TutorProfileDto>> GetAllFullAsync()
 		{
-			var entities = await _repository.GetAllFullAsync();
+			var entities = await _tutorProfileRepository.GetAllFullAsync();
 			return _mapper.Map<IReadOnlyList<TutorProfileDto>>(entities);
 		}
 
@@ -80,7 +80,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				if (string.IsNullOrWhiteSpace(_currentUserService.Email))
 					throw new ArgumentException("Current user email not found.");
 				var userEmail = _currentUserService.Email!;
-				var existing = await _repository.GetByEmailFullAsync(userEmail);
+				var existing = await _tutorProfileRepository.GetByEmailFullAsync(userEmail);
 				if (existing is not null)
 					throw new ArgumentException($"Tutor profile for email {userEmail} already exists.");
 
@@ -136,7 +136,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 					UpdatedAt = DateTime.UtcNow
 				};
 
-				await _repository.AddAsync(entity);
+				await _tutorProfileRepository.AddAsync(entity);
 				return _mapper.Map<TutorProfileDto>(entity);
 			}
 			catch (Exception ex)
@@ -161,7 +161,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 			if (string.IsNullOrWhiteSpace(userEmail))
 				throw new ArgumentException("Current user email not found.");
 
-			var existing = await _repository.GetByIdFullAsync(request.Id);
+			var existing = await _tutorProfileRepository.GetByIdFullAsync(request.Id);
 			if (existing is null)
 				throw new ArgumentException($"Tutor profile with ID {request.Id} not found.");
 
@@ -235,7 +235,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 			existing.UpdatedAt = DateTime.UtcNow;
 
-			await _repository.UpdateAsync(existing);
+			await _tutorProfileRepository.UpdateAsync(existing);
 			return _mapper.Map<TutorProfileDto>(existing);
 			}
 			catch (Exception ex)
@@ -252,7 +252,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
-			await _repository.RemoveByIdAsync(id);
+			await _tutorProfileRepository.RemoveByIdAsync(id);
 		}
 
 		/// <summary>
@@ -269,7 +269,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException("VerifiedBy is required");
 
 				// Check if entity exists
-				var existingEntity = await _repository.GetByIdFullAsync(id);
+			var existingEntity = await _tutorProfileRepository.GetByIdFullAsync(id);
 				if (existingEntity == null)
 				{
 					throw new ArgumentException($"Tutor profile with ID {id} not found");
@@ -287,7 +287,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				existingEntity.VerifiedAt = DateTime.UtcNow;
 				existingEntity.UpdatedAt = DateTime.UtcNow;
 
-				await _repository.UpdateAsync(existingEntity);
+			await _tutorProfileRepository.UpdateAsync(existingEntity);
 				return _mapper.Map<TutorProfileDto>(existingEntity);
 			}
 			catch (Exception ex)

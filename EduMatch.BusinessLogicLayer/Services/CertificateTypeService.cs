@@ -15,13 +15,16 @@ namespace EduMatch.BusinessLogicLayer.Services
 {
 	public class CertificateTypeService : ICertificateTypeService
 	{
-		private readonly ICertificateTypeRepository _repository;
+		private readonly ICertificateTypeRepository _certificateTypeRepository;
 		private readonly ICertificateTypeSubjectRepository _certificateTypeSubjectRepository;
 		private readonly IMapper _mapper;
 
-		public CertificateTypeService(ICertificateTypeRepository repository, ICertificateTypeSubjectRepository certificateTypeSubjectRepository, IMapper mapper)
+		public CertificateTypeService(
+			ICertificateTypeRepository certificateTypeRepository,
+			ICertificateTypeSubjectRepository certificateTypeSubjectRepository,
+			IMapper mapper)
 		{
-			_repository = repository;
+			_certificateTypeRepository = certificateTypeRepository;
 			_certificateTypeSubjectRepository = certificateTypeSubjectRepository;
 			_mapper = mapper;
 		}
@@ -31,7 +34,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<CertificateTypeDto?> GetByIdAsync(int id)
 		{
-			var entity = await _repository.GetByIdAsync(id);
+			var entity = await _certificateTypeRepository.GetByIdAsync(id);
 			return entity != null ? _mapper.Map<CertificateTypeDto>(entity) : null;
 		}
 
@@ -40,7 +43,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<CertificateTypeDto?> GetByCodeAsync(string code)
 		{
-			var entity = await _repository.GetByCodeAsync(code);
+			var entity = await _certificateTypeRepository.GetByCodeAsync(code);
 			return entity != null ? _mapper.Map<CertificateTypeDto>(entity) : null;
 		}
 
@@ -49,7 +52,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<IReadOnlyList<CertificateTypeDto>> GetAllAsync()
 		{
-			var entities = await _repository.GetAllAsync();
+			var entities = await _certificateTypeRepository.GetAllAsync();
 			return _mapper.Map<IReadOnlyList<CertificateTypeDto>>(entities);
 		}
 
@@ -58,7 +61,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<IReadOnlyList<CertificateTypeDto>> GetByNameAsync(string name)
 		{
-			var entities = await _repository.GetByNameAsync(name);
+			var entities = await _certificateTypeRepository.GetByNameAsync(name);
 			return _mapper.Map<IReadOnlyList<CertificateTypeDto>>(entities);
 		}
 
@@ -78,7 +81,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 
 				// Check if code already exists
-				var existingByCode = await _repository.GetByCodeAsync(request.Code);
+				var existingByCode = await _certificateTypeRepository.GetByCodeAsync(request.Code);
 				if (existingByCode != null)
 				{
 					throw new ArgumentException($"Certificate type with code '{request.Code}' already exists");
@@ -91,7 +94,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 					CreatedAt = DateTime.UtcNow,
 					Verified = (int)VerifyStatus.Pending
 				};
-				await _repository.AddAsync(entity);
+				await _certificateTypeRepository.AddAsync(entity);
 				return _mapper.Map<CertificateTypeDto>(entity);
 			}
 			catch (Exception ex)
@@ -116,14 +119,14 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 
 				// Check if entity exists
-				var existingEntity = await _repository.GetByIdAsync(request.Id);
+				var existingEntity = await _certificateTypeRepository.GetByIdAsync(request.Id);
 				if (existingEntity == null)
 				{
 					throw new ArgumentException($"Certificate type with ID {request.Id} not found");
 				}
 
 				// Check if code already exists (excluding current entity)
-				var existingByCode = await _repository.GetByCodeAsync(request.Code);
+				var existingByCode = await _certificateTypeRepository.GetByCodeAsync(request.Code);
 				if (existingByCode != null && existingByCode.Id != request.Id)
 				{
 					throw new ArgumentException($"Certificate type with code '{request.Code}' already exists");
@@ -133,7 +136,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				existingEntity.Code = request.Code;
 				existingEntity.Name = request.Name;
 
-				await _repository.UpdateAsync(existingEntity);
+				await _certificateTypeRepository.UpdateAsync(existingEntity);
 				return _mapper.Map<CertificateTypeDto>(existingEntity);
 			}
 			catch (Exception ex)
@@ -147,7 +150,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
-			await _repository.RemoveByIdAsync(id);
+			await _certificateTypeRepository.RemoveByIdAsync(id);
 		}
 
 		/// <summary>
@@ -164,7 +167,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException("VerifiedBy is required");
 
 				// Check if entity exists
-				var existingEntity = await _repository.GetByIdAsync(id);
+			var existingEntity = await _certificateTypeRepository.GetByIdAsync(id);
 				if (existingEntity == null)
 				{
 					throw new ArgumentException($"Certificate type with ID {id} not found");
@@ -181,7 +184,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				existingEntity.VerifiedBy = verifiedBy;
 				existingEntity.VerifiedAt = DateTime.UtcNow;
 
-				await _repository.UpdateAsync(existingEntity);
+			await _certificateTypeRepository.UpdateAsync(existingEntity);
 				return _mapper.Map<CertificateTypeDto>(existingEntity);
 			}
 			catch (Exception ex)
@@ -204,7 +207,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException("Subject IDs list cannot be null or empty");
 
 				// Check if certificate type exists
-				var certificateType = await _repository.GetByIdAsync(certificateTypeId);
+				var certificateType = await _certificateTypeRepository.GetByIdAsync(certificateTypeId);
 				if (certificateType == null)
 					throw new ArgumentException($"Certificate type with ID {certificateTypeId} not found");
 
@@ -228,7 +231,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 
 				// Return updated certificate type with all relationships
-				var updatedCertificateType = await _repository.GetByIdAsync(certificateTypeId);
+				var updatedCertificateType = await _certificateTypeRepository.GetByIdAsync(certificateTypeId);
 				return _mapper.Map<CertificateTypeDto>(updatedCertificateType);
 			}
 			catch (Exception ex)

@@ -13,7 +13,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 {
 	public class TutorSubjectService : ITutorSubjectService
 	{
-		private readonly ITutorSubjectRepository _repository;
+		private readonly ITutorSubjectRepository _tutorSubjectRepository;
 		private readonly IMapper _mapper;
 		private readonly ITutorProfileRepository _tutorProfileRepository;
 		private	readonly ISubjectRepository _subjectRepository;
@@ -26,7 +26,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 			ISubjectRepository subjectRepository,
 			ILevelRepository levelRepository)
 		{
-			_repository = repository;
+			_tutorSubjectRepository = repository;
 			_mapper = mapper;
 			_tutorProfileRepository = tutorProfileRepository;
 			_subjectRepository = subjectRepository;
@@ -39,7 +39,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<TutorSubjectDto?> GetByIdFullAsync(int id)
 		{
-			var entity = await _repository.GetByIdFullAsync(id);
+			var entity = await _tutorSubjectRepository.GetByIdFullAsync(id);
 			return entity != null ? _mapper.Map<TutorSubjectDto>(entity) : null;
 		}
 
@@ -48,7 +48,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<TutorSubjectDto?> GetByTutorIdFullAsync(int tutorId)
 		{
-			var entity = await _repository.GetByTutorIdFullAsync(tutorId);
+			var entity = await _tutorSubjectRepository.GetByTutorIdFullAsync(tutorId);
 			return entity != null ? _mapper.Map<TutorSubjectDto>(entity) : null;
 		}
 
@@ -57,7 +57,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<IReadOnlyList<TutorSubjectDto>> GetByTutorIdAsync(int tutorId)
 		{
-			var entities = await _repository.GetByTutorIdAsync(tutorId);
+			var entities = await _tutorSubjectRepository.GetByTutorIdAsync(tutorId);
 			return _mapper.Map<IReadOnlyList<TutorSubjectDto>>(entities);
 		}
 
@@ -66,7 +66,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<IReadOnlyList<TutorSubjectDto>> GetBySubjectIdAsync(int subjectId)
 		{
-			var entities = await _repository.GetBySubjectIdAsync(subjectId);
+			var entities = await _tutorSubjectRepository.GetBySubjectIdAsync(subjectId);
 			return _mapper.Map<IReadOnlyList<TutorSubjectDto>>(entities);
 		}
 
@@ -75,7 +75,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<IReadOnlyList<TutorSubjectDto>> GetByLevelIdAsync(int levelId)
 		{
-			var entities = await _repository.GetByLevelIdAsync(levelId);
+			var entities = await _tutorSubjectRepository.GetByLevelIdAsync(levelId);
 			return _mapper.Map<IReadOnlyList<TutorSubjectDto>>(entities);
 		}
 
@@ -84,7 +84,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<IReadOnlyList<TutorSubjectDto>> GetByHourlyRateRangeAsync(decimal minRate, decimal maxRate)
 		{
-			var entities = await _repository.GetByHourlyRateRangeAsync(minRate, maxRate);
+			var entities = await _tutorSubjectRepository.GetByHourlyRateRangeAsync(minRate, maxRate);
 			return _mapper.Map<IReadOnlyList<TutorSubjectDto>>(entities);
 		}
 
@@ -93,7 +93,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<IReadOnlyList<TutorSubjectDto>> GetTutorsBySubjectAndLevelAsync(int subjectId, int levelId)
 		{
-			var entities = await _repository.GetTutorsBySubjectAndLevelAsync(subjectId, levelId);
+			var entities = await _tutorSubjectRepository.GetTutorsBySubjectAndLevelAsync(subjectId, levelId);
 			return _mapper.Map<IReadOnlyList<TutorSubjectDto>>(entities);
 		}
 
@@ -102,7 +102,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<IReadOnlyList<TutorSubjectDto>> GetAllFullAsync()
 		{
-			var entities = await _repository.GetAllFullAsync();
+			var entities = await _tutorSubjectRepository.GetAllFullAsync();
 			return _mapper.Map<IReadOnlyList<TutorSubjectDto>>(entities);
 		}
 
@@ -132,7 +132,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 					LevelId = request.LevelId,
 					HourlyRate = request.HourlyRate
 				};
-				await _repository.AddAsync(entity);
+				await _tutorSubjectRepository.AddAsync(entity);
 				return _mapper.Map<TutorSubjectDto>(entity);
 			}
 			catch (Exception ex)
@@ -149,7 +149,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             try
             {
                 // Check if entity exists
-                var existingEntity = await _repository.GetByIdFullAsync(request.Id);
+				var existingEntity = await _tutorSubjectRepository.GetByIdFullAsync(request.Id);
                 if (existingEntity == null)
                 {
                     throw new ArgumentException($"Tutor subject with ID {request.Id} not found");
@@ -163,7 +163,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (request.HourlyRate.HasValue) 
                     existingEntity.HourlyRate = request.HourlyRate.Value;
 
-                await _repository.UpdateAsync(existingEntity);
+			await _tutorSubjectRepository.UpdateAsync(existingEntity);
                 return _mapper.Map<TutorSubjectDto>(existingEntity);
             }
             catch (Exception ex)
@@ -198,7 +198,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
-			await _repository.RemoveByIdAsync(id);
+			await _tutorSubjectRepository.RemoveByIdAsync(id);
 		}
 
 		/// <summary>
@@ -206,7 +206,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task DeleteByTutorIdAsync(int tutorId)
 		{
-			await _repository.RemoveByTutorIdAsync(tutorId);
+			await _tutorSubjectRepository.RemoveByTutorIdAsync(tutorId);
 		}
 	}
 }
