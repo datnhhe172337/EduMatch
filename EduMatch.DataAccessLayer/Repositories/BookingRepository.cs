@@ -39,6 +39,32 @@ namespace EduMatch.DataAccessLayer.Repositories
         }
 
         /// <summary>
+        /// Lấy danh sách bookings theo learnerEmail (không phân trang) với lọc theo status, tutorSubjectId
+        /// </summary>
+        public async Task<IEnumerable<Booking>> GetAllByLearnerEmailNoPagingAsync(string email, int? status, int? tutorSubjectId)
+        {
+            var query = _context.Bookings
+                .AsSplitQuery()
+                .Include(b => b.TutorSubject)
+                    .ThenInclude(ts => ts.Subject)
+                .Include(b => b.TutorSubject)
+                    .ThenInclude(ts => ts.Level)
+                .Include(b => b.TutorSubject)
+                    .ThenInclude(ts => ts.Tutor)
+                .Include(b => b.Schedules)
+                    .ThenInclude(s => s.Availabiliti)
+                        .ThenInclude(a => a.Slot)
+                .AsQueryable();
+            if (!string.IsNullOrEmpty(email))
+                query = query.Where(b => b.LearnerEmail == email);
+            if (status.HasValue)
+                query = query.Where(b => b.Status == status.Value);
+            if (tutorSubjectId.HasValue)
+                query = query.Where(b => b.TutorSubjectId == tutorSubjectId.Value);
+            return await query.ToListAsync();
+        }
+
+        /// <summary>
         /// Đếm tổng số bookings theo learnerEmail với lọc theo status, tutorSubjectId
         /// </summary>
         public async Task<int> CountByLearnerEmailAsync(string email, int? status, int? tutorSubjectId)
@@ -76,6 +102,31 @@ namespace EduMatch.DataAccessLayer.Repositories
             if (tutorSubjectId.HasValue)
                 query = query.Where(b => b.TutorSubjectId == tutorSubjectId.Value);
             return await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        }
+
+        /// <summary>
+        /// Lấy danh sách bookings theo tutorId (không phân trang) với lọc theo status, tutorSubjectId
+        /// </summary>
+        public async Task<IEnumerable<Booking>> GetAllByTutorIdNoPagingAsync(int tutorId, int? status, int? tutorSubjectId)
+        {
+            var query = _context.Bookings
+                .AsSplitQuery()
+                .Include(b => b.TutorSubject)
+                    .ThenInclude(ts => ts.Subject)
+                .Include(b => b.TutorSubject)
+                    .ThenInclude(ts => ts.Level)
+                .Include(b => b.TutorSubject)
+                    .ThenInclude(ts => ts.Tutor)
+                .Include(b => b.Schedules)
+                    .ThenInclude(s => s.Availabiliti)
+                        .ThenInclude(a => a.Slot)
+                .Where(b => b.TutorSubject.TutorId == tutorId)
+                .AsQueryable();
+            if (status.HasValue)
+                query = query.Where(b => b.Status == status.Value);
+            if (tutorSubjectId.HasValue)
+                query = query.Where(b => b.TutorSubjectId == tutorSubjectId.Value);
+            return await query.ToListAsync();
         }
 
         /// <summary>

@@ -54,6 +54,15 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
+        /// Lấy danh sách Schedule theo bookingId và status (không phân trang)
+        /// </summary>
+        public async Task<List<ScheduleDto>> GetAllByBookingIdAndStatusNoPagingAsync(int bookingId, int? status)
+        {
+            var entities = await _scheduleRepository.GetAllByBookingIdAndStatusNoPagingAsync(bookingId, status);
+            return _mapper.Map<List<ScheduleDto>>(entities);
+        }
+
+        /// <summary>
         /// Đếm tổng số Schedule theo bookingId và status
         /// </summary>
         public Task<int> CountByBookingIdAndStatusAsync(int bookingId, int? status)

@@ -23,6 +23,14 @@ namespace EduMatch.DataAccessLayer.Interfaces
         /// </summary>
         Task<int> CountByTutorIdAsync(int tutorId, int? status, int? tutorSubjectId);
         /// <summary>
+        /// Lấy danh sách Booking theo learnerEmail (không phân trang) với lọc theo status, tutorSubjectId
+        /// </summary>
+        Task<IEnumerable<Booking>> GetAllByLearnerEmailNoPagingAsync(string email, int? status, int? tutorSubjectId);
+        /// <summary>
+        /// Lấy danh sách Booking theo tutorId (không phân trang) với lọc theo status, tutorSubjectId
+        /// </summary>
+        Task<IEnumerable<Booking>> GetAllByTutorIdNoPagingAsync(int tutorId, int? status, int? tutorSubjectId);
+        /// <summary>
         /// Lấy Booking theo ID
         /// </summary>
         Task<Booking?> GetByIdAsync(int id);
