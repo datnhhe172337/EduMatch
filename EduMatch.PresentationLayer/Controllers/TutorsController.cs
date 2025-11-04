@@ -13,6 +13,7 @@ using EduMatch.DataAccessLayer.Interfaces;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Authorization;
+using EduMatch.BusinessLogicLayer.Constants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -158,7 +159,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Xác thực hàng loạt các bằng cấp học vấn của gia sư
 		/// </summary>
-		[Authorize(Roles = Roles.BusinessAdmin r)]
+		[Authorize(Roles = Roles.BusinessAdmin)]
 		[HttpPut("verify-list-education/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorEducationDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]

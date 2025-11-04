@@ -51,6 +51,20 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _bookingRepository.CountByLearnerEmailAsync(email, status, tutorSubjectId);
         }
 
+        // Lấy danh sách bookings theo tutorId với phân trang và lọc theo status, tutorSubjectId
+        public async Task<List<BookingDto>> GetAllByTutorIdAsync(int tutorId, int? status, int? tutorSubjectId, int page = 1, int pageSize = 10)
+        {
+            if (page <= 0) page = 1;
+            if (pageSize <= 0) pageSize = 10;
+            var entities = await _bookingRepository.GetAllByTutorIdAsync(tutorId, status, tutorSubjectId, page, pageSize);
+            return _mapper.Map<List<BookingDto>>(entities);
+        }
+
+        public Task<int> CountByTutorIdAsync(int tutorId, int? status, int? tutorSubjectId)
+        {
+            return _bookingRepository.CountByTutorIdAsync(tutorId, status, tutorSubjectId);
+        }
+
         public async Task<BookingDto?> GetByIdAsync(int id)
         {
             var entity = await _bookingRepository.GetByIdAsync(id);

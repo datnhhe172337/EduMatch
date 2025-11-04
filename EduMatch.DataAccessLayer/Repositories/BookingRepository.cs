@@ -34,6 +34,32 @@ namespace EduMatch.DataAccessLayer.Repositories
                 query = query.Where(b => b.TutorSubjectId == tutorSubjectId.Value);
             return await query.CountAsync();
         }
+        public async Task<IEnumerable<Booking>> GetAllByTutorIdAsync(int tutorId, int? status, int? tutorSubjectId, int page, int pageSize)
+        {
+           var query =
+                        from b in _context.Bookings
+                        join ts in _context.TutorSubjects on b.TutorSubjectId equals ts.Id
+                        where ts.TutorId == tutorId
+                        select b;
+            if (status.HasValue)
+                query = query.Where(b => b.Status == status.Value);
+            if (tutorSubjectId.HasValue)
+                query = query.Where(b => b.TutorSubjectId == tutorSubjectId.Value);
+            return await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        }
+        public async Task<int> CountByTutorIdAsync(int tutorId, int? status, int? tutorSubjectId)
+        {
+            var query =
+                from b in _context.Bookings
+                join ts in _context.TutorSubjects on b.TutorSubjectId equals ts.Id
+                where ts.TutorId == tutorId
+                select b;
+            if (status.HasValue)
+                query = query.Where(b => b.Status == status.Value);
+            if (tutorSubjectId.HasValue)
+                query = query.Where(b => b.TutorSubjectId == tutorSubjectId.Value);
+            return await query.CountAsync();
+        }
         public async Task<Booking?> GetByIdAsync(int id)
         {
             return await _context.Bookings.FirstOrDefaultAsync(b => b.Id == id);

@@ -6,6 +6,7 @@ using EduMatch.PresentationLayer.Common;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.BusinessLogicLayer.Requests.User;
 using EduMatch.BusinessLogicLayer.Requests.TutorProfile;
+using EduMatch.BusinessLogicLayer.Constants;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -54,7 +55,7 @@ namespace EduMatch.PresentationLayer.Controllers
          /// <summary>
 		/// Cập nhật thông tin user profile
 		/// </summary>
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Learner + "," + Roles.Tutor)]
 		[HttpPut("update-user-profile")]
 		[ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
