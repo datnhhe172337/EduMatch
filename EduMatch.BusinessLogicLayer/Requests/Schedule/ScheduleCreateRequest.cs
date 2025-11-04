@@ -13,5 +13,7 @@ namespace EduMatch.BusinessLogicLayer.Requests.Schedule
         public int BookingId { get; set; }
 
         public string? AttendanceNote { get; set; }
+
+        public bool IsOnline { get; set; } = true;
     }
 }

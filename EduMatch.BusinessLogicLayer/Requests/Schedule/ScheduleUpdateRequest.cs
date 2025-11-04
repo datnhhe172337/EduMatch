@@ -14,5 +14,8 @@ namespace EduMatch.BusinessLogicLayer.Requests.Schedule
         public ScheduleStatus? Status { get; set; }
         public string? AttendanceNote { get; set; }
         public bool? IsRefunded { get; set; }
+
+        
+        public bool? IsOnline { get; set; }
     }
 }

@@ -60,16 +60,14 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// <summary>
         /// Lấy danh sách Booking theo learnerEmail (không phân trang)
         /// </summary>
-        /// <summary>
-        /// Lấy danh sách Booking theo learnerEmail (không phân trang)
-        /// </summary>
+
         public async Task<List<BookingDto>> GetAllByLearnerEmailNoPagingAsync(string email, int? status, int? tutorSubjectId)
         {
             var entities = await _bookingRepository.GetAllByLearnerEmailNoPagingAsync(email, status, tutorSubjectId);
             return _mapper.Map<List<BookingDto>>(entities);
         }
 
-        // Lấy danh sách bookings theo tutorId với phân trang và lọc theo status, tutorSubjectId
+     
         /// <summary>
         /// Lấy danh sách Booking theo tutorId với phân trang và lọc theo status, tutorSubjectId
         /// </summary>
@@ -89,9 +87,6 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _bookingRepository.CountByTutorIdAsync(tutorId, status, tutorSubjectId);
         }
 
-        /// <summary>
-        /// Lấy danh sách Booking theo tutorId (không phân trang)
-        /// </summary>
         /// <summary>
         /// Lấy danh sách Booking theo tutorId (không phân trang)
         /// </summary>
@@ -264,6 +259,34 @@ namespace EduMatch.BusinessLogicLayer.Services
         public async Task DeleteAsync(int id)
         {
             await _bookingRepository.DeleteAsync(id);
+        }
+
+        /// <summary>
+        /// Cập nhật PaymentStatus của Booking
+        /// </summary>
+        public async Task<BookingDto> UpdatePaymentStatusAsync(int id, PaymentStatus paymentStatus)
+        {
+            var entity = await _bookingRepository.GetByIdAsync(id)
+                ?? throw new Exception("Booking không tồn tại");
+
+            entity.PaymentStatus = (int)paymentStatus;
+            entity.UpdatedAt = DateTime.UtcNow;
+            await _bookingRepository.UpdateAsync(entity);
+            return _mapper.Map<BookingDto>(entity);
+        }
+
+        /// <summary>
+        /// Cập nhật Status của Booking
+        /// </summary>
+        public async Task<BookingDto> UpdateStatusAsync(int id, BookingStatus status)
+        {
+            var entity = await _bookingRepository.GetByIdAsync(id)
+                ?? throw new Exception("Booking không tồn tại");
+
+            entity.Status = (int)status;
+            entity.UpdatedAt = DateTime.UtcNow;
+            await _bookingRepository.UpdateAsync(entity);
+            return _mapper.Map<BookingDto>(entity);
         }
     }
 }

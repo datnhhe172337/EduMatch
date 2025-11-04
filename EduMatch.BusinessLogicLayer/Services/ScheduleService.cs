@@ -129,6 +129,16 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             // Đánh dấu availability đã được đặt
             await _tutorAvailabilityService.UpdateStatusAsync(request.AvailabilitiId, TutorAvailabilityStatus.Booked);
+
+            // Nếu là online thì tạo MeetingSession, offline thì bỏ qua
+            if (request.IsOnline)
+            {
+                await _meetingSessionService.CreateAsync(new MeetingSessionCreateRequest
+                {
+                    ScheduleId = entity.Id
+                });
+            }
+
             return _mapper.Map<ScheduleDto>(entity);
         }
 
@@ -199,23 +209,48 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             await _scheduleRepository.UpdateAsync(entity);
 
-            // Nếu AvailabilitiId thay đổi: cập nhật MeetingSession qua service (đẩy Google) và cập nhật trạng thái Availability
+            // Nếu AvailabilitiId thay đổi: (online) cập nhật MeetingSession qua service (đẩy Google) và cập nhật trạng thái Availability
             if (availabilityIdChanged && request.AvailabilitiId.HasValue)
             {
-                // Update MeetingSession theo Schedule hiện tại (MeetingSessionService sẽ gửi update lên Google và đồng bộ Start/End từ response)
-                var meetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(entity.Id);
-                if (meetingSession != null)
+                // Chỉ xử lý MeetingSession nếu online (IsOnline true hoặc không truyền -> coi như online)
+                if (!request.IsOnline.HasValue || request.IsOnline.Value)
                 {
-                    await _meetingSessionService.UpdateAsync(new MeetingSessionUpdateRequest
+                    // Update MeetingSession theo Schedule hiện tại (MeetingSessionService sẽ gửi update lên Google và đồng bộ Start/End từ response)
+                    var meetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(entity.Id);
+                    if (meetingSession != null)
                     {
-                        Id = meetingSession.Id,
-                        ScheduleId = entity.Id
-                    });
+                        await _meetingSessionService.UpdateAsync(new MeetingSessionUpdateRequest
+                        {
+                            Id = meetingSession.Id,
+                            ScheduleId = entity.Id
+                        });
+                    }
+                    else
+                    {
+                        // Offline -> Online và chưa có MeetingSession thì tạo mới
+                        await _meetingSessionService.CreateAsync(new MeetingSessionCreateRequest
+                        {
+                            ScheduleId = entity.Id
+                        });
+                    }
                 }
 
                 // Cập nhật trạng thái Availability: old -> Available, new -> Booked
                 await _tutorAvailabilityService.UpdateStatusAsync(oldAvailabilityId, TutorAvailabilityStatus.Available);
                 await _tutorAvailabilityService.UpdateStatusAsync(request.AvailabilitiId.Value, TutorAvailabilityStatus.Booked);
+            }
+
+            // Không đổi AvailabilitiId nhưng yêu cầu Online: đảm bảo MeetingSession tồn tại (offline -> online)
+            if (!availabilityIdChanged && request.IsOnline.HasValue && request.IsOnline.Value)
+            {
+                var meetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(entity.Id);
+                if (meetingSession == null)
+                {
+                    await _meetingSessionService.CreateAsync(new MeetingSessionCreateRequest
+                    {
+                        ScheduleId = entity.Id
+                    });
+                }
             }
 
             return _mapper.Map<ScheduleDto>(entity);

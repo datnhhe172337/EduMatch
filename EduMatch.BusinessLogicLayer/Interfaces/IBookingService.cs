@@ -1,5 +1,6 @@
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Requests.Booking;
+using EduMatch.DataAccessLayer.Enum;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -47,5 +48,13 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// Xóa Booking theo ID
         /// </summary>
         Task DeleteAsync(int id);
+        /// <summary>
+        /// Cập nhật PaymentStatus của Booking
+        /// </summary>
+        Task<BookingDto> UpdatePaymentStatusAsync(int id, PaymentStatus paymentStatus);
+        /// <summary>
+        /// Cập nhật Status của Booking
+        /// </summary>
+        Task<BookingDto> UpdateStatusAsync(int id, BookingStatus status);
     }
 }
