@@ -33,32 +33,45 @@ namespace EduMatch.BusinessLogicLayer.Services
             _tutorProfileRepository = tutorProfileRepository;
         }
 
-        // --- NO CHANGES to your Get... methods ---
+        /// <summary>
+        /// Lấy TutorAvailability theo ID với đầy đủ thông tin
+        /// </summary>
         public async Task<TutorAvailabilityDto?> GetByIdFullAsync(int id)
         {
             var entity = await _repository.GetByIdFullAsync(id);
             return entity != null ? _mapper.Map<TutorAvailabilityDto>(entity) : null;
         }
 
+        /// <summary>
+        /// Lấy danh sách TutorAvailability theo TutorId
+        /// </summary>
         public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByTutorIdAsync(int tutorId)
         {
             var entities = await _repository.GetByTutorIdAsync(tutorId);
             return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
         }
 
+        /// <summary>
+        /// Lấy danh sách TutorAvailability theo TutorId với đầy đủ thông tin
+        /// </summary>
         public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByTutorIdFullAsync(int tutorId)
         {
             var entities = await _repository.GetByTutorIdFullAsync(tutorId);
             return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
         }
 
+        /// <summary>
+        /// Lấy tất cả TutorAvailability với đầy đủ thông tin
+        /// </summary>
         public async Task<IReadOnlyList<TutorAvailabilityDto>> GetAllFullAsync()
         {
             var entities = await _repository.GetAllFullAsync();
             return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
         }
 
-		// --- NO CHANGES to your CreateAsync method (it's correct) ---
+		/// <summary>
+		/// Tạo TutorAvailability mới, tính StartDate và EndDate từ TimeSlot
+		/// </summary>
 		public async Task<TutorAvailabilityDto> CreateAsync(TutorAvailabilityCreateRequest request)
 		{
 			try
@@ -98,6 +111,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Cập nhật TutorAvailability, tính lại StartDate và EndDate từ TimeSlot
+		/// </summary>
 		public async Task<TutorAvailabilityDto> UpdateAsync(TutorAvailabilityUpdateRequest request)
 		{
 			try
@@ -142,6 +158,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 
 		
+		/// <summary>
+		/// Tạo nhiều TutorAvailability
+		/// </summary>
 		public async Task<List<TutorAvailabilityDto>> CreateBulkAsync(List<TutorAvailabilityCreateRequest> requests)
         {
             try
@@ -160,7 +179,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             }
         }
 
-        // Cập nhật trạng thái availability (Booked/Available/InProgress/Cancelled)
+        /// <summary>
+        /// Cập nhật trạng thái của TutorAvailability (Available/Booked/InProgress/Cancelled)
+        /// </summary>
         public async Task<TutorAvailabilityDto> UpdateStatusAsync(int id, TutorAvailabilityStatus status)
         {
             var existingEntity = await _repository.GetByIdFullAsync(id)
@@ -173,6 +194,9 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
        
+        /// <summary>
+        /// Xóa TutorAvailability theo ID
+        /// </summary>
         public async Task DeleteAsync(int id)
         {
             await _repository.RemoveByIdAsync(id);

@@ -42,6 +42,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Lấy danh sách Schedule theo bookingId và status với phân trang
+        /// </summary>
         public async Task<List<ScheduleDto>> GetAllByBookingIdAndStatusAsync(int bookingId, int? status, int page = 1, int pageSize = 10)
         {
             if (page <= 0) page = 1;
@@ -50,23 +53,35 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<List<ScheduleDto>>(entities);
         }
 
+        /// <summary>
+        /// Đếm tổng số Schedule theo bookingId và status
+        /// </summary>
         public Task<int> CountByBookingIdAndStatusAsync(int bookingId, int? status)
         {
             return _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, status);
         }
 
+        /// <summary>
+        /// Lấy Schedule theo AvailabilityId
+        /// </summary>
         public async Task<ScheduleDto?> GetByAvailabilityIdAsync(int availabilitiId)
         {
             var entity = await _scheduleRepository.GetByAvailabilityIdAsync(availabilitiId);
             return entity == null ? null : _mapper.Map<ScheduleDto>(entity);
         }
 
+        /// <summary>
+        /// Lấy Schedule theo ID
+        /// </summary>
         public async Task<ScheduleDto?> GetByIdAsync(int id)
         {
             var entity = await _scheduleRepository.GetByIdAsync(id);
             return entity == null ? null : _mapper.Map<ScheduleDto>(entity);
         }
 
+        /// <summary>
+        /// Tạo Schedule mới và cập nhật TutorAvailability status sang Booked
+        /// </summary>
         public async Task<ScheduleDto> CreateAsync(ScheduleCreateRequest request)
         {
             // Validate TutorAvailability exists
@@ -108,6 +123,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<ScheduleDto>(entity);
         }
 
+        /// <summary>
+        /// Cập nhật Schedule, nếu AvailabilitiId thay đổi thì cập nhật MeetingSession và trạng thái Availability
+        /// </summary>
         public async Task<ScheduleDto> UpdateAsync(ScheduleUpdateRequest request)
         {
             var entity = await _scheduleRepository.GetByIdAsync(request.Id)
@@ -194,6 +212,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<ScheduleDto>(entity);
         }
 
+        /// <summary>
+        /// Xóa Schedule, xóa MeetingSession (bao gồm Google Calendar event) trước
+        /// </summary>
         public async Task DeleteAsync(int id)
         {
             // Xóa MeetingSession trước qua service (service sẽ xóa Google Event rồi xóa DB)
@@ -204,7 +225,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             await _scheduleRepository.DeleteAsync(id);
         }
 
-        // Hủy toàn bộ schedule theo bookingId: set Status=Cancelled, xóa MeetingSession (cùng Google), trả Availability về Available; trả về danh sách đã hủy
+        /// <summary>
+        /// Hủy toàn bộ Schedule theo bookingId: set Status=Cancelled, xóa MeetingSession (bao gồm Google Calendar event), trả Availability về Available
+        /// </summary>
         public async Task<List<ScheduleDto>> CancelAllByBookingAsync(int bookingId)
         {
             var schedules = (await _scheduleRepository.GetAllByBookingIdOrderedAsync(bookingId)).ToList();

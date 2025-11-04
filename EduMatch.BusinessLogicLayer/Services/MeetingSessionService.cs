@@ -40,18 +40,27 @@ namespace EduMatch.BusinessLogicLayer.Services
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Lấy MeetingSession theo ID
+        /// </summary>
         public async Task<MeetingSessionDto?> GetByIdAsync(int id)
         {
             var entity = await _meetingSessionRepository.GetByIdAsync(id);
             return entity == null ? null : _mapper.Map<MeetingSessionDto>(entity);
         }
 
+        /// <summary>
+        /// Lấy MeetingSession theo ScheduleId
+        /// </summary>
         public async Task<MeetingSessionDto?> GetByScheduleIdAsync(int scheduleId)
         {
             var entity = await _meetingSessionRepository.GetByScheduleIdAsync(scheduleId);
             return entity == null ? null : _mapper.Map<MeetingSessionDto>(entity);
         }
 
+        /// <summary>
+        /// Tạo MeetingSession mới và tạo Google Calendar event, đồng bộ Start/End từ Google response
+        /// </summary>
         public async Task<MeetingSessionDto> CreateAsync(MeetingSessionCreateRequest request)
         {
             // Validate Schedule exists and load related data
@@ -165,6 +174,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<MeetingSessionDto>(entity);
         }
 
+        /// <summary>
+        /// Cập nhật MeetingSession, tính lại Start/End từ Schedule, cập nhật Google Calendar event và đồng bộ từ response
+        /// </summary>
         public async Task<MeetingSessionDto> UpdateAsync(MeetingSessionUpdateRequest request)
         {
             var entity = await _meetingSessionRepository.GetByIdAsync(request.Id)
@@ -286,6 +298,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<MeetingSessionDto>(entity);
         }
 
+        /// <summary>
+        /// Xóa MeetingSession và Google Calendar event theo EventId
+        /// </summary>
         public async Task DeleteAsync(int id)
         {
             var entity = await _meetingSessionRepository.GetByIdAsync(id);

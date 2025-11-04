@@ -11,6 +11,10 @@ namespace EduMatch.DataAccessLayer.Interfaces
         /// </summary>
         Task<IEnumerable<SystemFee>> GetAllAsync(int page = 1, int pageSize = 10);
         /// <summary>
+        /// Lấy tất cả SystemFee (không phân trang)
+        /// </summary>
+        Task<IEnumerable<SystemFee>> GetAllNoPagingAsync();
+        /// <summary>
         /// Đếm tổng số SystemFee
         /// </summary>
         Task<int> CountAsync();

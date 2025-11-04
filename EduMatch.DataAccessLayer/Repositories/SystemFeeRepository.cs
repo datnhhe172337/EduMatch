@@ -31,6 +31,16 @@ namespace EduMatch.DataAccessLayer.Repositories
         }
 
         /// <summary>
+        /// Lấy tất cả SystemFee (không phân trang)
+        /// </summary>
+        public async Task<IEnumerable<SystemFee>> GetAllNoPagingAsync()
+        {
+            return await _context.SystemFees
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
+        }
+
+        /// <summary>
         /// Đếm tổng số SystemFee
         /// </summary>
         public async Task<int> CountAsync()

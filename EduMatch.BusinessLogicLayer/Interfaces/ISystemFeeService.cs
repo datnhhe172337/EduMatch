@@ -12,6 +12,10 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// </summary>
         Task<List<SystemFeeDto>> GetAllAsync(int page = 1, int pageSize = 10);
         /// <summary>
+        /// Lấy tất cả SystemFee (không phân trang)
+        /// </summary>
+        Task<List<SystemFeeDto>> GetAllNoPagingAsync();
+        /// <summary>
         /// Đếm tổng số SystemFee
         /// </summary>
         Task<int> CountAsync();
