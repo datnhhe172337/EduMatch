@@ -27,6 +27,20 @@ namespace EduMatch.DataAccessLayer.Repositories
             return await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
         }
         /// <summary>
+        /// Lấy danh sách Schedule theo BookingId và Status (không phân trang)
+        /// </summary>
+        public async Task<IEnumerable<Schedule>> GetAllByBookingIdAndStatusNoPagingAsync(int bookingId, int? status)
+        {
+            var query = _context.Schedules
+            .AsSplitQuery()
+            .Include(s => s.Availabiliti)
+            .Include(s => s.Booking)
+            .Where(s => s.BookingId == bookingId);
+            if (status.HasValue)
+                query = query.Where(s => s.Status == status.Value);
+            return await query.ToListAsync();
+        }
+        /// <summary>
         /// Đếm số lượng Schedule theo BookingId và Status
         /// </summary>
         public async Task<int> CountByBookingIdAndStatusAsync(int bookingId, int? status)

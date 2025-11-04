@@ -11,6 +11,10 @@ namespace EduMatch.DataAccessLayer.Interfaces
         /// </summary>
         Task<IEnumerable<Schedule>> GetAllByBookingIdAndStatusAsync(int bookingId, int? status, int page, int pageSize);
         /// <summary>
+        /// Lấy danh sách Schedule theo BookingId và Status (không phân trang)
+        /// </summary>
+        Task<IEnumerable<Schedule>> GetAllByBookingIdAndStatusNoPagingAsync(int bookingId, int? status);
+        /// <summary>
         /// Đếm số lượng Schedule theo BookingId và Status
         /// </summary>
         Task<int> CountByBookingIdAndStatusAsync(int bookingId, int? status);
