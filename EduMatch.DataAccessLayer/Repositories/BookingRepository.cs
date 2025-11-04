@@ -17,7 +17,18 @@ namespace EduMatch.DataAccessLayer.Repositories
         /// </summary>
         public async Task<IEnumerable<Booking>> GetAllByLearnerEmailAsync(string email, int? status, int? tutorSubjectId, int page, int pageSize)
         {
-            var query = _context.Bookings.AsQueryable();
+            var query = _context.Bookings
+                .AsSplitQuery()
+                .Include(b => b.TutorSubject)
+                    .ThenInclude(ts => ts.Subject)
+                .Include(b => b.TutorSubject)
+                    .ThenInclude(ts => ts.Level)
+                .Include(b => b.TutorSubject)
+                    .ThenInclude(ts => ts.Tutor)
+                .Include(b => b.Schedules)
+                    .ThenInclude(s => s.Availabiliti)
+                        .ThenInclude(a => a.Slot)
+                .AsQueryable();
             if (!string.IsNullOrEmpty(email))
                 query = query.Where(b => b.LearnerEmail == email);
             if (status.HasValue)
@@ -48,6 +59,16 @@ namespace EduMatch.DataAccessLayer.Repositories
         {
             var query =
                 from b in _context.Bookings
+                    .AsSplitQuery()
+                    .Include(b => b.TutorSubject)
+                        .ThenInclude(ts => ts.Subject)
+                    .Include(b => b.TutorSubject)
+                        .ThenInclude(ts => ts.Level)
+                    .Include(b => b.TutorSubject)
+                        .ThenInclude(ts => ts.Tutor)
+                    .Include(b => b.Schedules)
+                        .ThenInclude(s => s.Availabiliti)
+                            .ThenInclude(a => a.Slot)
                 join ts in _context.TutorSubjects on b.TutorSubjectId equals ts.Id
                 where ts.TutorId == tutorId
                 select b;
@@ -79,7 +100,18 @@ namespace EduMatch.DataAccessLayer.Repositories
         /// </summary>
         public async Task<Booking?> GetByIdAsync(int id)
         {
-            return await _context.Bookings.FirstOrDefaultAsync(b => b.Id == id);
+            return await _context.Bookings
+                .AsSplitQuery()
+                .Include(b => b.TutorSubject)
+                    .ThenInclude(ts => ts.Subject)
+                .Include(b => b.TutorSubject)
+                    .ThenInclude(ts => ts.Level)
+                .Include(b => b.TutorSubject)
+                    .ThenInclude(ts => ts.Tutor)
+                .Include(b => b.Schedules)
+                    .ThenInclude(s => s.Availabiliti)
+                        .ThenInclude(a => a.Slot)
+                .FirstOrDefaultAsync(b => b.Id == id);
         }
 
         /// <summary>
