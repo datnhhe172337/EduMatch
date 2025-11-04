@@ -38,6 +38,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             _context = context;
         }
 
+        /// <summary>
+        /// Lấy danh sách Booking theo learnerEmail với phân trang và lọc theo status, tutorSubjectId
+        /// </summary>
         public async Task<List<BookingDto>> GetAllByLearnerEmailAsync(string email, int? status, int? tutorSubjectId, int page = 1, int pageSize = 10)
         {
             if (page <= 0) page = 1;
@@ -46,12 +49,30 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<List<BookingDto>>(entities);
         }
 
+        /// <summary>
+        /// Đếm tổng số Booking theo learnerEmail với lọc theo status, tutorSubjectId
+        /// </summary>
         public Task<int> CountByLearnerEmailAsync(string email, int? status, int? tutorSubjectId)
         {
             return _bookingRepository.CountByLearnerEmailAsync(email, status, tutorSubjectId);
         }
 
+        /// <summary>
+        /// Lấy danh sách Booking theo learnerEmail (không phân trang)
+        /// </summary>
+        /// <summary>
+        /// Lấy danh sách Booking theo learnerEmail (không phân trang)
+        /// </summary>
+        public async Task<List<BookingDto>> GetAllByLearnerEmailNoPagingAsync(string email, int? status, int? tutorSubjectId)
+        {
+            var entities = await _bookingRepository.GetAllByLearnerEmailNoPagingAsync(email, status, tutorSubjectId);
+            return _mapper.Map<List<BookingDto>>(entities);
+        }
+
         // Lấy danh sách bookings theo tutorId với phân trang và lọc theo status, tutorSubjectId
+        /// <summary>
+        /// Lấy danh sách Booking theo tutorId với phân trang và lọc theo status, tutorSubjectId
+        /// </summary>
         public async Task<List<BookingDto>> GetAllByTutorIdAsync(int tutorId, int? status, int? tutorSubjectId, int page = 1, int pageSize = 10)
         {
             if (page <= 0) page = 1;
@@ -60,17 +81,38 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<List<BookingDto>>(entities);
         }
 
+        /// <summary>
+        /// Đếm tổng số Booking theo tutorId với lọc theo status, tutorSubjectId
+        /// </summary>
         public Task<int> CountByTutorIdAsync(int tutorId, int? status, int? tutorSubjectId)
         {
             return _bookingRepository.CountByTutorIdAsync(tutorId, status, tutorSubjectId);
         }
 
+        /// <summary>
+        /// Lấy danh sách Booking theo tutorId (không phân trang)
+        /// </summary>
+        /// <summary>
+        /// Lấy danh sách Booking theo tutorId (không phân trang)
+        /// </summary>
+        public async Task<List<BookingDto>> GetAllByTutorIdNoPagingAsync(int tutorId, int? status, int? tutorSubjectId)
+        {
+            var entities = await _bookingRepository.GetAllByTutorIdNoPagingAsync(tutorId, status, tutorSubjectId);
+            return _mapper.Map<List<BookingDto>>(entities);
+        }
+
+        /// <summary>
+        /// Lấy Booking theo ID
+        /// </summary>
         public async Task<BookingDto?> GetByIdAsync(int id)
         {
             var entity = await _bookingRepository.GetByIdAsync(id);
             return entity == null ? null : _mapper.Map<BookingDto>(entity);
         }
 
+        /// <summary>
+        /// Tạo Booking mới và tính phí hệ thống theo SystemFee đang hoạt động
+        /// </summary>
         public async Task<BookingDto> CreateAsync(BookingCreateRequest request)
         {
             // Validate LearnerEmail exists
@@ -139,6 +181,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<BookingDto>(entity);
         }
 
+        /// <summary>
+        /// Cập nhật Booking và tính lại các giá trị liên quan khi thay đổi
+        /// </summary>
         public async Task<BookingDto> UpdateAsync(BookingUpdateRequest request)
         {
             var entity = await _bookingRepository.GetByIdAsync(request.Id)
@@ -213,6 +258,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<BookingDto>(entity);
         }
 
+        /// <summary>
+        /// Xóa Booking theo ID
+        /// </summary>
         public async Task DeleteAsync(int id)
         {
             await _bookingRepository.DeleteAsync(id);

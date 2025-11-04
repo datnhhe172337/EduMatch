@@ -12,6 +12,10 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// </summary>
         Task<List<BookingDto>> GetAllByLearnerEmailAsync(string email, int? status, int? tutorSubjectId, int page = 1, int pageSize = 10);
         /// <summary>
+        /// Lấy danh sách Booking theo learnerEmail (không phân trang)
+        /// </summary>
+        Task<List<BookingDto>> GetAllByLearnerEmailNoPagingAsync(string email, int? status, int? tutorSubjectId);
+        /// <summary>
         /// Đếm tổng số Booking theo learnerEmail với lọc theo status, tutorSubjectId
         /// </summary>
         Task<int> CountByLearnerEmailAsync(string email, int? status, int? tutorSubjectId);
@@ -19,6 +23,10 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// Lấy danh sách Booking theo tutorId với phân trang và lọc theo status, tutorSubjectId
         /// </summary>
         Task<List<BookingDto>> GetAllByTutorIdAsync(int tutorId, int? status, int? tutorSubjectId, int page = 1, int pageSize = 10);
+        /// <summary>
+        /// Lấy danh sách Booking theo tutorId (không phân trang)
+        /// </summary>
+        Task<List<BookingDto>> GetAllByTutorIdNoPagingAsync(int tutorId, int? status, int? tutorSubjectId);
         /// <summary>
         /// Đếm tổng số Booking theo tutorId với lọc theo status, tutorSubjectId
         /// </summary>
