@@ -55,6 +55,8 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<Subject> Subjects { get; set; }
 
+    public virtual DbSet<SystemFee> SystemFees { get; set; }
+
     public virtual DbSet<TimeSlot> TimeSlots { get; set; }
 
     public virtual DbSet<TutorApplication> TutorApplications { get; set; }
@@ -127,6 +129,10 @@ public partial class EduMatchContext : DbContext
                 .HasColumnType("decimal(12, 2)")
                 .HasColumnName("refundedAmount");
             entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.SystemFeeAmount)
+                .HasColumnType("decimal(12, 2)")
+                .HasColumnName("systemFeeAmount");
+            entity.Property(e => e.SystemFeeId).HasColumnName("systemFeeId");
             entity.Property(e => e.TotalAmount)
                 .HasColumnType("decimal(12, 2)")
                 .HasColumnName("totalAmount");
@@ -143,6 +149,11 @@ public partial class EduMatchContext : DbContext
                 .HasForeignKey(d => d.LearnerEmail)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Bookings_Users");
+
+            entity.HasOne(d => d.SystemFee).WithMany(p => p.Bookings)
+                .HasForeignKey(d => d.SystemFeeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_bookings_system_fees");
 
             entity.HasOne(d => d.TutorSubject).WithMany(p => p.Bookings)
                 .HasForeignKey(d => d.TutorSubjectId)
@@ -257,6 +268,9 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.ApprovedBy)
                 .HasMaxLength(255)
                 .HasColumnName("approvedBy");
+            entity.Property(e => e.CancelReason)
+                .HasMaxLength(500)
+                .HasColumnName("cancelReason");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(sysdatetime())")
                 .HasColumnName("createdAt");
@@ -350,8 +364,6 @@ public partial class EduMatchContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__deposits__3213E83F5D423D1C");
 
             entity.ToTable("deposits");
-
-            entity.HasIndex(e => e.GatewayTransactionCode, "UQ__deposits__24392C0D39A9253B").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Amount)
@@ -473,6 +485,8 @@ public partial class EduMatchContext : DbContext
 
             entity.ToTable("meeting_sessions");
 
+            entity.HasIndex(e => e.ScheduleId, "UQ_meeting_sessions_scheduleId").IsUnique();
+
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CreatedAt).HasColumnName("createdAt");
             entity.Property(e => e.EndTime).HasColumnName("endTime");
@@ -499,10 +513,9 @@ public partial class EduMatchContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Meeting_GoogleToken");
 
-            entity.HasOne(d => d.Schedule).WithMany(p => p.MeetingSessions)
-                .HasForeignKey(d => d.ScheduleId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Meeting_Schedule");
+            entity.HasOne(d => d.Schedule).WithOne(p => p.MeetingSession)
+                .HasForeignKey<MeetingSession>(d => d.ScheduleId)
+                .HasConstraintName("FK_meeting_sessions_schedule");
         });
 
         modelBuilder.Entity<Province>(entity =>
@@ -618,6 +631,35 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.SubjectName)
                 .HasMaxLength(200)
                 .HasColumnName("subjectName");
+        });
+
+        modelBuilder.Entity<SystemFee>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__system_f__3213E83F4A31982F");
+
+            entity.ToTable("system_fees");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysdatetime())")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.EffectiveFrom).HasColumnName("effectiveFrom");
+            entity.Property(e => e.EffectiveTo).HasColumnName("effectiveTo");
+            entity.Property(e => e.FixedAmount)
+                .HasDefaultValue(0m)
+                .HasColumnType("decimal(10, 2)")
+                .HasColumnName("fixedAmount");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("isActive");
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .HasColumnName("name");
+            entity.Property(e => e.Percentage)
+                .HasDefaultValue(0m)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("percentage");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updatedAt");
         });
 
         modelBuilder.Entity<TimeSlot>(entity =>
@@ -985,8 +1027,7 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.ReferenceCode)
                 .HasMaxLength(100)
                 .HasColumnName("referenceCode");
-            entity.Property(e => e.Status)
-                .HasColumnName("status");
+            entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.TransactionType).HasColumnName("transactionType");
             entity.Property(e => e.WalletId).HasColumnName("walletId");
             entity.Property(e => e.WithdrawalId).HasColumnName("withdrawalId");

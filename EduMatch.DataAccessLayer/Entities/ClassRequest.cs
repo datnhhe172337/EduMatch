@@ -51,6 +51,8 @@ public partial class ClassRequest
 
     public string? RejectionReason { get; set; }
 
+    public string? CancelReason { get; set; }
+
     public virtual ICollection<ClassRequestSlotsAvailability> ClassRequestSlotsAvailabilities { get; set; } = new List<ClassRequestSlotsAvailability>();
 
     public virtual User LearnerEmailNavigation { get; set; } = null!;

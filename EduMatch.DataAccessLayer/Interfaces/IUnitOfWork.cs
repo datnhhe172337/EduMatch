@@ -14,6 +14,7 @@ namespace EduMatch.DataAccessLayer.Interfaces
         IDepositRepository Deposits { get; }
         IWalletTransactionRepository WalletTransactions { get; }
         IWithdrawalRepository Withdrawals { get; }
+        ISystemFeeRepository SystemFees { get; }
 
         Task<int> CompleteAsync(); 
     }

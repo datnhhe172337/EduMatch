@@ -12,7 +12,7 @@ namespace EduMatch.DataAccessLayer.Enum
         Withdrawal = 1,      // RÚT TIỀN
         BookingPayment = 2,  // THANH TOÁN BOOKING
         BookingRefund = 3,   // HOÀN TIỀN BOOKING
-        BookingPayout = 4    // NHẬN TIỀN TỪ BOOKING (Tutor receives earnings)
-        // PlatformFee = 5 
+        BookingPayout = 4,    // NHẬN TIỀN TỪ BOOKING (Tutor receives earnings)
+        PlatformFee = 5
     }
 }
