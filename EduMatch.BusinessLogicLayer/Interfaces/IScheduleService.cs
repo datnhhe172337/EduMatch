@@ -32,6 +32,10 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// </summary>
         Task<ScheduleDto> CreateAsync(ScheduleCreateRequest request);
         /// <summary>
+        /// Tạo danh sách Schedule cho một Booking; tổng số Schedule sau khi tạo phải bằng TotalSessions của Booking
+        /// </summary>
+        Task<List<ScheduleDto>> CreateListAsync(List<ScheduleCreateRequest> requests);
+        /// <summary>
         /// Cập nhật Schedule
         /// </summary>
         Task<ScheduleDto> UpdateAsync(ScheduleUpdateRequest request);

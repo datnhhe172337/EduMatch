@@ -105,6 +105,11 @@ namespace EduMatch.BusinessLogicLayer.Services
             var booking = await _bookingRepository.GetByIdAsync(request.BookingId)
                 ?? throw new Exception("Booking không tồn tại");
 
+            // Không được tạo vượt quá TotalSessions của Booking
+            var currentCountForBooking = await _scheduleRepository.CountByBookingIdAndStatusAsync(request.BookingId, null);
+            if (currentCountForBooking + 1 > booking.TotalSessions)
+                throw new Exception("Số lượng Schedule vượt quá TotalSessions của Booking");
+
             // AvailabilitiId chưa được sử dụng
             var existingSchedule = await _scheduleRepository.GetByAvailabilityIdAsync(request.AvailabilitiId);
             if (existingSchedule != null)
@@ -140,6 +145,36 @@ namespace EduMatch.BusinessLogicLayer.Services
             }
 
             return _mapper.Map<ScheduleDto>(entity);
+        }
+
+        /// <summary>
+        /// Tạo danh sách Schedule cho một Booking; tổng sau khi tạo phải bằng TotalSessions của Booking
+        /// </summary>
+        public async Task<List<ScheduleDto>> CreateListAsync(List<ScheduleCreateRequest> requests)
+        {
+            if (requests == null || requests.Count == 0)
+                throw new Exception("Danh sách request rỗng");
+
+            // Tất cả request phải cùng một BookingId
+            var bookingId = requests.First().BookingId;
+            if (requests.Any(r => r.BookingId != bookingId))
+                throw new Exception("Tất cả Schedule phải thuộc cùng một Booking");
+
+            // Lấy booking và kiểm tra tổng sessions
+            var booking = await _bookingRepository.GetByIdAsync(bookingId)
+                ?? throw new Exception("Booking không tồn tại");
+            var currentCount = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, null);
+            var totalAfterCreate = currentCount + requests.Count;
+            if (totalAfterCreate != booking.TotalSessions)
+                throw new Exception($"Tổng số Schedule sau khi tạo ({totalAfterCreate}) phải bằng TotalSessions ({booking.TotalSessions}) của Booking");
+
+            var created = new List<ScheduleDto>();
+            foreach (var req in requests)
+            {
+                var dto = await CreateAsync(req);
+                created.Add(dto);
+            }
+            return created;
         }
 
         /// <summary>
