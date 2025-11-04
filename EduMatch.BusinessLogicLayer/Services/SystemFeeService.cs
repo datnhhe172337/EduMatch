@@ -33,6 +33,15 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
+        /// Lấy tất cả SystemFee (không phân trang)
+        /// </summary>
+        public async Task<List<SystemFeeDto>> GetAllNoPagingAsync()
+        {
+            var entities = await _systemFeeRepository.GetAllNoPagingAsync();
+            return _mapper.Map<List<SystemFeeDto>>(entities);
+        }
+
+        /// <summary>
         /// Đếm tổng số SystemFee
         /// </summary>
         public Task<int> CountAsync() => _systemFeeRepository.CountAsync();
