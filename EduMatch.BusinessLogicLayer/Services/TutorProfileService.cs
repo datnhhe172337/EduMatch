@@ -39,13 +39,18 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 
 
+		/// <summary>
+		/// Lấy TutorProfile theo ID với đầy đủ thông tin
+		/// </summary>
 		public async Task<TutorProfileDto?> GetByIdFullAsync(int id)
 		{
 			var entity = await _repository.GetByIdFullAsync(id);
 			return entity is null ? null : _mapper.Map<TutorProfileDto>(entity);
 		}
 
-
+		/// <summary>
+		/// Lấy TutorProfile theo Email với đầy đủ thông tin
+		/// </summary>
 		public async Task<TutorProfileDto?> GetByEmailFullAsync(string email)
 		{
 			if (string.IsNullOrWhiteSpace(email))
@@ -55,15 +60,18 @@ namespace EduMatch.BusinessLogicLayer.Services
 			return entity is null ? null : _mapper.Map<TutorProfileDto>(entity);
 		}
 
+		/// <summary>
+		/// Lấy tất cả TutorProfile với đầy đủ thông tin
+		/// </summary>
 		public async Task<IReadOnlyList<TutorProfileDto>> GetAllFullAsync()
 		{
 			var entities = await _repository.GetAllFullAsync();
 			return _mapper.Map<IReadOnlyList<TutorProfileDto>>(entities);
 		}
 
-
-
-		
+		/// <summary>
+		/// Tạo TutorProfile mới
+		/// </summary>
 		public async Task<TutorProfileDto> CreateAsync(TutorProfileCreateRequest request)
 		{
 			try
@@ -141,7 +149,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 
 	
-		public async Task<TutorProfileDto> UpdateAsync(TutorProfileUpdateRequest request)
+			/// <summary>
+		/// Cập nhật TutorProfile
+		/// </summary>
+	public async Task<TutorProfileDto> UpdateAsync(TutorProfileUpdateRequest request)
 		{
 			try
 			{
@@ -236,11 +247,17 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 
 
+		/// <summary>
+		/// Xóa TutorProfile theo ID
+		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
 			await _repository.RemoveByIdAsync(id);
 		}
 
+		/// <summary>
+		/// Xác thực TutorProfile
+		/// </summary>
 		public async Task<TutorProfileDto> VerifyAsync(int id, string verifiedBy)
 		{
 			try

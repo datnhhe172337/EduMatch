@@ -57,21 +57,20 @@ namespace EduMatch.DataAccessLayer.Repositories
         /// </summary>
         public async Task<IEnumerable<Booking>> GetAllByTutorIdAsync(int tutorId, int? status, int? tutorSubjectId, int page, int pageSize)
         {
-            var query =
-                from b in _context.Bookings
-                    .AsSplitQuery()
-                    .Include(b => b.TutorSubject)
-                        .ThenInclude(ts => ts.Subject)
-                    .Include(b => b.TutorSubject)
-                        .ThenInclude(ts => ts.Level)
-                    .Include(b => b.TutorSubject)
-                        .ThenInclude(ts => ts.Tutor)
-                    .Include(b => b.Schedules)
-                        .ThenInclude(s => s.Availabiliti)
-                            .ThenInclude(a => a.Slot)
-                join ts in _context.TutorSubjects on b.TutorSubjectId equals ts.Id
-                where ts.TutorId == tutorId
-                select b;
+           var query = _context.Bookings
+                .AsSplitQuery()
+                .Include(b => b.TutorSubject)
+                    .ThenInclude(ts => ts.Subject)
+                .Include(b => b.TutorSubject)
+                    .ThenInclude(ts => ts.Level)
+                .Include(b => b.TutorSubject)
+                    .ThenInclude(ts => ts.Tutor)
+                .Include(b => b.Schedules)
+                    .ThenInclude(s => s.Availabiliti)
+                        .ThenInclude(a => a.Slot)
+                .Where(b => b.TutorSubject.TutorId == tutorId)   
+                .AsQueryable();
+                
             if (status.HasValue)
                 query = query.Where(b => b.Status == status.Value);
             if (tutorSubjectId.HasValue)

@@ -38,48 +38,72 @@ namespace EduMatch.BusinessLogicLayer.Services
 			_certificateTypeRepository = certificateTypeRepository;
 		}
 
+		/// <summary>
+		/// Lấy TutorCertificate theo ID với đầy đủ thông tin
+		/// </summary>
 		public async Task<TutorCertificateDto?> GetByIdFullAsync(int id)
 		{
 			var entity = await _repository.GetByIdFullAsync(id);
 			return entity != null ? _mapper.Map<TutorCertificateDto>(entity) : null;
 		}
 
+		/// <summary>
+		/// Lấy TutorCertificate theo TutorId với đầy đủ thông tin
+		/// </summary>
 		public async Task<TutorCertificateDto?> GetByTutorIdFullAsync(int tutorId)
 		{
 			var entity = await _repository.GetByTutorIdFullAsync(tutorId);
 			return entity != null ? _mapper.Map<TutorCertificateDto>(entity) : null;
 		}
 
+		/// <summary>
+		/// Lấy danh sách TutorCertificate theo TutorId
+		/// </summary>
 		public async Task<IReadOnlyList<TutorCertificateDto>> GetByTutorIdAsync(int tutorId)
 		{
 			var entities = await _repository.GetByTutorIdAsync(tutorId);
 			return _mapper.Map<IReadOnlyList<TutorCertificateDto>>(entities);
 		}
 
+		/// <summary>
+		/// Lấy danh sách TutorCertificate theo CertificateTypeId
+		/// </summary>
 		public async Task<IReadOnlyList<TutorCertificateDto>> GetByCertificateTypeAsync(int certificateTypeId)
 		{
 			var entities = await _repository.GetByCertificateTypeAsync(certificateTypeId);
 			return _mapper.Map<IReadOnlyList<TutorCertificateDto>>(entities);
 		}
 
+		/// <summary>
+		/// Lấy danh sách TutorCertificate theo trạng thái xác thực
+		/// </summary>
 		public async Task<IReadOnlyList<TutorCertificateDto>> GetByVerifiedStatusAsync(VerifyStatus verified)
 		{
 			var entities = await _repository.GetByVerifiedStatusAsync(verified);
 			return _mapper.Map<IReadOnlyList<TutorCertificateDto>>(entities);
 		}
 
+		/// <summary>
+		/// Lấy danh sách TutorCertificate đã hết hạn
+		/// </summary>
 		public async Task<IReadOnlyList<TutorCertificateDto>> GetExpiredCertificatesAsync()
 		{
 			var entities = await _repository.GetExpiredCertificatesAsync();
 			return _mapper.Map<IReadOnlyList<TutorCertificateDto>>(entities);
 		}
 
+		/// <summary>
+		/// Lấy danh sách TutorCertificate sắp hết hạn
+		/// </summary>
 		public async Task<IReadOnlyList<TutorCertificateDto>> GetExpiringCertificatesAsync(DateTime beforeDate)
 		{
 			var entities = await _repository.GetExpiringCertificatesAsync(beforeDate);
 			return _mapper.Map<IReadOnlyList<TutorCertificateDto>>(entities);
 		}
 
+		/// <summary>
+		/// Lấy tất cả TutorCertificate với đầy đủ thông tin
+		/// </summary>
 		public async Task<IReadOnlyList<TutorCertificateDto>> GetAllFullAsync()
 		{
 			var entities = await _repository.GetAllFullAsync();
@@ -89,6 +113,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 	
 		
 		
+		/// <summary>
+		/// Tạo TutorCertificate mới
+		/// </summary>
 	public async Task<TutorCertificateDto> CreateAsync(TutorCertificateCreateRequest request)
 	{
 		try
@@ -130,6 +157,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 		
 		
 		
+		/// <summary>
+		/// Cập nhật TutorCertificate
+		/// </summary>
 	public async Task<TutorCertificateDto> UpdateAsync(TutorCertificateUpdateRequest request)
 	{
 		try
@@ -189,6 +219,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Tạo nhiều TutorCertificate
+		/// </summary>
 		public async Task<List<TutorCertificateDto>> CreateBulkAsync(List<TutorCertificateCreateRequest> requests)
 		{
 			try
@@ -207,11 +240,17 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Xóa TutorCertificate theo ID
+		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
 			await _repository.RemoveByIdAsync(id);
 		}
 
+		/// <summary>
+		/// Xóa tất cả TutorCertificate theo TutorId
+		/// </summary>
 		public async Task DeleteByTutorIdAsync(int tutorId)
 		{
 			await _repository.RemoveByTutorIdAsync(tutorId);

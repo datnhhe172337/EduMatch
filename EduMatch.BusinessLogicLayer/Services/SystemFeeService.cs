@@ -21,6 +21,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Lấy danh sách SystemFee với phân trang
+        /// </summary>
         public async Task<List<SystemFeeDto>> GetAllAsync(int page = 1, int pageSize = 10)
         {
             if (page <= 0) page = 1;
@@ -29,14 +32,23 @@ namespace EduMatch.BusinessLogicLayer.Services
             return  _mapper.Map<List<SystemFeeDto>>(entities);
         }
 
+        /// <summary>
+        /// Đếm tổng số SystemFee
+        /// </summary>
         public Task<int> CountAsync() => _systemFeeRepository.CountAsync();
 
+        /// <summary>
+        /// Lấy SystemFee theo ID
+        /// </summary>
         public async Task<SystemFeeDto?> GetByIdAsync(int id)
         {
             var entity = await _systemFeeRepository.GetByIdAsync(id);
             return entity == null ? null : _mapper.Map<SystemFeeDto>(entity);
         }
 
+        /// <summary>
+        /// Tạo SystemFee mới
+        /// </summary>
         public async Task<SystemFeeDto> CreateAsync(SystemFeeCreateRequest request)
         {
             var now = DateTime.UtcNow;
@@ -56,6 +68,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<SystemFeeDto>(entity);
         }
 
+        /// <summary>
+        /// Cập nhật SystemFee
+        /// </summary>
         public async Task<SystemFeeDto> UpdateAsync(SystemFeeUpdateRequest request)
         {
             var entity = await _systemFeeRepository.GetByIdAsync(request.Id) ?? throw new Exception("SystemFee không tồn tại");
@@ -71,6 +86,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<SystemFeeDto>(entity);
         }
 
+        /// <summary>
+        /// Xóa SystemFee theo ID
+        /// </summary>
         public async Task DeleteAsync(int id)
         {
             await _systemFeeRepository.DeleteAsync(id);

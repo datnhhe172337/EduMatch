@@ -21,30 +21,45 @@ namespace EduMatch.BusinessLogicLayer.Services
 			_mapper = mapper;
 		}
 
+		/// <summary>
+		/// Lấy TimeSlot theo ID
+		/// </summary>
 		public async Task<TimeSlotDto?> GetByIdAsync(int id)
 		{
 			var entity = await _repository.GetByIdAsync(id);
 			return entity != null ? _mapper.Map<TimeSlotDto>(entity) : null;
 		}
 
+		/// <summary>
+		/// Lấy tất cả TimeSlot
+		/// </summary>
 		public async Task<IReadOnlyList<TimeSlotDto>> GetAllAsync()
 		{
 			var entities = await _repository.GetAllAsync();
 			return _mapper.Map<IReadOnlyList<TimeSlotDto>>(entities);
 		}
 
+		/// <summary>
+		/// Lấy TimeSlot theo khoảng thời gian
+		/// </summary>
 		public async Task<IReadOnlyList<TimeSlotDto>> GetByTimeRangeAsync(TimeOnly startTime, TimeOnly endTime)
 		{
 			var entities = await _repository.GetByTimeRangeAsync(startTime, endTime);
 			return _mapper.Map<IReadOnlyList<TimeSlotDto>>(entities);
 		}
 
+		/// <summary>
+		/// Lấy TimeSlot theo thời gian chính xác
+		/// </summary>
 		public async Task<TimeSlotDto?> GetByExactTimeAsync(TimeOnly startTime, TimeOnly endTime)
 		{
 			var entity = await _repository.GetByExactTimeAsync(startTime, endTime);
 			return entity != null ? _mapper.Map<TimeSlotDto>(entity) : null;
 		}
 
+		/// <summary>
+		/// Tạo TimeSlot mới
+		/// </summary>
         public async Task<TimeSlotDto> CreateAsync(TimeSlotCreateRequest request)
 		{
 			try
@@ -70,6 +85,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Cập nhật TimeSlot
+		/// </summary>
 	public async Task<TimeSlotDto> UpdateAsync(TimeSlotUpdateRequest request)
 	{
 		try
@@ -101,6 +119,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Xóa TimeSlot theo ID
+		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
 			await _repository.RemoveByIdAsync(id);

@@ -21,24 +21,36 @@ namespace EduMatch.BusinessLogicLayer.Services
 			_mapper = mapper;
 		}
 
+		/// <summary>
+		/// Lấy Subject theo ID
+		/// </summary>
 		public async Task<SubjectDto?> GetByIdAsync(int id)
 		{
 			var entity = await _repository.GetByIdAsync(id);
 			return entity != null ? _mapper.Map<SubjectDto>(entity) : null;
 		}
 
+		/// <summary>
+		/// Lấy tất cả Subject
+		/// </summary>
 		public async Task<IReadOnlyList<SubjectDto>> GetAllAsync()
 		{
 			var entities = await _repository.GetAllAsync();
 			return _mapper.Map<IReadOnlyList<SubjectDto>>(entities);
 		}
 
+		/// <summary>
+		/// Tìm Subject theo tên
+		/// </summary>
 		public async Task<IReadOnlyList<SubjectDto>> GetByNameAsync(string name)
 		{
 			var entities = await _repository.GetByNameAsync(name);
 			return _mapper.Map<IReadOnlyList<SubjectDto>>(entities);
 		}
 
+		/// <summary>
+		/// Tạo Subject mới
+		/// </summary>
 	public async Task<SubjectDto> CreateAsync(SubjectCreateRequest request)
 	{
 		try
@@ -56,6 +68,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Cập nhật Subject
+		/// </summary>
 	public async Task<SubjectDto> UpdateAsync(SubjectUpdateRequest request)
 	{
 		try
@@ -79,6 +94,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Xóa Subject theo ID
+		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
 			await _repository.RemoveByIdAsync(id);

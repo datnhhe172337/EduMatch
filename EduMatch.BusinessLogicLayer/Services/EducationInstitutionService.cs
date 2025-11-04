@@ -24,6 +24,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			_mapper = mapper;
 		}
 
+		/// <summary>
+		/// Lấy EducationInstitution theo ID
+		/// </summary>
 		public async Task<EducationInstitutionDto?> GetByIdAsync(int id)
 		{
 			try
@@ -37,6 +40,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Lấy EducationInstitution theo Code
+		/// </summary>
 		public async Task<EducationInstitutionDto?> GetByCodeAsync(string code)
 		{
 			try
@@ -53,6 +59,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Lấy tất cả EducationInstitution
+		/// </summary>
 		public async Task<IReadOnlyList<EducationInstitutionDto>> GetAllAsync()
 		{
 			try
@@ -66,6 +75,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Tìm EducationInstitution theo tên
+		/// </summary>
 		public async Task<IReadOnlyList<EducationInstitutionDto>> GetByNameAsync(string name)
 		{
 			try
@@ -82,6 +94,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Lấy EducationInstitution theo loại trường
+		/// </summary>
 		public async Task<IReadOnlyList<EducationInstitutionDto>> GetByInstitutionTypeAsync(InstitutionType institutionType)
 		{
 			try
@@ -95,6 +110,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Tạo EducationInstitution mới
+		/// </summary>
 		public async Task<EducationInstitutionDto> CreateAsync(EducationInstitutionCreateRequest request)
 		{
 			try
@@ -132,6 +150,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Cập nhật EducationInstitution
+		/// </summary>
 		public async Task<EducationInstitutionDto> UpdateAsync(EducationInstitutionUpdateRequest request)
 		{
 			try
@@ -175,6 +196,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Xóa EducationInstitution theo ID
+		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
 			try
@@ -197,6 +221,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Xác thực EducationInstitution
+		/// </summary>
 		public async Task<EducationInstitutionDto> VerifyAsync(int id, string verifiedBy)
 		{
 			try
