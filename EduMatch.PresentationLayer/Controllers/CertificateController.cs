@@ -106,6 +106,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Thêm chứng chỉ mới cho gia sư
 		/// </summary>
 		// Create tutor certificate
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Learner + "," + Roles.Tutor)]
 		[HttpPost("create-{tutorId}-certificate")]
 		[ProducesResponseType(typeof(ApiResponse<TutorCertificateDto>), StatusCodes.Status201Created)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -155,6 +156,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Cập nhật thông tin chứng chỉ của gia sư
 		/// </summary>
 		// Update tutor certificate
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
 		[HttpPut("update-{tutorId}-certificate")]
 		[ProducesResponseType(typeof(ApiResponse<TutorCertificateDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -201,6 +203,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Xóa chứng chỉ của gia sư (có thể xóa một chứng chỉ cụ)
 		/// </summary>
 		// Delete tutor certificate
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
 		[HttpDelete("delete-{tutorId}-certificate")]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]

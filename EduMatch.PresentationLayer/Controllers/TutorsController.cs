@@ -71,7 +71,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Đăng ký trở thành gia sư với đầy đủ thông tin profile, education, certificate, subject và availability
 		/// </summary>
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin + ","  + Roles.Tutor)]
 		[HttpPost("become-tutor")]
 		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -158,7 +158,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Xác thực hàng loạt các bằng cấp học vấn của gia sư
 		/// </summary>
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin r)]
 		[HttpPut("verify-list-education/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorEducationDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -189,7 +189,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Xác thực hàng loạt các chứng chỉ của gia sư
 		/// </summary>
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin )]
 		[HttpPut("verify-list-certificate/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorCertificateDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -318,7 +318,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Cập nhật thông cơ bản (không có chứng chỉ, bằng cấp học vấn, status) tin gia sư
 		/// </summary>
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
 		[HttpPut("update-tutor-profile")]
 		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -350,7 +350,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Phê duyệt gia sư và xác thực tất cả chứng chỉ, bằng cấp của gia sư
 		/// </summary>
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin )]
 		[HttpPut("approve-and-verify-all/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -419,7 +419,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Cập nhật trạng thái của gia sư (Pending, Approved, Rejected)
 		/// </summary>
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
 		[HttpPut("update-tutor-status/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
