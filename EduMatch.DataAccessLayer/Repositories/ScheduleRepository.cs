@@ -12,6 +12,9 @@ namespace EduMatch.DataAccessLayer.Repositories
         private readonly EduMatchContext _context;
         public ScheduleRepository(EduMatchContext context) => _context = context;
 
+        /// <summary>
+        /// Lấy danh sách Schedule theo BookingId và Status với phân trang
+        /// </summary>
         public async Task<IEnumerable<Schedule>> GetAllByBookingIdAndStatusAsync(int bookingId, int? status, int page, int pageSize)
         {
             var query = _context.Schedules
@@ -23,6 +26,9 @@ namespace EduMatch.DataAccessLayer.Repositories
                 query = query.Where(s => s.Status == status.Value);
             return await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
         }
+        /// <summary>
+        /// Đếm số lượng Schedule theo BookingId và Status
+        /// </summary>
         public async Task<int> CountByBookingIdAndStatusAsync(int bookingId, int? status)
         {
             var query = _context.Schedules.AsSplitQuery()
@@ -33,10 +39,16 @@ namespace EduMatch.DataAccessLayer.Repositories
                 query = query.Where(s => s.Status == status.Value);
             return await query.CountAsync();
         }
+        /// <summary>
+        /// Lấy Schedule theo AvailabilityId
+        /// </summary>
         public async Task<Schedule?> GetByAvailabilityIdAsync(int availabilitiId)
         {
             return await _context.Schedules.FirstOrDefaultAsync(s => s.AvailabilitiId == availabilitiId);
         }
+        /// <summary>
+        /// Lấy Schedule theo ID
+        /// </summary>
         public async Task<Schedule?> GetByIdAsync(int id)
         {
             return await _context.Schedules
@@ -53,6 +65,9 @@ namespace EduMatch.DataAccessLayer.Repositories
                         .ThenInclude(ts => ts.Level)
                 .FirstOrDefaultAsync(s => s.Id == id);
         }
+        /// <summary>
+        /// Lấy danh sách Schedule theo BookingId đã sắp xếp
+        /// </summary>
         public async Task<IEnumerable<Schedule>> GetAllByBookingIdOrderedAsync(int bookingId)
         {
             return await _context.Schedules
@@ -61,16 +76,25 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .ThenBy(s => s.Id)
                 .ToListAsync();
         }
+        /// <summary>
+        /// Tạo Schedule mới
+        /// </summary>
         public async Task CreateAsync(Schedule schedule)
         {
             await _context.Schedules.AddAsync(schedule);
             await _context.SaveChangesAsync();
         }
+        /// <summary>
+        /// Cập nhật Schedule
+        /// </summary>
         public async Task UpdateAsync(Schedule schedule)
         {
             _context.Schedules.Update(schedule);
             await _context.SaveChangesAsync();
         }
+        /// <summary>
+        /// Xóa Schedule theo ID
+        /// </summary>
         public async Task DeleteAsync(int id)
         {
             var schedule = await _context.Schedules.FindAsync(id);

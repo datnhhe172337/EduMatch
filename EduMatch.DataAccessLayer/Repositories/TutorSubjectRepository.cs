@@ -20,42 +20,75 @@ namespace EduMatch.DataAccessLayer.Repositories
 			.Include(t => t.Subject)
 			.Include(t => t.Tutor);
 
+	/// <summary>
+	/// Lấy TutorSubject theo ID với đầy đủ thông tin
+	/// </summary>
 	public async Task<TutorSubject?> GetByIdFullAsync(int id)
 		=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == id);
 
+	/// <summary>
+	/// Lấy TutorSubject theo TutorId với đầy đủ thông tin
+	/// </summary>
 	public async Task<TutorSubject?> GetByTutorIdFullAsync(int tutorId)
 		=> await IncludeAll().FirstOrDefaultAsync(t => t.TutorId == tutorId);
 
+	/// <summary>
+	/// Lấy danh sách TutorSubject theo TutorId
+	/// </summary>
 	public async Task<IReadOnlyList<TutorSubject>> GetByTutorIdAsync(int tutorId)
 		=> await IncludeAll().Where(t => t.TutorId == tutorId).ToListAsync();
 
+	/// <summary>
+	/// Lấy danh sách TutorSubject theo SubjectId
+	/// </summary>
 	public async Task<IReadOnlyList<TutorSubject>> GetBySubjectIdAsync(int subjectId)
 		=> await IncludeAll().Where(t => t.SubjectId == subjectId).ToListAsync();
 
+	/// <summary>
+	/// Lấy danh sách TutorSubject theo LevelId
+	/// </summary>
 	public async Task<IReadOnlyList<TutorSubject>> GetByLevelIdAsync(int levelId)
 		=> await IncludeAll().Where(t => t.LevelId == levelId).ToListAsync();
 
+	/// <summary>
+	/// Lấy danh sách TutorSubject theo khoảng giá giờ
+	/// </summary>
 	public async Task<IReadOnlyList<TutorSubject>> GetByHourlyRateRangeAsync(decimal minRate, decimal maxRate)
 		=> await IncludeAll().Where(t => t.HourlyRate.HasValue && t.HourlyRate.Value >= minRate && t.HourlyRate.Value <= maxRate).ToListAsync();
 
+	/// <summary>
+	/// Lấy danh sách TutorSubject theo SubjectId và LevelId
+	/// </summary>
 	public async Task<IReadOnlyList<TutorSubject>> GetTutorsBySubjectAndLevelAsync(int subjectId, int levelId)
 		=> await IncludeAll().Where(t => t.SubjectId == subjectId && t.LevelId == levelId).ToListAsync();
 
+	/// <summary>
+	/// Lấy tất cả TutorSubject với đầy đủ thông tin
+	/// </summary>
 	public async Task<IReadOnlyList<TutorSubject>> GetAllFullAsync()
 		=> await IncludeAll().ToListAsync();
 
+	/// <summary>
+	/// Thêm TutorSubject mới
+	/// </summary>
 	public async Task AddAsync(TutorSubject entity)
 	{
 		await _ctx.TutorSubjects.AddAsync(entity);
 		await _ctx.SaveChangesAsync();
 	}
 
+	/// <summary>
+	/// Cập nhật TutorSubject
+	/// </summary>
 	public async Task UpdateAsync(TutorSubject entity)
 	{
 		_ctx.TutorSubjects.Update(entity);
 		await _ctx.SaveChangesAsync();
 	}
 
+	/// <summary>
+	/// Xóa TutorSubject theo ID
+	/// </summary>
 	public async Task RemoveByIdAsync(int id)
 	{
 		var entity = await _ctx.TutorSubjects.FindAsync(new object?[] { id });
@@ -66,6 +99,9 @@ namespace EduMatch.DataAccessLayer.Repositories
 		}
 	}
 
+	/// <summary>
+	/// Xóa tất cả TutorSubject theo TutorId
+	/// </summary>
 	public async Task RemoveByTutorIdAsync(int tutorId)
 	{
 		var entities = await _ctx.TutorSubjects.Where(t => t.TutorId == tutorId).ToListAsync();

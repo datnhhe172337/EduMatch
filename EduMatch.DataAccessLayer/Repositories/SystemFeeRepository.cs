@@ -15,6 +15,9 @@ namespace EduMatch.DataAccessLayer.Repositories
             _context = context;
         }
 
+        /// <summary>
+        /// Lấy danh sách SystemFee với phân trang
+        /// </summary>
         public async Task<IEnumerable<SystemFee>> GetAllAsync(int page = 1, int pageSize = 10)
         {
             if (page <= 0) page = 1;
@@ -27,28 +30,43 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .ToListAsync();
         }
 
+        /// <summary>
+        /// Đếm tổng số SystemFee
+        /// </summary>
         public async Task<int> CountAsync()
         {
             return await _context.SystemFees.CountAsync();
         }
 
+        /// <summary>
+        /// Lấy SystemFee theo ID
+        /// </summary>
         public async Task<SystemFee?> GetByIdAsync(int id)
         {
             return await _context.SystemFees.FirstOrDefaultAsync(x => x.Id == id);
         }
 
+        /// <summary>
+        /// Tạo SystemFee mới
+        /// </summary>
         public async Task CreateAsync(SystemFee entity)
         {
             await _context.SystemFees.AddAsync(entity);
             await _context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Cập nhật SystemFee
+        /// </summary>
         public async Task UpdateAsync(SystemFee entity)
         {
             _context.SystemFees.Update(entity);
             await _context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Xóa SystemFee theo ID
+        /// </summary>
         public async Task DeleteAsync(int id)
         {
             var entity = await _context.SystemFees.FirstOrDefaultAsync(x => x.Id == id);

@@ -26,30 +26,45 @@ namespace EduMatch.BusinessLogicLayer.Services
 			_mapper = mapper;
 		}
 
+		/// <summary>
+		/// Lấy CertificateType theo ID
+		/// </summary>
 		public async Task<CertificateTypeDto?> GetByIdAsync(int id)
 		{
 			var entity = await _repository.GetByIdAsync(id);
 			return entity != null ? _mapper.Map<CertificateTypeDto>(entity) : null;
 		}
 
+		/// <summary>
+		/// Lấy CertificateType theo Code
+		/// </summary>
 		public async Task<CertificateTypeDto?> GetByCodeAsync(string code)
 		{
 			var entity = await _repository.GetByCodeAsync(code);
 			return entity != null ? _mapper.Map<CertificateTypeDto>(entity) : null;
 		}
 
+		/// <summary>
+		/// Lấy tất cả CertificateType
+		/// </summary>
 		public async Task<IReadOnlyList<CertificateTypeDto>> GetAllAsync()
 		{
 			var entities = await _repository.GetAllAsync();
 			return _mapper.Map<IReadOnlyList<CertificateTypeDto>>(entities);
 		}
 
+		/// <summary>
+		/// Tìm CertificateType theo tên
+		/// </summary>
 		public async Task<IReadOnlyList<CertificateTypeDto>> GetByNameAsync(string name)
 		{
 			var entities = await _repository.GetByNameAsync(name);
 			return _mapper.Map<IReadOnlyList<CertificateTypeDto>>(entities);
 		}
 
+		/// <summary>
+		/// Tạo CertificateType mới
+		/// </summary>
 		public async Task<CertificateTypeDto> CreateAsync(CertificateTypeCreateRequest request)
 		{
 			try
@@ -85,6 +100,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Cập nhật CertificateType
+		/// </summary>
 		public async Task<CertificateTypeDto> UpdateAsync(CertificateTypeUpdateRequest request)
 		{
 			try
@@ -124,11 +142,17 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Xóa CertificateType theo ID
+		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
 			await _repository.RemoveByIdAsync(id);
 		}
 
+		/// <summary>
+		/// Xác thực CertificateType
+		/// </summary>
 		public async Task<CertificateTypeDto> VerifyAsync(int id, string verifiedBy)
 		{
 			try
@@ -166,6 +190,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Thêm danh sách Subject vào CertificateType
+		/// </summary>
 		public async Task<CertificateTypeDto> AddSubjectsToCertificateTypeAsync(int certificateTypeId, List<int> subjectIds)
 		{
 			try

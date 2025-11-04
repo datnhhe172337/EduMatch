@@ -20,40 +20,65 @@ namespace EduMatch.DataAccessLayer.Repositories
 			.Include(t => t.Slot)
 			.Include(t => t.Tutor);
 
+		/// <summary>
+		/// Lấy TutorAvailability theo ID với đầy đủ thông tin
+		/// </summary>
 		public async Task<TutorAvailability?> GetByIdFullAsync(int id)
 			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == id);
 
+		/// <summary>
+		/// Lấy danh sách TutorAvailability theo TutorId
+		/// </summary>
 		public async Task<IReadOnlyList<TutorAvailability>> GetByTutorIdAsync(int tutorId)
 			=> await IncludeAll().Where(t => t.TutorId == tutorId).ToListAsync();
 
+		/// <summary>
+		/// Lấy danh sách TutorAvailability theo TutorId với đầy đủ thông tin
+		/// </summary>
 		public async Task<IReadOnlyList<TutorAvailability>> GetByTutorIdFullAsync(int tutorId)
 			=> await IncludeAll().Where(t => t.TutorId == tutorId).ToListAsync();
 
-
+		/// <summary>
+		/// Lấy danh sách TutorAvailability theo trạng thái
+		/// </summary>
 		public async Task<IReadOnlyList<TutorAvailability>> GetByStatusAsync(TutorAvailabilityStatus status)
 			=> await IncludeAll().Where(t => t.Status == (int)status).ToListAsync();
 
-
+		/// <summary>
+		/// Lấy tất cả TutorAvailability với đầy đủ thông tin
+		/// </summary>
 		public async Task<IReadOnlyList<TutorAvailability>> GetAllFullAsync()
 			=> await IncludeAll().ToListAsync();
 
+		/// <summary>
+		/// Thêm TutorAvailability mới
+		/// </summary>
 		public async Task AddAsync(TutorAvailability entity)
 		{
 			await _ctx.TutorAvailabilities.AddAsync(entity);
 			await _ctx.SaveChangesAsync();
 		}
 
+		/// <summary>
+		/// Thêm nhiều TutorAvailability
+		/// </summary>
 		public async Task AddRangeAsync(IEnumerable<TutorAvailability> entity)
 		{
 			await _ctx.TutorAvailabilities.AddRangeAsync(entity);
 			await _ctx.SaveChangesAsync();
 		}
+		/// <summary>
+		/// Cập nhật TutorAvailability
+		/// </summary>
 		public async Task UpdateAsync(TutorAvailability entity)
 		{
 			_ctx.TutorAvailabilities.Update(entity);
 			await _ctx.SaveChangesAsync();
 		}
 
+		/// <summary>
+		/// Xóa TutorAvailability theo ID
+		/// </summary>
 		public async Task RemoveByIdAsync(int id)
 		{
 			var entity = await _ctx.TutorAvailabilities.FindAsync(new object?[] { id });
