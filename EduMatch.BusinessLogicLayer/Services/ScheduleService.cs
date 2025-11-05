@@ -229,16 +229,6 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (request.AttendanceNote != null)
                 entity.AttendanceNote = request.AttendanceNote;
 
-            if (request.IsRefunded.HasValue)
-            {
-                entity.IsRefunded = request.IsRefunded.Value;
-                // Set RefundedAt if IsRefunded = true
-                if (request.IsRefunded.Value && entity.RefundedAt == null)
-                    entity.RefundedAt = DateTime.UtcNow;
-                // Clear RefundedAt if IsRefunded = false
-                else if (!request.IsRefunded.Value)
-                    entity.RefundedAt = null;
-            }
 
             entity.UpdatedAt = DateTime.UtcNow;
 
