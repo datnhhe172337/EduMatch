@@ -1,15 +1,9 @@
-﻿using EduMatch.BusinessLogicLayer.DTOs;
-using EduMatch.BusinessLogicLayer.Interfaces;
+﻿using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests.Wallet;
 using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Threading.Tasks;
-using EduMatch.DataAccessLayer.Entities; // Make sure this is here
-using EduMatch.DataAccessLayer.Enum; // Make sure this is here
 
 namespace EduMatch.PresentationLayer.Controllers
 {
