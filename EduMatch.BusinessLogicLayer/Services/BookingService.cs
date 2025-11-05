@@ -130,7 +130,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 .Where(sf => sf.IsActive == true 
                     && sf.EffectiveFrom <= now 
                     && (sf.EffectiveTo == null || sf.EffectiveTo >= now))
-                .OrderByDescending(sf => sf.EffectiveFrom)
+                .OrderBy(sf => sf.Id)
                 .FirstOrDefaultAsync()
                 ?? throw new Exception("Không tìm thấy SystemFee đang hoạt động");
 

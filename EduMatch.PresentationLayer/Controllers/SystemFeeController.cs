@@ -15,7 +15,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		private readonly ISystemFeeService _systemFeeService;
 
 		/// <summary>
-		/// SystemFee APIs: get all (paging & no paging), create, update
+		/// API SystemFee: lấy tất cả (có/không phân trang), tạo, cập nhật
 		/// </summary>
 		public SystemFeeController(ISystemFeeService systemFeeService)
 		{
@@ -23,10 +23,9 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 		/// <summary>
-		/// Get all SystemFees with paging
+		/// Lấy tất cả SystemFee có phân trang
 		/// </summary>
 		[HttpGet("get-all-paging")]
-		[Authorize]
 		[ProducesResponseType(typeof(ApiResponse<PagedResult<SystemFeeDto>>), StatusCodes.Status200OK)]
 		public async Task<ActionResult<ApiResponse<PagedResult<SystemFeeDto>>>> GetAllPaging([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
 		{
@@ -43,10 +42,9 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 		/// <summary>
-		/// Get all SystemFees (no paging)
+		/// Lấy tất cả SystemFee (không phân trang)
 		/// </summary>
 		[HttpGet("get-all-no-paging")]
-		[Authorize]
 		[ProducesResponseType(typeof(ApiResponse<IEnumerable<SystemFeeDto>>), StatusCodes.Status200OK)]
 		public async Task<ActionResult<ApiResponse<IEnumerable<SystemFeeDto>>>> GetAllNoPaging()
 		{
@@ -55,7 +53,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 		/// <summary>
-		/// Create a new SystemFee
+		/// Tạo mới SystemFee
 		/// </summary>
 		[HttpPost("create-systemfee")]
 		[Authorize(Roles = "BusseAdmin")]
@@ -72,7 +70,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 		/// <summary>
-		/// Update an existing SystemFee
+		/// Cập nhật SystemFee
 		/// </summary>
 		[HttpPut("update-systemfee")]
 		[Authorize(Roles = "BusseAdmin")]
