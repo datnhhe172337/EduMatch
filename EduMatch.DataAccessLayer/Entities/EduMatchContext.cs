@@ -1033,7 +1033,6 @@ public partial class EduMatchContext : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("referenceCode");
             entity.Property(e => e.Status)
-                .HasDefaultValue(1)
                 .HasColumnName("status");
             entity.Property(e => e.TransactionType).HasColumnName("transactionType");
             entity.Property(e => e.WalletId).HasColumnName("walletId");

@@ -1,13 +1,9 @@
 ﻿using DotNetEnv;
-using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.DataAccessLayer.Entities;
-using EduMatch.DataAccessLayer.Interfaces;
-using EduMatch.DataAccessLayer.Repositories;
 using EduMatch.PresentationLayer.Configurations;
 using EduMatch.PresentationLayer.Hubs;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 

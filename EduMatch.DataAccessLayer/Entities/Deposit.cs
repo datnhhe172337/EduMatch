@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EduMatch.DataAccessLayer.Enum;
+using System;
 using System.Collections.Generic;
 
 namespace EduMatch.DataAccessLayer.Entities;
@@ -11,7 +12,7 @@ public partial class Deposit
 
     public decimal Amount { get; set; }
 
-    public int Status { get; set; }
+    public TransactionStatus Status { get; set; }
 
     public string? PaymentGateway { get; set; }
 
