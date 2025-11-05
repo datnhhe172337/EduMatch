@@ -9,7 +9,6 @@ using Microsoft.Extensions.Options;
 using EduMatch.DataAccessLayer.Interfaces;
 using EduMatch.DataAccessLayer.Repositories;
 using Microsoft.AspNetCore.SignalR;
-using PayOS;
 
 
 namespace EduMatch.PresentationLayer.Configurations
@@ -50,14 +49,14 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<UserProfileRepository, UserProfileRepository>();
             services.AddScoped<IManageTutorProfileRepository, ManageTutorProfileRepository>();
             services.AddScoped<IFindTutorRepository, FindTutorRepository>();
-            services.AddScoped<IChatRepository, ChatRepository>();
+            
             services.AddScoped<IClassRequestRepository, ClassRequestRepository>();
             services.AddScoped<ITutorApplicationRepository, TutorApplicationRepository>();
 
-			services.AddScoped<IChatRepository, ChatRepository>();
+			
 			services.AddScoped<UserProfileRepository, UserProfileRepository>();
 			services.AddScoped<IManageTutorProfileRepository, ManageTutorProfileRepository>();
-			services.AddScoped<IFindTutorRepository, FindTutorRepository>();
+			
             services.AddScoped<IWalletRepository, WalletRepository>();
             services.AddScoped<IBankRepository, BankRepository>();
             services.AddScoped<IUserBankAccountRepository, UserBankAccountRepository>();
@@ -92,12 +91,12 @@ namespace EduMatch.PresentationLayer.Configurations
 
 
 
-
+            services.AddScoped<ISystemFeeRepository, SystemFeeRepository>();
             services.AddScoped<ChatService>();
-            services.AddScoped<IUserProfileService, UserProfileService>();
-			services.AddScoped<IManageTutorProfileService, ManageTutorProfileService>();
-			services.AddScoped<IFindTutorService, FindTutorService>();
-			services.AddScoped<IChatService, ChatService>();
+            
+			
+			
+			
             services.AddSingleton<IUserIdProvider, EmailUserIdProvider>();
 
             services.AddScoped<IWalletService, WalletService>();
@@ -123,7 +122,7 @@ namespace EduMatch.PresentationLayer.Configurations
 
 
 			//  HttpClient 
-			services.AddHttpClient();
+			//services.AddHttpClient();
 
 
 			// HttpContextAccessor for CurrentUserService
