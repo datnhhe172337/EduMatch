@@ -15,7 +15,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 {
 	public class TutorCertificateService : ITutorCertificateService
 	{
-		private readonly ITutorCertificateRepository _repository;
+		private readonly ITutorCertificateRepository _tutorCertificateRepository;
 		private readonly IMapper _mapper;
 		private readonly ICloudMediaService _cloudMedia;
 		private readonly CurrentUserService _currentUserService;
@@ -30,7 +30,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 			ITutorProfileRepository tutorProfileRepository,
 			ICertificateTypeRepository certificateTypeRepository	)
 		{
-			_repository = repository;
+			_tutorCertificateRepository = repository;
 			_mapper = mapper;
 			_cloudMedia = cloudMedia;
 			_currentUserService = currentUserService;
@@ -38,57 +38,84 @@ namespace EduMatch.BusinessLogicLayer.Services
 			_certificateTypeRepository = certificateTypeRepository;
 		}
 
+		/// <summary>
+		/// Lấy TutorCertificate theo ID với đầy đủ thông tin
+		/// </summary>
 		public async Task<TutorCertificateDto?> GetByIdFullAsync(int id)
 		{
-			var entity = await _repository.GetByIdFullAsync(id);
+			var entity = await _tutorCertificateRepository.GetByIdFullAsync(id);
 			return entity != null ? _mapper.Map<TutorCertificateDto>(entity) : null;
 		}
 
+		/// <summary>
+		/// Lấy TutorCertificate theo TutorId với đầy đủ thông tin
+		/// </summary>
 		public async Task<TutorCertificateDto?> GetByTutorIdFullAsync(int tutorId)
 		{
-			var entity = await _repository.GetByTutorIdFullAsync(tutorId);
+			var entity = await _tutorCertificateRepository.GetByTutorIdFullAsync(tutorId);
 			return entity != null ? _mapper.Map<TutorCertificateDto>(entity) : null;
 		}
 
+		/// <summary>
+		/// Lấy danh sách TutorCertificate theo TutorId
+		/// </summary>
 		public async Task<IReadOnlyList<TutorCertificateDto>> GetByTutorIdAsync(int tutorId)
 		{
-			var entities = await _repository.GetByTutorIdAsync(tutorId);
+			var entities = await _tutorCertificateRepository.GetByTutorIdAsync(tutorId);
 			return _mapper.Map<IReadOnlyList<TutorCertificateDto>>(entities);
 		}
 
+		/// <summary>
+		/// Lấy danh sách TutorCertificate theo CertificateTypeId
+		/// </summary>
 		public async Task<IReadOnlyList<TutorCertificateDto>> GetByCertificateTypeAsync(int certificateTypeId)
 		{
-			var entities = await _repository.GetByCertificateTypeAsync(certificateTypeId);
+			var entities = await _tutorCertificateRepository.GetByCertificateTypeAsync(certificateTypeId);
 			return _mapper.Map<IReadOnlyList<TutorCertificateDto>>(entities);
 		}
 
+		/// <summary>
+		/// Lấy danh sách TutorCertificate theo trạng thái xác thực
+		/// </summary>
 		public async Task<IReadOnlyList<TutorCertificateDto>> GetByVerifiedStatusAsync(VerifyStatus verified)
 		{
-			var entities = await _repository.GetByVerifiedStatusAsync(verified);
+			var entities = await _tutorCertificateRepository.GetByVerifiedStatusAsync(verified);
 			return _mapper.Map<IReadOnlyList<TutorCertificateDto>>(entities);
 		}
 
+		/// <summary>
+		/// Lấy danh sách TutorCertificate đã hết hạn
+		/// </summary>
 		public async Task<IReadOnlyList<TutorCertificateDto>> GetExpiredCertificatesAsync()
 		{
-			var entities = await _repository.GetExpiredCertificatesAsync();
+			var entities = await _tutorCertificateRepository.GetExpiredCertificatesAsync();
 			return _mapper.Map<IReadOnlyList<TutorCertificateDto>>(entities);
 		}
 
+		/// <summary>
+		/// Lấy danh sách TutorCertificate sắp hết hạn
+		/// </summary>
 		public async Task<IReadOnlyList<TutorCertificateDto>> GetExpiringCertificatesAsync(DateTime beforeDate)
 		{
-			var entities = await _repository.GetExpiringCertificatesAsync(beforeDate);
+			var entities = await _tutorCertificateRepository.GetExpiringCertificatesAsync(beforeDate);
 			return _mapper.Map<IReadOnlyList<TutorCertificateDto>>(entities);
 		}
 
+		/// <summary>
+		/// Lấy tất cả TutorCertificate với đầy đủ thông tin
+		/// </summary>
 		public async Task<IReadOnlyList<TutorCertificateDto>> GetAllFullAsync()
 		{
-			var entities = await _repository.GetAllFullAsync();
+			var entities = await _tutorCertificateRepository.GetAllFullAsync();
 			return _mapper.Map<IReadOnlyList<TutorCertificateDto>>(entities);
 		}
 
 	
 		
 		
+		/// <summary>
+		/// Tạo TutorCertificate mới
+		/// </summary>
 	public async Task<TutorCertificateDto> CreateAsync(TutorCertificateCreateRequest request)
 	{
 		try
@@ -118,7 +145,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 					RejectReason = null
 				};
 
-				await _repository.AddAsync(entity);
+				await _tutorCertificateRepository.AddAsync(entity);
 				return _mapper.Map<TutorCertificateDto>(entity);
 			}
 			catch (Exception ex)
@@ -130,12 +157,15 @@ namespace EduMatch.BusinessLogicLayer.Services
 		
 		
 		
+		/// <summary>
+		/// Cập nhật TutorCertificate
+		/// </summary>
 	public async Task<TutorCertificateDto> UpdateAsync(TutorCertificateUpdateRequest request)
 	{
 		try
 		{
 			// Check if entity exists
-				var existingEntity = await _repository.GetByIdFullAsync(request.Id);
+				var existingEntity = await _tutorCertificateRepository.GetByIdFullAsync(request.Id);
 				if (existingEntity == null)
 				{
 					throw new ArgumentException($"Tutor certificate with ID {request.Id} not found");
@@ -180,7 +210,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 					}
 				}
 
-				await _repository.UpdateAsync(existingEntity);
+				await _tutorCertificateRepository.UpdateAsync(existingEntity);
 				return _mapper.Map<TutorCertificateDto>(existingEntity);
 			}
 			catch (Exception ex)
@@ -189,6 +219,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Tạo nhiều TutorCertificate
+		/// </summary>
 		public async Task<List<TutorCertificateDto>> CreateBulkAsync(List<TutorCertificateCreateRequest> requests)
 		{
 			try
@@ -207,14 +240,20 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Xóa TutorCertificate theo ID
+		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
-			await _repository.RemoveByIdAsync(id);
+			await _tutorCertificateRepository.RemoveByIdAsync(id);
 		}
 
+		/// <summary>
+		/// Xóa tất cả TutorCertificate theo TutorId
+		/// </summary>
 		public async Task DeleteByTutorIdAsync(int tutorId)
 		{
-			await _repository.RemoveByTutorIdAsync(tutorId);
+			await _tutorCertificateRepository.RemoveByTutorIdAsync(tutorId);
 		}
 
 		

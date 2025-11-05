@@ -15,6 +15,7 @@ public partial class EduMatchContext : DbContext
     {
     }
 
+
     public virtual DbSet<Bank> Banks { get; set; }
 
     public virtual DbSet<Booking> Bookings { get; set; }
@@ -30,6 +31,7 @@ public partial class EduMatchContext : DbContext
     public virtual DbSet<ClassRequest> ClassRequests { get; set; }
 
     public virtual DbSet<ClassRequestSlotsAvailability> ClassRequestSlotsAvailabilities { get; set; }
+
 
     public virtual DbSet<Deposit> Deposits { get; set; }
 
@@ -83,9 +85,6 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<Withdrawal> Withdrawals { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -365,6 +364,8 @@ public partial class EduMatchContext : DbContext
 
             entity.ToTable("deposits");
 
+            entity.HasIndex(e => e.GatewayTransactionCode, "UQ__deposits__24392C0D39A9253B").IsUnique();
+
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Amount)
                 .HasColumnType("decimal(18, 2)")
@@ -485,8 +486,6 @@ public partial class EduMatchContext : DbContext
 
             entity.ToTable("meeting_sessions");
 
-            entity.HasIndex(e => e.ScheduleId, "UQ_meeting_sessions_scheduleId").IsUnique();
-
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CreatedAt).HasColumnName("createdAt");
             entity.Property(e => e.EndTime).HasColumnName("endTime");
@@ -515,7 +514,13 @@ public partial class EduMatchContext : DbContext
 
             entity.HasOne(d => d.Schedule).WithOne(p => p.MeetingSession)
                 .HasForeignKey<MeetingSession>(d => d.ScheduleId)
-                .HasConstraintName("FK_meeting_sessions_schedule");
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Meeting_Schedule");
+            
+            // Ensure 1-1 relationship: ScheduleId must be unique
+            entity.HasIndex(e => e.ScheduleId)
+                .IsUnique()
+                .HasDatabaseName("IX_MeetingSession_ScheduleId");
         });
 
         modelBuilder.Entity<Province>(entity =>
@@ -1027,7 +1032,9 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.ReferenceCode)
                 .HasMaxLength(100)
                 .HasColumnName("referenceCode");
-            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.Status)
+                .HasDefaultValue(1)
+                .HasColumnName("status");
             entity.Property(e => e.TransactionType).HasColumnName("transactionType");
             entity.Property(e => e.WalletId).HasColumnName("walletId");
             entity.Property(e => e.WithdrawalId).HasColumnName("withdrawalId");
@@ -1085,6 +1092,30 @@ public partial class EduMatchContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_withdrawals_wallets");
         });
+
+        modelBuilder.Entity<Bank>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__banks__3213E83FD8904DBA");
+
+            entity.ToTable("banks");
+
+            entity.HasIndex(e => e.Code, "UQ__banks__357D4CF9377AEDED").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Code)
+                .HasMaxLength(50)
+                .HasColumnName("code");
+            entity.Property(e => e.LogoUrl)
+                .HasMaxLength(255)
+                .HasColumnName("logoUrl");
+            entity.Property(e => e.Name)
+                .HasMaxLength(200)
+                .HasColumnName("name");
+            entity.Property(e => e.ShortName)
+                .HasMaxLength(100)
+                .HasColumnName("shortName");
+        });
+
 
         OnModelCreatingPartial(modelBuilder);
     }

@@ -42,4 +42,5 @@ public partial class Booking
     public virtual TutorSubject TutorSubject { get; set; } = null!;
 
     public virtual ICollection<WalletTransaction> WalletTransactions { get; set; } = new List<WalletTransaction>();
+
 }

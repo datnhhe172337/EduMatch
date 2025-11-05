@@ -4,6 +4,8 @@ using EduMatch.BusinessLogicLayer.Requests.TutorSubject;
 using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using EduMatch.BusinessLogicLayer.Constants;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -140,6 +142,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Thêm môn học mới cho gia sư với mức giá và cấp độ
 		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin + "," +  Roles.Tutor)]
 		[HttpPost("create-{tutorId}-subject")]
 		[ProducesResponseType(typeof(ApiResponse<TutorSubjectDto>), StatusCodes.Status201Created)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -188,6 +191,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Cập nhật thông tin môn học của gia sư (giá, cấp độ)
 		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
 		[HttpPut("update-{tutorId}-subject")]
 		[ProducesResponseType(typeof(ApiResponse<TutorSubjectDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -233,6 +237,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Xóa môn học của gia sư (có thể xóa một môn cụ thể hoặc tất cả)
 		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
 		[HttpDelete("delete-{tutorId}-subject")]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]

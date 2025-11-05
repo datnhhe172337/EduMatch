@@ -18,10 +18,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 		public string UserId => _httpContextAccessor.HttpContext?.User?.FindFirst(JwtClaimTypes.UserName)?.Value ?? string.Empty;
 
 		// Lấy Email từ Claims
-		public string Email =>
+		public virtual string Email =>
 				_httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email)
 				?? _httpContextAccessor.HttpContext?.User?.FindFirstValue("email")
-				?? _httpContextAccessor.HttpContext?.User?.FindFirstValue(JwtRegisteredClaimNames.Sub);
+				?? _httpContextAccessor.HttpContext?.User?.FindFirstValue(JwtRegisteredClaimNames.Sub)
+				?? string.Empty;
 
 	}
 }

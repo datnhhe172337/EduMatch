@@ -18,13 +18,13 @@ builder.Configuration
 
 // Add services to the container.
 
-
 builder.Services.ConfigureApplication(builder.Configuration);
 
 
+// Background Service
+builder.Services.AddHostedService<ClassRequestExpireBackgroundService>();
 
 // Add services to the container.
-
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {

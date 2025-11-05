@@ -5,6 +5,7 @@ using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Authorization;
+using EduMatch.BusinessLogicLayer.Constants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -35,7 +36,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Tạo nhiều lịch trình cùng lúc cho gia sư
 		/// </summary>
 
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
 		[HttpPost("tutor-availability-create-list")]
 		public async Task<IActionResult> TutorAvailabilityCreateList([FromBody] List<TutorAvailabilityCreateRequest> requests)
 		{
@@ -72,7 +73,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Cập nhật nhiều lịch trình cùng lúc
 		/// </summary>
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
 		[HttpPut("tutor-availability-update-list")]
 		public async Task<IActionResult> TutorAvailabilityUpdateList([FromBody] List<TutorAvailabilityUpdateRequest> requests)
 		{
@@ -109,7 +110,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Xóa nhiều lịch trình cùng lúc (chỉ được xóa khi status là Available)
 		/// </summary>
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
 		[HttpDelete("tutor-availability-delete-list")]
 		public async Task<IActionResult> TutorAvailabilityDeleteList([FromBody] List<int> ids)
 		{

@@ -199,7 +199,7 @@ namespace EduMatch.PresentationLayer.Controllers
                 return Unauthorized(new { Message = "Invalid token: missing email." });
 
             var name = User.FindFirst(ClaimTypes.Name)?.Value;
-            var roleId = User.FindFirst(ClaimTypes.Role)?.Value;
+            var roleName = User.FindFirst(ClaimTypes.Role)?.Value;
             var loginProvider = User.FindFirst("provider")?.Value;
             var createdAt = User.FindFirst("createdAt")?.Value;
             var avatarUrl = User.FindFirst("avatarUrl")?.Value;
@@ -208,7 +208,7 @@ namespace EduMatch.PresentationLayer.Controllers
             {
                 Email = email,
                 Name = name,
-                RoleId = roleId,
+                RoleName = roleName,
                 LoginProvider = loginProvider,
                 CreatedAt = createdAt,
                 AvatarUrl = avatarUrl

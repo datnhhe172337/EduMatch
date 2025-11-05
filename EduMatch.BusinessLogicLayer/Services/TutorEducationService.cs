@@ -16,7 +16,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 {
 	public class TutorEducationService : ITutorEducationService
 	{
-		private readonly ITutorEducationRepository _repository;
+		private readonly ITutorEducationRepository _tutorEducationRepository;
 		private readonly IEducationInstitutionRepository _educationInstitutionRepository;
 		private readonly ITutorProfileRepository _tutorProfileRepository;
 		private readonly IMapper _mapper;
@@ -24,7 +24,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		private readonly CurrentUserService _currentUserService;
 
         public TutorEducationService(
-            ITutorEducationRepository repository,
+			ITutorEducationRepository repository,
             IMapper mapper,
             ICloudMediaService cloudMedia,
             CurrentUserService currentUserService,
@@ -32,7 +32,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             IEducationInstitutionRepository educationInstitutionRepository
             )
 		{
-			_repository = repository;
+			_tutorEducationRepository = repository;
 			_mapper = mapper;
             _cloudMedia = cloudMedia; 
 			_currentUserService = currentUserService;
@@ -40,52 +40,76 @@ namespace EduMatch.BusinessLogicLayer.Services
 			_educationInstitutionRepository = educationInstitutionRepository;
 		}
 
+		/// <summary>
+		/// Lấy TutorEducation theo ID với đầy đủ thông tin
+		/// </summary>
 		public async Task<TutorEducationDto?> GetByIdFullAsync(int id)
 		{
-			var entity = await _repository.GetByIdFullAsync(id);
+			var entity = await _tutorEducationRepository.GetByIdFullAsync(id);
 			return entity != null ? _mapper.Map<TutorEducationDto>(entity) : null;
 		}
 
+		/// <summary>
+		/// Lấy TutorEducation theo TutorId với đầy đủ thông tin
+		/// </summary>
 		public async Task<TutorEducationDto?> GetByTutorIdFullAsync(int tutorId)
 		{
-			var entity = await _repository.GetByTutorIdFullAsync(tutorId);
+			var entity = await _tutorEducationRepository.GetByTutorIdFullAsync(tutorId);
 			return entity != null ? _mapper.Map<TutorEducationDto>(entity) : null;
 		}
 
+		/// <summary>
+		/// Lấy danh sách TutorEducation theo TutorId
+		/// </summary>
 		public async Task<IReadOnlyList<TutorEducationDto>> GetByTutorIdAsync(int tutorId)
 		{
-			var entities = await _repository.GetByTutorIdAsync(tutorId);
+			var entities = await _tutorEducationRepository.GetByTutorIdAsync(tutorId);
 			return _mapper.Map<IReadOnlyList<TutorEducationDto>>(entities);
 		}
 
+		/// <summary>
+		/// Lấy danh sách TutorEducation theo InstitutionId
+		/// </summary>
 		public async Task<IReadOnlyList<TutorEducationDto>> GetByInstitutionIdAsync(int institutionId)
 		{
-			var entities = await _repository.GetByInstitutionIdAsync(institutionId);
+			var entities = await _tutorEducationRepository.GetByInstitutionIdAsync(institutionId);
 			return _mapper.Map<IReadOnlyList<TutorEducationDto>>(entities);
 		}
 
+		/// <summary>
+		/// Lấy danh sách TutorEducation theo trạng thái xác thực
+		/// </summary>
 		public async Task<IReadOnlyList<TutorEducationDto>> GetByVerifiedStatusAsync(VerifyStatus verified)
 		{
-			var entities = await _repository.GetByVerifiedStatusAsync(verified);
+			var entities = await _tutorEducationRepository.GetByVerifiedStatusAsync(verified);
 			return _mapper.Map<IReadOnlyList<TutorEducationDto>>(entities);
 		}
 
+		/// <summary>
+		/// Lấy danh sách TutorEducation đang chờ xác thực
+		/// </summary>
 		public async Task<IReadOnlyList<TutorEducationDto>> GetPendingVerificationsAsync()
 		{
-			var entities = await _repository.GetPendingVerificationsAsync();
+			var entities = await _tutorEducationRepository.GetPendingVerificationsAsync();
 			return _mapper.Map<IReadOnlyList<TutorEducationDto>>(entities);
 		}
 
+		/// <summary>
+		/// Lấy tất cả TutorEducation với đầy đủ thông tin
+		/// </summary>
 		public async Task<IReadOnlyList<TutorEducationDto>> GetAllFullAsync()
 		{
-			var entities = await _repository.GetAllFullAsync();
+			var entities = await _tutorEducationRepository.GetAllFullAsync();
 			return _mapper.Map<IReadOnlyList<TutorEducationDto>>(entities);
 		}
 
 	
 	
 	
-		public async Task<TutorEducationDto> CreateAsync(TutorEducationCreateRequest request)
+			/// <summary>
+		/// Tạo TutorEducation mới
+		/// </summary>
+	public async Task<TutorEducationDto> CreateAsync(TutorEducationCreateRequest request)
 		{
 			try
 			{
@@ -113,7 +137,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 					RejectReason = null
 				};
 
-				await _repository.AddAsync(entity);
+				await _tutorEducationRepository.AddAsync(entity);
 				return _mapper.Map<TutorEducationDto>(entity);
 			}
 			catch (Exception ex)
@@ -126,13 +150,15 @@ namespace EduMatch.BusinessLogicLayer.Services
 	
 		
 
-		// NEW METHOD - USING URL
+		/// <summary>
+		/// Cập nhật TutorEducation
+		/// </summary>
 		public async Task<TutorEducationDto> UpdateAsync(TutorEducationUpdateRequest request)
 		{
 			try
 			{
 				// Check if entity exists
-				var existingEntity = await _repository.GetByIdFullAsync(request.Id);
+				var existingEntity = await _tutorEducationRepository.GetByIdFullAsync(request.Id);
 				if (existingEntity == null)
 				{
 					throw new ArgumentException($"Tutor education with ID {request.Id} not found");
@@ -176,7 +202,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 					}
 				}
 
-				await _repository.UpdateAsync(existingEntity);
+				await _tutorEducationRepository.UpdateAsync(existingEntity);
 				return _mapper.Map<TutorEducationDto>(existingEntity);
 			}
 			catch (Exception ex)
@@ -185,6 +211,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Tạo nhiều TutorEducation
+		/// </summary>
 		public async Task<List<TutorEducationDto>> CreateBulkAsync(List<TutorEducationCreateRequest> requests)
 		{
 			try
@@ -203,14 +232,20 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Xóa TutorEducation theo ID
+		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
-			await _repository.RemoveByIdAsync(id);
+			await _tutorEducationRepository.RemoveByIdAsync(id);
 		}
 
+		/// <summary>
+		/// Xóa tất cả TutorEducation theo TutorId
+		/// </summary>
 		public async Task DeleteByTutorIdAsync(int tutorId)
 		{
-			await _repository.RemoveByTutorIdAsync(tutorId);
+			await _tutorEducationRepository.RemoveByTutorIdAsync(tutorId);
 		}
 	}
 }

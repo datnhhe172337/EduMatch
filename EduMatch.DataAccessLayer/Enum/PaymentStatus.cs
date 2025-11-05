@@ -6,15 +6,10 @@ using System.Threading.Tasks;
 
 namespace EduMatch.DataAccessLayer.Enum
 {
-	public enum DayOfWeekEnum 
+	public enum PaymentStatus
 	{
-		Sunday = 0,
-		Monday = 1,
-		Tuesday = 2,
-		Wednesday = 3,
-		Thursday = 4,
-		Friday = 5,
-		Saturday = 6
+		Pending = 0,    // Chưa thanh toán
+		Paid = 1,       // Đã thanh toán
+		Refunded = 2    // Hoàn tiền
 	}
-
 }
