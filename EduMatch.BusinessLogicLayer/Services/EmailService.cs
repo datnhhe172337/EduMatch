@@ -26,7 +26,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             _mailSettings = mailSettings.Value;
         }
 
-        public async Task<string> SendMailAsync(MailContent mailContent)
+        public virtual async Task<string> SendMailAsync(MailContent mailContent)
         {
             var email = new MimeMessage();
             email.Sender = new MailboxAddress(_mailSettings.DisplayName, _mailSettings.Mail);
