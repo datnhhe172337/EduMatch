@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EduMatch.DataAccessLayer.Enum;    
 
 namespace EduMatch.DataAccessLayer.Repositories
 {
@@ -135,6 +136,21 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .ThenBy(s => s.CreatedAt)
                 .ThenBy(s => s.Id)
                 .ToListAsync();
+        }
+        /// <summary>
+        /// Kiểm tra tutor có lịch học trùng với slot và ngày hay không (loại trừ Schedule bị Cancelled)
+        /// </summary>
+        public async Task<bool> HasTutorScheduleOnSlotDateAsync(int tutorId, int slotId, DateTime date)
+        {
+            var dateOnly = date.Date;
+            return await _context.Schedules
+                .Include(s => s.Availabiliti)
+                .Include(s => s.Booking)
+                    .ThenInclude(b => b.TutorSubject)
+                .AnyAsync(s => s.Booking.TutorSubject.TutorId == tutorId
+                               && s.Availabiliti.SlotId == slotId
+                               && s.Availabiliti.StartDate.Date == dateOnly
+                               && s.Status != (int)ScheduleStatus.Cancelled);
         }
         /// <summary>
         /// Tạo Schedule mới

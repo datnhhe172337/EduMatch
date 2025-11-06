@@ -45,5 +45,9 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// Cập nhật trạng thái của TutorAvailability
         /// </summary>
         Task<TutorAvailabilityDto> UpdateStatusAsync(int id, TutorAvailabilityStatus status);
+        /// <summary>
+        /// Kiểm tra tutor có lịch học trùng với slot và ngày hay không (dựa trên Schedule hiện có)
+        /// </summary>
+        Task<bool> HasTutorScheduleConflictAsync(int tutorId, int slotId, DateTime date);
     }
 }

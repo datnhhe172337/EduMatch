@@ -341,6 +341,35 @@ namespace EduMatch.BusinessLogicLayer.Services
             var entities = await _scheduleRepository.GetAllByLearnerEmailAsync(learnerEmail, startDate, endDate);
             return _mapper.Map<List<ScheduleDto>>(entities);
         }
+
+        /// <summary>
+        /// Lấy danh sách TutorAvailabilityId theo LearnerEmail (lọc theo khoảng thời gian nếu truyền)
+        /// </summary>
+        public async Task<List<int>> GetAllAvailabilityIdsByLearnerEmailAsync(string learnerEmail, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            if (string.IsNullOrWhiteSpace(learnerEmail))
+                throw new Exception("LearnerEmail không được để trống");
+
+            if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
+                throw new Exception("StartDate không được lớn hơn EndDate");
+
+            var entities = await _scheduleRepository.GetAllByLearnerEmailAsync(learnerEmail, startDate, endDate);
+            return entities
+                .Select(s => s.AvailabilitiId)
+                .Distinct()
+                .OrderBy(id => id)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Kiểm tra tutor có lịch học trùng với slot và ngày hay không (loại trừ Schedule bị Cancelled)
+        /// </summary>
+        public Task<bool> HasTutorScheduleConflictAsync(int tutorId, int slotId, DateTime date)
+        {
+            if (tutorId <= 0) throw new Exception("TutorId phải lớn hơn 0");
+            if (slotId <= 0) throw new Exception("SlotId phải lớn hơn 0");
+            return _scheduleRepository.HasTutorScheduleOnSlotDateAsync(tutorId, slotId, date);
+        }
     }
 }
 

@@ -53,5 +53,13 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// Lấy tất cả lịch học theo LearnerEmail (có thể lọc theo khoảng thời gian từ TutorAvailability.StartDate)
         /// </summary>
         Task<List<ScheduleDto>> GetAllByLearnerEmailAsync(string learnerEmail, DateTime? startDate = null, DateTime? endDate = null);
+        /// <summary>
+        /// Lấy danh sách TutorAvailabilityId theo LearnerEmail (lọc theo khoảng thời gian StartDate nếu truyền)
+        /// </summary>
+        Task<List<int>> GetAllAvailabilityIdsByLearnerEmailAsync(string learnerEmail, DateTime? startDate = null, DateTime? endDate = null);
+        /// <summary>
+        /// Kiểm tra tutor có lịch học trùng với slot và ngày hay không (loại trừ Schedule bị Cancelled)
+        /// </summary>
+        Task<bool> HasTutorScheduleConflictAsync(int tutorId, int slotId, DateTime date);
     }
 }

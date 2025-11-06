@@ -35,6 +35,10 @@ namespace EduMatch.DataAccessLayer.Interfaces
         /// </summary>
         Task<IEnumerable<Schedule>> GetAllByLearnerEmailAsync(string learnerEmail, DateTime? startDate = null, DateTime? endDate = null);
         /// <summary>
+        /// Kiểm tra tutor có lịch học trùng với slot và ngày hay không (loại trừ Schedule bị Cancelled)
+        /// </summary>
+        Task<bool> HasTutorScheduleOnSlotDateAsync(int tutorId, int slotId, DateTime date);
+        /// <summary>
         /// Tạo Schedule mới
         /// </summary>
         Task CreateAsync(Schedule schedule);

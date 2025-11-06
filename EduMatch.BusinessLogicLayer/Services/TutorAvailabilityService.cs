@@ -20,17 +20,20 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IMapper _mapper;
         private readonly ITutorProfileRepository _tutorProfileRepository;
         private readonly ITimeSlotRepository _timeSlotRepository;
+        private readonly IScheduleService _scheduleService;
 
         public TutorAvailabilityService(
             ITutorAvailabilityRepository repository,
             IMapper mapper,
             ITimeSlotRepository timeSlotRepository,
-            ITutorProfileRepository tutorProfileRepository)
+            ITutorProfileRepository tutorProfileRepository,
+            IScheduleService scheduleService)
         {
             _repository = repository;
             _mapper = mapper;
             _timeSlotRepository = timeSlotRepository;
             _tutorProfileRepository = tutorProfileRepository;
+            _scheduleService = scheduleService;
         }
 
         /// <summary>
@@ -92,12 +95,17 @@ namespace EduMatch.BusinessLogicLayer.Services
 				if (timeSlot is null)
 					throw new ArgumentException($"timeSlot with ID {request.SlotId} not found.");
 
-				// Kiểm tra trùng: cùng TutorId + cùng ngày (Date) + cùng SlotId đã tồn tại
+                // Kiểm tra trùng: cùng TutorId + cùng ngày (Date) + cùng SlotId đã tồn tại
 				var desiredDate = request.StartDate.Date;
 				var existingForTutor = await _repository.GetByTutorIdAsync(request.TutorId);
 				var isDuplicate = existingForTutor.Any(a => a.SlotId == request.SlotId && a.StartDate.Date == desiredDate);
 				if (isDuplicate)
 					throw new InvalidOperationException("TutorAvailability đã tồn tại cho ngày và slot này");
+
+                // Kiểm tra xung đột với lịch học (Schedule) hiện có của tutor
+                var hasScheduleConflict = await _scheduleService.HasTutorScheduleConflictAsync(request.TutorId, request.SlotId, desiredDate);
+                if (hasScheduleConflict)
+                    throw new InvalidOperationException("Tutor đã có lịch dạy (Schedule) trùng thời gian này");
 
 				var entity = new TutorAvailability
 				{
@@ -151,12 +159,17 @@ namespace EduMatch.BusinessLogicLayer.Services
 				if (timeSlot is null)
 					throw new ArgumentException($"timeSlot with ID {request.SlotId} not found.");
 
-				// Kiểm tra trùng trước khi set ngày/giờ mới
+                // Kiểm tra trùng trước khi set ngày/giờ mới
 				var desiredDate = request.StartDate.Date;
 				var existingForTutor = await _repository.GetByTutorIdAsync(request.TutorId);
 				var isDuplicate = existingForTutor.Any(a => a.Id != request.Id && a.SlotId == request.SlotId && a.StartDate.Date == desiredDate);
 				if (isDuplicate)
 					throw new InvalidOperationException("TutorAvailability đã tồn tại cho ngày và slot này");
+
+                // Kiểm tra xung đột với lịch học (Schedule) hiện có của tutor
+                var hasScheduleConflict = await _scheduleService.HasTutorScheduleConflictAsync(request.TutorId, request.SlotId, desiredDate);
+                if (hasScheduleConflict)
+                    throw new InvalidOperationException("Tutor đã có lịch dạy (Schedule) trùng thời gian này");
 
 				existingEntity.StartDate = request.StartDate.Date.Add(timeSlot.StartTime.ToTimeSpan());
 				existingEntity.EndDate = request.StartDate.Date.Add(timeSlot.EndTime.ToTimeSpan());
@@ -192,6 +205,16 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 throw new InvalidOperationException($"Failed to create bulk tutor availabilities: {ex.Message}", ex);
             }
+        }
+
+        /// <summary>
+        /// Kiểm tra tutor có lịch học trùng với slot và ngày hay không (dựa trên Schedule hiện có)
+        /// </summary>
+        public Task<bool> HasTutorScheduleConflictAsync(int tutorId, int slotId, DateTime date)
+        {
+            if (tutorId <= 0) throw new ArgumentException("TutorId phải lớn hơn 0");
+            if (slotId <= 0) throw new ArgumentException("SlotId phải lớn hơn 0");
+            return _scheduleService.HasTutorScheduleConflictAsync(tutorId, slotId, date);
         }
 
         /// <summary>
