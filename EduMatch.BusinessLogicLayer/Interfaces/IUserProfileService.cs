@@ -1,6 +1,7 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Requests.User;
 using EduMatch.DataAccessLayer.Entities;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,5 +18,9 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task<UserProfileDto?> UpdateAsync(UserProfileUpdateRequest request);
 		Task<UserProfileDto?> GetByEmailDatAsync(string email);
 
-	}
+        Task<IEnumerable<ProvinceDto>> GetProvincesAsync();
+
+        Task<IEnumerable<SubDistrictDto>> GetSubDistrictsByProvinceIdAsync(int provinceId);
+
+    }
 }
