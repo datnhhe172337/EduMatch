@@ -3,5 +3,5 @@ services:
     build:
       context: .
       dockerfile: EduMatch.PresentationLayer/Dockerfile
-    image: hoangnm123/edumatch-api:v0
+    image: datnhm5/edumatch-api:v0
     # name/edumatch-api:v0

@@ -9,104 +9,97 @@ using System.Threading.Tasks;
 
 namespace EduMatch.DataAccessLayer.Repositories
 {
-    public sealed class TutorProfileRepository : ITutorProfileRepository
-    {
-        private readonly EduMatchContext _ctx;
-        public TutorProfileRepository(EduMatchContext ctx) => _ctx = ctx;
+	public sealed class TutorProfileRepository : ITutorProfileRepository
+	{
+		private readonly EduMatchContext _ctx;
+		public TutorProfileRepository(EduMatchContext ctx) => _ctx = ctx;
 
-        // --- METHOD 1: For Read-Only Queries (Keeps AsNoTracking) ---
-        private IQueryable<TutorProfile> IncludeAllReadOnly() =>
-            _ctx.TutorProfiles
-            .AsNoTracking() 
-            .AsSplitQuery()
-            .Include(t => t.TutorAvailabilities)
-                .ThenInclude(a => a.Slot)
-            .Include(t => t.TutorCertificates)
-                .ThenInclude(c => c.CertificateType)
-            .Include(t => t.TutorEducations)
-                .ThenInclude(e => e.Institution)
-            .Include(t => t.TutorSubjects)
-                .ThenInclude(ts => ts.Subject)
-            .Include(t => t.TutorSubjects)
-                .ThenInclude(ts => ts.Level)
-            .Include(t => t.UserEmailNavigation)
-                .ThenInclude(u => u!.UserProfile) 
-                    .ThenInclude(p => p!.City) 
-            .Include(t => t.UserEmailNavigation)
-                .ThenInclude(u => u!.UserProfile) 
-                    .ThenInclude(p => p!.SubDistrict); 
+		private IQueryable<TutorProfile> IncludeAll() =>
+	_ctx.TutorProfiles
+		.AsSplitQuery()
 
-        // --- METHOD 2: For Update Queries (NO AsNoTracking) ---
-        private IQueryable<TutorProfile> IncludeAllForUpdate() =>
-            _ctx.TutorProfiles
-            .AsSplitQuery()
-            .Include(t => t.TutorAvailabilities)
-                .ThenInclude(a => a.Slot)
-            .Include(t => t.TutorCertificates)
-                .ThenInclude(c => c.CertificateType)
-            .Include(t => t.TutorEducations)
-                .ThenInclude(e => e.Institution)
-            .Include(t => t.TutorSubjects)
-                .ThenInclude(ts => ts.Subject)
-            .Include(t => t.TutorSubjects)
-                .ThenInclude(ts => ts.Level)
-            .Include(t => t.UserEmailNavigation)
-                .ThenInclude(u => u!.UserProfile) 
-                    .ThenInclude(p => p!.City)
-            .Include(t => t.UserEmailNavigation)
-                .ThenInclude(u => u!.UserProfile) 
-                    .ThenInclude(p => p!.SubDistrict); 
+		// Availabilities + Slot (chỉ lấy những availability còn tồn tại)
+		.Include(t => t.TutorAvailabilities.Where(a => a.StartDate >= DateTime.Now && (a.EndDate == null || a.EndDate >= DateTime.Now)))
+			.ThenInclude(a => a.Slot)
+
+		// Certificates + CertificateType
+		.Include(t => t.TutorCertificates)
+			.ThenInclude(c => c.CertificateType)
+
+		// Educations + Institution
+		.Include(t => t.TutorEducations)
+			.ThenInclude(e => e.Institution)
+
+		// Subjects + Subject, Level (cần 2 Include riêng)
+		.Include(t => t.TutorSubjects)
+			.ThenInclude(ts => ts.Subject)
+		.Include(t => t.TutorSubjects)
+			.ThenInclude(ts => ts.Level)
+
+		// User -> UserProfile -> City/SubDistrict
+		.Include(t => t.UserEmailNavigation)
+			.ThenInclude(u => u.UserProfile)
+				.ThenInclude(p => p.City)
+		.Include(t => t.UserEmailNavigation)
+			.ThenInclude(u => u.UserProfile)
+				.ThenInclude(p => p.SubDistrict);
 
 
-        public async Task<TutorProfile?> GetByIdFullAsync(int id, CancellationToken ct = default)
-            => await IncludeAllReadOnly().FirstOrDefaultAsync(t => t.Id == id, ct);
 
-        public async Task<TutorProfile?> GetByEmailFullAsync(string email, CancellationToken ct = default)
-            => await IncludeAllReadOnly().FirstOrDefaultAsync(t => t.UserEmail == email, ct);
-        //public async Task<TutorProfile?> GetByTutorIdFullAsync(int tutorId, CancellationToken ct = default)
-        //    => await IncludeAll().FirstOrDefaultAsync(t => t.Id == tutorId, ct);
-        public async Task<IReadOnlyList<TutorProfile>> GetAllFullAsync(CancellationToken ct = default)
-            => await IncludeAllReadOnly().ToListAsync();
+		/// <summary>
+		/// Lấy TutorProfile theo ID với đầy đủ thông tin
+		/// </summary>
+		public async Task<TutorProfile?> GetByIdFullAsync(int id)
+			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == id);
 
-        // --- Get Methods For Update (Use ForUpdate - WITHOUT AsNoTracking) ---
-        public async Task<TutorProfile?> GetByIdForUpdateAsync(int id, CancellationToken ct = default)
-             => await IncludeAllForUpdate().FirstOrDefaultAsync(t => t.Id == id, ct);
+		/// <summary>
+		/// Lấy TutorProfile theo TutorId với đầy đủ thông tin
+		/// </summary>
+		public async Task<TutorProfile?> GetByTutorIdFullAsync(int tutorId)
+			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == tutorId);
 
-        public async Task<TutorProfile?> GetByEmailForUpdateAsync(string email, CancellationToken ct = default)
-             => await IncludeAllForUpdate().FirstOrDefaultAsync(t => t.UserEmail == email, ct);
+		/// <summary>
+		/// Lấy TutorProfile theo Email với đầy đủ thông tin
+		/// </summary>
+		public async Task<TutorProfile?> GetByEmailFullAsync(string email)
+			=> await IncludeAll().FirstOrDefaultAsync(t => t.UserEmail == email);
 
-        // --- Simple GetById (WITH Tracking, NO Includes) ---
-        public async Task<TutorProfile?> GetByIdAsync(int id, CancellationToken ct = default)
-             => await _ctx.TutorProfiles.FirstOrDefaultAsync(t => t.Id == id, ct); // WITH tracking
+		/// <summary>
+		/// Lấy tất cả TutorProfile với đầy đủ thông tin
+		/// </summary>
+		public async Task<IReadOnlyList<TutorProfile>> GetAllFullAsync()
+			=> await IncludeAll().ToListAsync();
 
-        // --- Add Method ---
-        public async Task AddAsync(TutorProfile entity, CancellationToken ct = default)
-        {
-            await _ctx.TutorProfiles.AddAsync(entity, ct);
-            await _ctx.SaveChangesAsync(ct);
-        }
+		/// <summary>
+		/// Thêm TutorProfile mới
+		/// </summary>
+		public async Task AddAsync(TutorProfile entity)
+		{
+			await _ctx.TutorProfiles.AddAsync(entity);
+			await _ctx.SaveChangesAsync();
+		}
 
-        public async Task UpdateAsync(TutorProfile entity, CancellationToken ct = default)
-        {
-            _ctx.TutorProfiles.Update(entity);
-            await _ctx.SaveChangesAsync(ct);
-        }
+		/// <summary>
+		/// Cập nhật TutorProfile
+		/// </summary>
+		public async Task UpdateAsync(TutorProfile entity)
+		{
+			_ctx.TutorProfiles.Update(entity);
+			await _ctx.SaveChangesAsync();
+		}
 
-        public async Task SaveChangesAsync(CancellationToken ct = default)
-        {
-            await _ctx.SaveChangesAsync(ct);
-        }
+		/// <summary>
+		/// Xóa TutorProfile theo ID
+		/// </summary>
+		public async Task RemoveByIdAsync(int id)
+		{
+			var entity = await _ctx.TutorProfiles.FindAsync(new object?[] { id });
+			if (entity != null)
+			{
+				_ctx.TutorProfiles.Remove(entity);
+				await _ctx.SaveChangesAsync();
+			}
+		}
 
-        public async Task RemoveByIdAsync(int id, CancellationToken ct = default)
-        {
-            // FindAsync is simple for removal by PK
-            var entity = await _ctx.TutorProfiles.FindAsync(new object?[] { id }, ct);
-            if (entity != null)
-            {
-                _ctx.TutorProfiles.Remove(entity);
-                await _ctx.SaveChangesAsync(ct);
-            }
-        }
-
-    }
+	}
 }

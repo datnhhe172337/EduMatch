@@ -14,38 +14,55 @@ namespace EduMatch.DataAccessLayer.Repositories
 
 		private IQueryable<Subject> IncludeAll() =>
 			_ctx.Subjects
-			.AsNoTracking()
 			.Include(s => s.CertificateTypeSubjects)
 				.ThenInclude(s => s.CertificateType);
 
-		public async Task<Subject?> GetByIdAsync(int id, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(s => s.Id == id, ct);
+		/// <summary>
+		/// Lấy Subject theo ID
+		/// </summary>
+		public async Task<Subject?> GetByIdAsync(int id)
+			=> await IncludeAll().FirstOrDefaultAsync(s => s.Id == id);
 
-		public async Task<IReadOnlyList<Subject>> GetAllAsync(CancellationToken ct = default)
-			=> await IncludeAll().ToListAsync(ct);
+		/// <summary>
+		/// Lấy tất cả Subject
+		/// </summary>
+		public async Task<IReadOnlyList<Subject>> GetAllAsync()
+			=> await IncludeAll().ToListAsync();
 
-		public async Task<IReadOnlyList<Subject>> GetByNameAsync(string name, CancellationToken ct = default)
-			=> await IncludeAll().Where(s => s.SubjectName.Contains(name)).ToListAsync(ct);
+		/// <summary>
+		/// Tìm Subject theo tên
+		/// </summary>
+		public async Task<IReadOnlyList<Subject>> GetByNameAsync(string name)
+			=> await IncludeAll().Where(s => s.SubjectName.Contains(name)).ToListAsync();
 
-		public async Task AddAsync(Subject entity, CancellationToken ct = default)
+		/// <summary>
+		/// Thêm Subject mới
+		/// </summary>
+		public async Task AddAsync(Subject entity)
 		{
-			await _ctx.Subjects.AddAsync(entity, ct);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.Subjects.AddAsync(entity);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task UpdateAsync(Subject entity, CancellationToken ct = default)
+		/// <summary>
+		/// Cập nhật Subject
+		/// </summary>
+		public async Task UpdateAsync(Subject entity)
 		{
 			_ctx.Subjects.Update(entity);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task RemoveByIdAsync(int id, CancellationToken ct = default)
+		/// <summary>
+		/// Xóa Subject theo ID
+		/// </summary>
+		public async Task RemoveByIdAsync(int id)
 		{
-			var entity = await _ctx.Subjects.FindAsync(new object?[] { id }, ct);
+			var entity = await _ctx.Subjects.FindAsync(new object?[] { id });
 			if (entity != null)
 			{
 				_ctx.Subjects.Remove(entity);
-				await _ctx.SaveChangesAsync(ct);
+				await _ctx.SaveChangesAsync();
 			}
 		}
 	}

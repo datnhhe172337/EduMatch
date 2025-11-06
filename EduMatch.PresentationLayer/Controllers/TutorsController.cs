@@ -1,6 +1,11 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.TutorProfile;
+using EduMatch.BusinessLogicLayer.Requests.TutorCertificate;
+using EduMatch.BusinessLogicLayer.Requests.TutorEducation;
+using EduMatch.BusinessLogicLayer.Requests.TutorSubject;
+using EduMatch.BusinessLogicLayer.Requests.TutorAvailability;
+using EduMatch.BusinessLogicLayer.Requests.User;
 using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Entities;
@@ -8,6 +13,7 @@ using EduMatch.DataAccessLayer.Interfaces;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Authorization;
+using EduMatch.BusinessLogicLayer.Constants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -31,9 +37,8 @@ namespace EduMatch.PresentationLayer.Controllers
 		private readonly ITutorEducationService _tutorEducationService;
 		private readonly EmailService _emailService;
 		private readonly IUserService _userService;
-        private readonly IManageTutorProfileService _manageTutorProfileService;
 
-        public TutorsController(
+		public TutorsController(
 			ITutorSubjectService tutorSubjectService,
 			ISubjectService subjectService,
 			ILevelService levelService,
@@ -44,8 +49,7 @@ namespace EduMatch.PresentationLayer.Controllers
 			EduMatchContext eduMatch,
 			ITutorEducationService tutorEducationService,
 			EmailService emailService,
-			IUserService userService ,
-            IManageTutorProfileService manageTutorProfileService
+			IUserService userService 
 
 			)
 		{
@@ -60,21 +64,20 @@ namespace EduMatch.PresentationLayer.Controllers
 			_tutorEducationService = tutorEducationService;
 			_emailService = emailService;
 			_userService = userService;
-			_manageTutorProfileService = manageTutorProfileService;
 
-
-        }
+		}
 
 
 		
-		// beacme tutor
-		[Authorize]
+		/// <summary>
+		/// Đăng ký trở thành gia sư với đầy đủ thông tin profile, education, certificate, subject và availability
+		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin + ","  + Roles.Tutor)]
 		[HttpPost("become-tutor")]
-		[Consumes("multipart/form-data")]
 		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
-		public async Task<IActionResult> BecomeTutor([FromForm] BecomeTutorRequest request)
+		public async Task<IActionResult> BecomeTutor([FromBody] BecomeTutorRequest request)
 		{
 			if (!ModelState.IsValid)
 				return BadRequest(ApiResponse<string>.Fail("Invalid request."));
@@ -121,7 +124,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
 				await _emailService.SendBecomeTutorWelcomeAsync(userEmail);
 
-				await _userService.UpdateRoleUserAsync(userEmail, 2);
+				// await _userService.UpdateRoleUserAsync(userEmail, 2);
 
 				await tx.CommitAsync();
 
@@ -134,7 +137,7 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 			catch (Exception ex)
 			{
-				// ❌ KHÔNG rollback ở đây nữa
+				await tx.RollbackAsync();
 				return BadRequest(ApiResponse<string>.Fail(
 					"Failed to create tutor profile.",
 					new { exception = ex.Message }
@@ -148,114 +151,16 @@ namespace EduMatch.PresentationLayer.Controllers
 
 
 
-		// Update tutor education (partial)
-		[Authorize]
-		[HttpPut("update-education/{id}")]
-		[Consumes("multipart/form-data")]
-		[ProducesResponseType(typeof(ApiResponse<TutorEducationDto>), StatusCodes.Status200OK)]
-		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
-		public async Task<IActionResult> UpdateEducation([FromRoute] int id, [FromForm] TutorEducationUpdateRequest request)
-		{
-			try
-			{
-				var existing = await _tutorEducationService.GetByIdFullAsync(id);
-				if (existing == null)
-					return NotFound(ApiResponse<string>.Fail("Not found", $"Education #{id} not found"));
-
-				var merged = new TutorEducationUpdateRequest
-				{
-					Id = id,
-					TutorId = request.TutorId != 0 ? request.TutorId : existing.TutorId,
-					InstitutionId = request.InstitutionId != 0 ? request.InstitutionId : existing.InstitutionId,
-					IssueDate = request.IssueDate ?? existing.IssueDate,
-					CertificateEducation = request.CertificateEducation,
-					Verified = request.Verified != 0 ? request.Verified : existing.Verified,
-					RejectReason = string.IsNullOrWhiteSpace(request.RejectReason) ? existing.RejectReason : request.RejectReason
-				};
-
-				var updated = await _tutorEducationService.UpdateAsync(merged);
-				return Ok(ApiResponse<TutorEducationDto>.Ok(updated, "Updated"));
-			}
-			catch (ArgumentException ex)
-			{
-				return BadRequest(ApiResponse<string>.Fail("Bad request", ex.Message));
-			}
-		}
-
-		// Update tutor certificate (partial)
-		[Authorize]
-		[HttpPut("update-certificate/{id}")]
-		[Consumes("multipart/form-data")]
-		[ProducesResponseType(typeof(ApiResponse<TutorCertificateDto>), StatusCodes.Status200OK)]
-		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
-		public async Task<IActionResult> UpdateCertificate([FromRoute] int id, [FromForm] TutorCertificateUpdateRequest request)
-		{
-			try
-			{
-				var existing = await _tutorCertificateService.GetByIdFullAsync(id);
-				if (existing == null)
-					return NotFound(ApiResponse<string>.Fail("Not found", $"Certificate #{id} not found"));
-
-				var merged = new TutorCertificateUpdateRequest
-				{
-					Id = id,
-					TutorId = request.TutorId != 0 ? request.TutorId : existing.TutorId,
-					CertificateTypeId = request.CertificateTypeId != 0 ? request.CertificateTypeId : existing.CertificateTypeId,
-					IssueDate = request.IssueDate ?? existing.IssueDate,
-					ExpiryDate = request.ExpiryDate ?? existing.ExpiryDate,
-					Certificate = request.Certificate,
-					Verified = request.Verified != 0 ? request.Verified : existing.Verified,
-					RejectReason = string.IsNullOrWhiteSpace(request.RejectReason) ? existing.RejectReason : request.RejectReason
-				};
-
-				var updated = await _tutorCertificateService.UpdateAsync(merged);
-				return Ok(ApiResponse<TutorCertificateDto>.Ok(updated, "Updated"));
-			}
-			catch (ArgumentException ex)
-			{
-				return BadRequest(ApiResponse<string>.Fail("Bad request", ex.Message));
-			}
-		}
-
-		// Update tutor subject (partial)
-		[Authorize]
-		[HttpPut("update-tutor-subject/{id}")]
-		[ProducesResponseType(typeof(ApiResponse<TutorSubjectDto>), StatusCodes.Status200OK)]
-		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
-		public async Task<IActionResult> UpdateSubject([FromRoute] int id, [FromBody] TutorSubjectUpdateRequest request)
-		{
-			try
-			{
-				var existing = await _tutorSubjectService.GetByIdFullAsync(id);
-				if (existing == null)
-					return NotFound(ApiResponse<string>.Fail("Not found", $"TutorSubject #{id} not found"));
-
-				var merged = new TutorSubjectUpdateRequest
-				{
-					Id = id,
-					TutorId = request.TutorId != 0 ? request.TutorId : existing.TutorId,
-					SubjectId = request.SubjectId != 0 ? request.SubjectId : existing.SubjectId,
-					HourlyRate = request.HourlyRate ?? existing.HourlyRate,
-					LevelId = request.LevelId ?? existing.LevelId
-				};
-
-				var updated = await _tutorSubjectService.UpdateAsync(merged);
-				return Ok(ApiResponse<TutorSubjectDto>.Ok(updated, "Updated"));
-			}
-			catch (ArgumentException ex)
-			{
-				return BadRequest(ApiResponse<string>.Fail("Bad request", ex.Message));
-			}
-		}
 
 		
 
-		// Batch verify: education
-		[Authorize]
-		[HttpPut("update-verify-education-list/{tutorId}")]
+		
+
+		/// <summary>
+		/// Xác thực hàng loạt các bằng cấp học vấn của gia sư
+		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin)]
+		[HttpPut("verify-list-education/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorEducationDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
 		public async Task<IActionResult> VerifyEducationBatch([FromRoute] int tutorId, [FromBody] List<VerifyUpdateRequest> updates)
@@ -282,9 +187,11 @@ namespace EduMatch.PresentationLayer.Controllers
 			return Ok(ApiResponse<List<TutorEducationDto>>.Ok(results, "Batch verification applied"));
 		}
 
-		// Batch verify: certificate
-		[Authorize]
-		[HttpPut("update-verify-certificate-list/{tutorId}")]
+		/// <summary>
+		/// Xác thực hàng loạt các chứng chỉ của gia sư
+		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin )]
+		[HttpPut("verify-list-certificate/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorCertificateDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
 		public async Task<IActionResult> VerifyCertificateBatch([FromRoute] int tutorId, [FromBody] List<VerifyUpdateRequest> updates)
@@ -312,8 +219,14 @@ namespace EduMatch.PresentationLayer.Controllers
 			return Ok(ApiResponse<List<TutorCertificateDto>>.Ok(results, "Batch verification applied"));
 		}
 
-		// Get all tutors by status
+
+
+
+
 		
+		/// <summary>
+		/// Lấy danh sách gia sư theo trạng thái (Pending, Approved, Rejected)
+		/// </summary>
 		[HttpGet("get-all-tutor-by-status")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorProfileDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -331,6 +244,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Lấy danh sách tất cả gia sư trong hệ thống
+		/// </summary>
 		[HttpGet("get-all-tutor")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorProfileDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -348,8 +264,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
-		// Get all certificates and educations of a tutor filtered by verify status
-		
+		/// <summary>
+		/// Lấy tất cả chứng chỉ và bằng cấp học vấn của một gia sư
+		/// </summary>
 		[HttpGet("get-all-tutor-certificate-education/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -372,6 +289,9 @@ namespace EduMatch.PresentationLayer.Controllers
 
 
 		
+		/// <summary>
+		/// Lấy thông tin chi tiết của một gia sư theo ID
+		/// </summary>
 		[HttpGet("get-tutor-by-id/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -396,10 +316,173 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 
+		/// <summary>
+		/// Cập nhật thông cơ bản (không có chứng chỉ, bằng cấp học vấn, status) tin gia sư
+		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
+		[HttpPut("update-tutor-profile")]
+		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
+		public async Task<IActionResult> UpdateTutorProfile([FromBody] TutorProfileUpdateRequest request)
+		{
+			try
+			{
+				if (!ModelState.IsValid)
+					return BadRequest(ApiResponse<string>.Fail("Invalid request."));
+
+				var updatedProfile = await _tutorProfileService.UpdateAsync(request);
+				return Ok(ApiResponse<TutorProfileDto>.Ok(updatedProfile, "Tutor profile updated successfully."));
+			}
+			catch (ArgumentException ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail(ex.Message));
+			}
+			catch (InvalidOperationException ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail(ex.Message));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail("Failed to update tutor profile.", ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Phê duyệt gia sư và xác thực tất cả chứng chỉ, bằng cấp của gia sư
+		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin )]
+		[HttpPut("approve-and-verify-all/{tutorId}")]
+		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		public async Task<IActionResult> ApproveAndVerifyAll([FromRoute] int tutorId)
+		{
+			if (tutorId <= 0)
+				return BadRequest(ApiResponse<string>.Fail("Invalid tutor ID."));
+
+			// Check if tutor exists using service layer
+			var existingProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
+			if (existingProfile == null)
+				return NotFound(ApiResponse<string>.Fail($"Tutor with ID {tutorId} not found."));
+
+			try
+			{
+				// Get current user email from CurrentUserService
+				var currentUserEmail = _currentUserService.Email ?? "System";
+				
+				// Use VerifyAsync to update status and track verification info
+				await _tutorProfileService.VerifyAsync(tutorId, currentUserEmail);
+
+				// Verify all certificates using service layer
+				var certs = await _tutorCertificateService.GetByTutorIdAsync(tutorId);
+				foreach (var c in certs)
+				{
+					await _tutorCertificateService.UpdateAsync(new TutorCertificateUpdateRequest
+					{
+						Id = c.Id,
+						TutorId = c.TutorId,
+						CertificateTypeId = c.CertificateTypeId,
+						IssueDate = c.IssueDate,
+						ExpiryDate = c.ExpiryDate,
+						Verified = VerifyStatus.Verified,
+						RejectReason = null
+					});
+				}
+
+				// Verify all educations using service layer
+				var edus = await _tutorEducationService.GetByTutorIdAsync(tutorId);
+				foreach (var e in edus)
+				{
+					await _tutorEducationService.UpdateAsync(new TutorEducationUpdateRequest
+					{
+						Id = e.Id,
+						TutorId = e.TutorId,
+						InstitutionId = e.InstitutionId,
+						IssueDate = e.IssueDate,
+						Verified = VerifyStatus.Verified,
+						RejectReason = null
+					});
+				}
+
+				// Update user role to tutor since status is Approved
+				await _userService.UpdateRoleUserAsync(existingProfile.UserEmail, 2); // Role 2 = Tutor
+
+				var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
+				return Ok(ApiResponse<TutorProfileDto>.Ok(fullProfile!, $"Tutor approved and all certificates/educations verified by {currentUserEmail}."));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail("Failed to approve and verify all.", ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Cập nhật trạng thái của gia sư (Pending, Approved, Rejected)
+		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
+		[HttpPut("update-tutor-status/{tutorId}")]
+		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		public async Task<IActionResult> UpdateTutorStatus([FromRoute] int tutorId, [FromBody] UpdateTutorStatusRequest request)
+		{
+			if (tutorId <= 0)
+				return BadRequest(ApiResponse<string>.Fail("Invalid tutor ID."));
+
+			// Check if tutor exists using service layer
+			var existingProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
+			if (existingProfile == null)
+				return NotFound(ApiResponse<string>.Fail($"Tutor with ID {tutorId} not found."));
+
+			try
+			{
+				// Check if changing from Pending to Approved - use VerifyAsync to track who verified
+				if (existingProfile.Status == (int)TutorStatus.Pending && request.Status == TutorStatus.Approved)
+				{
+					// Get current user email from CurrentUserService
+					var currentUserEmail = _currentUserService.Email ?? "System";
+					
+					// Use VerifyAsync to update status and track verification info
+					var verifiedProfile = await _tutorProfileService.VerifyAsync(tutorId, currentUserEmail);
+					
+					// Update user role to tutor since status is Approved
+					await _userService.UpdateRoleUserAsync(existingProfile.UserEmail, 2); // Role 2 = Tutor
+					
+					return Ok(ApiResponse<TutorProfileDto>.Ok(verifiedProfile, $"Tutor verified and approved by {currentUserEmail}."));
+				}
+				else
+				{
+					// For other status changes, use regular UpdateAsync
+					await _tutorProfileService.UpdateAsync(new TutorProfileUpdateRequest
+					{
+						Id = tutorId,
+						Status = request.Status
+					});
+
+					// If status is Approved, update user role to tutor
+					if (request.Status == TutorStatus.Approved)
+					{
+						await _userService.UpdateRoleUserAsync(existingProfile.UserEmail, 2); // Role 2 = Tutor
+					}
+
+					var updatedProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
+					return Ok(ApiResponse<TutorProfileDto>.Ok(updatedProfile!, $"Tutor status updated to {request.Status}."));
+				}
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail("Failed to update tutor status.", ex.Message));
+			}
+		}
 
 
 
 
 
-    }
+
+
+
+	
+	}
 }

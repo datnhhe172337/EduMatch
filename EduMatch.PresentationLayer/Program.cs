@@ -1,13 +1,11 @@
 ﻿using DotNetEnv;
-using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.DataAccessLayer.Entities;
-using EduMatch.DataAccessLayer.Interfaces;
-using EduMatch.DataAccessLayer.Repositories;
 using EduMatch.PresentationLayer.Configurations;
 using EduMatch.PresentationLayer.Hubs;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,8 +18,9 @@ builder.Configuration
 	.AddEnvironmentVariables();
 
 // Add services to the container.
-builder.Services.AddControllers();
+
 builder.Services.ConfigureApplication(builder.Configuration);
+
 
 // Background Service
 builder.Services.AddHostedService<ClassRequestExpireBackgroundService>();
@@ -32,18 +31,21 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.WriteIndented = true;
-    });
+		options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+	});
 
 builder.Services.AddDbContext<EduMatchContext>(options =>
   options.UseSqlServer(builder.Configuration.GetConnectionString("EduMatch")));
 
+
 builder.Services.AddAuthorization();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
-builder.Services.AddScoped<ChatService>();
 
 var app = builder.Build();
 
@@ -75,6 +77,7 @@ app.UseAuthorization();
 
 // Health endpoint để Coolify/Traefik check
 app.MapGet("/health", () => Results.Ok("OK"));
+
 
 app.MapControllers();
 

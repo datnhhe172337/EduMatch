@@ -13,42 +13,91 @@ namespace EduMatch.DataAccessLayer.Repositories
 		public CertificateTypeSubjectRepository(EduMatchContext ctx) => _ctx = ctx;
 
 		private IQueryable<CertificateTypeSubject> IncludeAll() =>
-			_ctx.CertificateTypeSubjects.AsNoTracking();
+			_ctx.CertificateTypeSubjects;
 
-		public async Task<CertificateTypeSubject?> GetByIdAsync(int id, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(c => c.Id == id, ct);
+		/// <summary>
+		/// Lấy CertificateTypeSubject theo ID
+		/// </summary>
+		public async Task<CertificateTypeSubject?> GetByIdAsync(int id)
+			=> await IncludeAll().FirstOrDefaultAsync(c => c.Id == id);
 
-		public async Task<IReadOnlyList<CertificateTypeSubject>> GetByCertificateTypeIdAsync(int certificateTypeId, CancellationToken ct = default)
-			=> await IncludeAll().Where(c => c.CertificateTypeId == certificateTypeId).ToListAsync(ct);
+		/// <summary>
+		/// Lấy danh sách CertificateTypeSubject theo CertificateTypeId
+		/// </summary>
+		public async Task<IReadOnlyList<CertificateTypeSubject>> GetByCertificateTypeIdAsync(int certificateTypeId)
+			=> await IncludeAll().Where(c => c.CertificateTypeId == certificateTypeId).ToListAsync();
 
-		public async Task<IReadOnlyList<CertificateTypeSubject>> GetBySubjectIdAsync(int subjectId, CancellationToken ct = default)
-			=> await IncludeAll().Where(c => c.SubjectId == subjectId).ToListAsync(ct);
+		/// <summary>
+		/// Lấy danh sách CertificateTypeSubject theo SubjectId
+		/// </summary>
+		public async Task<IReadOnlyList<CertificateTypeSubject>> GetBySubjectIdAsync(int subjectId)
+			=> await IncludeAll().Where(c => c.SubjectId == subjectId).ToListAsync();
 
-		public async Task<CertificateTypeSubject?> GetByCertificateTypeAndSubjectAsync(int certificateTypeId, int subjectId, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(c => c.CertificateTypeId == certificateTypeId && c.SubjectId == subjectId, ct);
+		/// <summary>
+		/// Lấy CertificateTypeSubject theo CertificateTypeId và SubjectId
+		/// </summary>
+		public async Task<CertificateTypeSubject?> GetByCertificateTypeAndSubjectAsync(int certificateTypeId, int subjectId)
+			=> await IncludeAll().FirstOrDefaultAsync(c => c.CertificateTypeId == certificateTypeId && c.SubjectId == subjectId);
 
-		public async Task<IReadOnlyList<CertificateTypeSubject>> GetAllAsync(CancellationToken ct = default)
-			=> await IncludeAll().ToListAsync(ct);
+		/// <summary>
+		/// Lấy tất cả CertificateTypeSubject
+		/// </summary>
+		public async Task<IReadOnlyList<CertificateTypeSubject>> GetAllAsync()
+			=> await IncludeAll().ToListAsync();
 
-		public async Task AddAsync(CertificateTypeSubject entity, CancellationToken ct = default)
+		/// <summary>
+		/// Thêm CertificateTypeSubject mới
+		/// </summary>
+		public async Task AddAsync(CertificateTypeSubject entity)
 		{
-			await _ctx.CertificateTypeSubjects.AddAsync(entity, ct);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.CertificateTypeSubjects.AddAsync(entity);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task UpdateAsync(CertificateTypeSubject entity, CancellationToken ct = default)
+		/// <summary>
+		/// Cập nhật CertificateTypeSubject
+		/// </summary>
+		public async Task UpdateAsync(CertificateTypeSubject entity)
 		{
 			_ctx.CertificateTypeSubjects.Update(entity);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task RemoveByIdAsync(int id, CancellationToken ct = default)
+		/// <summary>
+		/// Xóa CertificateTypeSubject theo ID
+		/// </summary>
+		public async Task RemoveByIdAsync(int id)
 		{
-			var entity = await _ctx.CertificateTypeSubjects.FindAsync(new object?[] { id }, ct);
+			var entity = await _ctx.CertificateTypeSubjects.FindAsync(new object?[] { id });
 			if (entity != null)
 			{
 				_ctx.CertificateTypeSubjects.Remove(entity);
-				await _ctx.SaveChangesAsync(ct);
+				await _ctx.SaveChangesAsync();
+			}
+		}
+
+		/// <summary>
+		/// Thêm nhiều CertificateTypeSubject
+		/// </summary>
+		public async Task AddRangeAsync(IEnumerable<CertificateTypeSubject> entities)
+		{
+			await _ctx.CertificateTypeSubjects.AddRangeAsync(entities);
+			await _ctx.SaveChangesAsync();
+		}
+
+		/// <summary>
+		/// Xóa tất cả CertificateTypeSubject theo CertificateTypeId
+		/// </summary>
+		public async Task RemoveByCertificateTypeIdAsync(int certificateTypeId)
+		{
+			var entities = await _ctx.CertificateTypeSubjects
+				.Where(c => c.CertificateTypeId == certificateTypeId)
+				.ToListAsync();
+			
+			if (entities.Any())
+			{
+				_ctx.CertificateTypeSubjects.RemoveRange(entities);
+				await _ctx.SaveChangesAsync();
 			}
 		}
 	}

@@ -14,42 +14,69 @@ namespace EduMatch.DataAccessLayer.Repositories
 
 		private IQueryable<CertificateType> IncludeAll() =>
 			_ctx.CertificateTypes
-			.AsNoTracking()
 			.AsSplitQuery()
 			.Include(c => c.CertificateTypeSubjects)
-		 		.ThenInclude(c => c.Subject);
+					.ThenInclude(c => c.Subject);
 
-		public async Task<CertificateType?> GetByIdAsync(int id, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(c => c.Id == id, ct);
+		/// <summary>
+		/// Lấy CertificateType theo ID
+		/// </summary>
+		public async Task<CertificateType?> GetByIdAsync(int id)
+			=> await IncludeAll().FirstOrDefaultAsync(c => c.Id == id);
 
-		public async Task<CertificateType?> GetByCodeAsync(string code, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(c => c.Code == code, ct);
+		/// <summary>
+		/// Lấy CertificateType theo Code
+		/// </summary>
+		public async Task<CertificateType?> GetByCodeAsync(string code)
+			=> await IncludeAll().FirstOrDefaultAsync(c => c.Code == code);
 
-		public async Task<IReadOnlyList<CertificateType>> GetAllAsync(CancellationToken ct = default)
-			=> await IncludeAll().ToListAsync(ct);
+		/// <summary>
+		/// Lấy tất cả CertificateType
+		/// </summary>
+		public async Task<IReadOnlyList<CertificateType>> GetAllAsync()
+			=> await IncludeAll().ToListAsync();
 
-		public async Task<IReadOnlyList<CertificateType>> GetByNameAsync(string name, CancellationToken ct = default)
-			=> await IncludeAll().Where(c => c.Name.Contains(name)).ToListAsync(ct);
+		/// <summary>
+		/// Tìm CertificateType theo tên
+		/// </summary>
+		public async Task<IReadOnlyList<CertificateType>> GetByNameAsync(string name)
+			=> await IncludeAll().Where(c => c.Name.Contains(name)).ToListAsync();
 
-		public async Task AddAsync(CertificateType entity, CancellationToken ct = default)
+		/// <summary>
+		/// Thêm CertificateType mới
+		/// </summary>
+		public async Task AddAsync(CertificateType entity)
 		{
-			await _ctx.CertificateTypes.AddAsync(entity, ct);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.CertificateTypes.AddAsync(entity);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task UpdateAsync(CertificateType entity, CancellationToken ct = default)
+		/// <summary>
+		/// Cập nhật CertificateType
+		/// </summary>
+		public async Task UpdateAsync(CertificateType entity)
 		{
 			_ctx.CertificateTypes.Update(entity);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task RemoveByIdAsync(int id, CancellationToken ct = default)
+		/// <summary>
+		/// Xóa CertificateType theo ID
+		/// </summary>
+		public async Task RemoveByIdAsync(int id)
 		{
-			var entity = await _ctx.CertificateTypes.FindAsync(new object?[] { id }, ct);
+			var entity = await _ctx.CertificateTypes
+				.Include(c => c.CertificateTypeSubjects)
+				.FirstOrDefaultAsync(c => c.Id == id);
+			
 			if (entity != null)
 			{
+				// Remove all related CertificateTypeSubjects first
+				_ctx.CertificateTypeSubjects.RemoveRange(entity.CertificateTypeSubjects);
+				
+				// Then remove the CertificateType
 				_ctx.CertificateTypes.Remove(entity);
-				await _ctx.SaveChangesAsync(ct);
+				await _ctx.SaveChangesAsync();
 			}
 		}
 	}

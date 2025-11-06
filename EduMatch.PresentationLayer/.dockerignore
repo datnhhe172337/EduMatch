@@ -38,3 +38,6 @@ TestResults/
 *.db
 *.pdb
 *.cache
+
+# Ignore tests
+EduMatch.Tests/

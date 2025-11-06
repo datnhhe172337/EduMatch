@@ -1,7 +1,7 @@
 ﻿using AutoMapper; // Added
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.TutorAvailability;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
@@ -9,7 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
-using System.Linq; // Added
+using System.Linq;
+using EduMatch.BusinessLogicLayer.Requests.User; // Added
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
@@ -32,124 +33,150 @@ namespace EduMatch.BusinessLogicLayer.Services
             _tutorProfileRepository = tutorProfileRepository;
         }
 
-        // --- NO CHANGES to your Get... methods ---
+        /// <summary>
+        /// Lấy TutorAvailability theo ID với đầy đủ thông tin
+        /// </summary>
         public async Task<TutorAvailabilityDto?> GetByIdFullAsync(int id)
         {
             var entity = await _repository.GetByIdFullAsync(id);
             return entity != null ? _mapper.Map<TutorAvailabilityDto>(entity) : null;
         }
 
+        /// <summary>
+        /// Lấy danh sách TutorAvailability theo TutorId
+        /// </summary>
         public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByTutorIdAsync(int tutorId)
         {
             var entities = await _repository.GetByTutorIdAsync(tutorId);
             return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
         }
 
+        /// <summary>
+        /// Lấy danh sách TutorAvailability theo TutorId với đầy đủ thông tin
+        /// </summary>
+        public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByTutorIdFullAsync(int tutorId)
+        {
+            var entities = await _repository.GetByTutorIdFullAsync(tutorId);
+            return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
+        }
+
+        /// <summary>
+        /// Lấy tất cả TutorAvailability với đầy đủ thông tin
+        /// </summary>
         public async Task<IReadOnlyList<TutorAvailabilityDto>> GetAllFullAsync()
         {
             var entities = await _repository.GetAllFullAsync();
             return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
         }
 
-        // --- NO CHANGES to your CreateAsync method (it's correct) ---
-        public async Task<TutorAvailabilityDto> CreateAsync(TutorAvailabilityCreateRequest request)
-        {
-            try
-            {
-                var tutor = await _tutorProfileRepository.GetByIdFullAsync(request.TutorId);
-                if (tutor is null)
-                    throw new ArgumentException($"Tutor with ID {request.TutorId} not found.");
+		/// <summary>
+		/// Tạo TutorAvailability mới, tính StartDate và EndDate từ TimeSlot
+		/// </summary>
+		public async Task<TutorAvailabilityDto> CreateAsync(TutorAvailabilityCreateRequest request)
+		{
+			try
+			{
+				// Validate request
+				var validationContext = new ValidationContext(request);
+				var validationResults = new List<ValidationResult>();
+				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+				{
+					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
+				}
 
-                var timeSlot = await _timeSlotRepository.GetByIdAsync(request.SlotId);
-                if (timeSlot is null)
-                    throw new ArgumentException($"timeSlot with ID {request.SlotId} not found.");
+				var tutor = await _tutorProfileRepository.GetByIdFullAsync(request.TutorId);
+				if (tutor is null)
+					throw new ArgumentException($"Tutor with ID {request.TutorId} not found.");
 
-                var entity = _mapper.Map<TutorAvailability>(request);
+				var timeSlot = await _timeSlotRepository.GetByIdAsync(request.SlotId);
+				if (timeSlot is null)
+					throw new ArgumentException($"timeSlot with ID {request.SlotId} not found.");
 
-                if (entity.Status == null)
-                    entity.Status = TutorAvailabilityStatus.Available;
+				// Kiểm tra trùng: cùng TutorId + cùng ngày (Date) + cùng SlotId đã tồn tại
+				var desiredDate = request.StartDate.Date;
+				var existingForTutor = await _repository.GetByTutorIdAsync(request.TutorId);
+				var isDuplicate = existingForTutor.Any(a => a.SlotId == request.SlotId && a.StartDate.Date == desiredDate);
+				if (isDuplicate)
+					throw new InvalidOperationException("TutorAvailability đã tồn tại cho ngày và slot này");
 
-                entity.CreatedAt = DateTime.UtcNow;
-                entity.UpdatedAt = null;
-                // This date calculation logic is crucial
-                entity.StartDate = request.StartDate.Date.Add(timeSlot.StartTime.ToTimeSpan());
-                entity.EndDate = request.StartDate.Date.Add(timeSlot.EndTime.ToTimeSpan());
+				var entity = new TutorAvailability
+				{
+					TutorId = request.TutorId,
+					SlotId = request.SlotId,
+					Status = (int)TutorAvailabilityStatus.Available,
+					CreatedAt = DateTime.UtcNow,
+					StartDate = request.StartDate.Date.Add(timeSlot.StartTime.ToTimeSpan()),
+					EndDate = request.StartDate.Date.Add(timeSlot.EndTime.ToTimeSpan())
+				};
 
-                await _repository.AddAsync(entity);
-                return _mapper.Map<TutorAvailabilityDto>(entity);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to create tutor availability: {ex.Message}", ex);
-            }
-        }
-        public async Task<TutorAvailabilityDto> UpdateAsync(TutorAvailabilityUpdateRequest request)
-        {
-            try
-            {
-                // Validate request
-                var validationContext = new ValidationContext(request);
-                var validationResults = new List<ValidationResult>();
-                if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-                {
-                    throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-                }
+				await _repository.AddAsync(entity);
+				return _mapper.Map<TutorAvailabilityDto>(entity);
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to create tutor availability: {ex.Message}", ex);
+			}
+		}
 
-                // Check if entity exists
-                var existingEntity = await _repository.GetByIdFullAsync(request.Id);
-                if (existingEntity == null)
-                {
-                    throw new ArgumentException($"Tutor availability with ID {request.Id} not found");
-                }
+		/// <summary>
+		/// Cập nhật TutorAvailability, tính lại StartDate và EndDate từ TimeSlot
+		/// </summary>
+		public async Task<TutorAvailabilityDto> UpdateAsync(TutorAvailabilityUpdateRequest request)
+		{
+			try
+			{
+				// Validate request
+				var validationContext = new ValidationContext(request);
+				var validationResults = new List<ValidationResult>();
+				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+				{
+					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
+				}
 
-                var entity = _mapper.Map<TutorAvailability>(request);
-                await _repository.UpdateAsync(entity);
-                return _mapper.Map<TutorAvailabilityDto>(entity);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to update tutor availability: {ex.Message}", ex);
-            }
-        }
+				// Check if entity exists
+				var existingEntity = await _repository.GetByIdFullAsync(request.Id);
+				if (existingEntity == null)
+				{
+					throw new ArgumentException($"Tutor availability with ID {request.Id} not found");
+				}
 
-        // --- FIXED this method to use the new DTO and add correct logic ---
-        public async Task<TutorAvailabilityDto> UpdateAsync(UpdateTutorAvailabilityRequest request)
-        {
-            try
-            {
-                // Check if entity exists
-                var existingEntity = await _repository.GetByIdFullAsync(request.Id);
-                if (existingEntity == null)
-                {
-                    throw new ArgumentException($"Tutor availability with ID {request.Id} not found");
-                }
+				// Update only provided fields
+				existingEntity.TutorId = request.TutorId;
+				existingEntity.SlotId = request.SlotId;
+				if (request.Status.HasValue)
+					existingEntity.Status = (int)request.Status.Value;
 
-                // Fetch the time slot to recalculate dates, just like in CreateAsync
-                var timeSlot = await _timeSlotRepository.GetByIdAsync(request.SlotId);
-                if (timeSlot is null)
-                    throw new ArgumentException($"timeSlot with ID {request.SlotId} not found.");
+				// Update StartDate and EndDate based on SlotId
+				var timeSlot = await _timeSlotRepository.GetByIdAsync(request.SlotId);
+				if (timeSlot is null)
+					throw new ArgumentException($"timeSlot with ID {request.SlotId} not found.");
 
-                // Map the basic properties
-                _mapper.Map(request, existingEntity);
+				// Kiểm tra trùng trước khi set ngày/giờ mới
+				var desiredDate = request.StartDate.Date;
+				var existingForTutor = await _repository.GetByTutorIdAsync(request.TutorId);
+				var isDuplicate = existingForTutor.Any(a => a.Id != request.Id && a.SlotId == request.SlotId && a.StartDate.Date == desiredDate);
+				if (isDuplicate)
+					throw new InvalidOperationException("TutorAvailability đã tồn tại cho ngày và slot này");
 
-                // Manually set/recalculate critical properties
-                existingEntity.UpdatedAt = DateTime.UtcNow;
-                existingEntity.StartDate = request.StartDate.Date.Add(timeSlot.StartTime.ToTimeSpan());
-                existingEntity.EndDate = request.StartDate.Date.Add(timeSlot.EndTime.ToTimeSpan());
-                // When a tutor updates their availability, it should become "Available"
-                existingEntity.Status = TutorAvailabilityStatus.Available;
+				existingEntity.StartDate = request.StartDate.Date.Add(timeSlot.StartTime.ToTimeSpan());
+				existingEntity.EndDate = request.StartDate.Date.Add(timeSlot.EndTime.ToTimeSpan());
+				existingEntity.UpdatedAt = DateTime.UtcNow;
 
-                await _repository.UpdateAsync(existingEntity);
-                return _mapper.Map<TutorAvailabilityDto>(existingEntity);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to update tutor availability: {ex.Message}", ex);
-            }
-        }
+				await _repository.UpdateAsync(existingEntity);
+				return _mapper.Map<TutorAvailabilityDto>(existingEntity);
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to update tutor availability: {ex.Message}", ex);
+			}
+		}
 
-        // --- NO CHANGES to your CreateBulkAsync (it's correct) ---
-        public async Task<List<TutorAvailabilityDto>> CreateBulkAsync(List<TutorAvailabilityCreateRequest> requests)
+
+		
+		/// <summary>
+		/// Tạo nhiều TutorAvailability
+		/// </summary>
+		public async Task<List<TutorAvailabilityDto>> CreateBulkAsync(List<TutorAvailabilityCreateRequest> requests)
         {
             try
             {
@@ -167,51 +194,30 @@ namespace EduMatch.BusinessLogicLayer.Services
             }
         }
 
-        // --- NO CHANGES to your DeleteAsync ---
+        /// <summary>
+        /// Cập nhật trạng thái của TutorAvailability (Available/Booked/InProgress/Cancelled)
+        /// </summary>
+        public async Task<TutorAvailabilityDto> UpdateStatusAsync(int id, TutorAvailabilityStatus status)
+        {
+            var existingEntity = await _repository.GetByIdFullAsync(id)
+                ?? throw new ArgumentException($"Tutor availability with ID {id} not found");
+
+            existingEntity.Status = (int)status;
+            existingEntity.UpdatedAt = DateTime.UtcNow;
+            await _repository.UpdateAsync(existingEntity);
+            return _mapper.Map<TutorAvailabilityDto>(existingEntity);
+        }
+
+       
+        /// <summary>
+        /// Xóa TutorAvailability theo ID
+        /// </summary>
         public async Task DeleteAsync(int id)
         {
             await _repository.RemoveByIdAsync(id);
         }
 
-        // --- ADDED THE NEW RECONCILIATION METHOD ---
-        public async Task ReconcileAsync(int tutorId, List<UpdateTutorAvailabilityRequest> incomingAvailabilities)
-        {
-            // 1. Get current state
-            var currentAvailabilities = await _repository.GetByTutorIdAsync(tutorId);
-            var currentIds = currentAvailabilities.Select(a => a.Id).ToHashSet();
-            var incomingIds = incomingAvailabilities.Select(a => a.Id).ToHashSet();
-
-            // 2. (DELETE)
-            var idsToDelete = currentIds.Except(incomingIds);
-            foreach (var id in idsToDelete)
-            {
-                await this.DeleteAsync(id);
-            }
-
-            // 3. (UPDATE)
-            var requestsToUpdate = incomingAvailabilities
-                .Where(a => a.Id > 0 && currentIds.Contains(a.Id))
-                .ToList();
-            foreach (var req in requestsToUpdate)
-            {
-                // Use our new, fixed UpdateAsync method
-                await this.UpdateAsync(req);
-            }
-
-            // 4. (CREATE)
-            var requestsToCreate = incomingAvailabilities
-                .Where(a => a.Id == 0)
-                .ToList();
-            if (requestsToCreate.Any())
-            {
-                var createDtos = _mapper.Map<List<TutorAvailabilityCreateRequest>>(requestsToCreate);
-                foreach (var dto in createDtos)
-                {
-                    dto.TutorId = tutorId;
-                }
-                // Use your existing CreateBulkAsync
-                await this.CreateBulkAsync(createDtos);
-            }
-        }
+      
+       
     }
 }

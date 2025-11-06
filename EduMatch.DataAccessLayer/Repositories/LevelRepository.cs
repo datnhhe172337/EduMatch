@@ -13,36 +13,54 @@ namespace EduMatch.DataAccessLayer.Repositories
 		public LevelRepository(EduMatchContext ctx) => _ctx = ctx;
 
 		private IQueryable<Level> IncludeAll() =>
-			_ctx.Levels.AsNoTracking();
+			_ctx.Levels;
 
-		public async Task<Level?> GetByIdAsync(int id, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(l => l.Id == id, ct);
+		/// <summary>
+		/// Lấy Level theo ID
+		/// </summary>
+		public async Task<Level?> GetByIdAsync(int id)
+			=> await IncludeAll().FirstOrDefaultAsync(l => l.Id == id);
 
-		public async Task<IReadOnlyList<Level>> GetAllAsync(CancellationToken ct = default)
-			=> await IncludeAll().ToListAsync(ct);
+		/// <summary>
+		/// Lấy tất cả Level
+		/// </summary>
+		public async Task<IReadOnlyList<Level>> GetAllAsync()
+			=> await IncludeAll().ToListAsync();
 
-		public async Task<IReadOnlyList<Level>> GetByNameAsync(string name, CancellationToken ct = default)
-			=> await IncludeAll().Where(l => l.Name.Contains(name)).ToListAsync(ct);
+		/// <summary>
+		/// Tìm Level theo tên
+		/// </summary>
+		public async Task<IReadOnlyList<Level>> GetByNameAsync(string name)
+			=> await IncludeAll().Where(l => l.Name.Contains(name)).ToListAsync();
 
-		public async Task AddAsync(Level entity, CancellationToken ct = default)
+		/// <summary>
+		/// Thêm Level mới
+		/// </summary>
+		public async Task AddAsync(Level entity)
 		{
-			await _ctx.Levels.AddAsync(entity, ct);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.Levels.AddAsync(entity);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task UpdateAsync(Level entity, CancellationToken ct = default)
+		/// <summary>
+		/// Cập nhật Level
+		/// </summary>
+		public async Task UpdateAsync(Level entity)
 		{
 			_ctx.Levels.Update(entity);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task RemoveByIdAsync(int id, CancellationToken ct = default)
+		/// <summary>
+		/// Xóa Level theo ID
+		/// </summary>
+		public async Task RemoveByIdAsync(int id)
 		{
-			var entity = await _ctx.Levels.FindAsync(new object?[] { id }, ct);
+			var entity = await _ctx.Levels.FindAsync(new object?[] { id });
 			if (entity != null)
 			{
 				_ctx.Levels.Remove(entity);
-				await _ctx.SaveChangesAsync(ct);
+				await _ctx.SaveChangesAsync();
 			}
 		}
 	}

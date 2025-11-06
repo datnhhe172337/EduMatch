@@ -1,6 +1,7 @@
 using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.Requests.EducationInstitution;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
@@ -14,20 +15,23 @@ namespace EduMatch.BusinessLogicLayer.Services
 {
 	public class EducationInstitutionService : IEducationInstitutionService
 	{
-		private readonly IEducationInstitutionRepository _repository;
+		private readonly IEducationInstitutionRepository _educationInstitutionRepository;
 		private readonly IMapper _mapper;
 
 		public EducationInstitutionService(IEducationInstitutionRepository repository, IMapper mapper)
 		{
-			_repository = repository;
+			_educationInstitutionRepository = repository;
 			_mapper = mapper;
 		}
 
+		/// <summary>
+		/// Lấy EducationInstitution theo ID
+		/// </summary>
 		public async Task<EducationInstitutionDto?> GetByIdAsync(int id)
 		{
 			try
 			{
-				var entity = await _repository.GetByIdAsync(id);
+			var entity = await _educationInstitutionRepository.GetByIdAsync(id);
 				return entity != null ? _mapper.Map<EducationInstitutionDto>(entity) : null;
 			}
 			catch (Exception ex)
@@ -36,6 +40,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Lấy EducationInstitution theo Code
+		/// </summary>
 		public async Task<EducationInstitutionDto?> GetByCodeAsync(string code)
 		{
 			try
@@ -43,7 +50,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				if (string.IsNullOrWhiteSpace(code))
 					throw new ArgumentException("Code cannot be null or empty");
 
-				var entity = await _repository.GetByCodeAsync(code);
+			var entity = await _educationInstitutionRepository.GetByCodeAsync(code);
 				return entity != null ? _mapper.Map<EducationInstitutionDto>(entity) : null;
 			}
 			catch (Exception ex)
@@ -52,11 +59,14 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Lấy tất cả EducationInstitution
+		/// </summary>
 		public async Task<IReadOnlyList<EducationInstitutionDto>> GetAllAsync()
 		{
 			try
 			{
-				var entities = await _repository.GetAllAsync();
+			var entities = await _educationInstitutionRepository.GetAllAsync();
 				return _mapper.Map<IReadOnlyList<EducationInstitutionDto>>(entities);
 			}
 			catch (Exception ex)
@@ -65,6 +75,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Tìm EducationInstitution theo tên
+		/// </summary>
 		public async Task<IReadOnlyList<EducationInstitutionDto>> GetByNameAsync(string name)
 		{
 			try
@@ -72,7 +85,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				if (string.IsNullOrWhiteSpace(name))
 					throw new ArgumentException("Name cannot be null or empty");
 
-				var entities = await _repository.GetByNameAsync(name);
+			var entities = await _educationInstitutionRepository.GetByNameAsync(name);
 				return _mapper.Map<IReadOnlyList<EducationInstitutionDto>>(entities);
 			}
 			catch (Exception ex)
@@ -81,11 +94,14 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Lấy EducationInstitution theo loại trường
+		/// </summary>
 		public async Task<IReadOnlyList<EducationInstitutionDto>> GetByInstitutionTypeAsync(InstitutionType institutionType)
 		{
 			try
 			{
-				var entities = await _repository.GetByInstitutionTypeAsync(institutionType);
+			var entities = await _educationInstitutionRepository.GetByInstitutionTypeAsync(institutionType);
 				return _mapper.Map<IReadOnlyList<EducationInstitutionDto>>(entities);
 			}
 			catch (Exception ex)
@@ -94,31 +110,38 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
-		public async Task<EducationInstitutionDto> CreateAsync(string code, string name, InstitutionType? institutionType = null)
+		/// <summary>
+		/// Tạo EducationInstitution mới
+		/// </summary>
+		public async Task<EducationInstitutionDto> CreateAsync(EducationInstitutionCreateRequest request)
 		{
 			try
 			{
-				if (string.IsNullOrWhiteSpace(code))
+				if (request == null)
+					throw new ArgumentException("Request cannot be null");
+
+				if (string.IsNullOrWhiteSpace(request.Code))
 					throw new ArgumentException("Code is required");
-				if (string.IsNullOrWhiteSpace(name))
+				if (string.IsNullOrWhiteSpace(request.Name))
 					throw new ArgumentException("Name is required");
 
 				// Check if code already exists
-				var existingByCode = await _repository.GetByCodeAsync(code);
+				var existingByCode = await _educationInstitutionRepository.GetByCodeAsync(request.Code);
 				if (existingByCode != null)
 				{
-					throw new ArgumentException($"Education institution with code '{code}' already exists");
+					throw new ArgumentException($"Education institution with code '{request.Code}' already exists");
 				}
 
 				var entity = new EducationInstitution
 				{
-					Code = code,
-					Name = name,
-					InstitutionType = institutionType,
-					CreatedAt = DateTime.Now
+					Code = request.Code,
+					Name = request.Name,
+					InstitutionType = request.InstitutionType.HasValue ? (int)request.InstitutionType.Value : 0,
+					CreatedAt = DateTime.UtcNow,
+					Verified = (int)VerifyStatus.Pending
 				};
 
-				await _repository.AddAsync(entity);
+				await _educationInstitutionRepository.AddAsync(entity);
 				return _mapper.Map<EducationInstitutionDto>(entity);
 			}
 			catch (Exception ex)
@@ -127,36 +150,44 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
-		public async Task<EducationInstitutionDto> UpdateAsync(int id, string code, string name, InstitutionType? institutionType = null)
+		/// <summary>
+		/// Cập nhật EducationInstitution
+		/// </summary>
+		public async Task<EducationInstitutionDto> UpdateAsync(EducationInstitutionUpdateRequest request)
 		{
 			try
 			{
-				if (id <= 0)
+				if (request == null)
+					throw new ArgumentException("Request cannot be null");
+
+				if (request.Id <= 0)
 					throw new ArgumentException("ID must be greater than 0");
-				if (string.IsNullOrWhiteSpace(code))
+				if (string.IsNullOrWhiteSpace(request.Code))
 					throw new ArgumentException("Code is required");
-				if (string.IsNullOrWhiteSpace(name))
+				if (string.IsNullOrWhiteSpace(request.Name))
 					throw new ArgumentException("Name is required");
 
 				// Check if entity exists
-				var existingEntity = await _repository.GetByIdAsync(id);
+				var existingEntity = await _educationInstitutionRepository.GetByIdAsync(request.Id);
 				if (existingEntity == null)
 				{
-					throw new ArgumentException($"Education institution with ID {id} not found");
+					throw new ArgumentException($"Education institution with ID {request.Id} not found");
 				}
 
 				// Check if code already exists (excluding current entity)
-				var existingByCode = await _repository.GetByCodeAsync(code);
-				if (existingByCode != null && existingByCode.Id != id)
+				var existingByCode = await _educationInstitutionRepository.GetByCodeAsync(request.Code);
+				if (existingByCode != null && existingByCode.Id != request.Id)
 				{
-					throw new ArgumentException($"Education institution with code '{code}' already exists");
+					throw new ArgumentException($"Education institution with code '{request.Code}' already exists");
 				}
 
-				existingEntity.Code = code;
-				existingEntity.Name = name;
-				existingEntity.InstitutionType = institutionType;
+				// Update only provided fields
+				existingEntity.Code = request.Code;
+				existingEntity.Name = request.Name;
+				if (request.InstitutionType.HasValue)
+					existingEntity.InstitutionType = (int)request.InstitutionType.Value;
 
-				await _repository.UpdateAsync(existingEntity);
+				await _educationInstitutionRepository.UpdateAsync(existingEntity);
 				return _mapper.Map<EducationInstitutionDto>(existingEntity);
 			}
 			catch (Exception ex)
@@ -165,6 +196,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Xóa EducationInstitution theo ID
+		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
 			try
@@ -173,17 +207,57 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException("ID must be greater than 0");
 
 				// Check if entity exists
-				var existingEntity = await _repository.GetByIdAsync(id);
+			var existingEntity = await _educationInstitutionRepository.GetByIdAsync(id);
 				if (existingEntity == null)
 				{
 					throw new ArgumentException($"Education institution with ID {id} not found");
 				}
 
-				await _repository.RemoveByIdAsync(id);
+			await _educationInstitutionRepository.RemoveByIdAsync(id);
 			}
 			catch (Exception ex)
 			{
 				throw new InvalidOperationException($"Failed to delete education institution: {ex.Message}", ex);
+			}
+		}
+
+		/// <summary>
+		/// Xác thực EducationInstitution
+		/// </summary>
+		public async Task<EducationInstitutionDto> VerifyAsync(int id, string verifiedBy)
+		{
+			try
+			{
+				if (id <= 0)
+					throw new ArgumentException("ID must be greater than 0");
+
+				if (string.IsNullOrWhiteSpace(verifiedBy))
+					throw new ArgumentException("VerifiedBy is required");
+
+				// Check if entity exists
+			var existingEntity = await _educationInstitutionRepository.GetByIdAsync(id);
+				if (existingEntity == null)
+				{
+					throw new ArgumentException($"Education institution with ID {id} not found");
+				}
+
+				// Check if current status is Pending
+				if (existingEntity.Verified != (int)VerifyStatus.Pending)
+				{
+					throw new InvalidOperationException($"Education institution with ID {id} is not in Pending status for verification");
+				}
+
+				// Update verification status
+				existingEntity.Verified = (int)VerifyStatus.Verified;
+				existingEntity.VerifiedBy = verifiedBy;
+				existingEntity.VerifiedAt = DateTime.UtcNow;
+
+			await _educationInstitutionRepository.UpdateAsync(existingEntity);
+				return _mapper.Map<EducationInstitutionDto>(existingEntity);
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidOperationException($"Failed to verify education institution: {ex.Message}", ex);
 			}
 		}
 	}

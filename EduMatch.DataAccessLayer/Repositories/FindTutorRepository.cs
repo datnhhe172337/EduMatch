@@ -66,17 +66,17 @@ namespace EduMatch.DataAccessLayer.Repositories
                     (t.TeachingExp != null && t.TeachingExp.Contains(keyword)));
             }
 
-            if (gender.HasValue)
-                query = query.Where(t => t.UserEmailNavigation.UserProfile!.Gender == gender.Value);
+			if (gender.HasValue)
+				query = query.Where(t => t.UserEmailNavigation.UserProfile!.Gender == (int)gender.Value);
 
             if (cityId.HasValue)
                 query = query.Where(t => t.UserEmailNavigation.UserProfile.CityId == cityId.Value);
 
-            if (teachingMode.HasValue)
-                query = query.Where(t => t.TeachingModes == teachingMode.Value);
+			if (teachingMode.HasValue)
+				query = query.Where(t => t.TeachingModes == (int)teachingMode.Value);
 
-            if (status.HasValue)
-                query = query.Where(t => t.Status == status.Value);
+			if (status.HasValue)
+				query = query.Where(t => t.Status == (int)status.Value);
 
             query = query.OrderByDescending(t => t.CreatedAt)
                          .Skip((page - 1) * pageSize)

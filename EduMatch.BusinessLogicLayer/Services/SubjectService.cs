@@ -1,60 +1,65 @@
 using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.Subject;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
 	public class SubjectService : ISubjectService
 	{
-		private readonly ISubjectRepository _repository;
+		private readonly ISubjectRepository _subjectRepository;
 		private readonly IMapper _mapper;
 
 		public SubjectService(ISubjectRepository repository, IMapper mapper)
 		{
-			_repository = repository;
+			_subjectRepository = repository;
 			_mapper = mapper;
 		}
 
+		/// <summary>
+		/// Lấy Subject theo ID
+		/// </summary>
 		public async Task<SubjectDto?> GetByIdAsync(int id)
 		{
-			var entity = await _repository.GetByIdAsync(id);
+			var entity = await _subjectRepository.GetByIdAsync(id);
 			return entity != null ? _mapper.Map<SubjectDto>(entity) : null;
 		}
 
+		/// <summary>
+		/// Lấy tất cả Subject
+		/// </summary>
 		public async Task<IReadOnlyList<SubjectDto>> GetAllAsync()
 		{
-			var entities = await _repository.GetAllAsync();
+			var entities = await _subjectRepository.GetAllAsync();
 			return _mapper.Map<IReadOnlyList<SubjectDto>>(entities);
 		}
 
+		/// <summary>
+		/// Tìm Subject theo tên
+		/// </summary>
 		public async Task<IReadOnlyList<SubjectDto>> GetByNameAsync(string name)
 		{
-			var entities = await _repository.GetByNameAsync(name);
+			var entities = await _subjectRepository.GetByNameAsync(name);
 			return _mapper.Map<IReadOnlyList<SubjectDto>>(entities);
 		}
 
-		public async Task<SubjectDto> CreateAsync(SubjectCreateRequest request)
+		/// <summary>
+		/// Tạo Subject mới
+		/// </summary>
+	public async Task<SubjectDto> CreateAsync(SubjectCreateRequest request)
+	{
+		try
 		{
-			try
-			{
-				// Validate request
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
+			var entity = new Subject
 				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-				}
-
-				var entity = _mapper.Map<Subject>(request);
-				await _repository.AddAsync(entity);
+					SubjectName = request.SubjectName
+				};
+				await _subjectRepository.AddAsync(entity);
 				return _mapper.Map<SubjectDto>(entity);
 			}
 			catch (Exception ex)
@@ -63,28 +68,25 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
-		public async Task<SubjectDto> UpdateAsync(SubjectUpdateRequest request)
+		/// <summary>
+		/// Cập nhật Subject
+		/// </summary>
+	public async Task<SubjectDto> UpdateAsync(SubjectUpdateRequest request)
+	{
+		try
 		{
-			try
-			{
-				// Validate request
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-				}
-
-				// Check if entity exists
-				var existingEntity = await _repository.GetByIdAsync(request.Id);
+			// Check if entity exists
+				var existingEntity = await _subjectRepository.GetByIdAsync(request.Id);
 				if (existingEntity == null)
 				{
 					throw new ArgumentException($"Subject with ID {request.Id} not found");
 				}
 
-				var entity = _mapper.Map<Subject>(request);
-				await _repository.UpdateAsync(entity);
-				return _mapper.Map<SubjectDto>(entity);
+				// Update only provided fields
+				existingEntity.SubjectName = request.SubjectName;
+
+				await _subjectRepository.UpdateAsync(existingEntity);
+				return _mapper.Map<SubjectDto>(existingEntity);
 			}
 			catch (Exception ex)
 			{
@@ -92,9 +94,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Xóa Subject theo ID
+		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
-			await _repository.RemoveByIdAsync(id);
+			await _subjectRepository.RemoveByIdAsync(id);
 		}
 	}
 }

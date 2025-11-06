@@ -13,39 +13,60 @@ namespace EduMatch.DataAccessLayer.Repositories
 		public TimeSlotRepository(EduMatchContext ctx) => _ctx = ctx;
 
 		private IQueryable<TimeSlot> IncludeAll() =>
-			_ctx.TimeSlots.AsNoTracking();
+			_ctx.TimeSlots;
 
-		public async Task<TimeSlot?> GetByIdAsync(int id, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == id, ct);
+		/// <summary>
+		/// Lấy TimeSlot theo ID
+		/// </summary>
+		public async Task<TimeSlot?> GetByIdAsync(int id)
+			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == id);
 
-		public async Task<IReadOnlyList<TimeSlot>> GetAllAsync(CancellationToken ct = default)
-			=> await IncludeAll().ToListAsync(ct);
+		/// <summary>
+		/// Lấy tất cả TimeSlot
+		/// </summary>
+		public async Task<IReadOnlyList<TimeSlot>> GetAllAsync()
+			=> await IncludeAll().ToListAsync();
 
-		public async Task<IReadOnlyList<TimeSlot>> GetByTimeRangeAsync(TimeOnly startTime, TimeOnly endTime, CancellationToken ct = default)
-			=> await IncludeAll().Where(t => t.StartTime >= startTime && t.EndTime <= endTime).ToListAsync(ct);
+		/// <summary>
+		/// Lấy TimeSlot theo khoảng thời gian
+		/// </summary>
+		public async Task<IReadOnlyList<TimeSlot>> GetByTimeRangeAsync(TimeOnly startTime, TimeOnly endTime)
+			=> await IncludeAll().Where(t => t.StartTime >= startTime && t.EndTime <= endTime).ToListAsync();
 
-		public async Task<TimeSlot?> GetByExactTimeAsync(TimeOnly startTime, TimeOnly endTime, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(t => t.StartTime == startTime && t.EndTime == endTime, ct);
+		/// <summary>
+		/// Lấy TimeSlot theo thời gian chính xác
+		/// </summary>
+		public async Task<TimeSlot?> GetByExactTimeAsync(TimeOnly startTime, TimeOnly endTime)
+			=> await IncludeAll().FirstOrDefaultAsync(t => t.StartTime == startTime && t.EndTime == endTime);
 
-		public async Task AddAsync(TimeSlot entity, CancellationToken ct = default)
+		/// <summary>
+		/// Thêm TimeSlot mới
+		/// </summary>
+		public async Task AddAsync(TimeSlot entity)
 		{
-			await _ctx.TimeSlots.AddAsync(entity, ct);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.TimeSlots.AddAsync(entity);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task UpdateAsync(TimeSlot entity, CancellationToken ct = default)
+		/// <summary>
+		/// Cập nhật TimeSlot
+		/// </summary>
+		public async Task UpdateAsync(TimeSlot entity)
 		{
 			_ctx.TimeSlots.Update(entity);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task RemoveByIdAsync(int id, CancellationToken ct = default)
+		/// <summary>
+		/// Xóa TimeSlot theo ID
+		/// </summary>
+		public async Task RemoveByIdAsync(int id)
 		{
-			var entity = await _ctx.TimeSlots.FindAsync(new object?[] { id }, ct);
+			var entity = await _ctx.TimeSlots.FindAsync(new object?[] { id });
 			if (entity != null)
 			{
 				_ctx.TimeSlots.Remove(entity);
-				await _ctx.SaveChangesAsync(ct);
+				await _ctx.SaveChangesAsync();
 			}
 		}
 	}

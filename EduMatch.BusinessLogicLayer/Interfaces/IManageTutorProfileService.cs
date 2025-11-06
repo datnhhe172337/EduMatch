@@ -1,5 +1,6 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.TutorProfile;
+using EduMatch.BusinessLogicLayer.Requests.User;
 using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.Interfaces
@@ -13,6 +14,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task<TutorProfileDto?> GetByIdFullAsync(int id);
 
         // --- FIXED: tutorId is no longer nullable (int?) ---
-        Task<TutorProfileDto> UpdateTutorProfileAsync(int tutorId, UpdateTutorProfileRequest request);
+		Task<TutorProfileDto> UpdateTutorProfileAsync(int tutorId, TutorProfileUpdateRequest request);
     }
 }

@@ -83,6 +83,8 @@ namespace EduMatch.DataAccessLayer.Repositories
             return await _context.ClassRequests
                 .Include(r => r.Subject)
                 .Include(r => r.Level)
+                .Include(t => t.LearnerEmailNavigation)
+                   .ThenInclude(u => u.UserProfile)
                 .Where(u => u.Status == ClassRequestStatus.Open)
                 .OrderByDescending(u => u.CreatedAt)
                 .ToListAsync();
@@ -93,6 +95,8 @@ namespace EduMatch.DataAccessLayer.Repositories
             return await _context.ClassRequests
                 .Include(r => r.Subject)
                 .Include(r => r.Level)
+                .Include(t => t.LearnerEmailNavigation)
+                   .ThenInclude(u => u.UserProfile)
                 .Where(x => x.LearnerEmail == learnerEmail && x.Status == status)
                 .OrderByDescending(u => u.CreatedAt)
                 .ToListAsync();
@@ -113,6 +117,8 @@ namespace EduMatch.DataAccessLayer.Repositories
             return await _context.ClassRequests
                .Include(r => r.Subject)
                .Include(r => r.Level)
+               .Include(t => t.LearnerEmailNavigation)
+                   .ThenInclude(u => u.UserProfile)
                .Where(c => c.Status == ClassRequestStatus.Pending)
                .OrderBy(c => c.CreatedAt)
                .ToListAsync();

@@ -14,43 +14,66 @@ namespace EduMatch.DataAccessLayer.Repositories
 		public EducationInstitutionRepository(EduMatchContext ctx) => _ctx = ctx;
 
 		private IQueryable<EducationInstitution> IncludeAll() =>
-			_ctx.EducationInstitutions
-			.AsNoTracking();
+			_ctx.EducationInstitutions;
 
-		public async Task<EducationInstitution?> GetByIdAsync(int id, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(e => e.Id == id, ct);
+		/// <summary>
+		/// Lấy EducationInstitution theo ID
+		/// </summary>
+		public async Task<EducationInstitution?> GetByIdAsync(int id)
+			=> await IncludeAll().FirstOrDefaultAsync(e => e.Id == id);
 
-		public async Task<EducationInstitution?> GetByCodeAsync(string code, CancellationToken ct = default)
-			=> await IncludeAll().FirstOrDefaultAsync(e => e.Code == code, ct);
+		/// <summary>
+		/// Lấy EducationInstitution theo Code
+		/// </summary>
+		public async Task<EducationInstitution?> GetByCodeAsync(string code)
+			=> await IncludeAll().FirstOrDefaultAsync(e => e.Code == code);
 
-		public async Task<IReadOnlyList<EducationInstitution>> GetAllAsync(CancellationToken ct = default)
-			=> await IncludeAll().ToListAsync(ct);
+		/// <summary>
+		/// Lấy tất cả EducationInstitution
+		/// </summary>
+		public async Task<IReadOnlyList<EducationInstitution>> GetAllAsync()
+			=> await IncludeAll().ToListAsync();
 
-		public async Task<IReadOnlyList<EducationInstitution>> GetByNameAsync(string name, CancellationToken ct = default)
-			=> await IncludeAll().Where(e => e.Name.Contains(name)).ToListAsync(ct);
+		/// <summary>
+		/// Tìm EducationInstitution theo tên
+		/// </summary>
+		public async Task<IReadOnlyList<EducationInstitution>> GetByNameAsync(string name)
+			=> await IncludeAll().Where(e => e.Name.Contains(name)).ToListAsync();
 
-		public async Task<IReadOnlyList<EducationInstitution>> GetByInstitutionTypeAsync(InstitutionType institutionType, CancellationToken ct = default)
-			=> await IncludeAll().Where(e => e.InstitutionType == institutionType).ToListAsync(ct);
+		/// <summary>
+		/// Lấy EducationInstitution theo loại trường
+		/// </summary>
+		public async Task<IReadOnlyList<EducationInstitution>> GetByInstitutionTypeAsync(InstitutionType institutionType)
+			=> await IncludeAll().Where(e => e.InstitutionType == (int)institutionType).ToListAsync();
 
-		public async Task AddAsync(EducationInstitution entity, CancellationToken ct = default)
+		/// <summary>
+		/// Thêm EducationInstitution mới
+		/// </summary>
+		public async Task AddAsync(EducationInstitution entity)
 		{
-			await _ctx.EducationInstitutions.AddAsync(entity, ct);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.EducationInstitutions.AddAsync(entity);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task UpdateAsync(EducationInstitution entity, CancellationToken ct = default)
+		/// <summary>
+		/// Cập nhật EducationInstitution
+		/// </summary>
+		public async Task UpdateAsync(EducationInstitution entity)
 		{
 			_ctx.EducationInstitutions.Update(entity);
-			await _ctx.SaveChangesAsync(ct);
+			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task RemoveByIdAsync(int id, CancellationToken ct = default)
+		/// <summary>
+		/// Xóa EducationInstitution theo ID
+		/// </summary>
+		public async Task RemoveByIdAsync(int id)
 		{
-			var entity = await _ctx.EducationInstitutions.FindAsync(new object?[] { id }, ct);
+			var entity = await _ctx.EducationInstitutions.FindAsync(new object?[] { id });
 			if (entity != null)
 			{
 				_ctx.EducationInstitutions.Remove(entity);
-				await _ctx.SaveChangesAsync(ct);
+				await _ctx.SaveChangesAsync();
 			}
 		}
 	}

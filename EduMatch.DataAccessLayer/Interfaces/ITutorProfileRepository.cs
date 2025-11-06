@@ -9,18 +9,29 @@ namespace EduMatch.DataAccessLayer.Interfaces
 {
 	public interface ITutorProfileRepository
 	{
-		Task<TutorProfile?> GetByIdFullAsync(int id, CancellationToken ct = default);
-		Task<TutorProfile?> GetByEmailFullAsync(string email, CancellationToken ct = default);
-		Task<IReadOnlyList<TutorProfile>> GetAllFullAsync(CancellationToken ct = default);
-
-		Task AddAsync(TutorProfile entity, CancellationToken ct = default);
-		Task UpdateAsync(TutorProfile entity, CancellationToken ct = default);
-		Task RemoveByIdAsync(int id, CancellationToken ct = default);
-
-        Task SaveChangesAsync(CancellationToken ct = default);
-
-
-        Task<TutorProfile?> GetByIdForUpdateAsync(int id, CancellationToken ct = default);
-        Task<TutorProfile?> GetByEmailForUpdateAsync(string email, CancellationToken ct = default);
-    }
+		/// <summary>
+		/// Lấy TutorProfile theo ID với đầy đủ thông tin
+		/// </summary>
+		Task<TutorProfile?> GetByIdFullAsync(int id);
+		/// <summary>
+		/// Lấy TutorProfile theo Email với đầy đủ thông tin
+		/// </summary>
+		Task<TutorProfile?> GetByEmailFullAsync(string email);
+		/// <summary>
+		/// Lấy tất cả TutorProfile với đầy đủ thông tin
+		/// </summary>
+		Task<IReadOnlyList<TutorProfile>> GetAllFullAsync();
+		/// <summary>
+		/// Thêm TutorProfile mới
+		/// </summary>
+		Task AddAsync(TutorProfile entity);
+		/// <summary>
+		/// Cập nhật TutorProfile
+		/// </summary>
+		Task UpdateAsync(TutorProfile entity);
+		/// <summary>
+		/// Xóa TutorProfile theo ID
+		/// </summary>
+		Task RemoveByIdAsync(int id);
+	}
 }

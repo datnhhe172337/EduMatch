@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.PresentationLayer.Common;
 using EduMatch.DataAccessLayer.Entities;
-using EduMatch.BusinessLogicLayer.Requests;
+using EduMatch.BusinessLogicLayer.Requests.User;
+using EduMatch.BusinessLogicLayer.Requests.TutorProfile;
+using EduMatch.BusinessLogicLayer.Constants;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -11,12 +14,12 @@ namespace EduMatch.PresentationLayer.Controllers
     [Route("api/[controller]")]
     public class UserProfilesController : ControllerBase
     {
-        private readonly IUserProfileService _service;
+        private readonly IUserProfileService _userProfileService;
         private readonly ILogger<UserProfilesController> _logger;
 
-        public UserProfilesController(IUserProfileService service, ILogger<UserProfilesController> logger)
+        public UserProfilesController(IUserProfileService userProfileService, ILogger<UserProfilesController> logger)
         {
-            _service = service;
+            _userProfileService = userProfileService;
             _logger = logger;
         }
 
@@ -31,7 +34,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
             try
             {
-                var profile = await _service.GetByEmailAsync(email);
+                var profile = await _userProfileService.GetByEmailAsync(email);
 
                 if (profile == null)
                     return NotFound(ApiResponse<string>.Fail($"User profile with email '{email}' not found."));
@@ -45,67 +48,62 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
+       
+
+
+        // Function of Datnh.m
+         /// <summary>
+		/// Cập nhật thông tin user profile
+		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Learner + "," + Roles.Tutor)]
+		[HttpPut("update-user-profile")]
+		[ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
+		public async Task<IActionResult> UpdateUserProfile([FromBody] UserProfileUpdateRequest request)
+		{
+			try
+			{
+				if (!ModelState.IsValid)
+					return BadRequest(ApiResponse<string>.Fail("Invalid request."));
+
+				var updatedProfile = await _userProfileService.UpdateAsync(request);
+				return Ok(ApiResponse<UserProfileDto>.Ok(updatedProfile, "User profile updated successfully."));
+			}
+			catch (ArgumentException ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail(ex.Message));
+			}
+			catch (InvalidOperationException ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail(ex.Message));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail("Failed to update user profile.", ex.Message));
+			}
+		}
+
         /// <summary>
-        /// Update user profile by email
+        /// Lấy ra danh sách tất cả các tỉnh
         /// </summary>
-        //[HttpPut("{email}")]
-        //public async Task<IActionResult> UpdateUserProfile(string email, [FromBody] UpdateUserProfileDto dto)
-        //{
-        //    if (string.IsNullOrWhiteSpace(email))
-        //        return BadRequest(ApiResponse<string>.Fail("Email is required."));
-
-        //    if (dto == null)
-        //        return BadRequest(ApiResponse<string>.Fail("Invalid request body."));
-
-        //    try
-        //    {
-        //        var success = await _service.UpdateUserProfileAsync(email, dto);
-
-        //        if (!success)
-        //            return NotFound(ApiResponse<string>.Fail($"User profile with email '{email}' not found."));
-
-        //        return Ok(ApiResponse<string>.Ok("User profile updated successfully."));
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error updating user profile for email: {Email}", email);
-        //        return StatusCode(500, ApiResponse<string>.Fail("An error occurred while updating the user profile.", ex.Message));
-        //    }
-        //}
-        [HttpPut("{email}")]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UpdateUserProfile(
-    string email,
-    [FromForm] UpdateUserProfileRequest request)
+        /// <returns></returns>
+        [HttpGet("provinves")]
+        public async Task<IActionResult> GetProvincesAsync()
         {
-            if (string.IsNullOrWhiteSpace(email))
-                return BadRequest(ApiResponse<string>.Fail("Email is required."));
+            var provinces = await _userProfileService.GetProvincesAsync();
+            return Ok(provinces);
+        }
 
-            if (!ModelState.IsValid)
-                return BadRequest(ApiResponse<string>.Fail("Invalid data.", ModelState));
-
-            try
-            {
-                var success = await _service.UpdateUserProfileAsync(email, request);
-
-                if (!success)
-                    return NotFound(ApiResponse<string>.Fail($"User profile with email '{email}' not found."));
-
-                return Ok(ApiResponse<string>.Ok("User profile updated successfully."));
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ApiResponse<string>.Fail(ex.Message));
-            }
-            catch (InvalidOperationException ex)
-            {
-                return NotFound(ApiResponse<string>.Fail(ex.Message));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating user profile for email: {Email}", email);
-                return StatusCode(500, ApiResponse<string>.Fail("An unexpected error occurred.", ex.Message));
-            }
+        /// <summary>
+        /// Lấy ra danh sách tất cả các xã theo tỉnh
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("subDistricts/{provinceId}")]
+        public async Task<IActionResult> GetSubDistrictsByProvinceIdAsync(int provinceId)
+        {
+            var provinces = await _userProfileService.GetSubDistrictsByProvinceIdAsync(provinceId);
+            return Ok(provinces);
         }
 
     }

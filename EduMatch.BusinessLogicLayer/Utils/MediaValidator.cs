@@ -1,4 +1,4 @@
-﻿using EduMatch.BusinessLogicLayer.Requests;
+﻿using EduMatch.BusinessLogicLayer.Requests.Common;
 using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Enum;
 using Microsoft.Extensions.Options;

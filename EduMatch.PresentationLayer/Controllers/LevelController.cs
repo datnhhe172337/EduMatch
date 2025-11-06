@@ -18,6 +18,9 @@ namespace EduMatch.PresentationLayer.Controllers
 			_levelService = levelService;
 		}
 
+		/// <summary>
+		/// Lấy danh sách tất cả các cấp độ học tập có sẵn trong hệ thống
+		/// </summary>
 		// get all levels
 		[HttpGet("get-all-level")]
 		[ProducesResponseType(typeof(ApiResponse<List<LevelDto>>), StatusCodes.Status200OK)]
