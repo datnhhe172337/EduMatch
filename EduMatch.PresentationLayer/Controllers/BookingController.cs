@@ -208,7 +208,8 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 		/// <summary>
-		/// Tạo Booking mới và tính phí hệ thống theo SystemFee đang hoạt động. Tự động lấy SystemFee có Id nhỏ nhất đang hoạt động
+		/// Tạo Booking mới và tính phí hệ thống theo SystemFee đang hoạt động. Tự động lấy SystemFee có Id nhỏ nhất đang hoạt động.
+		/// Sau khi tạo Booking thành công, lấy ID của Booking để tạo Schedule. BookingId trong request Schedule có thể truyền bất kỳ số nào > 0, sẽ được ghi đè bằng ID của Booking vừa tạo.
 		/// </summary>
 		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
 		[HttpPost("create-booking")]
@@ -226,8 +227,14 @@ namespace EduMatch.PresentationLayer.Controllers
 
 				// Tạo Booking
 				var createdBooking = await _bookingService.CreateAsync(request.Booking);
+				
+				// Kiểm tra Booking đã tạo thành công
+				if (createdBooking == null || createdBooking.Id <= 0)
+				{
+					return BadRequest(ApiResponse<object>.Fail("Tạo Booking thất bại"));
+				}
 
-				// Tạo danh sách Schedule nếu có
+				// Tạo danh sách Schedule nếu có (sử dụng ID của Booking vừa tạo)
 				if (request.Schedules != null && request.Schedules.Count > 0)
 				{
 					foreach (var s in request.Schedules)

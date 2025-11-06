@@ -19,7 +19,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		/// <summary>
 		/// Tạo URL đăng nhập Google OAuth
 		/// </summary>
-		string GenerateAuthUrlDat();
+		Task<string> GenerateAuthUrlDat();
 		/// <summary>
 		/// Đổi authorization code lấy GoogleToken
 		/// </summary>

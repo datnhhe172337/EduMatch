@@ -9,6 +9,7 @@ using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.PresentationLayer.Common;
 using System.ComponentModel.DataAnnotations;
+using EduMatch.BusinessLogicLayer.Constants;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -17,14 +18,16 @@ namespace EduMatch.PresentationLayer.Controllers
 	public class ScheduleController : ControllerBase
 	{
 		private readonly IScheduleService _scheduleService;
+		private readonly IBookingService _bookingService;
 		private readonly EduMatchContext _context;
 
 		/// <summary>
 		/// API Schedule: lấy danh sách (có/không phân trang), lấy theo Id/AvailabilityId, tạo, cập nhật, hủy theo BookingId
 		/// </summary>
-		public ScheduleController(IScheduleService scheduleService, EduMatchContext context)
+		public ScheduleController(IScheduleService scheduleService, IBookingService bookingService, EduMatchContext context)
 		{
 			_scheduleService = scheduleService;
+			_bookingService = bookingService;
 			_context = context;
 		}
 
@@ -77,6 +80,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy danh sách Schedule theo BookingId và Status có phân trang
 		/// </summary>
+		[Authorize]
 		[HttpGet("get-all-paging")]
 		[ProducesResponseType(typeof(ApiResponse<PagedResult<ScheduleDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -116,6 +120,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy danh sách Schedule theo BookingId và Status (không phân trang)
 		/// </summary>
+		[Authorize]
 		[HttpGet("get-all-no-paging")]
 		[ProducesResponseType(typeof(ApiResponse<IEnumerable<ScheduleDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -147,6 +152,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Nếu là online thì tạo MeetingSession tự động
 		/// Optional vì booking là tạo luôn booking và schedule và meeting session(nếu là online) cùng lúc
 		/// </summary>
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
 		[HttpPost("create-schedule")]
 		[ProducesResponseType(typeof(ApiResponse<ScheduleDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -171,6 +177,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Tạo danh sách Schedule cho một Booking. Tổng số Schedule sau khi tạo phải bằng TotalSessions của Booking
 		/// Optional vì booking là tạo luôn booking và schedule và meeting session(nếu là online) cùng lúc
 		/// </summary>
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
 		[HttpPost("create-schedule-list")]
 		[ProducesResponseType(typeof(ApiResponse<IEnumerable<ScheduleDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -199,6 +206,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Cập nhật Schedule. Nếu AvailabilitiId thay đổi thì cập nhật MeetingSession và trạng thái Availability
 		/// Mặc định là online, nếu không truyền IsOnline thì coi như online
 		/// </summary>
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
 		[HttpPut("update-schedule")]
 		[ProducesResponseType(typeof(ApiResponse<ScheduleDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -226,6 +234,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Hủy toàn bộ Schedule theo BookingId: set Status=Cancelled, xóa MeetingSession (bao gồm Google Calendar event), trả Availability về Available
 		/// </summary>
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
 		[HttpPost("cancel-all-by-booking/{bookingId:int}")]
 		[ProducesResponseType(typeof(ApiResponse<IEnumerable<ScheduleDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -237,6 +246,13 @@ namespace EduMatch.PresentationLayer.Controllers
 				{
 					return BadRequest(ApiResponse<object>.Fail("BookingId phải lớn hơn 0"));
 				}
+				// Kiểm tra Booking tồn tại qua service
+				var booking = await _bookingService.GetByIdAsync(bookingId);
+				if (booking == null)
+				{
+					return NotFound(ApiResponse<object>.Fail("Không tìm thấy Booking"));
+				}
+
 				var cancelled = await _scheduleService.CancelAllByBookingAsync(bookingId);
 				return Ok(ApiResponse<IEnumerable<ScheduleDto>>.Ok(cancelled, "Hủy toàn bộ Schedule thành công"));
 			}
@@ -249,6 +265,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy tất cả lịch học theo LearnerEmail; có thể lọc theo khoảng thời gian và Status (StartDate <= EndDate)
 		/// </summary>
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
 		[HttpGet("get-all-by-learner-email")]
 		[ProducesResponseType(typeof(ApiResponse<IEnumerable<ScheduleDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -290,6 +307,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy tất cả lịch dạy theo TutorEmail Optional StartDate và EndDate (có thể lọc theo khoảng thời gian StartDate <= EndDate)
 		/// </summary>
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
 		[HttpGet("get-all-by-tutor-email")]
 		[ProducesResponseType(typeof(ApiResponse<IEnumerable<ScheduleDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]

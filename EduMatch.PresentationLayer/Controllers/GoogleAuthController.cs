@@ -4,6 +4,7 @@ using EduMatch.BusinessLogicLayer.Requests.GoogleMeeting;
 using EduMatch.BusinessLogicLayer.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -24,9 +25,9 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// </summary>
 
 		[HttpGet("authorize")]
-		public IActionResult Authorize()
+		public async Task<IActionResult> Authorize()
 		{
-			string authUrl = _googleAuthService.GenerateAuthUrlDat();
+			string authUrl = await _googleAuthService.GenerateAuthUrlDat();
 			return Ok(new { authUrl });
 		}
 
