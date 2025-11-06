@@ -49,5 +49,9 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// Hủy toàn bộ Schedule theo bookingId
         /// </summary>
         Task<List<ScheduleDto>> CancelAllByBookingAsync(int bookingId);
+        /// <summary>
+        /// Lấy tất cả lịch học theo LearnerEmail (có thể lọc theo khoảng thời gian từ TutorAvailability.StartDate)
+        /// </summary>
+        Task<List<ScheduleDto>> GetAllByLearnerEmailAsync(string learnerEmail, DateTime? startDate = null, DateTime? endDate = null);
     }
 }

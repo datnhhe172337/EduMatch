@@ -242,7 +242,36 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Lấy tất cả lịch học theo LearnerEmail Optional StartDate và EndDate (có thể lọc theo khoảng thời gian StartDate <= EndDate)
+		/// </summary>
+		[HttpGet("get-all-by-learner-email")]
+		[ProducesResponseType(typeof(ApiResponse<IEnumerable<ScheduleDto>>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<IEnumerable<ScheduleDto>>>> GetAllByLearnerEmail(
+			[FromQuery] string learnerEmail,
+			[FromQuery] DateTime? startDate = null,
+			[FromQuery] DateTime? endDate = null)
+		{
+			try
+			{
+				if (string.IsNullOrWhiteSpace(learnerEmail))
+				{
+					return BadRequest(ApiResponse<object>.Fail("LearnerEmail không được để trống"));
+				}
 
-		
+				if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
+				{
+					return BadRequest(ApiResponse<object>.Fail("StartDate không được lớn hơn EndDate"));
+				}
+
+				var items = await _scheduleService.GetAllByLearnerEmailAsync(learnerEmail, startDate, endDate);
+				return Ok(ApiResponse<IEnumerable<ScheduleDto>>.Ok(items));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+		}
 	}
 }

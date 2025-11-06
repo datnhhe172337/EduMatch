@@ -99,6 +99,44 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .ToListAsync();
         }
         /// <summary>
+        /// Lấy danh sách Schedule theo LearnerEmail (qua Booking) và optional khoảng thời gian (qua TutorAvailability.StartDate)
+        /// </summary>
+        public async Task<IEnumerable<Schedule>> GetAllByLearnerEmailAsync(string learnerEmail, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            var query = _context.Schedules
+                .AsSplitQuery()
+                .Include(s => s.Availabiliti)
+                    .ThenInclude(a => a.Slot)
+                .Include(s => s.Booking)
+                    .ThenInclude(b => b.TutorSubject)
+                        .ThenInclude(ts => ts.Tutor)
+                .Include(s => s.Booking)
+                    .ThenInclude(b => b.TutorSubject)
+                        .ThenInclude(ts => ts.Subject)
+                .Include(s => s.Booking)
+                    .ThenInclude(b => b.TutorSubject)
+                        .ThenInclude(ts => ts.Level)
+                .Where(s => s.Booking.LearnerEmail == learnerEmail);
+
+            if (startDate.HasValue)
+            {
+                var startDateOnly = startDate.Value.Date;
+                query = query.Where(s => s.Availabiliti.StartDate.Date >= startDateOnly);
+            }
+
+            if (endDate.HasValue)
+            {
+                var endDateOnly = endDate.Value.Date;
+                query = query.Where(s => s.Availabiliti.StartDate.Date <= endDateOnly);
+            }
+
+            return await query
+                .OrderBy(s => s.Availabiliti.StartDate)
+                .ThenBy(s => s.CreatedAt)
+                .ThenBy(s => s.Id)
+                .ToListAsync();
+        }
+        /// <summary>
         /// Tạo Schedule mới
         /// </summary>
         public async Task CreateAsync(Schedule schedule)

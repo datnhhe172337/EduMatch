@@ -326,6 +326,21 @@ namespace EduMatch.BusinessLogicLayer.Services
             }
             return _mapper.Map<List<ScheduleDto>>(updated);
         }
+
+        /// <summary>
+        /// Lấy tất cả lịch học theo LearnerEmail (có thể lọc theo khoảng thời gian từ TutorAvailability.StartDate)
+        /// </summary>
+        public async Task<List<ScheduleDto>> GetAllByLearnerEmailAsync(string learnerEmail, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            if (string.IsNullOrWhiteSpace(learnerEmail))
+                throw new Exception("LearnerEmail không được để trống");
+
+            if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
+                throw new Exception("StartDate không được lớn hơn EndDate");
+
+            var entities = await _scheduleRepository.GetAllByLearnerEmailAsync(learnerEmail, startDate, endDate);
+            return _mapper.Map<List<ScheduleDto>>(entities);
+        }
     }
 }
 
