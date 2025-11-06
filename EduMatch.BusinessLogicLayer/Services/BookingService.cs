@@ -15,26 +15,35 @@ namespace EduMatch.BusinessLogicLayer.Services
     public class BookingService : IBookingService
     {
         private readonly IBookingRepository _bookingRepository;
-        private readonly ITutorSubjectService _tutorSubjectService;
-        private readonly ISystemFeeService _systemFeeService;
-        private readonly IUserService _userService;
+        private readonly ITutorSubjectRepository _tutorSubjectRepository;
+        private readonly ISystemFeeRepository _systemFeeRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
-        private readonly IScheduleService _scheduleService;
+        private readonly IScheduleRepository _scheduleRepository;
+        private readonly IMeetingSessionRepository _meetingSessionRepository;
+        private readonly ITutorAvailabilityRepository _tutorAvailabilityRepository;
+        private readonly IGoogleCalendarService _googleCalendarService;
 
         public BookingService(
             IBookingRepository bookingRepository,
-            ITutorSubjectService tutorSubjectService,
-            ISystemFeeService systemFeeService,
-            IUserService userService,
+            ITutorSubjectRepository tutorSubjectRepository,
+            ISystemFeeRepository systemFeeRepository,
+            IUserRepository userRepository,
             IMapper mapper,
-            IScheduleService scheduleService)
+            IScheduleRepository scheduleRepository,
+            IMeetingSessionRepository meetingSessionRepository,
+            ITutorAvailabilityRepository tutorAvailabilityRepository,
+            IGoogleCalendarService googleCalendarService)
         {
             _bookingRepository = bookingRepository;
-            _tutorSubjectService = tutorSubjectService;
-            _systemFeeService = systemFeeService;
-            _userService = userService;
+            _tutorSubjectRepository = tutorSubjectRepository;
+            _systemFeeRepository = systemFeeRepository;
+            _userRepository = userRepository;
             _mapper = mapper;
-            _scheduleService = scheduleService;
+            _scheduleRepository = scheduleRepository;
+            _meetingSessionRepository = meetingSessionRepository;
+            _tutorAvailabilityRepository = tutorAvailabilityRepository;
+            _googleCalendarService = googleCalendarService;
         }
 
         /// <summary>
@@ -129,11 +138,11 @@ namespace EduMatch.BusinessLogicLayer.Services
         public async Task<BookingDto> CreateAsync(BookingCreateRequest request)
         {
             // Validate LearnerEmail exists
-            var learner = await _userService.GetByEmailAsync(request.LearnerEmail)
+            var learner = await _userRepository.GetUserByEmailAsync(request.LearnerEmail)
                 ?? throw new Exception("LearnerEmail không tồn tại trong hệ thống");
 
             // Validate TutorSubject exists and get HourlyRate
-            var tutorSubject = await _tutorSubjectService.GetByIdFullAsync(request.TutorSubjectId)
+            var tutorSubject = await _tutorSubjectRepository.GetByIdFullAsync(request.TutorSubjectId)
                 ?? throw new Exception("TutorSubject không tồn tại");
 
             if (!tutorSubject.HourlyRate.HasValue || tutorSubject.HourlyRate.Value <= 0)
@@ -143,7 +152,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             var totalSessions = request.TotalSessions ?? 1;
 
             // Get active SystemFee
-            var activeSystemFee = await _systemFeeService.GetActiveSystemFeeAsync()
+            var activeSystemFee = await _systemFeeRepository.GetActiveSystemFeeAsync()
                 ?? throw new Exception("Không tìm thấy SystemFee đang hoạt động");
 
             var now = DateTime.UtcNow;
@@ -201,14 +210,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (!string.IsNullOrWhiteSpace(request.LearnerEmail))
             {
                 // Validate LearnerEmail exists
-                var learner = await _userService.GetByEmailAsync(request.LearnerEmail)
+                var learner = await _userRepository.GetUserByEmailAsync(request.LearnerEmail)
                     ?? throw new Exception("LearnerEmail không tồn tại trong hệ thống");
                 entity.LearnerEmail = request.LearnerEmail;
             }
 
             if (request.TutorSubjectId.HasValue)
             {
-                var tutorSubject = await _tutorSubjectService.GetByIdFullAsync(request.TutorSubjectId.Value)
+                var tutorSubject = await _tutorSubjectRepository.GetByIdFullAsync(request.TutorSubjectId.Value)
                     ?? throw new Exception("TutorSubject không tồn tại");
                 entity.TutorSubjectId = request.TutorSubjectId.Value;
                 // Update UnitPrice if TutorSubject changes
@@ -227,7 +236,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 var baseAmount = entity.UnitPrice * entity.TotalSessions;
                 
                 // Get current SystemFee to recalculate fee
-                var systemFee = await _systemFeeService.GetByIdAsync(entity.SystemFeeId)
+                var systemFee = await _systemFeeRepository.GetByIdAsync(entity.SystemFeeId)
                     ?? throw new Exception("SystemFee không tồn tại");
                 
                 // Recalculate SystemFeeAmount
@@ -289,10 +298,53 @@ namespace EduMatch.BusinessLogicLayer.Services
             // Nếu status là Cancelled thì hủy tất cả Schedule liên quan
             if (status == BookingStatus.Cancelled)
             {
-                await _scheduleService.CancelAllByBookingAsync(id);
+                await CancelAllSchedulesByBookingAsync(id);
             }
 
             return _mapper.Map<BookingDto>(entity);
+        }
+
+        /// <summary>
+        /// Hủy toàn bộ Schedule theo bookingId: set Status=Cancelled, xóa MeetingSession (bao gồm Google Calendar event), trả Availability về Available
+        /// </summary>
+        private async Task CancelAllSchedulesByBookingAsync(int bookingId)
+        {
+            var schedules = (await _scheduleRepository.GetAllByBookingIdOrderedAsync(bookingId)).ToList();
+            foreach (var schedule in schedules)
+            {
+                // Delete meeting session first (includes Google event deletion)
+                var meetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(schedule.Id);
+                if (meetingSession != null)
+                {
+                    // Xóa Google Calendar event nếu có
+                    if (!string.IsNullOrEmpty(meetingSession.EventId))
+                    {
+                        try
+                        {
+                            await _googleCalendarService.DeleteEventAsync(meetingSession.EventId);
+                        }
+                        catch
+                        {
+                            // Log error but continue
+                        }
+                    }
+                    // Xóa meeting session
+                    await _meetingSessionRepository.DeleteAsync(meetingSession.Id);
+                }
+
+                // Mark schedule as cancelled
+                schedule.Status = (int)ScheduleStatus.Cancelled;
+                schedule.UpdatedAt = DateTime.UtcNow;
+                await _scheduleRepository.UpdateAsync(schedule);
+
+                // Return availability to Available
+                var availability = await _tutorAvailabilityRepository.GetByIdFullAsync(schedule.AvailabilitiId);
+                if (availability != null)
+                {
+                    availability.Status = (int)TutorAvailabilityStatus.Available;
+                    await _tutorAvailabilityRepository.UpdateAsync(availability);
+                }
+            }
         }
     }
 }
