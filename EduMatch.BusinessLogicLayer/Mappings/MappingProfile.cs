@@ -330,15 +330,48 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 					opt => opt.MapFrom(src => (PaymentStatus)src.PaymentStatus))
 				.ForMember(dest => dest.Status,
 					opt => opt.MapFrom(src => (BookingStatus)src.Status))
+				.ForMember(dest => dest.SystemFee, opt => opt.MapFrom(src => src.SystemFee != null ? src.SystemFee : null))
 				.ForMember(dest => dest.Schedules,
-					opt => opt.MapFrom(src => src.Schedules));
+					opt => opt.MapFrom(src => src.Schedules != null ? src.Schedules.Select(s => new ScheduleDto
+					{
+						Id = s.Id,
+						AvailabilitiId = s.AvailabilitiId,
+						BookingId = s.BookingId,
+						Status = (ScheduleStatus)s.Status,
+						AttendanceNote = s.AttendanceNote,
+						IsRefunded = s.IsRefunded,
+						RefundedAt = s.RefundedAt,
+						CreatedAt = s.CreatedAt,
+						UpdatedAt = s.UpdatedAt,
+						MeetingSession = s.MeetingSession != null ? new MeetingSessionDto
+						{
+							Id = s.MeetingSession.Id,
+							MeetingType = (MeetingType)s.MeetingSession.MeetingType,
+							StartTime = s.MeetingSession.StartTime,
+							EndTime = s.MeetingSession.EndTime,
+							MeetCode = s.MeetingSession.MeetCode,
+							MeetLink = s.MeetingSession.MeetLink,
+							CreatedAt = s.MeetingSession.CreatedAt,
+							UpdatedAt = s.MeetingSession.UpdatedAt,
+						} : null
+					}) : null));
+				
 
 			//Schedule 
 			CreateMap<Schedule, ScheduleDto>()
 				.ForMember(dest => dest.Status,
 					opt => opt.MapFrom(src => (ScheduleStatus)src.Status))
-				.ForMember(dest => dest.MeetingSessions,
-					opt => opt.MapFrom(src => src.MeetingSessions));
+				.ForMember(dest => dest.MeetingSession,
+					opt => opt.MapFrom(src => src.MeetingSession != null ? new MeetingSessionDto
+					{
+						Id = src.MeetingSession.Id,
+						MeetingType = (MeetingType)src.MeetingSession.MeetingType,
+						StartTime = src.MeetingSession.StartTime,
+						EndTime = src.MeetingSession.EndTime,
+						MeetLink = src.MeetingSession.MeetLink,
+						MeetCode = src.MeetingSession.MeetCode,
+						CreatedAt = src.MeetingSession.CreatedAt,
+					} : null));
 
 			// MeetingSession 
 			CreateMap<MeetingSession, MeetingSessionDto>()

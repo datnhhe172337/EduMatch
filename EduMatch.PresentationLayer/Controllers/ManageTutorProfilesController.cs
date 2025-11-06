@@ -11,6 +11,7 @@ using EduMatch.BusinessLogicLayer.Requests.User;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class ManageTutorProfilesController : ControllerBase
@@ -18,6 +19,7 @@ namespace EduMatch.PresentationLayer.Controllers
         // --- RENAMED this field for clarity ---
         private readonly IManageTutorProfileService _manageTutorProfileService;
         private readonly ILogger<ManageTutorProfilesController> _logger;
+        private readonly ITutorProfileService _tutorProfileService;
 
         // --- ADDED these two fields ---
         private readonly CurrentUserService _currentUserService;
@@ -28,12 +30,14 @@ namespace EduMatch.PresentationLayer.Controllers
             ILogger<ManageTutorProfilesController> logger,
             // --- ADD these to your constructor ---
             CurrentUserService currentUserService,
+            ITutorProfileService tutorProfileService,
             EduMatchContext eduMatch)
         {
-            _manageTutorProfileService = service; // --- Fixed name assignment ---
+            _manageTutorProfileService = service; 
             _logger = logger;
-            _currentUserService = currentUserService; // --- Added ---
-            _eduMatch = eduMatch; // --- Added ---
+            _tutorProfileService = tutorProfileService;
+            _currentUserService = currentUserService; 
+            _eduMatch = eduMatch; 
         }
 
         /// <summary>
@@ -67,7 +71,7 @@ namespace EduMatch.PresentationLayer.Controllers
             try
             {
                 // --- Fixed variable name ---
-                var profile = await _manageTutorProfileService.GetByEmailAsync(email);
+                var profile = await _tutorProfileService.GetByEmailFullAsync(email);
                 if (profile == null)
                     return NotFound(ApiResponse<TutorProfileDto>.Fail($"Tutor profile with email '{email}' not found."));
 

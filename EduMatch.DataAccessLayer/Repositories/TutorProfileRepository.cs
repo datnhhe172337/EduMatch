@@ -46,30 +46,51 @@ namespace EduMatch.DataAccessLayer.Repositories
 
 
 
+		/// <summary>
+		/// Lấy TutorProfile theo ID với đầy đủ thông tin
+		/// </summary>
 		public async Task<TutorProfile?> GetByIdFullAsync(int id)
 			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == id);
 
+		/// <summary>
+		/// Lấy TutorProfile theo TutorId với đầy đủ thông tin
+		/// </summary>
 		public async Task<TutorProfile?> GetByTutorIdFullAsync(int tutorId)
 			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == tutorId);
 
+		/// <summary>
+		/// Lấy TutorProfile theo Email với đầy đủ thông tin
+		/// </summary>
 		public async Task<TutorProfile?> GetByEmailFullAsync(string email)
 			=> await IncludeAll().FirstOrDefaultAsync(t => t.UserEmail == email);
 
+		/// <summary>
+		/// Lấy tất cả TutorProfile với đầy đủ thông tin
+		/// </summary>
 		public async Task<IReadOnlyList<TutorProfile>> GetAllFullAsync()
 			=> await IncludeAll().ToListAsync();
 
+		/// <summary>
+		/// Thêm TutorProfile mới
+		/// </summary>
 		public async Task AddAsync(TutorProfile entity)
 		{
 			await _ctx.TutorProfiles.AddAsync(entity);
 			await _ctx.SaveChangesAsync();
 		}
 
+		/// <summary>
+		/// Cập nhật TutorProfile
+		/// </summary>
 		public async Task UpdateAsync(TutorProfile entity)
 		{
 			_ctx.TutorProfiles.Update(entity);
 			await _ctx.SaveChangesAsync();
 		}
 
+		/// <summary>
+		/// Xóa TutorProfile theo ID
+		/// </summary>
 		public async Task RemoveByIdAsync(int id)
 		{
 			var entity = await _ctx.TutorProfiles.FindAsync(new object?[] { id });

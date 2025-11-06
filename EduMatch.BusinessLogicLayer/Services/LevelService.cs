@@ -14,33 +14,45 @@ namespace EduMatch.BusinessLogicLayer.Services
 {
 	public class LevelService : ILevelService
 	{
-		private readonly ILevelRepository _repository;
+		private readonly ILevelRepository _levelRepository;
 		private readonly IMapper _mapper;
 
 		public LevelService(ILevelRepository repository, IMapper mapper)
 		{
-			_repository = repository;
+			_levelRepository = repository;
 			_mapper = mapper;
 		}
 
+		/// <summary>
+		/// Lấy Level theo ID
+		/// </summary>
 		public async Task<LevelDto?> GetByIdAsync(int id)
 		{
-			var entity = await _repository.GetByIdAsync(id);
+			var entity = await _levelRepository.GetByIdAsync(id);
 			return entity != null ? _mapper.Map<LevelDto>(entity) : null;
 		}
 
+		/// <summary>
+		/// Lấy tất cả Level
+		/// </summary>
 		public async Task<IReadOnlyList<LevelDto>> GetAllAsync()
 		{
-			var entities = await _repository.GetAllAsync();
+			var entities = await _levelRepository.GetAllAsync();
 			return _mapper.Map<IReadOnlyList<LevelDto>>(entities);
 		}
 
+		/// <summary>
+		/// Tìm Level theo tên
+		/// </summary>
 		public async Task<IReadOnlyList<LevelDto>> GetByNameAsync(string name)
 		{
-			var entities = await _repository.GetByNameAsync(name);
+			var entities = await _levelRepository.GetByNameAsync(name);
 			return _mapper.Map<IReadOnlyList<LevelDto>>(entities);
 		}
 
+		/// <summary>
+		/// Tạo Level mới
+		/// </summary>
 		public async Task<LevelDto> CreateAsync(LevelCreateRequest request)
 		{
 			try
@@ -57,7 +69,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				{
 					Name = request.Name
 				};
-				await _repository.AddAsync(entity);
+				await _levelRepository.AddAsync(entity);
 				return _mapper.Map<LevelDto>(entity);
 			}
 			catch (Exception ex)
@@ -66,6 +78,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Cập nhật Level
+		/// </summary>
 		public async Task<LevelDto> UpdateAsync(LevelUpdateRequest request)
 		{
 			try
@@ -79,7 +94,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				}
 
 				// Check if entity exists
-				var existingEntity = await _repository.GetByIdAsync(request.Id);
+				var existingEntity = await _levelRepository.GetByIdAsync(request.Id);
 				if (existingEntity == null)
 				{
 					throw new ArgumentException($"Level with ID {request.Id} not found");
@@ -88,7 +103,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 				// Update only provided fields
 				existingEntity.Name = request.Name;
 
-				await _repository.UpdateAsync(existingEntity);
+				await _levelRepository.UpdateAsync(existingEntity);
 				return _mapper.Map<LevelDto>(existingEntity);
 			}
 			catch (Exception ex)
@@ -97,9 +112,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
+		/// <summary>
+		/// Xóa Level theo ID
+		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
-			await _repository.RemoveByIdAsync(id);
+			await _levelRepository.RemoveByIdAsync(id);
 		}
 	}
 }

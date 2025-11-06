@@ -5,6 +5,7 @@ using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Authorization;
+using EduMatch.BusinessLogicLayer.Constants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -35,7 +36,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Tạo nhiều lịch trình cùng lúc cho gia sư
 		/// </summary>
 
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
 		[HttpPost("tutor-availability-create-list")]
 		public async Task<IActionResult> TutorAvailabilityCreateList([FromBody] List<TutorAvailabilityCreateRequest> requests)
 		{
@@ -72,7 +73,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Cập nhật nhiều lịch trình cùng lúc
 		/// </summary>
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
 		[HttpPut("tutor-availability-update-list")]
 		public async Task<IActionResult> TutorAvailabilityUpdateList([FromBody] List<TutorAvailabilityUpdateRequest> requests)
 		{
@@ -109,7 +110,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Xóa nhiều lịch trình cùng lúc (chỉ được xóa khi status là Available)
 		/// </summary>
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
 		[HttpDelete("tutor-availability-delete-list")]
 		public async Task<IActionResult> TutorAvailabilityDeleteList([FromBody] List<int> ids)
 		{
@@ -151,23 +152,19 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 		/// <summary>
-		/// Lấy tất cả lịch trình của gia sư với những ngày chưa bắt đầu
+		/// Lấy tất cả lịch trình của gia sư (repository đã lọc những ngày còn tương lai)
 		/// </summary>
 		[HttpGet("tutor-availability-get-all/{tutorId}")]
 		public async Task<IActionResult> TutorAvailabilityGetAll(int tutorId)
 		{
 			try
 			{
-				var allAvailabilities = await _tutorAvailabilityService.GetByTutorIdFullAsync(tutorId);
-				
-				// Lọc những ngày chưa bắt đầu (StartDate > DateTime.Now)
-				var futureAvailabilities = allAvailabilities
-					.Where(ta => ta.StartDate > DateTime.Now)
-					.ToList();
+				// Repository đã lọc StartDate >= now, không cần filter lại
+				var availabilities = await _tutorAvailabilityService.GetByTutorIdFullAsync(tutorId);
 
 				return Ok(ApiResponse<IReadOnlyList<TutorAvailabilityDto>>.Ok(
-					futureAvailabilities, 
-					$"Lấy danh sách lịch trình của gia sư {tutorId} thành công. Tìm thấy {futureAvailabilities.Count} lịch trình chưa bắt đầu"));
+					availabilities, 
+					$"Lấy danh sách lịch trình của gia sư {tutorId} thành công. Tìm thấy {availabilities.Count} lịch trình"));
 			}
 			catch (Exception ex)
 			{
@@ -176,7 +173,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 		/// <summary>
-		/// Lấy lịch trình theo trạng thái với những ngày chưa bắt đầu
+		/// Lấy lịch trình theo trạng thái (repository đã lọc những ngày còn tương lai)
 		/// </summary>
 		[HttpGet("tutor-availability-get-list-by-status/{tutorId}/{status}")]
 		public async Task<IActionResult> TutorAvailabilityGetListByStatus(int tutorId, TutorAvailabilityStatus status)
@@ -185,14 +182,14 @@ namespace EduMatch.PresentationLayer.Controllers
 			{
 				var allAvailabilities = await _tutorAvailabilityService.GetByTutorIdFullAsync(tutorId);
 				
-				// Lọc những ngày chưa bắt đầu (StartDate > DateTime.Now) và theo trạng thái
+				// filter theo status
 				var filteredAvailabilities = allAvailabilities
-					.Where(ta => ta.StartDate > DateTime.Now && ta.Status == status)
+					.Where(ta => ta.Status == status)
 					.ToList();
 
 				return Ok(ApiResponse<IReadOnlyList<TutorAvailabilityDto>>.Ok(
 					filteredAvailabilities, 
-					$"Lấy danh sách lịch trình của gia sư {tutorId} theo trạng thái {status} thành công. Tìm thấy {filteredAvailabilities.Count} lịch trình chưa bắt đầu"));
+					$"Lấy danh sách lịch trình của gia sư {tutorId} theo trạng thái {status} thành công. Tìm thấy {filteredAvailabilities.Count} lịch trình"));
 			}
 			catch (Exception ex)
 			{

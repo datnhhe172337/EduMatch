@@ -34,6 +34,19 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .FirstOrDefaultAsync(up => up.UserEmail == email);
         }
 
+        public async Task<IEnumerable<Province>> GetProvincesAsync()
+        {
+            return await _context.Provinces.ToListAsync();
+        }
+
+        public async Task<IEnumerable<SubDistrict>> GetSubDistrictsByProvinceIdAsync(int provinceId)
+        {
+            return await _context.SubDistricts
+                .Include(x => x.Province)
+                .Where(u =>  u.ProvinceId == provinceId)
+                .ToListAsync();
+        }
+
         public async Task UpdateAsync(UserProfile profile)
         {
             //_context.UserProfiles.Update(profile);
@@ -46,5 +59,7 @@ namespace EduMatch.DataAccessLayer.Repositories
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
         }
+
+
     }
 }

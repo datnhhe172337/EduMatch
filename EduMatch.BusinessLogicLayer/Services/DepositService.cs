@@ -1,0 +1,173 @@
+﻿using AutoMapper;
+using EduMatch.BusinessLogicLayer.DTOs;
+using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.Requests.Wallet;
+using EduMatch.DataAccessLayer.Entities;
+using EduMatch.DataAccessLayer.Enum;
+using EduMatch.DataAccessLayer.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace EduMatch.BusinessLogicLayer.Services
+{
+    public class DepositService : IDepositService
+    {
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+        private readonly EduMatchContext _context; // For transactions
+
+        public DepositService(
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            EduMatchContext context)
+        {
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+            _context = context;
+        }
+
+        // --- THIS IS THE METHOD YOU ASKED ABOUT ---
+        public async Task<Deposit> CreateDepositRequestAsync(WalletDepositRequest request, string userEmail)
+        {
+            var wallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(userEmail);
+            if (wallet == null)
+            {
+                wallet = new Wallet { UserEmail = userEmail };
+                await _unitOfWork.Wallets.AddAsync(wallet);
+                await _unitOfWork.CompleteAsync();
+            }
+
+            var newDeposit = new Deposit
+            {
+                WalletId = wallet.Id,
+                Amount = request.Amount,
+                Status = TransactionStatus.Pending,
+                PaymentGateway = "VNPay", // Set the gateway name
+                CreatedAt = System.DateTime.UtcNow
+            };
+            await _unitOfWork.Deposits.AddAsync(newDeposit);
+            await _unitOfWork.CompleteAsync();
+
+            // Return the full deposit object.
+            // The controller needs 'newDeposit.Id' and 'newDeposit.Amount'
+            return newDeposit;
+        }
+
+        // --- THIS IS THE WEBHOOK METHOD FOR VNPAY ---
+        public async Task<bool> ProcessVnpayPaymentAsync(int depositId, string transactionId, decimal amountPaid)
+        {
+            var deposit = await _unitOfWork.Deposits.GetByIdAsync(depositId);
+            if (deposit == null) throw new Exception($"Deposit {depositId} not found.");
+
+            // Check 1: Already completed
+            if (deposit.Status == TransactionStatus.Completed) return true;
+
+            // Check 2: Amount mismatch
+            if (deposit.Amount != amountPaid)
+            {
+                deposit.Status = TransactionStatus.Failed;
+                _unitOfWork.Deposits.Update(deposit);
+                await _unitOfWork.CompleteAsync();
+                throw new Exception($"Amount mismatch for deposit {depositId}. Expected: {deposit.Amount}, Got: {amountPaid}");
+            }
+
+            // All checks passed, get the wallet
+            var wallet = deposit.Wallet;
+            if (wallet == null) throw new Exception($"Wallet {deposit.WalletId} not found.");
+
+            var balanceBefore = wallet.Balance;
+            var balanceAfter = balanceBefore + deposit.Amount;
+
+            // Start database transaction
+            using var dbTransaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                deposit.Status = TransactionStatus.Completed;
+                deposit.GatewayTransactionCode = transactionId;
+                deposit.CompletedAt = DateTime.UtcNow;
+                _unitOfWork.Deposits.Update(deposit);
+
+                wallet.Balance = balanceAfter;
+                wallet.UpdatedAt = DateTime.UtcNow;
+                _unitOfWork.Wallets.Update(wallet);
+
+                var newTransaction = new WalletTransaction
+                {
+                    WalletId = wallet.Id,
+                    Amount = deposit.Amount,
+                    TransactionType = WalletTransactionType.Credit,
+                    Reason = WalletTransactionReason.Deposit,
+                    Status = TransactionStatus.Completed,
+                    BalanceBefore = balanceBefore,
+                    BalanceAfter = balanceAfter,
+                    CreatedAt = DateTime.UtcNow,
+                    ReferenceCode = $"VNPAY_{transactionId}",
+                    DepositId = deposit.Id
+                };
+                await _unitOfWork.WalletTransactions.AddAsync(newTransaction);
+
+                await _unitOfWork.CompleteAsync();
+                await dbTransaction.CommitAsync();
+
+                return true;
+            }
+            catch (Exception)
+            {
+                await dbTransaction.RollbackAsync();
+                throw;
+            }
+        }
+
+
+        public async Task<int> CleanupExpiredDepositsAsync()
+        {
+            // Find all deposits that are still "Pending"
+            // AND were created more than 24 hours ago
+            var expirationTime = DateTime.UtcNow.AddHours(-24);
+
+            var expiredDeposits = await _unitOfWork.Deposits
+                .FindAsync(d => d.Status == TransactionStatus.Pending && d.CreatedAt < expirationTime);
+
+            if (expiredDeposits == null || !expiredDeposits.Any())
+            {
+                return 0; // Nothing to clean up
+            }
+
+            foreach (var deposit in expiredDeposits)
+            {
+                // Change status to 2 (Failed/Expired/Cancelled)
+                deposit.Status = TransactionStatus.Failed;
+                _unitOfWork.Deposits.Update(deposit);
+            }
+
+            // Save all changes to the database
+            return await _unitOfWork.CompleteAsync();
+        }
+
+        public async Task<bool> CancelDepositRequestAsync(int depositId, string userEmail)
+        {
+            var deposit = await _unitOfWork.Deposits.GetByIdAsync(depositId);
+
+            if (deposit == null)
+            {
+                throw new Exception("Deposit request not found.");
+            }
+            if (deposit.Wallet.UserEmail != userEmail)
+            {
+                throw new Exception("You do not have permission to cancel this request.");
+            }
+            if (deposit.Status != TransactionStatus.Pending)
+            {
+                throw new Exception("This request cannot be cancelled as it is no longer pending.");
+            }
+
+            deposit.Status = TransactionStatus.Failed;
+            _unitOfWork.Deposits.Update(deposit);
+
+            int result = await _unitOfWork.CompleteAsync();
+            return result > 0;
+        }
+    }
+}

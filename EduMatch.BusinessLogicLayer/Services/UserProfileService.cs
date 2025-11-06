@@ -6,6 +6,7 @@ using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
 using EduMatch.DataAccessLayer.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
@@ -101,7 +102,29 @@ namespace EduMatch.BusinessLogicLayer.Services
 		return _mapper.Map<UserProfileDto>(existingProfile);
 	}
 
-		
-		
-	}
+        public async Task<IEnumerable<ProvinceDto>> GetProvincesAsync()
+        {
+            var provinces = await _repo.GetProvincesAsync();
+			return provinces.Select(u => new ProvinceDto
+			{
+				Id = u.Id,
+				Name = u.Name
+			});
+			
+        }
+
+        public async Task<IEnumerable<SubDistrictDto>> GetSubDistrictsByProvinceIdAsync(int provinceId)
+        {
+            var subDistricts = await _repo.GetSubDistrictsByProvinceIdAsync(provinceId);
+			return subDistricts.Select(u => new SubDistrictDto
+			{
+				Id= u.Id,
+				Name = u.Name,
+				ProvinceId = provinceId
+			});
+        }
+
+
+
+    }
 }

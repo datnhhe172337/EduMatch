@@ -512,10 +512,15 @@ public partial class EduMatchContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Meeting_GoogleToken");
 
-            entity.HasOne(d => d.Schedule).WithMany(p => p.MeetingSessions)
-                .HasForeignKey(d => d.ScheduleId)
+            entity.HasOne(d => d.Schedule).WithOne(p => p.MeetingSession)
+                .HasForeignKey<MeetingSession>(d => d.ScheduleId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Meeting_Schedule");
+            
+            // Ensure 1-1 relationship: ScheduleId must be unique
+            entity.HasIndex(e => e.ScheduleId)
+                .IsUnique()
+                .HasDatabaseName("IX_MeetingSession_ScheduleId");
         });
 
         modelBuilder.Entity<Province>(entity =>
@@ -1028,7 +1033,6 @@ public partial class EduMatchContext : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("referenceCode");
             entity.Property(e => e.Status)
-                .HasDefaultValue(1)
                 .HasColumnName("status");
             entity.Property(e => e.TransactionType).HasColumnName("transactionType");
             entity.Property(e => e.WalletId).HasColumnName("walletId");

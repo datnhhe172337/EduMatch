@@ -22,6 +22,8 @@ namespace EduMatch.DataAccessLayer.Interfaces
 
         Task<List<ClassRequest>> GetClassRequestsByLearnerEmailandStatusAsync(string learnerEmail, ClassRequestStatus status);
 
+        Task<List<ClassRequest>> GetClassRequestsByLearnerEmailAsync(string learnerEmail);
+
         Task<List<ClassRequest>> GetPendingClassRequestsAsync();
 
         Task UpdateStatusAsync(ClassRequest request);

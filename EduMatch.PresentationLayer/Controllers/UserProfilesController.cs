@@ -6,6 +6,7 @@ using EduMatch.PresentationLayer.Common;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.BusinessLogicLayer.Requests.User;
 using EduMatch.BusinessLogicLayer.Requests.TutorProfile;
+using EduMatch.BusinessLogicLayer.Constants;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -54,7 +55,7 @@ namespace EduMatch.PresentationLayer.Controllers
          /// <summary>
 		/// Cập nhật thông tin user profile
 		/// </summary>
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Learner + "," + Roles.Tutor)]
 		[HttpPut("update-user-profile")]
 		[ProducesResponseType(typeof(ApiResponse<UserProfileDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -82,6 +83,28 @@ namespace EduMatch.PresentationLayer.Controllers
 				return BadRequest(ApiResponse<string>.Fail("Failed to update user profile.", ex.Message));
 			}
 		}
+
+        /// <summary>
+        /// Lấy ra danh sách tất cả các tỉnh
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("provinves")]
+        public async Task<IActionResult> GetProvincesAsync()
+        {
+            var provinces = await _userProfileService.GetProvincesAsync();
+            return Ok(provinces);
+        }
+
+        /// <summary>
+        /// Lấy ra danh sách tất cả các xã theo tỉnh
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("subDistricts/{provinceId}")]
+        public async Task<IActionResult> GetSubDistrictsByProvinceIdAsync(int provinceId)
+        {
+            var provinces = await _userProfileService.GetSubDistrictsByProvinceIdAsync(provinceId);
+            return Ok(provinces);
+        }
 
     }
 }

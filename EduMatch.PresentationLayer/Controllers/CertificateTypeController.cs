@@ -7,6 +7,7 @@ using EduMatch.PresentationLayer.Common;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.BusinessLogicLayer.Services;
 using Microsoft.AspNetCore.Authorization;
+using EduMatch.BusinessLogicLayer.Constants;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -104,6 +105,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Tạo loại chứng chỉ mới với trạng thái Pending
 		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Learner + "," + Roles.Tutor)]
 		[HttpPost("create-certificate-type")]
 		[ProducesResponseType(typeof(ApiResponse<CertificateTypeDto>), StatusCodes.Status201Created)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -142,7 +144,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Thêm các môn học vào loại chứng chỉ
 		/// </summary>
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Learner + "," + Roles.Tutor)]
 		[HttpPost("add-subjects-to-certificate-type/{certificateTypeId}")]
 		[ProducesResponseType(typeof(ApiResponse<CertificateTypeDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -203,7 +205,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Verify loại chứng chỉ từ Pending sang Verified
 		/// </summary>
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin)]
 		[HttpPut("verify-certificate-type/{certificateTypeId}")]
 		[ProducesResponseType(typeof(ApiResponse<CertificateTypeDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -257,6 +259,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Xóa loại chứng chỉ
 		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin)]
 		[HttpDelete("delete-certificate-type/{certificateTypeId}")]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]

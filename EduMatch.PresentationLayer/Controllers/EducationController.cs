@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.BusinessLogicLayer.Services;
 using Microsoft.AspNetCore.Authorization;
+using EduMatch.BusinessLogicLayer.Constants;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -67,7 +68,8 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Tạo mới cơ sở giáo dục
 		/// </summary>
-		[Authorize]
+		
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Learner + "," + Roles.Tutor)]
 		[HttpPost("create-education-institution")]
 		[ProducesResponseType(typeof(ApiResponse<EducationInstitutionDto>), StatusCodes.Status201Created)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -156,6 +158,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Thêm bằng cấp học vấn mới cho gia sư
 		/// </summary>
 		// Create tutor education
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Learner + "," + Roles.Tutor)]
 		[HttpPost("create-{tutorId}-education")]
 		[ProducesResponseType(typeof(ApiResponse<TutorEducationDto>), StatusCodes.Status201Created)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -205,7 +208,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Cập nhật thông tin bằng cấp học vấn của gia sư
 		/// </summary>
 		// Update tutor education
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
 		[HttpPut("update-{tutorId}-education")]
 		[ProducesResponseType(typeof(ApiResponse<TutorEducationDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -252,7 +255,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Xóa bằng cấp học vấn của gia sư (có thể xóa một bằng cụ thể)
 		/// </summary>
 		// Delete tutor education
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin + ","  + Roles.Tutor)]
 		[HttpDelete("delete-{tutorId}-education")]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -344,7 +347,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Verify cơ sở giáo dục từ Pending sang Verified
 		/// </summary>
-		[Authorize]
+		[Authorize(Roles = Roles.BusinessAdmin )]
 		[HttpPut("verify-education-institution/{educationInstitutionId}")]
 		[ProducesResponseType(typeof(ApiResponse<EducationInstitutionDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]

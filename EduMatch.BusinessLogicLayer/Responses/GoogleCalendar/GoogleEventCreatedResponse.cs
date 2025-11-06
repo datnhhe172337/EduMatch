@@ -18,6 +18,12 @@ namespace EduMatch.BusinessLogicLayer.Responses.GoogleCalendar
 		[JsonProperty("hangoutLink")]
 		public string? HangoutLink { get; set; }
 
+        [JsonProperty("start")]
+        public GoogleEventDateTimeResponse? Start { get; set; }
+
+        [JsonProperty("end")]
+        public GoogleEventDateTimeResponse? End { get; set; }
+
 		[JsonProperty("conferenceData")]
 		public ConferenceData? ConferenceData { get; set; }
 	}
@@ -42,4 +48,13 @@ namespace EduMatch.BusinessLogicLayer.Responses.GoogleCalendar
 		[JsonProperty("label")]
 		public string? Label { get; set; }
 	}
+
+    public class GoogleEventDateTimeResponse
+    {
+        [JsonProperty("dateTime")]
+        public string? DateTime { get; set; }
+
+        [JsonProperty("timeZone")]
+        public string? TimeZone { get; set; }
+    }
 }
