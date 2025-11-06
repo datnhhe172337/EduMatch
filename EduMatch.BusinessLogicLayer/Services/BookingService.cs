@@ -41,29 +41,37 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// <summary>
         /// Lấy danh sách Booking theo learnerEmail với phân trang và lọc theo status, tutorSubjectId
         /// </summary>
-        public async Task<List<BookingDto>> GetAllByLearnerEmailAsync(string email, int? status, int? tutorSubjectId, int page = 1, int pageSize = 10)
+        public async Task<List<BookingDto>> GetAllByLearnerEmailAsync(string email, BookingStatus? status, int? tutorSubjectId, int page = 1, int pageSize = 10)
         {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new Exception("Email không được để trống");
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
-            var entities = await _bookingRepository.GetAllByLearnerEmailAsync(email, status, tutorSubjectId, page, pageSize);
+            int? statusInt = status.HasValue ? (int?)status.Value : null;
+            var entities = await _bookingRepository.GetAllByLearnerEmailAsync(email, statusInt, tutorSubjectId, page, pageSize);
             return _mapper.Map<List<BookingDto>>(entities);
         }
 
         /// <summary>
         /// Đếm tổng số Booking theo learnerEmail với lọc theo status, tutorSubjectId
         /// </summary>
-        public Task<int> CountByLearnerEmailAsync(string email, int? status, int? tutorSubjectId)
+        public Task<int> CountByLearnerEmailAsync(string email, BookingStatus? status, int? tutorSubjectId)
         {
-            return _bookingRepository.CountByLearnerEmailAsync(email, status, tutorSubjectId);
+            if (string.IsNullOrWhiteSpace(email))
+                throw new Exception("Email không được để trống");
+            int? statusInt = status.HasValue ? (int?)status.Value : null;
+            return _bookingRepository.CountByLearnerEmailAsync(email, statusInt, tutorSubjectId);
         }
 
         /// <summary>
         /// Lấy danh sách Booking theo learnerEmail (không phân trang)
         /// </summary>
-
-        public async Task<List<BookingDto>> GetAllByLearnerEmailNoPagingAsync(string email, int? status, int? tutorSubjectId)
+        public async Task<List<BookingDto>> GetAllByLearnerEmailNoPagingAsync(string email, BookingStatus? status, int? tutorSubjectId)
         {
-            var entities = await _bookingRepository.GetAllByLearnerEmailNoPagingAsync(email, status, tutorSubjectId);
+            if (string.IsNullOrWhiteSpace(email))
+                throw new Exception("Email không được để trống");
+            int? statusInt = status.HasValue ? (int?)status.Value : null;
+            var entities = await _bookingRepository.GetAllByLearnerEmailNoPagingAsync(email, statusInt, tutorSubjectId);
             return _mapper.Map<List<BookingDto>>(entities);
         }
 
@@ -71,28 +79,37 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// <summary>
         /// Lấy danh sách Booking theo tutorId với phân trang và lọc theo status, tutorSubjectId
         /// </summary>
-        public async Task<List<BookingDto>> GetAllByTutorIdAsync(int tutorId, int? status, int? tutorSubjectId, int page = 1, int pageSize = 10)
+        public async Task<List<BookingDto>> GetAllByTutorIdAsync(int tutorId, BookingStatus? status, int? tutorSubjectId, int page = 1, int pageSize = 10)
         {
+            if (tutorId <= 0)
+                throw new Exception("TutorId phải lớn hơn 0");
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
-            var entities = await _bookingRepository.GetAllByTutorIdAsync(tutorId, status, tutorSubjectId, page, pageSize);
+            int? statusInt = status.HasValue ? (int?)status.Value : null;
+            var entities = await _bookingRepository.GetAllByTutorIdAsync(tutorId, statusInt, tutorSubjectId, page, pageSize);
             return _mapper.Map<List<BookingDto>>(entities);
         }
 
         /// <summary>
         /// Đếm tổng số Booking theo tutorId với lọc theo status, tutorSubjectId
         /// </summary>
-        public Task<int> CountByTutorIdAsync(int tutorId, int? status, int? tutorSubjectId)
+        public Task<int> CountByTutorIdAsync(int tutorId, BookingStatus? status, int? tutorSubjectId)
         {
-            return _bookingRepository.CountByTutorIdAsync(tutorId, status, tutorSubjectId);
+            if (tutorId <= 0)
+                throw new Exception("TutorId phải lớn hơn 0");
+            int? statusInt = status.HasValue ? (int?)status.Value : null;
+            return _bookingRepository.CountByTutorIdAsync(tutorId, statusInt, tutorSubjectId);
         }
 
         /// <summary>
         /// Lấy danh sách Booking theo tutorId (không phân trang)
         /// </summary>
-        public async Task<List<BookingDto>> GetAllByTutorIdNoPagingAsync(int tutorId, int? status, int? tutorSubjectId)
+        public async Task<List<BookingDto>> GetAllByTutorIdNoPagingAsync(int tutorId, BookingStatus? status, int? tutorSubjectId)
         {
-            var entities = await _bookingRepository.GetAllByTutorIdNoPagingAsync(tutorId, status, tutorSubjectId);
+            if (tutorId <= 0)
+                throw new Exception("TutorId phải lớn hơn 0");
+            int? statusInt = status.HasValue ? (int?)status.Value : null;
+            var entities = await _bookingRepository.GetAllByTutorIdNoPagingAsync(tutorId, statusInt, tutorSubjectId);
             return _mapper.Map<List<BookingDto>>(entities);
         }
 
@@ -101,6 +118,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<BookingDto?> GetByIdAsync(int id)
         {
+            if (id <= 0)
+                throw new Exception("Id phải lớn hơn 0");
             var entity = await _bookingRepository.GetByIdAsync(id);
             return entity == null ? null : _mapper.Map<BookingDto>(entity);
         }
