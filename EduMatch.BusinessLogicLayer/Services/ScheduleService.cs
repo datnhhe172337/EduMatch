@@ -45,29 +45,38 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// <summary>
         /// Lấy danh sách Schedule theo bookingId và status với phân trang
         /// </summary>
-        public async Task<List<ScheduleDto>> GetAllByBookingIdAndStatusAsync(int bookingId, int? status, int page = 1, int pageSize = 10)
+        public async Task<List<ScheduleDto>> GetAllByBookingIdAndStatusAsync(int bookingId, ScheduleStatus? status, int page = 1, int pageSize = 10)
         {
+            if (bookingId <= 0)
+                throw new Exception("BookingId phải lớn hơn 0");
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
-            var entities = await _scheduleRepository.GetAllByBookingIdAndStatusAsync(bookingId, status, page, pageSize);
+            int? statusInt = status.HasValue ? (int?)status.Value : null;
+            var entities = await _scheduleRepository.GetAllByBookingIdAndStatusAsync(bookingId, statusInt, page, pageSize);
             return _mapper.Map<List<ScheduleDto>>(entities);
         }
 
         /// <summary>
         /// Lấy danh sách Schedule theo bookingId và status (không phân trang)
         /// </summary>
-        public async Task<List<ScheduleDto>> GetAllByBookingIdAndStatusNoPagingAsync(int bookingId, int? status)
+        public async Task<List<ScheduleDto>> GetAllByBookingIdAndStatusNoPagingAsync(int bookingId, ScheduleStatus? status)
         {
-            var entities = await _scheduleRepository.GetAllByBookingIdAndStatusNoPagingAsync(bookingId, status);
+            if (bookingId <= 0)
+                throw new Exception("BookingId phải lớn hơn 0");
+            int? statusInt = status.HasValue ? (int?)status.Value : null;
+            var entities = await _scheduleRepository.GetAllByBookingIdAndStatusNoPagingAsync(bookingId, statusInt);
             return _mapper.Map<List<ScheduleDto>>(entities);
         }
 
         /// <summary>
         /// Đếm tổng số Schedule theo bookingId và status
         /// </summary>
-        public Task<int> CountByBookingIdAndStatusAsync(int bookingId, int? status)
+        public Task<int> CountByBookingIdAndStatusAsync(int bookingId, ScheduleStatus? status)
         {
-            return _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, status);
+            if (bookingId <= 0)
+                throw new Exception("BookingId phải lớn hơn 0");
+            int? statusInt = status.HasValue ? (int?)status.Value : null;
+            return _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, statusInt);
         }
 
         /// <summary>
@@ -75,6 +84,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<ScheduleDto?> GetByAvailabilityIdAsync(int availabilitiId)
         {
+            if (availabilitiId <= 0)
+                throw new Exception("AvailabilitiId phải lớn hơn 0");
             var entity = await _scheduleRepository.GetByAvailabilityIdAsync(availabilitiId);
             return entity == null ? null : _mapper.Map<ScheduleDto>(entity);
         }
@@ -84,6 +95,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<ScheduleDto?> GetByIdAsync(int id)
         {
+            if (id <= 0)
+                throw new Exception("Id phải lớn hơn 0");
             var entity = await _scheduleRepository.GetByIdAsync(id);
             return entity == null ? null : _mapper.Map<ScheduleDto>(entity);
         }

@@ -1,5 +1,6 @@
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Requests.Schedule;
+using EduMatch.DataAccessLayer.Enum;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -10,15 +11,15 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// <summary>
         /// Lấy danh sách Schedule theo bookingId và status với phân trang
         /// </summary>
-        Task<List<ScheduleDto>> GetAllByBookingIdAndStatusAsync(int bookingId, int? status, int page = 1, int pageSize = 10);
+        Task<List<ScheduleDto>> GetAllByBookingIdAndStatusAsync(int bookingId, ScheduleStatus? status, int page = 1, int pageSize = 10);
         /// <summary>
         /// Lấy danh sách Schedule theo bookingId và status (không phân trang)
         /// </summary>
-        Task<List<ScheduleDto>> GetAllByBookingIdAndStatusNoPagingAsync(int bookingId, int? status);
+        Task<List<ScheduleDto>> GetAllByBookingIdAndStatusNoPagingAsync(int bookingId, ScheduleStatus? status);
         /// <summary>
         /// Đếm tổng số Schedule theo bookingId và status
         /// </summary>
-        Task<int> CountByBookingIdAndStatusAsync(int bookingId, int? status);
+        Task<int> CountByBookingIdAndStatusAsync(int bookingId, ScheduleStatus? status);
         /// <summary>
         /// Lấy Schedule theo AvailabilityId
         /// </summary>

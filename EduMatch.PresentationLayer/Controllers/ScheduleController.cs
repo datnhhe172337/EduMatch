@@ -1,5 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.DTOs;
+using EduMatch.BusinessLogicLayer.Requests.Schedule;
+using EduMatch.DataAccessLayer.Enum;
+using EduMatch.PresentationLayer.Common;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -7,5 +12,222 @@ namespace EduMatch.PresentationLayer.Controllers
 	[ApiController]
 	public class ScheduleController : ControllerBase
 	{
+		private readonly IScheduleService _scheduleService;
+
+		/// <summary>
+		/// API Schedule: lấy danh sách (có/không phân trang), lấy theo Id/AvailabilityId, tạo, cập nhật, hủy theo BookingId
+		/// </summary>
+		public ScheduleController(IScheduleService scheduleService)
+		{
+			_scheduleService = scheduleService;
+		}
+
+		/// <summary>
+		/// Lấy Schedule theo Id
+		/// </summary>
+		[HttpGet("get-by-id/{id:int}")]
+		[ProducesResponseType(typeof(ApiResponse<ScheduleDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<ScheduleDto>>> GetById(int id)
+		{
+			try
+			{
+				var item = await _scheduleService.GetByIdAsync(id);
+				if (item == null)
+					return NotFound(ApiResponse<object>.Fail("Không tìm thấy Schedule"));
+				return Ok(ApiResponse<ScheduleDto>.Ok(item));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Lấy Schedule theo AvailabilityId
+		/// </summary>
+		[HttpGet("get-by-availability-id/{availabilitiId:int}")]
+		[ProducesResponseType(typeof(ApiResponse<ScheduleDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<ScheduleDto>>> GetByAvailabilityId(int availabilitiId)
+		{
+			try
+			{
+				var item = await _scheduleService.GetByAvailabilityIdAsync(availabilitiId);
+				if (item == null)
+					return NotFound(ApiResponse<object>.Fail("Không tìm thấy Schedule cho AvailabilityId"));
+				return Ok(ApiResponse<ScheduleDto>.Ok(item));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Lấy danh sách Schedule theo BookingId và Status có phân trang
+		/// </summary>
+		[HttpGet("get-all-paging")]
+		[ProducesResponseType(typeof(ApiResponse<PagedResult<ScheduleDto>>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<PagedResult<ScheduleDto>>>> GetAllPaging(
+			[FromQuery] int bookingId,
+			[FromQuery] ScheduleStatus? status = null,
+			[FromQuery] int page = 1,
+			[FromQuery] int pageSize = 10)
+		{
+			try
+			{
+				if (bookingId <= 0)
+				{
+					return BadRequest(ApiResponse<object>.Fail("BookingId phải lớn hơn 0"));
+				}
+				if (status.HasValue && !Enum.IsDefined(typeof(ScheduleStatus), status.Value))
+				{
+					return BadRequest(ApiResponse<object>.Fail("Status không hợp lệ"));
+				}
+				var items = await _scheduleService.GetAllByBookingIdAndStatusAsync(bookingId, status, page, pageSize);
+				var total = await _scheduleService.CountByBookingIdAndStatusAsync(bookingId, status);
+				var result = new PagedResult<ScheduleDto>
+				{
+					Items = items,
+					PageNumber = page,
+					PageSize = pageSize,
+					TotalCount = total
+				};
+				return Ok(ApiResponse<PagedResult<ScheduleDto>>.Ok(result));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Lấy danh sách Schedule theo BookingId và Status (không phân trang)
+		/// </summary>
+		[HttpGet("get-all-no-paging")]
+		[ProducesResponseType(typeof(ApiResponse<IEnumerable<ScheduleDto>>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<IEnumerable<ScheduleDto>>>> GetAllNoPaging(
+			[FromQuery] int bookingId,
+			[FromQuery] ScheduleStatus? status = null)
+		{
+			try
+			{
+				if (bookingId <= 0)
+				{
+					return BadRequest(ApiResponse<object>.Fail("BookingId phải lớn hơn 0"));
+				}
+				if (status.HasValue && !Enum.IsDefined(typeof(ScheduleStatus), status.Value))
+				{
+					return BadRequest(ApiResponse<object>.Fail("Status không hợp lệ"));
+				}
+				var items = await _scheduleService.GetAllByBookingIdAndStatusNoPagingAsync(bookingId, status);
+				return Ok(ApiResponse<IEnumerable<ScheduleDto>>.Ok(items));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Tạo Schedule mới và cập nhật TutorAvailability status sang Booked. Nếu là online thì tạo MeetingSession tự động
+		/// </summary>
+		[HttpPost("create-schedule")]
+		[ProducesResponseType(typeof(ApiResponse<ScheduleDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<ScheduleDto>>> Create([FromBody] ScheduleCreateRequest request)
+		{
+			try
+			{
+				if (!ModelState.IsValid)
+				{
+					return BadRequest(ApiResponse<object>.Fail("Dữ liệu không hợp lệ", ModelState));
+				}
+				var created = await _scheduleService.CreateAsync(request);
+				return Ok(ApiResponse<ScheduleDto>.Ok(created, "Tạo Schedule thành công"));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Tạo danh sách Schedule cho một Booking. Tổng số Schedule sau khi tạo phải bằng TotalSessions của Booking
+		/// </summary>
+		[HttpPost("create-schedule-list")]
+		[ProducesResponseType(typeof(ApiResponse<IEnumerable<ScheduleDto>>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<IEnumerable<ScheduleDto>>>> CreateList([FromBody] List<ScheduleCreateRequest> requests)
+		{
+			try
+			{
+				if (!ModelState.IsValid)
+				{
+					return BadRequest(ApiResponse<object>.Fail("Dữ liệu không hợp lệ", ModelState));
+				}
+				var created = await _scheduleService.CreateListAsync(requests);
+				return Ok(ApiResponse<IEnumerable<ScheduleDto>>.Ok(created, "Tạo danh sách Schedule thành công"));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Cập nhật Schedule. Nếu AvailabilitiId thay đổi thì cập nhật MeetingSession và trạng thái Availability
+		/// </summary>
+		[HttpPut("update-schedule")]
+		[ProducesResponseType(typeof(ApiResponse<ScheduleDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<ScheduleDto>>> Update([FromBody] ScheduleUpdateRequest request)
+		{
+			try
+			{
+				if (!ModelState.IsValid)
+				{
+					return BadRequest(ApiResponse<object>.Fail("Dữ liệu không hợp lệ", ModelState));
+				}
+				if (request.Status.HasValue && !Enum.IsDefined(typeof(ScheduleStatus), request.Status.Value))
+				{
+					return BadRequest(ApiResponse<object>.Fail("Status không hợp lệ"));
+				}
+				var updated = await _scheduleService.UpdateAsync(request);
+				return Ok(ApiResponse<ScheduleDto>.Ok(updated, "Cập nhật Schedule thành công"));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Hủy toàn bộ Schedule theo BookingId: set Status=Cancelled, xóa MeetingSession (bao gồm Google Calendar event), trả Availability về Available
+		/// </summary>
+		[HttpPost("cancel-all-by-booking/{bookingId:int}")]
+		[ProducesResponseType(typeof(ApiResponse<IEnumerable<ScheduleDto>>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<IEnumerable<ScheduleDto>>>> CancelAllByBooking(int bookingId)
+		{
+			try
+			{
+				if (bookingId <= 0)
+				{
+					return BadRequest(ApiResponse<object>.Fail("BookingId phải lớn hơn 0"));
+				}
+				var cancelled = await _scheduleService.CancelAllByBookingAsync(bookingId);
+				return Ok(ApiResponse<IEnumerable<ScheduleDto>>.Ok(cancelled, "Hủy toàn bộ Schedule thành công"));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+		}
 	}
 }
