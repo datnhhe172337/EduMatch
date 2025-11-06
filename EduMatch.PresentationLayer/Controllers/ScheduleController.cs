@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Storage;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Requests.Schedule;
+using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.PresentationLayer.Common;
 
@@ -13,13 +15,15 @@ namespace EduMatch.PresentationLayer.Controllers
 	public class ScheduleController : ControllerBase
 	{
 		private readonly IScheduleService _scheduleService;
+		private readonly EduMatchContext _context;
 
 		/// <summary>
 		/// API Schedule: lấy danh sách (có/không phân trang), lấy theo Id/AvailabilityId, tạo, cập nhật, hủy theo BookingId
 		/// </summary>
-		public ScheduleController(IScheduleService scheduleService)
+		public ScheduleController(IScheduleService scheduleService, EduMatchContext context)
 		{
 			_scheduleService = scheduleService;
+			_context = context;
 		}
 
 		/// <summary>
@@ -168,17 +172,21 @@ namespace EduMatch.PresentationLayer.Controllers
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
 		public async Task<ActionResult<ApiResponse<IEnumerable<ScheduleDto>>>> CreateList([FromBody] List<ScheduleCreateRequest> requests)
 		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ApiResponse<object>.Fail("Dữ liệu không hợp lệ", ModelState));
+			}
+
+			await using var transaction = await _context.Database.BeginTransactionAsync();
 			try
 			{
-				if (!ModelState.IsValid)
-				{
-					return BadRequest(ApiResponse<object>.Fail("Dữ liệu không hợp lệ", ModelState));
-				}
 				var created = await _scheduleService.CreateListAsync(requests);
+				await transaction.CommitAsync();
 				return Ok(ApiResponse<IEnumerable<ScheduleDto>>.Ok(created, "Tạo danh sách Schedule thành công"));
 			}
 			catch (Exception ex)
 			{
+				await transaction.RollbackAsync();
 				return BadRequest(ApiResponse<object>.Fail(ex.Message));
 			}
 		}
