@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.PresentationLayer.Common;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -23,6 +24,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy MeetingSession theo Id
 		/// </summary>
+		[Authorize]
 		[HttpGet("get-by-id/{id:int}")]
 		[ProducesResponseType(typeof(ApiResponse<MeetingSessionDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -37,6 +39,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy MeetingSession theo ScheduleId
 		/// </summary>
+		[Authorize]
 		[HttpGet("get-by-schedule-id/{scheduleId:int}")]
 		[ProducesResponseType(typeof(ApiResponse<MeetingSessionDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]

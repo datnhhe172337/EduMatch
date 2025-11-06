@@ -8,6 +8,9 @@ using EduMatch.DataAccessLayer.Entities;
 using Microsoft.EntityFrameworkCore.Storage;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.PresentationLayer.Common;
+using Microsoft.AspNetCore.Authorization;
+using System.ComponentModel.DataAnnotations;
+using EduMatch.BusinessLogicLayer.Constants;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -32,6 +35,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy Booking theo Id
 		/// </summary>
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
 		[HttpGet("get-by-id/{id:int}")]
 		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -54,6 +58,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy danh sách Booking theo LearnerEmail có phân trang và lọc theo Status, TutorSubjectId
 		/// </summary>
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
 		[HttpGet("get-all-by-learner-email-paging")]
 		[ProducesResponseType(typeof(ApiResponse<PagedResult<BookingDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -69,6 +74,10 @@ namespace EduMatch.PresentationLayer.Controllers
 				if (string.IsNullOrWhiteSpace(email))
 				{
 					return BadRequest(ApiResponse<object>.Fail("Email không được để trống"));
+				}
+				if (!new EmailAddressAttribute().IsValid(email))
+				{
+					return BadRequest(ApiResponse<object>.Fail("Email không đúng định dạng"));
 				}
 				if (status.HasValue && !Enum.IsDefined(typeof(BookingStatus), status.Value))
 				{
@@ -94,6 +103,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy danh sách Booking theo LearnerEmail (không phân trang) và lọc theo Status, TutorSubjectId
 		/// </summary>
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
 		[HttpGet("get-all-by-learner-email-no-paging")]
 		[ProducesResponseType(typeof(ApiResponse<IEnumerable<BookingDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -107,6 +117,10 @@ namespace EduMatch.PresentationLayer.Controllers
 				if (string.IsNullOrWhiteSpace(email))
 				{
 					return BadRequest(ApiResponse<object>.Fail("Email không được để trống"));
+				}
+				if (!new EmailAddressAttribute().IsValid(email))
+				{
+					return BadRequest(ApiResponse<object>.Fail("Email không đúng định dạng"));
 				}
 				if (status.HasValue && !Enum.IsDefined(typeof(BookingStatus), status.Value))
 				{
@@ -124,6 +138,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy danh sách Booking theo TutorId có phân trang và lọc theo Status, TutorSubjectId
 		/// </summary>
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
 		[HttpGet("get-all-by-tutor-id-paging")]
 		[ProducesResponseType(typeof(ApiResponse<PagedResult<BookingDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
