@@ -3,13 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36203.30
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduMatch.BusinessLogicLayer", "EduMatch.BusinessLogicLayer\EduMatch.BusinessLogicLayer.csproj", "{1B9EA4A8-6307-4B1E-A8EF-B2731397FF91}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EduMatch.BusinessLogicLayer", "EduMatch.BusinessLogicLayer\EduMatch.BusinessLogicLayer.csproj", "{1B9EA4A8-6307-4B1E-A8EF-B2731397FF91}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduMatch.DataAccessLayer", "EduMatch.DataAccessLayer\EduMatch.DataAccessLayer.csproj", "{91B7D9A4-C717-4FA5-9F52-3085635ACAF2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EduMatch.DataAccessLayer", "EduMatch.DataAccessLayer\EduMatch.DataAccessLayer.csproj", "{91B7D9A4-C717-4FA5-9F52-3085635ACAF2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduMatch.PresentationLayer", "EduMatch.PresentationLayer\EduMatch.PresentationLayer.csproj", "{11B1863D-7334-4C2F-B465-C3D1741706CA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EduMatch.PresentationLayer", "EduMatch.PresentationLayer\EduMatch.PresentationLayer.csproj", "{11B1863D-7334-4C2F-B465-C3D1741706CA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduMatch.Tests", "EduMatch.Tests\EduMatch.Tests.csproj", "{DF0F0703-C2B6-4824-B79C-08E374D6FB4C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EduMatch.Tests", "EduMatch.Tests\EduMatch.Tests.csproj", "{DF0F0703-C2B6-4824-B79C-08E374D6FB4C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduMatch.UnitTests", "EduMatch.UnitTests\EduMatch.UnitTests.csproj", "{AF50C5F4-3E12-4239-9C63-B896BA19CC8D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{DF0F0703-C2B6-4824-B79C-08E374D6FB4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF0F0703-C2B6-4824-B79C-08E374D6FB4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DF0F0703-C2B6-4824-B79C-08E374D6FB4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF50C5F4-3E12-4239-9C63-B896BA19CC8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF50C5F4-3E12-4239-9C63-B896BA19CC8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF50C5F4-3E12-4239-9C63-B896BA19CC8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF50C5F4-3E12-4239-9C63-B896BA19CC8D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
