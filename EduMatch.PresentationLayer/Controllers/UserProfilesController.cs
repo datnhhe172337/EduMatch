@@ -84,5 +84,27 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
+        /// <summary>
+        /// Lấy ra danh sách tất cả các tỉnh
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("provinves")]
+        public async Task<IActionResult> GetProvincesAsync()
+        {
+            var provinces = await _userProfileService.GetProvincesAsync();
+            return Ok(provinces);
+        }
+
+        /// <summary>
+        /// Lấy ra danh sách tất cả các xã theo tỉnh
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("subDistricts/{provinceId}")]
+        public async Task<IActionResult> GetSubDistrictsByProvinceIdAsync(int provinceId)
+        {
+            var provinces = await _userProfileService.GetSubDistrictsByProvinceIdAsync(provinceId);
+            return Ok(provinces);
+        }
+
     }
 }
