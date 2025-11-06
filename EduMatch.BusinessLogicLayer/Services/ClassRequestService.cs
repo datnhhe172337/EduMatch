@@ -324,6 +324,34 @@ namespace EduMatch.BusinessLogicLayer.Services
             }).ToList();
         }
 
+        public async Task<List<ClassRequestItemDto>> GetListAllClassRequestsByLearnerEmail(string learnerEmail)
+        {
+            var result = await _repo.GetClassRequestsByLearnerEmailAsync(learnerEmail);
+
+            return result.Select(r => new ClassRequestItemDto
+            {
+                Id = r.Id,
+                LearnerEmail = r.LearnerEmail,
+                SubjectName = r.Subject.SubjectName,
+                Title = r.Title,
+                Level = r.Level.Name,
+                //LearningGoal = r.LearningGoal,
+                //TutorRequirement = r.TutorRequirement,
+                Mode = r.Mode.ToString(),
+                //ProvinceName = r.Province.Name,
+                //SubDistrictName = r.SubDistrict.Name,
+                //AddressLine = r.AddressLine,
+                //Latitude = r.Latitude,
+                //Longitude = r.Longitude,
+                ExpectedStartDate = r.ExpectedStartDate,
+                ExpectedSessions = r.ExpectedSessions,
+                TargetUnitPriceMin = r.TargetUnitPriceMin,
+                TargetUnitPriceMax = r.TargetUnitPriceMax,
+                Status = r.Status.ToString(),
+                CreatedAt = r.CreatedAt
+            }).ToList();
+        }
+
         public async Task<List<ClassRequestItemDto>> GetOpenClassRequestsByLearnerEmail(string learnerEmail)
         {
             var result = await _repo.GetClassRequestsByLearnerEmailandStatusAsync(learnerEmail, ClassRequestStatus.Open);
