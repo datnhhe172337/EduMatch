@@ -9,33 +9,32 @@ using EduMatch.BusinessLogicLayer.Requests.Booking;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
-using Microsoft.EntityFrameworkCore;
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
     public class BookingService : IBookingService
     {
         private readonly IBookingRepository _bookingRepository;
-        private readonly ITutorSubjectRepository _tutorSubjectRepository;
-        private readonly ISystemFeeRepository _systemFeeRepository;
-        private readonly IUserRepository _userRepository;
+        private readonly ITutorSubjectService _tutorSubjectService;
+        private readonly ISystemFeeService _systemFeeService;
+        private readonly IUserService _userService;
         private readonly IMapper _mapper;
-        private readonly EduMatchContext _context;
+        private readonly IScheduleService _scheduleService;
 
         public BookingService(
             IBookingRepository bookingRepository,
-            ITutorSubjectRepository tutorSubjectRepository,
-            ISystemFeeRepository systemFeeRepository,
-            IUserRepository userRepository,
+            ITutorSubjectService tutorSubjectService,
+            ISystemFeeService systemFeeService,
+            IUserService userService,
             IMapper mapper,
-            EduMatchContext context)
+            IScheduleService scheduleService)
         {
             _bookingRepository = bookingRepository;
-            _tutorSubjectRepository = tutorSubjectRepository;
-            _systemFeeRepository = systemFeeRepository;
-            _userRepository = userRepository;
+            _tutorSubjectService = tutorSubjectService;
+            _systemFeeService = systemFeeService;
+            _userService = userService;
             _mapper = mapper;
-            _context = context;
+            _scheduleService = scheduleService;
         }
 
         /// <summary>
@@ -130,11 +129,11 @@ namespace EduMatch.BusinessLogicLayer.Services
         public async Task<BookingDto> CreateAsync(BookingCreateRequest request)
         {
             // Validate LearnerEmail exists
-            var learner = await _userRepository.GetUserByEmailAsync(request.LearnerEmail)
+            var learner = await _userService.GetByEmailAsync(request.LearnerEmail)
                 ?? throw new Exception("LearnerEmail không tồn tại trong hệ thống");
 
             // Validate TutorSubject exists and get HourlyRate
-            var tutorSubject = await _tutorSubjectRepository.GetByIdFullAsync(request.TutorSubjectId)
+            var tutorSubject = await _tutorSubjectService.GetByIdFullAsync(request.TutorSubjectId)
                 ?? throw new Exception("TutorSubject không tồn tại");
 
             if (!tutorSubject.HourlyRate.HasValue || tutorSubject.HourlyRate.Value <= 0)
@@ -144,14 +143,10 @@ namespace EduMatch.BusinessLogicLayer.Services
             var totalSessions = request.TotalSessions ?? 1;
 
             // Get active SystemFee
-            var now = DateTime.UtcNow;
-            var activeSystemFee = await _context.SystemFees
-                .Where(sf => sf.IsActive == true 
-                    && sf.EffectiveFrom <= now 
-                    && (sf.EffectiveTo == null || sf.EffectiveTo >= now))
-                .OrderBy(sf => sf.Id)
-                .FirstOrDefaultAsync()
+            var activeSystemFee = await _systemFeeService.GetActiveSystemFeeAsync()
                 ?? throw new Exception("Không tìm thấy SystemFee đang hoạt động");
+
+            var now = DateTime.UtcNow;
 
             // Calculate base amount (tổng đơn hàng)
             var baseAmount = unitPrice * totalSessions;
@@ -206,14 +201,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (!string.IsNullOrWhiteSpace(request.LearnerEmail))
             {
                 // Validate LearnerEmail exists
-                var learner = await _userRepository.GetUserByEmailAsync(request.LearnerEmail)
+                var learner = await _userService.GetByEmailAsync(request.LearnerEmail)
                     ?? throw new Exception("LearnerEmail không tồn tại trong hệ thống");
                 entity.LearnerEmail = request.LearnerEmail;
             }
 
             if (request.TutorSubjectId.HasValue)
             {
-                var tutorSubject = await _tutorSubjectRepository.GetByIdFullAsync(request.TutorSubjectId.Value)
+                var tutorSubject = await _tutorSubjectService.GetByIdFullAsync(request.TutorSubjectId.Value)
                     ?? throw new Exception("TutorSubject không tồn tại");
                 entity.TutorSubjectId = request.TutorSubjectId.Value;
                 // Update UnitPrice if TutorSubject changes
@@ -232,7 +227,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 var baseAmount = entity.UnitPrice * entity.TotalSessions;
                 
                 // Get current SystemFee to recalculate fee
-                var systemFee = await _systemFeeRepository.GetByIdAsync(entity.SystemFeeId)
+                var systemFee = await _systemFeeService.GetByIdAsync(entity.SystemFeeId)
                     ?? throw new Exception("SystemFee không tồn tại");
                 
                 // Recalculate SystemFeeAmount
@@ -250,22 +245,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 // TotalAmount giữ nguyên giá gốc, không cộng phí
                 entity.TotalAmount = baseAmount;
             }
-
-            if (request.PaymentStatus.HasValue)
-                entity.PaymentStatus = (int)request.PaymentStatus.Value;
-
-            if (request.RefundedAmount.HasValue)
-            {
-                if (request.RefundedAmount.Value < 0)
-                    throw new Exception("RefundedAmount không được âm");
-                if (request.RefundedAmount.Value > entity.TotalAmount)
-                    throw new Exception("RefundedAmount không được vượt quá TotalAmount");
-                entity.RefundedAmount = request.RefundedAmount.Value;
-            }
-
-            if (request.Status.HasValue)
-                entity.Status = (int)request.Status.Value;
-
+            
             entity.UpdatedAt = DateTime.UtcNow;
 
             await _bookingRepository.UpdateAsync(entity);
@@ -295,7 +275,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
-        /// Cập nhật Status của Booking
+        /// Cập nhật Status của Booking. Nếu status là Cancelled thì hủy tất cả Schedule liên quan
         /// </summary>
         public async Task<BookingDto> UpdateStatusAsync(int id, BookingStatus status)
         {
@@ -305,6 +285,13 @@ namespace EduMatch.BusinessLogicLayer.Services
             entity.Status = (int)status;
             entity.UpdatedAt = DateTime.UtcNow;
             await _bookingRepository.UpdateAsync(entity);
+
+            // Nếu status là Cancelled thì hủy tất cả Schedule liên quan
+            if (status == BookingStatus.Cancelled)
+            {
+                await _scheduleService.CancelAllByBookingAsync(id);
+            }
+
             return _mapper.Map<BookingDto>(entity);
         }
     }

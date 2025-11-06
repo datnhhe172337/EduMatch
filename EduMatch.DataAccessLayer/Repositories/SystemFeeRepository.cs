@@ -1,6 +1,7 @@
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -85,6 +86,20 @@ namespace EduMatch.DataAccessLayer.Repositories
                 _context.SystemFees.Remove(entity);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        /// <summary>
+        /// Lấy SystemFee đang hoạt động (IsActive = true, EffectiveFrom <= now, EffectiveTo >= now hoặc null), lấy Id nhỏ nhất
+        /// </summary>
+        public async Task<SystemFee?> GetActiveSystemFeeAsync()
+        {
+            var now = DateTime.UtcNow;
+            return await _context.SystemFees
+                .Where(sf => sf.IsActive == true
+                    && sf.EffectiveFrom <= now
+                    && (sf.EffectiveTo == null || sf.EffectiveTo >= now))
+                .OrderBy(sf => sf.Id)
+                .FirstOrDefaultAsync();
         }
     }
 }
