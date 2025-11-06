@@ -164,6 +164,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy danh sách Booking theo TutorId (không phân trang) và lọc theo Status, TutorSubjectId
 		/// </summary>
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
 		[HttpGet("get-all-by-tutor-id-no-paging")]
 		[ProducesResponseType(typeof(ApiResponse<IEnumerable<BookingDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -194,6 +195,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Tạo Booking mới và tính phí hệ thống theo SystemFee đang hoạt động. Tự động lấy SystemFee có Id nhỏ nhất đang hoạt động
 		/// </summary>
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
 		[HttpPost("create-booking")]
 		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -233,6 +235,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Cập nhật Booking và tính lại các giá trị liên quan khi thay đổi (TotalSessions, TutorSubjectId). Nếu thay đổi TotalSessions sẽ tính lại SystemFeeAmount
 		/// </summary>
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
 		[HttpPut("update-booking")]
 		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -256,6 +259,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Cập nhật PaymentStatus của Booking theo Id
 		/// </summary>
+		[Authorize (Roles = Roles.BusinessAdmin )]
 		[HttpPut("update-payment-status/{id:int}")]
 		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -285,6 +289,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Cập nhật Status của Booking theo Id
 		/// </summary>
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
 		[HttpPut("update-status/{id:int}")]
 		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]

@@ -31,9 +31,13 @@ namespace EduMatch.DataAccessLayer.Interfaces
         /// </summary>
         Task<IEnumerable<Schedule>> GetAllByBookingIdOrderedAsync(int bookingId);
         /// <summary>
-        /// Lấy danh sách Schedule theo LearnerEmail (qua Booking) và optional khoảng thời gian (qua TutorAvailability.StartDate)
+        /// Lấy danh sách Schedule theo LearnerEmail (qua Booking) và optional khoảng thời gian (qua TutorAvailability.StartDate) và Status
         /// </summary>
-        Task<IEnumerable<Schedule>> GetAllByLearnerEmailAsync(string learnerEmail, DateTime? startDate = null, DateTime? endDate = null);
+        Task<IEnumerable<Schedule>> GetAllByLearnerEmailAsync(string learnerEmail, DateTime? startDate = null, DateTime? endDate = null, int? status = null);
+        /// <summary>
+        /// Lấy danh sách Schedule theo TutorEmail (qua TutorProfile -> TutorSubject -> Booking) và optional khoảng thời gian và Status
+        /// </summary>
+        Task<IEnumerable<Schedule>> GetAllByTutorEmailAsync(string tutorEmail, DateTime? startDate = null, DateTime? endDate = null, int? status = null);
         /// <summary>
         /// Kiểm tra tutor có lịch học trùng với slot và ngày hay không (loại trừ Schedule bị Cancelled)
         /// </summary>

@@ -20,20 +20,20 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IMapper _mapper;
         private readonly ITutorProfileRepository _tutorProfileRepository;
         private readonly ITimeSlotRepository _timeSlotRepository;
-        private readonly IScheduleService _scheduleService;
+        private readonly IScheduleRepository _scheduleRepository;
 
         public TutorAvailabilityService(
             ITutorAvailabilityRepository repository,
             IMapper mapper,
             ITimeSlotRepository timeSlotRepository,
             ITutorProfileRepository tutorProfileRepository,
-            IScheduleService scheduleService)
+            IScheduleRepository scheduleRepository)
         {
             _repository = repository;
             _mapper = mapper;
             _timeSlotRepository = timeSlotRepository;
             _tutorProfileRepository = tutorProfileRepository;
-            _scheduleService = scheduleService;
+            _scheduleRepository = scheduleRepository;
         }
 
         /// <summary>
@@ -103,9 +103,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new InvalidOperationException("TutorAvailability đã tồn tại cho ngày và slot này");
 
                 // Kiểm tra xung đột với lịch học (Schedule) hiện có của tutor
-                var hasScheduleConflict = await _scheduleService.HasTutorScheduleConflictAsync(request.TutorId, request.SlotId, desiredDate);
+                var hasScheduleConflict = await _scheduleRepository.HasTutorScheduleOnSlotDateAsync(request.TutorId, request.SlotId, desiredDate);
                 if (hasScheduleConflict)
-                    throw new InvalidOperationException("Tutor đã có lịch dạy (Schedule) trùng thời gian này");
+                    throw new InvalidOperationException($"Lịch dạy của gia sư trùng với lịch học đã đặt: ngày {desiredDate:dd/MM/yyyy}, khung {timeSlot.StartTime:hh\\:mm}-{timeSlot.EndTime:hh\\:mm} (SlotId {request.SlotId})");
 
 				var entity = new TutorAvailability
 				{
@@ -167,9 +167,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new InvalidOperationException("TutorAvailability đã tồn tại cho ngày và slot này");
 
                 // Kiểm tra xung đột với lịch học (Schedule) hiện có của tutor
-                var hasScheduleConflict = await _scheduleService.HasTutorScheduleConflictAsync(request.TutorId, request.SlotId, desiredDate);
+                var hasScheduleConflict = await _scheduleRepository.HasTutorScheduleOnSlotDateAsync(request.TutorId, request.SlotId, desiredDate);
                 if (hasScheduleConflict)
-                    throw new InvalidOperationException("Tutor đã có lịch dạy (Schedule) trùng thời gian này");
+                    throw new InvalidOperationException($"Lịch dạy của gia sư trùng với lịch học đã đặt: ngày {desiredDate:dd/MM/yyyy}, khung {timeSlot.StartTime:hh\\:mm}-{timeSlot.EndTime:hh\\:mm} (SlotId {request.SlotId})");
 
 				existingEntity.StartDate = request.StartDate.Date.Add(timeSlot.StartTime.ToTimeSpan());
 				existingEntity.EndDate = request.StartDate.Date.Add(timeSlot.EndTime.ToTimeSpan());
@@ -207,15 +207,6 @@ namespace EduMatch.BusinessLogicLayer.Services
             }
         }
 
-        /// <summary>
-        /// Kiểm tra tutor có lịch học trùng với slot và ngày hay không (dựa trên Schedule hiện có)
-        /// </summary>
-        public Task<bool> HasTutorScheduleConflictAsync(int tutorId, int slotId, DateTime date)
-        {
-            if (tutorId <= 0) throw new ArgumentException("TutorId phải lớn hơn 0");
-            if (slotId <= 0) throw new ArgumentException("SlotId phải lớn hơn 0");
-            return _scheduleService.HasTutorScheduleConflictAsync(tutorId, slotId, date);
-        }
 
         /// <summary>
         /// Cập nhật trạng thái của TutorAvailability (Available/Booked/InProgress/Cancelled)

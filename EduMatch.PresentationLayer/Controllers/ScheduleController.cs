@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.AspNetCore.Authorization;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Requests.Schedule;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.PresentationLayer.Common;
+using System.ComponentModel.DataAnnotations;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -29,6 +31,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy Schedule theo Id
 		/// </summary>
+		[Authorize]
 		[HttpGet("get-by-id/{id:int}")]
 		[ProducesResponseType(typeof(ApiResponse<ScheduleDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -51,6 +54,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy Schedule theo AvailabilityId
 		/// </summary>
+		[Authorize]
 		[HttpGet("get-by-availability-id/{availabilitiId:int}")]
 		[ProducesResponseType(typeof(ApiResponse<ScheduleDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -243,7 +247,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 		/// <summary>
-		/// Lấy tất cả lịch học theo LearnerEmail Optional StartDate và EndDate (có thể lọc theo khoảng thời gian StartDate <= EndDate)
+		/// Lấy tất cả lịch học theo LearnerEmail; có thể lọc theo khoảng thời gian và Status (StartDate <= EndDate)
 		/// </summary>
 		[HttpGet("get-all-by-learner-email")]
 		[ProducesResponseType(typeof(ApiResponse<IEnumerable<ScheduleDto>>), StatusCodes.Status200OK)]
@@ -251,7 +255,8 @@ namespace EduMatch.PresentationLayer.Controllers
 		public async Task<ActionResult<ApiResponse<IEnumerable<ScheduleDto>>>> GetAllByLearnerEmail(
 			[FromQuery] string learnerEmail,
 			[FromQuery] DateTime? startDate = null,
-			[FromQuery] DateTime? endDate = null)
+			[FromQuery] DateTime? endDate = null,
+			[FromQuery] ScheduleStatus? status = null)
 		{
 			try
 			{
@@ -259,13 +264,21 @@ namespace EduMatch.PresentationLayer.Controllers
 				{
 					return BadRequest(ApiResponse<object>.Fail("LearnerEmail không được để trống"));
 				}
+				if (!new EmailAddressAttribute().IsValid(learnerEmail))
+				{
+					return BadRequest(ApiResponse<object>.Fail("LearnerEmail không đúng định dạng"));
+				}
 
 				if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
 				{
 					return BadRequest(ApiResponse<object>.Fail("StartDate không được lớn hơn EndDate"));
 				}
+				if (status.HasValue && !Enum.IsDefined(typeof(ScheduleStatus), status.Value))
+				{
+					return BadRequest(ApiResponse<object>.Fail("Status không hợp lệ"));
+				}
 
-				var items = await _scheduleService.GetAllByLearnerEmailAsync(learnerEmail, startDate, endDate);
+				var items = await _scheduleService.GetAllByLearnerEmailAsync(learnerEmail, startDate, endDate, status);
 				return Ok(ApiResponse<IEnumerable<ScheduleDto>>.Ok(items));
 			}
 			catch (Exception ex)
@@ -273,5 +286,49 @@ namespace EduMatch.PresentationLayer.Controllers
 				return BadRequest(ApiResponse<object>.Fail(ex.Message));
 			}
 		}
+
+		/// <summary>
+		/// Lấy tất cả lịch dạy theo TutorEmail Optional StartDate và EndDate (có thể lọc theo khoảng thời gian StartDate <= EndDate)
+		/// </summary>
+		[HttpGet("get-all-by-tutor-email")]
+		[ProducesResponseType(typeof(ApiResponse<IEnumerable<ScheduleDto>>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<IEnumerable<ScheduleDto>>>> GetAllByTutorEmail(
+			[FromQuery] string tutorEmail,
+			[FromQuery] DateTime? startDate = null,
+			[FromQuery] DateTime? endDate = null,
+			[FromQuery] ScheduleStatus? status = null)
+		{
+			try
+			{
+				if (string.IsNullOrWhiteSpace(tutorEmail))
+				{
+					return BadRequest(ApiResponse<object>.Fail("TutorEmail không được để trống"));
+				}
+				if (!new EmailAddressAttribute().IsValid(tutorEmail))
+				{
+					return BadRequest(ApiResponse<object>.Fail("TutorEmail không đúng định dạng"));
+				}
+
+				if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
+				{
+					return BadRequest(ApiResponse<object>.Fail("StartDate không được lớn hơn EndDate"));
+				}
+
+				if (status.HasValue && !Enum.IsDefined(typeof(ScheduleStatus), status.Value))
+				{
+					return BadRequest(ApiResponse<object>.Fail("Status không hợp lệ"));
+				}
+
+				var items = await _scheduleService.GetAllByTutorEmailAsync(tutorEmail, startDate, endDate, status);
+				return Ok(ApiResponse<IEnumerable<ScheduleDto>>.Ok(items));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+		}
+
+
 	}
 }

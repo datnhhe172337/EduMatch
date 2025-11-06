@@ -100,9 +100,9 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .ToListAsync();
         }
         /// <summary>
-        /// Lấy danh sách Schedule theo LearnerEmail (qua Booking) và optional khoảng thời gian (qua TutorAvailability.StartDate)
+        /// Lấy danh sách Schedule theo LearnerEmail (qua Booking) và optional khoảng thời gian (qua TutorAvailability.StartDate) và Status
         /// </summary>
-        public async Task<IEnumerable<Schedule>> GetAllByLearnerEmailAsync(string learnerEmail, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<IEnumerable<Schedule>> GetAllByLearnerEmailAsync(string learnerEmail, DateTime? startDate = null, DateTime? endDate = null, int? status = null)
         {
             var query = _context.Schedules
                 .AsSplitQuery()
@@ -129,6 +129,54 @@ namespace EduMatch.DataAccessLayer.Repositories
             {
                 var endDateOnly = endDate.Value.Date;
                 query = query.Where(s => s.Availabiliti.StartDate.Date <= endDateOnly);
+            }
+
+            if (status.HasValue)
+            {
+                query = query.Where(s => s.Status == status.Value);
+            }
+
+            return await query
+                .OrderBy(s => s.Availabiliti.StartDate)
+                .ThenBy(s => s.CreatedAt)
+                .ThenBy(s => s.Id)
+                .ToListAsync();
+        }
+        /// <summary>
+        /// Lấy danh sách Schedule theo TutorEmail (qua TutorProfile -> TutorSubject -> Booking) và optional khoảng thời gian và Status
+        /// </summary>
+        public async Task<IEnumerable<Schedule>> GetAllByTutorEmailAsync(string tutorEmail, DateTime? startDate = null, DateTime? endDate = null, int? status = null)
+        {
+            var query = _context.Schedules
+                .AsSplitQuery()
+                .Include(s => s.Availabiliti)
+                    .ThenInclude(a => a.Slot)
+                .Include(s => s.Booking)
+                    .ThenInclude(b => b.TutorSubject)
+                        .ThenInclude(ts => ts.Tutor)
+                .Include(s => s.Booking)
+                    .ThenInclude(b => b.TutorSubject)
+                        .ThenInclude(ts => ts.Subject)
+                .Include(s => s.Booking)
+                    .ThenInclude(b => b.TutorSubject)
+                        .ThenInclude(ts => ts.Level)
+                .Where(s => s.Booking.TutorSubject.Tutor.UserEmail == tutorEmail);
+
+            if (startDate.HasValue)
+            {
+                var startDateOnly = startDate.Value.Date;
+                query = query.Where(s => s.Availabiliti.StartDate.Date >= startDateOnly);
+            }
+
+            if (endDate.HasValue)
+            {
+                var endDateOnly = endDate.Value.Date;
+                query = query.Where(s => s.Availabiliti.StartDate.Date <= endDateOnly);
+            }
+
+            if (status.HasValue)
+            {
+                query = query.Where(s => s.Status == status.Value);
             }
 
             return await query

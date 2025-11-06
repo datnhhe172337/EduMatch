@@ -50,13 +50,13 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// </summary>
         Task<List<ScheduleDto>> CancelAllByBookingAsync(int bookingId);
         /// <summary>
-        /// Lấy tất cả lịch học theo LearnerEmail (có thể lọc theo khoảng thời gian từ TutorAvailability.StartDate)
+        /// Lấy tất cả lịch học của Learner theo email (có thể lọc theo khoảng thời gian và Status)
         /// </summary>
-        Task<List<ScheduleDto>> GetAllByLearnerEmailAsync(string learnerEmail, DateTime? startDate = null, DateTime? endDate = null);
+        Task<List<ScheduleDto>> GetAllByLearnerEmailAsync(string learnerEmail, DateTime? startDate = null, DateTime? endDate = null, ScheduleStatus? status = null);
         /// <summary>
-        /// Lấy danh sách TutorAvailabilityId theo LearnerEmail (lọc theo khoảng thời gian StartDate nếu truyền)
+        /// Lấy tất cả lịch dạy của Tutor theo email (có thể lọc theo khoảng thời gian và Status)
         /// </summary>
-        Task<List<int>> GetAllAvailabilityIdsByLearnerEmailAsync(string learnerEmail, DateTime? startDate = null, DateTime? endDate = null);
+        Task<List<ScheduleDto>> GetAllByTutorEmailAsync(string tutorEmail, DateTime? startDate = null, DateTime? endDate = null, ScheduleStatus? status = null);
         /// <summary>
         /// Kiểm tra tutor có lịch học trùng với slot và ngày hay không (loại trừ Schedule bị Cancelled)
         /// </summary>
