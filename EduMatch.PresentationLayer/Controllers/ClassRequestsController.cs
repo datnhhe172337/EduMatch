@@ -299,6 +299,26 @@ namespace EduMatch.PresentationLayer.Controllers
 
         }
 
+        [Authorize(Roles = "Learner")]
+        [HttpGet("listAllClassRequestByLearnerEmail")]
+        public async Task<IActionResult> GetListAllClassRequestsByLearnerEmailAsync()
+        {
+            try
+            {
+                var learnerEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+                if (string.IsNullOrEmpty(learnerEmail))
+                    return Unauthorized(new { message = "Invalid user token" });
+
+                var requests = await _service.GetListAllClassRequestsByLearnerEmail(learnerEmail);
+                return Ok(requests);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+        }
+
 
 
     }

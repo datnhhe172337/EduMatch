@@ -98,6 +98,16 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .ToListAsync();
         }
 
+        public async Task<List<ClassRequest>> GetClassRequestsByLearnerEmailAsync(string learnerEmail)
+        {
+            return await _context.ClassRequests
+                .Include(r => r.Subject)
+                .Include(r => r.Level)
+                .Where(x => x.LearnerEmail == learnerEmail)
+                .OrderByDescending(u => u.CreatedAt)
+                .ToListAsync();
+        }
+
         public async Task<List<ClassRequest>> GetPendingClassRequestsAsync()
         {
             return await _context.ClassRequests
