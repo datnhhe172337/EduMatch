@@ -20,18 +20,21 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IMapper _mapper;
         private readonly IMeetingSessionService _meetingSessionService;
         private readonly ITutorAvailabilityService _tutorAvailabilityService;
+        private readonly ITutorProfileService _tutorProfileService;
 
         public ScheduleService(
             IScheduleRepository scheduleRepository,
             IBookingService bookingService,
             IMeetingSessionService meetingSessionService,
             ITutorAvailabilityService tutorAvailabilityService,
+            ITutorProfileService tutorProfileService,
             IMapper mapper)
         {
             _scheduleRepository = scheduleRepository;
             _bookingService = bookingService;
             _meetingSessionService = meetingSessionService;
             _tutorAvailabilityService = tutorAvailabilityService;
+            _tutorProfileService = tutorProfileService;
             _mapper = mapper;
         }
 
@@ -111,6 +114,24 @@ namespace EduMatch.BusinessLogicLayer.Services
             var bookingDto = await _bookingService.GetByIdAsync(request.BookingId)
                 ?? throw new Exception("Booking không tồn tại");
             var booking = new { TotalSessions = bookingDto.TotalSessions };
+
+            // Nếu LearnerEmail là tutor: không được đăng ký lịch học trùng với lịch dạy (cùng slot và cùng ngày)
+            if (!string.IsNullOrWhiteSpace(bookingDto.LearnerEmail))
+            {
+                var tutorProfile = await _tutorProfileService.GetByEmailFullAsync(bookingDto.LearnerEmail);
+                if (tutorProfile != null)
+                {
+                    var hasConflict = await HasTutorScheduleConflictAsync(tutorProfile.Id, availability.SlotId, availability.StartDate.Date);
+                    if (hasConflict)
+                    {
+                        var dateLabel = availability.StartDate.Date.ToString("dd/MM/yyyy");
+                        var slotLabel = availability.Slot != null
+                            ? $"{availability.Slot.StartTime:hh\\:mm}-{availability.Slot.EndTime:hh\\:mm}"
+                            : $"SlotId {availability.SlotId}";
+                        throw new Exception($"Tài khoản {bookingDto.LearnerEmail} là Gia sư và đã có lịch dạy trùng thời gian: ngày {dateLabel}, khung {slotLabel}. Không thể đăng ký học.");
+                    }
+                }
+            }
 
             // Không được tạo vượt quá TotalSessions của Booking
             var currentCountForBooking = await _scheduleRepository.CountByBookingIdAndStatusAsync(request.BookingId, null);
@@ -217,6 +238,26 @@ namespace EduMatch.BusinessLogicLayer.Services
                     // Availability mới phải đang trống
                     if (availability.Status != TutorAvailabilityStatus.Available)
                         throw new Exception("TutorAvailability mới không ở trạng thái Available");
+
+                    // Nếu LearnerEmail là tutor: không được đổi sang khung trùng với lịch dạy (cùng slot và cùng ngày)
+                    var bookingDtoForUpdate = await _bookingService.GetByIdAsync(entity.BookingId)
+                        ?? throw new Exception("Booking không tồn tại");
+                    if (!string.IsNullOrWhiteSpace(bookingDtoForUpdate.LearnerEmail))
+                    {
+                        var tutorProfile = await _tutorProfileService.GetByEmailFullAsync(bookingDtoForUpdate.LearnerEmail);
+                        if (tutorProfile != null)
+                        {
+                            var hasConflict = await HasTutorScheduleConflictAsync(tutorProfile.Id, availability.SlotId, availability.StartDate.Date);
+                            if (hasConflict)
+                            {
+                                var dateLabel = availability.StartDate.Date.ToString("dd/MM/yyyy");
+                                var slotLabel = availability.Slot != null
+                                    ? $"{availability.Slot.StartTime:hh\\:mm}-{availability.Slot.EndTime:hh\\:mm}"
+                                    : $"SlotId {availability.SlotId}";
+                                throw new Exception($"Tài khoản {bookingDtoForUpdate.LearnerEmail} là Gia sư và đã có lịch dạy trùng thời gian: ngày {dateLabel}, khung {slotLabel}. Không thể đổi lịch.");
+                            }
+                        }
+                    }
                 }
 
                 entity.AvailabilitiId = request.AvailabilitiId.Value;
