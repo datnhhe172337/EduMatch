@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Requests.Booking;
+using EduMatch.BusinessLogicLayer.Requests.Schedule;
+using EduMatch.DataAccessLayer.Entities;
+using Microsoft.EntityFrameworkCore.Storage;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.PresentationLayer.Common;
 
@@ -13,13 +16,17 @@ namespace EduMatch.PresentationLayer.Controllers
 	public class BookingController : ControllerBase
 	{
 		private readonly IBookingService _bookingService;
+		private readonly IScheduleService _scheduleService;
+		private readonly EduMatchContext _context;
 
 		/// <summary>
 		/// API Booking: lấy danh sách theo LearnerEmail/TutorId (có/không phân trang), lấy theo Id, tạo, cập nhật, cập nhật Status/PaymentStatus
 		/// </summary>
-		public BookingController(IBookingService bookingService)
+		public BookingController(IBookingService bookingService, IScheduleService scheduleService, EduMatchContext context)
 		{
 			_bookingService = bookingService;
+			_scheduleService = scheduleService;
+			_context = context;
 		}
 
 		/// <summary>
@@ -190,19 +197,35 @@ namespace EduMatch.PresentationLayer.Controllers
 		[HttpPost("create-booking")]
 		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-		public async Task<ActionResult<ApiResponse<BookingDto>>> Create([FromBody] BookingCreateRequest request)
+		public async Task<ActionResult<ApiResponse<BookingDto>>> Create([FromBody] BookingWithSchedulesCreateRequest request)
 		{
+			await using var transaction = await _context.Database.BeginTransactionAsync();
 			try
 			{
 				if (!ModelState.IsValid)
 				{
 					return BadRequest(ApiResponse<object>.Fail("Dữ liệu không hợp lệ", ModelState));
 				}
-				var created = await _bookingService.CreateAsync(request);
-				return Ok(ApiResponse<BookingDto>.Ok(created, "Tạo Booking thành công"));
+
+				// Tạo Booking
+				var createdBooking = await _bookingService.CreateAsync(request.Booking);
+
+				// Tạo danh sách Schedule nếu có
+				if (request.Schedules != null && request.Schedules.Count > 0)
+				{
+					foreach (var s in request.Schedules)
+					{
+						s.BookingId = createdBooking.Id;
+					}
+					await _scheduleService.CreateListAsync(request.Schedules);
+				}
+
+				await transaction.CommitAsync();
+				return Ok(ApiResponse<BookingDto>.Ok(createdBooking, "Tạo Booking và danh sách Schedule thành công"));
 			}
 			catch (Exception ex)
 			{
+				await transaction.RollbackAsync();
 				return BadRequest(ApiResponse<object>.Fail(ex.Message));
 			}
 		}
