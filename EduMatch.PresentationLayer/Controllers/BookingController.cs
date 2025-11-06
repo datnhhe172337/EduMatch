@@ -221,14 +221,6 @@ namespace EduMatch.PresentationLayer.Controllers
 				{
 					return BadRequest(ApiResponse<object>.Fail("Dữ liệu không hợp lệ", ModelState));
 				}
-				if (request.Status.HasValue && !Enum.IsDefined(typeof(BookingStatus), request.Status.Value))
-				{
-					return BadRequest(ApiResponse<object>.Fail("Status không hợp lệ"));
-				}
-				if (request.PaymentStatus.HasValue && !Enum.IsDefined(typeof(PaymentStatus), request.PaymentStatus.Value))
-				{
-					return BadRequest(ApiResponse<object>.Fail("PaymentStatus không hợp lệ"));
-				}
 				var updated = await _bookingService.UpdateAsync(request);
 				return Ok(ApiResponse<BookingDto>.Ok(updated, "Cập nhật Booking thành công"));
 			}

@@ -18,7 +18,7 @@ namespace EduMatch.BusinessLogicLayer.Services
     public class MeetingSessionService : IMeetingSessionService
     {
         private readonly IMeetingSessionRepository _meetingSessionRepository;
-        private readonly IScheduleRepository _scheduleRepository;
+        private readonly IScheduleService _scheduleService;
         private readonly IGoogleTokenRepository _googleTokenRepository;
         private readonly IGoogleCalendarService _googleCalendarService;
         private readonly GoogleCalendarSettings _googleCalendarSettings;
@@ -26,14 +26,14 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public MeetingSessionService(
             IMeetingSessionRepository meetingSessionRepository,
-            IScheduleRepository scheduleRepository,
+            IScheduleService scheduleService,
             IGoogleTokenRepository googleTokenRepository,
             IGoogleCalendarService googleCalendarService,
             IOptions<GoogleCalendarSettings> googleCalendarSettings,
             IMapper mapper)
         {
             _meetingSessionRepository = meetingSessionRepository;
-            _scheduleRepository = scheduleRepository;
+            _scheduleService = scheduleService;
             _googleTokenRepository = googleTokenRepository;
             _googleCalendarService = googleCalendarService;
             _googleCalendarSettings = googleCalendarSettings.Value;
@@ -64,7 +64,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         public async Task<MeetingSessionDto> CreateAsync(MeetingSessionCreateRequest request)
         {
             // Validate Schedule exists and load related data
-            var schedule = await _scheduleRepository.GetByIdAsync(request.ScheduleId)
+            var schedule = await _scheduleService.GetByIdFullEntityAsync(request.ScheduleId)
                 ?? throw new Exception("Schedule không tồn tại");
 
             if (schedule.Availabiliti == null)
@@ -113,7 +113,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 throw new Exception("Thời gian slot không hợp lệ: StartTime phải nhỏ hơn EndTime");
 
             // Calculate session number
-            var allSchedules = (await _scheduleRepository.GetAllByBookingIdOrderedAsync(booking.Id)).ToList();
+            var allSchedules = (await _scheduleService.GetAllByBookingIdOrderedEntityAsync(booking.Id)).ToList();
             var sessionNumber = allSchedules.FindIndex(s => s.Id == schedule.Id) + 1;
             var totalSessions = booking.TotalSessions;
 
@@ -190,7 +190,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (request.ScheduleId.Value != entity.ScheduleId)
                     throw new Exception("Không thể thay đổi ScheduleId của MeetingSession");
 
-                var schedule = await _scheduleRepository.GetByIdAsync(entity.ScheduleId)
+                var schedule = await _scheduleService.GetByIdFullEntityAsync(entity.ScheduleId)
                     ?? throw new Exception("Schedule không tồn tại");
 
                 if (schedule.Availabiliti == null)
@@ -231,7 +231,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (shouldUpdateGoogleEvent && !string.IsNullOrEmpty(entity.EventId))
             {
                 // Get schedule for building meeting request (use entity.ScheduleId - already updated if changed)
-                var schedule = await _scheduleRepository.GetByIdAsync(entity.ScheduleId)
+                var schedule = await _scheduleService.GetByIdFullEntityAsync(entity.ScheduleId)
                     ?? throw new Exception("Schedule không tồn tại");
 
                 var booking = schedule.Booking ?? throw new Exception("Schedule không có Booking");
@@ -245,7 +245,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 var levelName = level?.Name ?? "Tất cả cấp độ";
 
                 // Calculate session number
-                var allSchedules = (await _scheduleRepository.GetAllByBookingIdOrderedAsync(booking.Id)).ToList();
+                var allSchedules = (await _scheduleService.GetAllByBookingIdOrderedEntityAsync(booking.Id)).ToList();
                 var sessionNumber = allSchedules.FindIndex(s => s.Id == schedule.Id) + 1;
                 var totalSessions = booking.TotalSessions;
 

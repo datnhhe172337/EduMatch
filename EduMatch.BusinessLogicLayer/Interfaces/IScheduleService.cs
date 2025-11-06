@@ -1,5 +1,6 @@
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Requests.Schedule;
+using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -28,6 +29,14 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// Lấy Schedule theo ID
         /// </summary>
         Task<ScheduleDto?> GetByIdAsync(int id);
+        /// <summary>
+        /// Lấy Schedule theo ID với đầy đủ thông tin (entity với navigation properties) - dùng cho service khác
+        /// </summary>
+        Task<Schedule?> GetByIdFullEntityAsync(int id);
+        /// <summary>
+        /// Lấy danh sách Schedule theo BookingId đã sắp xếp (entity) - dùng cho service khác
+        /// </summary>
+        Task<IEnumerable<Schedule>> GetAllByBookingIdOrderedEntityAsync(int bookingId);
         /// <summary>
         /// Tạo Schedule mới
         /// </summary>

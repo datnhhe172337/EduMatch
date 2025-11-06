@@ -9,7 +9,6 @@ using EduMatch.BusinessLogicLayer.Requests.Schedule;
 using EduMatch.BusinessLogicLayer.Requests.MeetingSession;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Entities;
-using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
 
 namespace EduMatch.BusinessLogicLayer.Services
@@ -17,26 +16,20 @@ namespace EduMatch.BusinessLogicLayer.Services
     public class ScheduleService : IScheduleService
     {
         private readonly IScheduleRepository _scheduleRepository;
-        private readonly IBookingRepository _bookingRepository;
-        private readonly ITutorAvailabilityRepository _tutorAvailabilityRepository;
-        private readonly IMeetingSessionRepository _meetingSessionRepository;
+        private readonly IBookingService _bookingService;
         private readonly IMapper _mapper;
         private readonly IMeetingSessionService _meetingSessionService;
         private readonly ITutorAvailabilityService _tutorAvailabilityService;
 
         public ScheduleService(
             IScheduleRepository scheduleRepository,
-            IBookingRepository bookingRepository,
-            ITutorAvailabilityRepository tutorAvailabilityRepository,
-            IMeetingSessionRepository meetingSessionRepository,
+            IBookingService bookingService,
             IMeetingSessionService meetingSessionService,
             ITutorAvailabilityService tutorAvailabilityService,
             IMapper mapper)
         {
             _scheduleRepository = scheduleRepository;
-            _bookingRepository = bookingRepository;
-            _tutorAvailabilityRepository = tutorAvailabilityRepository;
-            _meetingSessionRepository = meetingSessionRepository;
+            _bookingService = bookingService;
             _meetingSessionService = meetingSessionService;
             _tutorAvailabilityService = tutorAvailabilityService;
             _mapper = mapper;
@@ -102,21 +95,42 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
+        /// Lấy Schedule theo ID với đầy đủ thông tin (entity với navigation properties) - dùng cho service khác
+        /// </summary>
+        public async Task<Schedule?> GetByIdFullEntityAsync(int id)
+        {
+            if (id <= 0)
+                throw new Exception("Id phải lớn hơn 0");
+            return await _scheduleRepository.GetByIdAsync(id);
+        }
+
+        /// <summary>
+        /// Lấy danh sách Schedule theo BookingId đã sắp xếp (entity) - dùng cho service khác
+        /// </summary>
+        public async Task<IEnumerable<Schedule>> GetAllByBookingIdOrderedEntityAsync(int bookingId)
+        {
+            if (bookingId <= 0)
+                throw new Exception("BookingId phải lớn hơn 0");
+            return await _scheduleRepository.GetAllByBookingIdOrderedAsync(bookingId);
+        }
+
+        /// <summary>
         /// Tạo Schedule mới và cập nhật TutorAvailability status sang Booked
         /// </summary>
         public async Task<ScheduleDto> CreateAsync(ScheduleCreateRequest request)
         {
             // Validate TutorAvailability exists
-            var availability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.AvailabilitiId)
+            var availability = await _tutorAvailabilityService.GetByIdFullAsync(request.AvailabilitiId)
                 ?? throw new Exception("TutorAvailability không tồn tại");
 
             // Availability phải đang trống
-            if (availability.Status != (int)TutorAvailabilityStatus.Available)
+            if (availability.Status != TutorAvailabilityStatus.Available)
                 throw new Exception("TutorAvailability không ở trạng thái Available");
 
             // Validate Booking exists
-            var booking = await _bookingRepository.GetByIdAsync(request.BookingId)
+            var bookingDto = await _bookingService.GetByIdAsync(request.BookingId)
                 ?? throw new Exception("Booking không tồn tại");
+            var booking = new { TotalSessions = bookingDto.TotalSessions };
 
             // Không được tạo vượt quá TotalSessions của Booking
             var currentCountForBooking = await _scheduleRepository.CountByBookingIdAndStatusAsync(request.BookingId, null);
@@ -174,12 +188,12 @@ namespace EduMatch.BusinessLogicLayer.Services
                 throw new Exception("Tất cả Schedule phải thuộc cùng một Booking");
 
             // Lấy booking và kiểm tra tổng sessions
-            var booking = await _bookingRepository.GetByIdAsync(bookingId)
+            var bookingDto = await _bookingService.GetByIdAsync(bookingId)
                 ?? throw new Exception("Booking không tồn tại");
             var currentCount = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, null);
             var totalAfterCreate = currentCount + requests.Count;
-            if (totalAfterCreate != booking.TotalSessions)
-                throw new Exception($"Tổng số Schedule sau khi tạo ({totalAfterCreate}) phải bằng TotalSessions ({booking.TotalSessions}) của Booking");
+            if (totalAfterCreate != bookingDto.TotalSessions)
+                throw new Exception($"Tổng số Schedule sau khi tạo ({totalAfterCreate}) phải bằng TotalSessions ({bookingDto.TotalSessions}) của Booking");
 
             var created = new List<ScheduleDto>();
             foreach (var req in requests)
@@ -204,7 +218,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             // Validate TutorAvailability if being updated
             if (request.AvailabilitiId.HasValue)
             {
-                var availability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.AvailabilitiId.Value)
+                var availability = await _tutorAvailabilityService.GetByIdFullAsync(request.AvailabilitiId.Value)
                     ?? throw new Exception("TutorAvailability không tồn tại");
 
                 if (availability.Slot == null)
@@ -221,7 +235,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                     availabilityIdChanged = true;
 
                     // Availability mới phải đang trống
-                    if (availability.Status != (int)TutorAvailabilityStatus.Available)
+                    if (availability.Status != TutorAvailabilityStatus.Available)
                         throw new Exception("TutorAvailability mới không ở trạng thái Available");
                 }
 
@@ -231,7 +245,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             // Validate Booking if being updated
             if (request.BookingId.HasValue)
             {
-                var booking = await _bookingRepository.GetByIdAsync(request.BookingId.Value)
+                var booking = await _bookingService.GetByIdAsync(request.BookingId.Value)
                     ?? throw new Exception("Booking không tồn tại");
                 entity.BookingId = request.BookingId.Value;
             }
@@ -254,7 +268,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (!request.IsOnline.HasValue || request.IsOnline.Value)
                 {
                     // Update MeetingSession theo Schedule hiện tại (MeetingSessionService sẽ gửi update lên Google và đồng bộ Start/End từ response)
-                    var meetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(entity.Id);
+                    var meetingSession = await _meetingSessionService.GetByScheduleIdAsync(entity.Id);
                     if (meetingSession != null)
                     {
                         await _meetingSessionService.UpdateAsync(new MeetingSessionUpdateRequest
@@ -281,7 +295,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             // Không đổi AvailabilitiId nhưng yêu cầu Online: đảm bảo MeetingSession tồn tại (offline -> online)
             if (!availabilityIdChanged && request.IsOnline.HasValue && request.IsOnline.Value)
             {
-                var meetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(entity.Id);
+                var meetingSession = await _meetingSessionService.GetByScheduleIdAsync(entity.Id);
                 if (meetingSession == null)
                 {
                     await _meetingSessionService.CreateAsync(new MeetingSessionCreateRequest
