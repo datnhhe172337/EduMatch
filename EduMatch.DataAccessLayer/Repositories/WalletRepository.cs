@@ -35,5 +35,23 @@ namespace EduMatch.DataAccessLayer.Repositories
         {
             _dbSet.Update(entity);
         }
+
+        public async Task<decimal> GetTotalLockedBalanceForRoleAsync(string roleName)
+        {
+
+            return await _context.Wallets
+                .Include(w => w.UserEmailNavigation) 
+                .ThenInclude(u => u.Role) 
+                .Where(w => w.UserEmailNavigation.Role.RoleName == roleName)
+                .SumAsync(w => w.LockedBalance);
+        }
+
+        
+        public async Task<decimal> GetTotalAvailableBalanceAsync()
+        {
+            return await _dbSet
+                .Where(w => w.UserEmail != "system@edumatch.com")
+                .SumAsync(w => w.Balance);
+        }
     }
 }

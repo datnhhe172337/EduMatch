@@ -12,6 +12,7 @@ namespace EduMatch.DataAccessLayer.Interfaces
 
         Task AddAsync(Wallet entity);
         void Update(Wallet entity);
- 
+        Task<decimal> GetTotalLockedBalanceForRoleAsync(string roleName);
+        Task<decimal> GetTotalAvailableBalanceAsync();
     }
 }
