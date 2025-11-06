@@ -13,6 +13,10 @@ namespace EduMatch.DataAccessLayer.Interfaces
         Task CreateUserProfileAsync (UserProfile profile);
         Task<UserProfile?> GetByEmailAsync(string email);
         Task UpdateAsync(UserProfile profile);
+
+        Task<IEnumerable<Province>> GetProvincesAsync();
+
+        Task<IEnumerable<SubDistrict>> GetSubDistrictsByProvinceIdAsync(int provinceId);
     }
 
 }

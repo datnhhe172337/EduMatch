@@ -1,5 +1,4 @@
-﻿
-using CloudinaryDotNet;
+﻿using CloudinaryDotNet;
 using DotNetEnv;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Services;
@@ -21,8 +20,10 @@ namespace EduMatch.PresentationLayer.Configurations
             //// Mail Settings
             services.Configure<MailSettings>(configuration.GetSection("MailSettings"));
 
-			// AutoMapper
-			services.AddAutoMapper(typeof(MappingProfile).Assembly);
+            services.Configure<VnpaySettings>(configuration.GetSection("VnpaySettings"));
+
+            // AutoMapper
+            services.AddAutoMapper(typeof(MappingProfile).Assembly);
 
 			// inject HttpClient
 			services.AddHttpClient();
@@ -43,10 +44,12 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
             services.AddScoped<IUserProfileRepository, UserProfileRepository>();
             services.AddScoped<IFavoriteTutorRepository, FavoriteTutorRepository>();
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped<IChatRepository, ChatRepository>();
             services.AddScoped<UserProfileRepository, UserProfileRepository>();
             services.AddScoped<IManageTutorProfileRepository, ManageTutorProfileRepository>();
             services.AddScoped<IFindTutorRepository, FindTutorRepository>();
-            services.AddScoped<IChatRepository, ChatRepository>();
+            
             services.AddScoped<IClassRequestRepository, ClassRequestRepository>();
             services.AddScoped<ITutorApplicationRepository, TutorApplicationRepository>();
             services.AddScoped<ISystemFeeRepository, SystemFeeRepository>();
@@ -55,13 +58,18 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IMeetingSessionRepository, MeetingSessionRepository>();
 
 
-			services.AddScoped<IChatRepository, ChatRepository>();
+			
 			services.AddScoped<UserProfileRepository, UserProfileRepository>();
 			services.AddScoped<IManageTutorProfileRepository, ManageTutorProfileRepository>();
-			services.AddScoped<IFindTutorRepository, FindTutorRepository>();
-
-			// Services
-			services.AddScoped<IUserService, UserService>();
+			
+            services.AddScoped<IWalletRepository, WalletRepository>();
+            services.AddScoped<IBankRepository, BankRepository>();
+            services.AddScoped<IUserBankAccountRepository, UserBankAccountRepository>();
+            services.AddScoped<IDepositRepository, DepositRepository>();
+            services.AddScoped<IWalletTransactionRepository, WalletTransactionRepository>();
+            services.AddScoped<IWithdrawalRepository, WithdrawalRepository>();
+            // Services
+            services.AddScoped<IUserService, UserService>();
             services.AddScoped<CurrentUserService>();
 			services.AddTransient<EmailService>();
 			services.AddScoped<IGoogleTokenRepository, GoogleTokenRepository>();
@@ -92,13 +100,21 @@ namespace EduMatch.PresentationLayer.Configurations
 
 
 
-
-			services.AddScoped<IUserProfileService, UserProfileService>();
-			services.AddScoped<IManageTutorProfileService, ManageTutorProfileService>();
-			services.AddScoped<IFindTutorService, FindTutorService>();
-			services.AddScoped<IChatService, ChatService>();
+            services.AddScoped<ISystemFeeRepository, SystemFeeRepository>();
+            services.AddScoped<ChatService>();
+            
+			
+			
+			
             services.AddSingleton<IUserIdProvider, EmailUserIdProvider>();
 
+            services.AddScoped<IWalletService, WalletService>();
+            services.AddScoped<IBankService, BankService>();
+            services.AddScoped<IUserBankAccountService, UserBankAccountService>();
+            services.AddScoped<IDepositService, DepositService>();
+            services.AddScoped<IVnpayService, VnpayService>();
+            services.AddScoped<IWithdrawalService, WithdrawalService>();
+            services.AddScoped<IAdminWalletService, AdminWalletService>();
             // Bind "CloudinarySettings" 
             services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
 
@@ -115,7 +131,7 @@ namespace EduMatch.PresentationLayer.Configurations
 
 
 			//  HttpClient 
-			services.AddHttpClient();
+			//services.AddHttpClient();
 
 
 			// HttpContextAccessor for CurrentUserService

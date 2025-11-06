@@ -24,9 +24,7 @@ namespace EduMatch.PresentationLayer.Controllers
             _currentUserService = currentUserService;
         }
 
-   
 
-        // ⭐ POST: api/FavoriteTutor/add/5
         [HttpPost("add/{tutorId}")]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -52,7 +50,6 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
-        // ❌ DELETE: api/FavoriteTutor/remove/5
         [HttpDelete("remove/{tutorId}")]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
@@ -101,7 +98,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
         // 📜 GET: api/FavoriteTutor/list
         [HttpGet("list")]
-        [ProducesResponseType(typeof(ApiResponse<List<TutorProfileDto>>), StatusCodes.Status200OK)] // 👈 Changed to DTO
+        [ProducesResponseType(typeof(ApiResponse<List<TutorProfileDto>>), StatusCodes.Status200OK)] 
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetFavoriteTutors()
         {
@@ -111,7 +108,7 @@ namespace EduMatch.PresentationLayer.Controllers
                 if (string.IsNullOrWhiteSpace(userEmail))
                     return Unauthorized(ApiResponse<string>.Fail("User email not found in token."));
 
-                var tutors = await _favoriteTutorService.GetFavoriteTutorsAsync(userEmail); // 👈 Now returns DTOs
+                var tutors = await _favoriteTutorService.GetFavoriteTutorsAsync(userEmail); 
                 return Ok(ApiResponse<List<TutorProfile>>.Ok(tutors));
             }
             catch (Exception ex)

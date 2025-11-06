@@ -15,6 +15,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task<bool> UpdateClassRequestAsync(int classRequestId, UpdateClassRequest request, string learnerEmail);
         Task<ClassRequestDetailDto?> GetDetailsClassRequestByIdAsync(int classRequestId);
         Task<List<ClassRequestItemDto>> GetPendingClassRequestsAsync();
+        Task<List<ClassRequestItemDto>> GetListAllClassRequestsByLearnerEmail(string learnerEmail);
         Task<List<ClassRequestItemDto>> GetPendingClassRequestsByLearnerEmail(string learnerEmail);
         Task<List<ClassRequestItemDto>> GetOpenClassRequestsByLearnerEmail(string learnerEmail);
         Task<List<ClassRequestItemDto>> GetRejectedClassRequestsByLearnerEmail(string learnerEmail);
