@@ -95,26 +95,6 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
-        /// Lấy Schedule theo ID với đầy đủ thông tin (entity với navigation properties) - dùng cho service khác
-        /// </summary>
-        public async Task<Schedule?> GetByIdFullEntityAsync(int id)
-        {
-            if (id <= 0)
-                throw new Exception("Id phải lớn hơn 0");
-            return await _scheduleRepository.GetByIdAsync(id);
-        }
-
-        /// <summary>
-        /// Lấy danh sách Schedule theo BookingId đã sắp xếp (entity) - dùng cho service khác
-        /// </summary>
-        public async Task<IEnumerable<Schedule>> GetAllByBookingIdOrderedEntityAsync(int bookingId)
-        {
-            if (bookingId <= 0)
-                throw new Exception("BookingId phải lớn hơn 0");
-            return await _scheduleRepository.GetAllByBookingIdOrderedAsync(bookingId);
-        }
-
-        /// <summary>
         /// Tạo Schedule mới và cập nhật TutorAvailability status sang Booked
         /// </summary>
         public async Task<ScheduleDto> CreateAsync(ScheduleCreateRequest request)

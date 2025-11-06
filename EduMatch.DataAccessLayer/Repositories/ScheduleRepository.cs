@@ -24,7 +24,12 @@ namespace EduMatch.DataAccessLayer.Repositories
             .Where(s => s.BookingId == bookingId);
             if (status.HasValue)
                 query = query.Where(s => s.Status == status.Value);
-            return await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            return await query
+                .OrderBy(s => s.CreatedAt)
+                .ThenBy(s => s.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
         }
         /// <summary>
         /// Lấy danh sách Schedule theo BookingId và Status (không phân trang)
@@ -38,7 +43,10 @@ namespace EduMatch.DataAccessLayer.Repositories
             .Where(s => s.BookingId == bookingId);
             if (status.HasValue)
                 query = query.Where(s => s.Status == status.Value);
-            return await query.ToListAsync();
+            return await query
+                .OrderBy(s => s.CreatedAt)
+                .ThenBy(s => s.Id)
+                .ToListAsync();
         }
         /// <summary>
         /// Đếm số lượng Schedule theo BookingId và Status
