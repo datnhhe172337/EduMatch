@@ -105,7 +105,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IDepositService, DepositService>();
             services.AddScoped<IVnpayService, VnpayService>();
             services.AddScoped<IWithdrawalService, WithdrawalService>();
-
+            services.AddScoped<IAdminWalletService, AdminWalletService>();
             // Bind "CloudinarySettings" 
             services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
 

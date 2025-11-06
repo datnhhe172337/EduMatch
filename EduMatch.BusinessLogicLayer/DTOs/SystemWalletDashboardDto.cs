@@ -6,7 +6,12 @@ using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.DTOs
 {
-    internal class SystemWalletDashboardDto
+    public class SystemWalletDashboardDto
     {
+        public decimal PlatformRevenueBalance { get; set; }
+
+        public decimal TotalTutorLockedBalance { get; set; }
+
+        public decimal TotalUserAvailableBalance { get; set; }
     }
 }
