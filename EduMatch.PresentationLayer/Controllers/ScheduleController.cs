@@ -135,7 +135,9 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 		/// <summary>
-		/// Tạo Schedule mới và cập nhật TutorAvailability status sang Booked. Nếu là online thì tạo MeetingSession tự động
+		/// Tạo Schedule mới và cập nhật TutorAvailability status sang Booked. 
+		/// Nếu là online thì tạo MeetingSession tự động
+		/// Optional vì booking là tạo luôn booking và schedule và meeting session(nếu là online) cùng lúc
 		/// </summary>
 		[HttpPost("create-schedule")]
 		[ProducesResponseType(typeof(ApiResponse<ScheduleDto>), StatusCodes.Status200OK)]
@@ -159,6 +161,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
 		/// <summary>
 		/// Tạo danh sách Schedule cho một Booking. Tổng số Schedule sau khi tạo phải bằng TotalSessions của Booking
+		/// Optional vì booking là tạo luôn booking và schedule và meeting session(nếu là online) cùng lúc
 		/// </summary>
 		[HttpPost("create-schedule-list")]
 		[ProducesResponseType(typeof(ApiResponse<IEnumerable<ScheduleDto>>), StatusCodes.Status200OK)]
@@ -182,6 +185,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
 		/// <summary>
 		/// Cập nhật Schedule. Nếu AvailabilitiId thay đổi thì cập nhật MeetingSession và trạng thái Availability
+		/// Mặc định là online, nếu không truyền IsOnline thì coi như online
 		/// </summary>
 		[HttpPut("update-schedule")]
 		[ProducesResponseType(typeof(ApiResponse<ScheduleDto>), StatusCodes.Status200OK)]
