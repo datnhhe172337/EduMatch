@@ -19,11 +19,26 @@ namespace EduMatch.DataAccessLayer.Repositories
         public async Task<TutorProfile?> GetByEmailAsync(string email)
         {
             return await _context.TutorProfiles
-                .Include(tp => tp.UserEmailNavigation)
-                    .ThenInclude(u => u!.UserProfile)
-                .Include(tp => tp.FavoriteTutors)               
-                    .ThenInclude(ft => ft.UserEmailNavigation)  
-                .FirstOrDefaultAsync(tp => tp.UserEmail == email);
+        .AsSplitQuery() // <-- Highly recommended to prevent slow queries
+        .Include(tp => tp.UserEmailNavigation)
+            .ThenInclude(u => u.UserProfile)
+                .ThenInclude(p => p.City)
+        .Include(tp => tp.UserEmailNavigation)
+            .ThenInclude(u => u.UserProfile)
+                .ThenInclude(p => p.SubDistrict)
+        .Include(tp => tp.TutorSubjects)
+            .ThenInclude(ts => ts.Subject)
+        .Include(tp => tp.TutorSubjects)
+            .ThenInclude(ts => ts.Level)
+        .Include(tp => tp.TutorAvailabilities)
+            .ThenInclude(a => a.Slot)
+        .Include(tp => tp.TutorCertificates)
+            .ThenInclude(c => c.CertificateType)
+        .Include(tp => tp.TutorEducations)
+            .ThenInclude(e => e.Institution)
+        .Include(tp => tp.FavoriteTutors)
+            .ThenInclude(ft => ft.UserEmailNavigation)
+        .FirstOrDefaultAsync(tp => tp.UserEmail == email);
         }
 
 
