@@ -15,6 +15,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task<ChatRoom> GetOrCreateChatRoomAsync(string userEmail, int tutorId)
         {
+            if (string.IsNullOrEmpty(userEmail))
+                throw new ArgumentNullException(nameof(userEmail));
+
             var room = await _repo.GetChatRoomAsync(userEmail, tutorId);
             if (room == null)
             {
@@ -31,11 +34,21 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task<List<ChatRoom>> GetUserChatRoomsAsync(string email)
         {
+            if (string.IsNullOrEmpty(email))
+                throw new ArgumentNullException(nameof(email));
             return await _repo.GetUserChatRoomsAsync(email);
         }
 
         public async Task<ChatMessage> SendMessageAsync(int chatRoomId, string senderEmail, string receiverEmail, string message)
         {
+            if (string.IsNullOrEmpty(senderEmail))
+                throw new ArgumentNullException(nameof(senderEmail));
+            if (string.IsNullOrEmpty(receiverEmail))
+                throw new ArgumentNullException(nameof(receiverEmail));
+            if (string.IsNullOrEmpty(message))
+                throw new ArgumentNullException(nameof(message));
+
+
             var msg = new ChatMessage
             {
                 ChatRoomId = chatRoomId,
@@ -55,6 +68,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task MarkAsReadAsync(int chatRoomId, string receiverEmail)
         {
+            if (string.IsNullOrEmpty(receiverEmail))
+                throw new ArgumentNullException(nameof(receiverEmail));
             await _repo.MarkMessagesAsReadAsync(chatRoomId, receiverEmail);
         }
     }
