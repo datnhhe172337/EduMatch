@@ -59,7 +59,7 @@ namespace EduMatch.UnitTests
         }
 
         // ==========================================================
-        // 1️⃣ TEST GetUserByRoleAsync
+        // TEST GetUserByRoleAsync
         // ==========================================================
         [Fact]
         public async Task GetUserByRoleAsync_Learner_ReturnsMappedList()
@@ -143,7 +143,7 @@ namespace EduMatch.UnitTests
         }
 
         // ==========================================================
-        // 2️⃣ TEST ActivateUserAsync & DeactivateUserAsync
+        // TEST ActivateUserAsync & DeactivateUserAsync
         // ==========================================================
         [Fact]
         public async Task DeactivateUserAsync_ReturnsTrue_WhenRepoSucceeds()
@@ -198,7 +198,7 @@ namespace EduMatch.UnitTests
         }
 
         // ==========================================================
-        // 3️⃣ TEST CreateAdminAccAsync
+        // TEST CreateAdminAccAsync
         // ==========================================================
         [Fact]
         public async Task CreateAdminAccAsync_CreatesAdminAndSendsEmail()
