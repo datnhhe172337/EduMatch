@@ -23,6 +23,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task<IEnumerable<TutorProfile>> SearchTutorsAsync(TutorFilterDto filter)
         {
+            if (filter == null)
+            {
+                throw new ArgumentNullException(nameof(filter));
+            }
             return await _tutorRepo.SearchTutorsAsync(
                 filter.Keyword,
                 filter.Gender,
