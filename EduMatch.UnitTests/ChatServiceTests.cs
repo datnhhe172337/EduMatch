@@ -51,7 +51,7 @@ namespace EduMatch.Tests.Services
 
             _mockRepo.Setup(r => r.GetChatRoomAsync(userEmail, tutorId)).ReturnsAsync((ChatRoom)null);
             _mockRepo.Setup(r => r.CreateChatRoomAsync(It.IsAny<ChatRoom>()))
-         .ReturnsAsync((ChatRoom room) => room);
+           .ReturnsAsync((ChatRoom room) => room);
 
             // Act
             var result = await _service.GetOrCreateChatRoomAsync(userEmail, tutorId);
@@ -65,14 +65,47 @@ namespace EduMatch.Tests.Services
             )), Times.Once);
         }
 
-        [Fact]
-        public async Task GetOrCreateChatRoomAsync_ShouldThrowArgumentNullException_WhenEmailIsNull()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public async Task GetOrCreateChatRoomAsync_ShouldThrowArgumentNullException_WhenEmailIsNullOrEmpty(string invalidEmail)
         {
             // Act
-            Func<Task> act = async () => await _service.GetOrCreateChatRoomAsync(null, 1);
+            Func<Task> act = async () => await _service.GetOrCreateChatRoomAsync(invalidEmail, 1);
 
             // Assert
             await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName("userEmail");
+        }
+
+        [Fact]
+        public async Task GetOrCreateChatRoomAsync_ShouldPropagateException_WhenRepoGetFails()
+        {
+            // Arrange
+            var dbException = new InvalidOperationException("DB failed");
+            _mockRepo.Setup(r => r.GetChatRoomAsync(It.IsAny<string>(), It.IsAny<int>()))
+                     .ThrowsAsync(dbException);
+
+            // Act
+            Func<Task> act = async () => await _service.GetOrCreateChatRoomAsync("student@example.com", 1);
+
+            // Assert
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("DB failed");
+        }
+
+        [Fact]
+        public async Task GetOrCreateChatRoomAsync_ShouldPropagateException_WhenRepoCreateFails()
+        {
+            // Arrange
+            var dbException = new InvalidOperationException("DB failed");
+            _mockRepo.Setup(r => r.GetChatRoomAsync(It.IsAny<string>(), It.IsAny<int>())).ReturnsAsync((ChatRoom)null);
+            _mockRepo.Setup(r => r.CreateChatRoomAsync(It.IsAny<ChatRoom>()))
+                     .ThrowsAsync(dbException);
+
+            // Act
+            Func<Task> act = async () => await _service.GetOrCreateChatRoomAsync("student@example.com", 1);
+
+            // Assert
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("DB failed");
         }
 
         #endregion
@@ -115,14 +148,31 @@ namespace EduMatch.Tests.Services
             result.Should().BeEmpty();
         }
 
-        [Fact]
-        public async Task GetUserChatRoomsAsync_ShouldThrowArgumentNullException_WhenEmailIsNull()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public async Task GetUserChatRoomsAsync_ShouldThrowArgumentNullException_WhenEmailIsNullOrEmpty(string invalidEmail)
         {
             // Act
-            Func<Task> act = async () => await _service.GetUserChatRoomsAsync(null);
+            Func<Task> act = async () => await _service.GetUserChatRoomsAsync(invalidEmail);
 
             // Assert
             await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName("email");
+        }
+
+        [Fact]
+        public async Task GetUserChatRoomsAsync_ShouldPropagateException_WhenRepoFails()
+        {
+            // Arrange
+            var dbException = new InvalidOperationException("DB failed");
+            _mockRepo.Setup(r => r.GetUserChatRoomsAsync(It.IsAny<string>()))
+                     .ThrowsAsync(dbException);
+
+            // Act
+            Func<Task> act = async () => await _service.GetUserChatRoomsAsync("student@example.com");
+
+            // Assert
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("DB failed");
         }
 
         #endregion
@@ -138,12 +188,11 @@ namespace EduMatch.Tests.Services
             var receiver = "receiver@example.com";
             var messageText = "Hello!";
 
-            // Setup mock to return the message that was passed to it
             _mockRepo.Setup(r => r.AddMessageAsync(It.IsAny<ChatMessage>()))
-                     .ReturnsAsync((ChatMessage msg) => {
-                         msg.Id = 99; // Simulate DB assigning an ID
-                         return msg;
-                     });
+                       .ReturnsAsync((ChatMessage msg) => {
+                           msg.Id = 99; // Simulate DB assigning an ID
+                           return msg;
+                       });
 
             // Act
             var result = await _service.SendMessageAsync(chatRoomId, sender, receiver, messageText);
@@ -165,6 +214,9 @@ namespace EduMatch.Tests.Services
         [InlineData(null, "receiver", "message", "senderEmail")]
         [InlineData("sender", null, "message", "receiverEmail")]
         [InlineData("sender", "receiver", null, "message")]
+        [InlineData("", "receiver", "message", "senderEmail")]
+        [InlineData("sender", "", "message", "receiverEmail")]
+        [InlineData("sender", "receiver", "", "message")]
         public async Task SendMessageAsync_ShouldThrowArgumentNullException_ForInvalidInputs(
             string sender, string receiver, string message, string paramName)
         {
@@ -173,6 +225,22 @@ namespace EduMatch.Tests.Services
 
             // Assert
             await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName(paramName);
+        }
+
+        // --- NEW TEST ---
+        [Fact]
+        public async Task SendMessageAsync_ShouldPropagateException_WhenRepoFails()
+        {
+            // Arrange
+            var dbException = new InvalidOperationException("DB failed");
+            _mockRepo.Setup(r => r.AddMessageAsync(It.IsAny<ChatMessage>()))
+                     .ThrowsAsync(dbException);
+
+            // Act
+            Func<Task> act = async () => await _service.SendMessageAsync(1, "s", "r", "m");
+
+            // Assert
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("DB failed");
         }
 
         #endregion
@@ -215,6 +283,21 @@ namespace EduMatch.Tests.Services
             result.Should().BeEmpty();
         }
 
+        [Fact]
+        public async Task GetChatMessagesAsync_ShouldPropagateException_WhenRepoFails()
+        {
+            // Arrange
+            var dbException = new InvalidOperationException("DB failed");
+            _mockRepo.Setup(r => r.GetMessagesByRoomAsync(It.IsAny<int>()))
+                     .ThrowsAsync(dbException);
+
+            // Act
+            Func<Task> act = async () => await _service.GetChatMessagesAsync(1);
+
+            // Assert
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("DB failed");
+        }
+
         #endregion
 
         #region MarkAsReadAsync Tests
@@ -235,18 +318,33 @@ namespace EduMatch.Tests.Services
             _mockRepo.Verify(r => r.MarkMessagesAsReadAsync(chatRoomId, receiverEmail), Times.Once);
         }
 
-        [Fact]
-        public async Task MarkAsReadAsync_ShouldThrowArgumentNullException_WhenEmailIsNull()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public async Task MarkAsReadAsync_ShouldThrowArgumentNullException_WhenEmailIsNullOrEmpty(string invalidEmail)
         {
             // Act
-            Func<Task> act = async () => await _service.MarkAsReadAsync(1, null);
+            Func<Task> act = async () => await _service.MarkAsReadAsync(1, invalidEmail);
 
             // Assert
             await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName("receiverEmail");
         }
 
+        [Fact]
+        public async Task MarkAsReadAsync_ShouldPropagateException_WhenRepoFails()
+        {
+            // Arrange
+            var dbException = new InvalidOperationException("DB failed");
+            _mockRepo.Setup(r => r.MarkMessagesAsReadAsync(It.IsAny<int>(), It.IsAny<string>()))
+                     .ThrowsAsync(dbException);
+
+            // Act
+            Func<Task> act = async () => await _service.MarkAsReadAsync(1, "receiver@example.com");
+
+            // Assert
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("DB failed");
+        }
+
         #endregion
     }
-
-    
 }
