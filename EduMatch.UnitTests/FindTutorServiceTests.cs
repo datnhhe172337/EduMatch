@@ -38,9 +38,8 @@ namespace EduMatch.Tests.Services
                 new TutorProfile { Id = 2, Bio = "Test Tutor 2" }
             };
 
-            // Setup the mock repository to return our fake list
             _mockRepo.Setup(r => r.GetAllTutorsAsync())
-                .Returns(Task.FromResult(fakeTutors as IEnumerable<TutorProfile>)); // <-- UPDATED
+                .Returns(Task.FromResult(fakeTutors as IEnumerable<TutorProfile>)); 
 
             // Act
             var result = await _service.GetAllTutorsAsync();
@@ -48,7 +47,7 @@ namespace EduMatch.Tests.Services
             // Assert
             result.Should().BeEquivalentTo(fakeTutors);
             result.Should().HaveCount(2);
-            _mockRepo.Verify(r => r.GetAllTutorsAsync(), Times.Once); // Verify the repo was called once
+            _mockRepo.Verify(r => r.GetAllTutorsAsync(), Times.Once); 
         }
 
         [Fact]
@@ -106,7 +105,6 @@ namespace EduMatch.Tests.Services
                 new TutorProfile { Id = 3, Bio = "Math Tutor" }
             };
 
-            // Setup the mock to return the result *only if* the parameters match
             _mockRepo.Setup(r => r.SearchTutorsAsync(
                 filter.Keyword,
                 filter.Gender,
@@ -121,20 +119,9 @@ namespace EduMatch.Tests.Services
             var result = await _service.SearchTutorsAsync(filter);
 
             // Assert
-            // 1. Check that we got the expected result
             result.Should().BeEquivalentTo(fakeSearchResult);
-
-            // 2. (Most Important) Verify the repository was called ONCE 
-            //    with the exact parameters from the DTO.
             _mockRepo.Verify(r => r.SearchTutorsAsync(
-                "Math",              // Explicitly check the value
-                Gender.Male,
-                1,
-                TeachingMode.Online,
-                TutorStatus.Approved,
-                2,
-                10
-            ), Times.Once);
+                "Math", Gender.Male,1,TeachingMode.Online,TutorStatus.Approved,2, 10 ), Times.Once);
         }
 
         [Fact]

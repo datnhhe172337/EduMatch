@@ -12,7 +12,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public FindTutorService(IFindTutorRepository tutorRepo)
         {
-            
+
             _tutorRepo = tutorRepo;
         }
 
