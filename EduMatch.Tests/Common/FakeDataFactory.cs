@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static EduMatch.DataAccessLayer.Enum.InstitutionType;
 
 namespace EduMatch.Tests.Common
 {
@@ -87,19 +88,20 @@ namespace EduMatch.Tests.Common
 			};
 		}
 
-		/// <summary>
-		/// Tạo EducationInstitution giả với ID cụ thể (dùng cho test)
-		/// </summary>
-		public static EducationInstitution CreateFakeEducationInstitution(int id = 1)
+	/// <summary>
+	/// Tạo EducationInstitution giả với ID cụ thể (dùng cho test)
+	/// </summary>
+	public static EducationInstitution CreateFakeEducationInstitution(int id = 1)
+	{
+		return new EducationInstitution
 		{
-			return new EducationInstitution
-			{
-				Id = id,
-				Code = $"INST{id}",
-				Name = $"Institution {id}",
-				Verified = (int)VerifyStatus.Verified
-			};
-		}
+			Id = id,
+			Code = $"INST{id}",
+			Name = $"Institution {id}",
+			Verified = (int)VerifyStatus.Verified,
+			InstitutionType = (int)InstitutionType.University
+		};
+	}
 
 		/// <summary>
 		/// Tạo TutorEducation giả với các tham số tùy chỉnh (dùng cho test)
@@ -128,7 +130,8 @@ namespace EduMatch.Tests.Common
 					Id = institutionId,
 					Code = $"INST{institutionId}",
 					Name = $"Institution {institutionId}",
-					Verified = (int)VerifyStatus.Verified
+					Verified = (int)VerifyStatus.Verified,
+					InstitutionType = (int)InstitutionType.University
 				},
 				Tutor = new TutorProfile
 				{

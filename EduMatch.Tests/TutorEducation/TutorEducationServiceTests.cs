@@ -297,7 +297,7 @@ public class TutorEducationServiceTests
 			null,
 			FakeDataFactory.CreateFakeEducationInstitution(1),
 			false,
-			typeof(ArgumentException)
+			typeof(InvalidOperationException)
 		).SetName("CreateAsync_TutorNotFound_ThrowsArgumentException");
 
 		// Institution not found
@@ -312,7 +312,7 @@ public class TutorEducationServiceTests
 			FakeDataFactory.CreateFakeTutorProfile(1),
 			null,
 			false,
-			typeof(ArgumentException)
+			typeof(InvalidOperationException)
 		).SetName("CreateAsync_InstitutionNotFound_ThrowsArgumentException");
 
 		// Certificate URL is empty
@@ -327,7 +327,7 @@ public class TutorEducationServiceTests
 			FakeDataFactory.CreateFakeTutorProfile(1),
 			FakeDataFactory.CreateFakeEducationInstitution(1),
 			false,
-			typeof(ArgumentException)
+			typeof(InvalidOperationException)
 		).SetName("CreateAsync_CertificateUrlEmpty_ThrowsArgumentException");
 
 		// Certificate URL is null
@@ -342,7 +342,7 @@ public class TutorEducationServiceTests
 			FakeDataFactory.CreateFakeTutorProfile(1),
 			FakeDataFactory.CreateFakeEducationInstitution(1),
 			false,
-			typeof(ArgumentException)
+			typeof(InvalidOperationException)
 		).SetName("CreateAsync_CertificateUrlNull_ThrowsArgumentException");
 
 		// Certificate URL is whitespace
@@ -357,7 +357,7 @@ public class TutorEducationServiceTests
 			FakeDataFactory.CreateFakeTutorProfile(1),
 			FakeDataFactory.CreateFakeEducationInstitution(1),
 			false,
-			typeof(ArgumentException)
+			typeof(InvalidOperationException)
 		).SetName("CreateAsync_CertificateUrlWhitespace_ThrowsArgumentException");
 	}
 
@@ -387,7 +387,8 @@ public class TutorEducationServiceTests
 	/// <summary>
 	/// Test CreateAsync với nhiều kịch bản khác nhau - bao phủ success và các trường hợp lỗi
 	/// </summary>
-	[Test,TestCaseSource(nameof(CreateAsyncTestCases))]
+	[Test]
+	[TestCaseSource(nameof(CreateAsyncTestCases))]
 	public async Task CreateAsync_WithVariousScenarios_HandlesCorrectly(
 		TutorEducationCreateRequest request,
 		TutorProfile? tutor,
@@ -430,7 +431,7 @@ public class TutorEducationServiceTests
 		}
 		else
 		{
-			var exception = Assert.ThrowsAsync<Exception>(async () => await _service.CreateAsync(request));
+			var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.CreateAsync(request));
 			Assert.That(exception, Is.InstanceOf(expectedExceptionType!));
 		}
 	}
@@ -470,8 +471,8 @@ public class TutorEducationServiceTests
 			null,
 			FakeDataFactory.CreateFakeEducationInstitution(1),
 			false,
-			typeof(ArgumentException)
-		).SetName("UpdateAsync_EntityNotFound_ThrowsArgumentException");
+			typeof(InvalidOperationException)
+		).SetName("UpdateAsync_EntityNotFound_ThrowsInvalidOperationException");
 
 		// Institution not found
 		yield return new TestCaseData(
@@ -486,10 +487,10 @@ public class TutorEducationServiceTests
 			FakeDataFactory.CreateFakeTutorEducation(1),
 			null,
 			false,
-			typeof(ArgumentException)
-		).SetName("UpdateAsync_InstitutionNotFound_ThrowsArgumentException");
+			typeof(InvalidOperationException)
+		).SetName("UpdateAsync_InstitutionNotFound_ThrowsInvalidOperationException");
 
-		// Update with Verified = Rejected but no RejectReason
+		// Update with Verified = Rejected but no RejectReason and no existing reason
 		yield return new TestCaseData(
 			new TutorEducationUpdateRequest
 			{
@@ -499,13 +500,13 @@ public class TutorEducationServiceTests
 				Verified = VerifyStatus.Rejected,
 				RejectReason = null
 			},
-			FakeDataFactory.CreateFakeTutorEducation(1, verified: VerifyStatus.Pending),
+			FakeDataFactory.CreateFakeTutorEducation(1, verified: VerifyStatus.Pending, rejectReason: null),
 			FakeDataFactory.CreateFakeEducationInstitution(1),
 			false,
-			typeof(ArgumentException)
-		).SetName("UpdateAsync_RejectedWithoutReason_ThrowsArgumentException");
+			typeof(InvalidOperationException)
+		).SetName("UpdateAsync_RejectedWithoutReason_ThrowsInvalidOperationException");
 
-		// Update with Verified = Rejected with empty RejectReason
+		// Update with Verified = Rejected with empty RejectReason and no existing reason
 		yield return new TestCaseData(
 			new TutorEducationUpdateRequest
 			{
@@ -515,11 +516,11 @@ public class TutorEducationServiceTests
 				Verified = VerifyStatus.Rejected,
 				RejectReason = ""
 			},
-			FakeDataFactory.CreateFakeTutorEducation(1, verified: VerifyStatus.Pending),
+			FakeDataFactory.CreateFakeTutorEducation(1, verified: VerifyStatus.Pending, rejectReason: null),
 			FakeDataFactory.CreateFakeEducationInstitution(1),
 			false,
-			typeof(ArgumentException)
-		).SetName("UpdateAsync_RejectedWithEmptyReason_ThrowsArgumentException");
+			typeof(InvalidOperationException)
+		).SetName("UpdateAsync_RejectedWithEmptyReason_ThrowsInvalidOperationException");
 
 		// Update with Verified = Rejected with valid RejectReason
 		yield return new TestCaseData(
@@ -611,8 +612,8 @@ public class TutorEducationServiceTests
 	/// <summary>
 	/// Test UpdateAsync với nhiều kịch bản khác nhau - bao phủ success và các trường hợp lỗi
 	/// </summary>
-
-	[Test,TestCaseSource(nameof(UpdateAsyncTestCases))]
+	[Test]
+	[TestCaseSource(nameof(UpdateAsyncTestCases))]
 	public async Task UpdateAsync_WithVariousScenarios_HandlesCorrectly(
 		TutorEducationUpdateRequest request,
 		TutorEducation? existingEntity,
@@ -679,7 +680,7 @@ public class TutorEducationServiceTests
 		}
 		else
 		{
-			var exception = Assert.ThrowsAsync<Exception>(async () => await _service.UpdateAsync(request));
+			var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.UpdateAsync(request));
 			Assert.That(exception, Is.InstanceOf(expectedExceptionType!));
 		}
 	}
@@ -689,6 +690,7 @@ public class TutorEducationServiceTests
 	/// <summary>
 	/// Test CreateBulkAsync với số lượng khác nhau - tạo thành công tất cả các items
 	/// </summary>
+	[Test]
 	[TestCase(0)]
 	[TestCase(1)]
 	[TestCase(3)]
@@ -762,7 +764,7 @@ public class TutorEducationServiceTests
 	/// <summary>
 	/// Test DeleteAsync với các ID khác nhau - gọi repository để xóa
 	/// </summary>
-
+	[Test]
 	[TestCase(1)]
 	[TestCase(10)]
 	[TestCase(100)]
@@ -784,6 +786,7 @@ public class TutorEducationServiceTests
 	/// <summary>
 	/// Test DeleteByTutorIdAsync với các TutorId khác nhau - gọi repository để xóa tất cả tutor education của tutor
 	/// </summary>
+	[Test]
 	[TestCase(1)]
 	[TestCase(10)]
 	[TestCase(100)]
