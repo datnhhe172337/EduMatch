@@ -85,6 +85,19 @@ public class TutorAvailabilityServiceTests
 	}
 
 	/// <summary>
+	/// Test GetByIdFullAsync với ID không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void GetByIdFullAsync_WithInvalidId_ThrowsArgumentException(int id)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.GetByIdFullAsync(id));
+		Assert.That(exception.Message, Does.Contain("ID must be greater than 0"));
+	}
+
+	/// <summary>
 	/// Test GetByTutorIdAsync với số lượng khác nhau - trả về danh sách DTOs đúng số lượng
 	/// </summary>
 	[Test]
@@ -115,6 +128,19 @@ public class TutorAvailabilityServiceTests
 	}
 
 	/// <summary>
+	/// Test GetByTutorIdAsync với TutorId không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void GetByTutorIdAsync_WithInvalidTutorId_ThrowsArgumentException(int tutorId)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.GetByTutorIdAsync(tutorId));
+		Assert.That(exception.Message, Does.Contain("TutorId must be greater than 0"));
+	}
+
+	/// <summary>
 	/// Test GetByTutorIdFullAsync với số lượng khác nhau - trả về danh sách DTOs đúng số lượng
 	/// </summary>
 	[Test]
@@ -138,6 +164,19 @@ public class TutorAvailabilityServiceTests
 		// Assert
 		Assert.That(result, Is.Not.Null);
 		Assert.That(result.Count, Is.EqualTo(count));
+	}
+
+	/// <summary>
+	/// Test GetByTutorIdFullAsync với TutorId không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void GetByTutorIdFullAsync_WithInvalidTutorId_ThrowsArgumentException(int tutorId)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.GetByTutorIdFullAsync(tutorId));
+		Assert.That(exception.Message, Does.Contain("TutorId must be greater than 0"));
 	}
 
 	/// <summary>
@@ -630,16 +669,30 @@ public class TutorAvailabilityServiceTests
 	/// Test UpdateStatusAsync khi entity không tồn tại - ném ArgumentException
 	/// </summary>
 	[Test]
-	public void UpdateStatusAsync_WhenEntityNotFound_ThrowsArgumentException()
+	[TestCase(999)]
+	public void UpdateStatusAsync_WhenEntityNotFound_ThrowsArgumentException(int id)
 	{
 		// Arrange
 		_tutorAvailabilityRepositoryMock
-			.Setup(r => r.GetByIdFullAsync(999))
+			.Setup(r => r.GetByIdFullAsync(id))
 			.ReturnsAsync((TutorAvailability?)null);
 
 		// Act & Assert
-		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.UpdateStatusAsync(999, TutorAvailabilityStatus.Available));
-		Assert.That(exception.Message, Does.Contain("Tutor availability with ID 999 not found"));
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.UpdateStatusAsync(id, TutorAvailabilityStatus.Available));
+		Assert.That(exception.Message, Does.Contain($"Tutor availability with ID {id} not found"));
+	}
+
+	/// <summary>
+	/// Test UpdateStatusAsync với ID không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void UpdateStatusAsync_WithInvalidId_ThrowsArgumentException(int id)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.UpdateStatusAsync(id, TutorAvailabilityStatus.Available));
+		Assert.That(exception.Message, Does.Contain("ID must be greater than 0"));
 	}
 
 	/// <summary>
@@ -661,6 +714,19 @@ public class TutorAvailabilityServiceTests
 
 		// Assert
 		_tutorAvailabilityRepositoryMock.Verify(r => r.RemoveByIdAsync(id), Times.Once);
+	}
+
+	/// <summary>
+	/// Test DeleteAsync với ID không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void DeleteAsync_WithInvalidId_ThrowsArgumentException(int id)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.DeleteAsync(id));
+		Assert.That(exception.Message, Does.Contain("ID must be greater than 0"));
 	}
 }
 

@@ -84,6 +84,19 @@ public class TutorSubjectServiceTests
 	}
 
 	/// <summary>
+	/// Test GetByIdFullAsync với ID không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void GetByIdFullAsync_WithInvalidId_ThrowsArgumentException(int id)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.GetByIdFullAsync(id));
+		Assert.That(exception.Message, Does.Contain("ID must be greater than 0"));
+	}
+
+	/// <summary>
 	/// Test GetByTutorIdFullAsync với các TutorId khác nhau - trả về DTO khi tồn tại, null khi không tồn tại
 	/// </summary>
 	[Test]
@@ -111,6 +124,19 @@ public class TutorSubjectServiceTests
 		{
 			Assert.That(result, Is.Null);
 		}
+	}
+
+	/// <summary>
+	/// Test GetByTutorIdFullAsync với TutorId không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void GetByTutorIdFullAsync_WithInvalidTutorId_ThrowsArgumentException(int tutorId)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.GetByTutorIdFullAsync(tutorId));
+		Assert.That(exception.Message, Does.Contain("TutorId must be greater than 0"));
 	}
 
 	/// <summary>
@@ -144,6 +170,19 @@ public class TutorSubjectServiceTests
 	}
 
 	/// <summary>
+	/// Test GetByTutorIdAsync với TutorId không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void GetByTutorIdAsync_WithInvalidTutorId_ThrowsArgumentException(int tutorId)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.GetByTutorIdAsync(tutorId));
+		Assert.That(exception.Message, Does.Contain("TutorId must be greater than 0"));
+	}
+
+	/// <summary>
 	/// Test GetBySubjectIdAsync với số lượng khác nhau - trả về danh sách DTOs đúng số lượng
 	/// </summary>
 	[Test]
@@ -170,6 +209,19 @@ public class TutorSubjectServiceTests
 	}
 
 	/// <summary>
+	/// Test GetBySubjectIdAsync với SubjectId không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void GetBySubjectIdAsync_WithInvalidSubjectId_ThrowsArgumentException(int subjectId)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.GetBySubjectIdAsync(subjectId));
+		Assert.That(exception.Message, Does.Contain("SubjectId must be greater than 0"));
+	}
+
+	/// <summary>
 	/// Test GetByLevelIdAsync với số lượng khác nhau - trả về danh sách DTOs đúng số lượng
 	/// </summary>
 	[Test]
@@ -193,6 +245,19 @@ public class TutorSubjectServiceTests
 		// Assert
 		Assert.That(result, Is.Not.Null);
 		Assert.That(result.Count, Is.EqualTo(count));
+	}
+
+	/// <summary>
+	/// Test GetByLevelIdAsync với LevelId không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void GetByLevelIdAsync_WithInvalidLevelId_ThrowsArgumentException(int levelId)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.GetByLevelIdAsync(levelId));
+		Assert.That(exception.Message, Does.Contain("LevelId must be greater than 0"));
 	}
 
 	/// <summary>
@@ -645,6 +710,19 @@ public class TutorSubjectServiceTests
 	}
 
 	/// <summary>
+	/// Test DeleteAsync với ID không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void DeleteAsync_WithInvalidId_ThrowsArgumentException(int id)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.DeleteAsync(id));
+		Assert.That(exception.Message, Does.Contain("ID must be greater than 0"));
+	}
+
+	/// <summary>
 	/// Test DeleteByTutorIdAsync với các TutorId khác nhau - gọi repository để xóa tất cả tutor subject của tutor
 	/// </summary>
 	[Test]
@@ -663,6 +741,19 @@ public class TutorSubjectServiceTests
 
 		// Assert
 		_tutorSubjectRepositoryMock.Verify(r => r.RemoveByTutorIdAsync(tutorId), Times.Once);
+	}
+
+	/// <summary>
+	/// Test DeleteByTutorIdAsync với TutorId không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void DeleteByTutorIdAsync_WithInvalidTutorId_ThrowsArgumentException(int tutorId)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.DeleteByTutorIdAsync(tutorId));
+		Assert.That(exception.Message, Does.Contain("TutorId must be greater than 0"));
 	}
 }
 

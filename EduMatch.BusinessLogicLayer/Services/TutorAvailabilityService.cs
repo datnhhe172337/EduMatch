@@ -41,6 +41,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<TutorAvailabilityDto?> GetByIdFullAsync(int id)
         {
+            if (id <= 0)
+                throw new ArgumentException("ID must be greater than 0");
             var entity = await _repository.GetByIdFullAsync(id);
             return entity != null ? _mapper.Map<TutorAvailabilityDto>(entity) : null;
         }
@@ -50,6 +52,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByTutorIdAsync(int tutorId)
         {
+            if (tutorId <= 0)
+                throw new ArgumentException("TutorId must be greater than 0");
             var entities = await _repository.GetByTutorIdAsync(tutorId);
             return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
         }
@@ -59,6 +63,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByTutorIdFullAsync(int tutorId)
         {
+            if (tutorId <= 0)
+                throw new ArgumentException("TutorId must be greater than 0");
             var entities = await _repository.GetByTutorIdFullAsync(tutorId);
             return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
         }
@@ -213,6 +219,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<TutorAvailabilityDto> UpdateStatusAsync(int id, TutorAvailabilityStatus status)
         {
+            if (id <= 0)
+                throw new ArgumentException("ID must be greater than 0");
             var existingEntity = await _repository.GetByIdFullAsync(id)
                 ?? throw new ArgumentException($"Tutor availability with ID {id} not found");
 
@@ -228,6 +236,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task DeleteAsync(int id)
         {
+            if (id <= 0)
+                throw new ArgumentException("ID must be greater than 0");
             await _repository.RemoveByIdAsync(id);
         }
 

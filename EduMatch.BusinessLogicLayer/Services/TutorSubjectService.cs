@@ -39,6 +39,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<TutorSubjectDto?> GetByIdFullAsync(int id)
 		{
+			if (id <= 0)
+				throw new ArgumentException("ID must be greater than 0");
 			var entity = await _tutorSubjectRepository.GetByIdFullAsync(id);
 			return entity != null ? _mapper.Map<TutorSubjectDto>(entity) : null;
 		}
@@ -48,6 +50,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<TutorSubjectDto?> GetByTutorIdFullAsync(int tutorId)
 		{
+			if (tutorId <= 0)
+				throw new ArgumentException("TutorId must be greater than 0");
 			var entity = await _tutorSubjectRepository.GetByTutorIdFullAsync(tutorId);
 			return entity != null ? _mapper.Map<TutorSubjectDto>(entity) : null;
 		}
@@ -57,6 +61,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<IReadOnlyList<TutorSubjectDto>> GetByTutorIdAsync(int tutorId)
 		{
+			if (tutorId <= 0)
+				throw new ArgumentException("TutorId must be greater than 0");
 			var entities = await _tutorSubjectRepository.GetByTutorIdAsync(tutorId);
 			return _mapper.Map<IReadOnlyList<TutorSubjectDto>>(entities);
 		}
@@ -66,6 +72,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<IReadOnlyList<TutorSubjectDto>> GetBySubjectIdAsync(int subjectId)
 		{
+			if (subjectId <= 0)
+				throw new ArgumentException("SubjectId must be greater than 0");
 			var entities = await _tutorSubjectRepository.GetBySubjectIdAsync(subjectId);
 			return _mapper.Map<IReadOnlyList<TutorSubjectDto>>(entities);
 		}
@@ -75,6 +83,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<IReadOnlyList<TutorSubjectDto>> GetByLevelIdAsync(int levelId)
 		{
+			if (levelId <= 0)
+				throw new ArgumentException("LevelId must be greater than 0");
 			var entities = await _tutorSubjectRepository.GetByLevelIdAsync(levelId);
 			return _mapper.Map<IReadOnlyList<TutorSubjectDto>>(entities);
 		}
@@ -198,6 +208,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
+			if (id <= 0)
+				throw new ArgumentException("ID must be greater than 0");
 			await _tutorSubjectRepository.RemoveByIdAsync(id);
 		}
 
@@ -206,6 +218,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task DeleteByTutorIdAsync(int tutorId)
 		{
+			if (tutorId <= 0)
+				throw new ArgumentException("TutorId must be greater than 0");
 			await _tutorSubjectRepository.RemoveByTutorIdAsync(tutorId);
 		}
 	}

@@ -89,6 +89,19 @@ public class TutorEducationServiceTests
 		}
 	}
 
+	/// <summary>
+	/// Test GetByIdFullAsync với ID không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void GetByIdFullAsync_WithInvalidId_ThrowsArgumentException(int id)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.GetByIdFullAsync(id));
+		Assert.That(exception.Message, Does.Contain("ID must be greater than 0"));
+	}
+
 
 	/// <summary>
 	/// Test GetByTutorIdFullAsync với các TutorId khác nhau - trả về DTO khi tồn tại, null khi không tồn tại
@@ -120,7 +133,18 @@ public class TutorEducationServiceTests
 		}
 	}
 
-
+	/// <summary>
+	/// Test GetByTutorIdFullAsync với TutorId không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void GetByTutorIdFullAsync_WithInvalidTutorId_ThrowsArgumentException(int tutorId)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.GetByTutorIdFullAsync(tutorId));
+		Assert.That(exception.Message, Does.Contain("TutorId must be greater than 0"));
+	}
 
 	/// <summary>
 	/// Test GetByTutorIdAsync với số lượng khác nhau - trả về danh sách DTOs đúng số lượng
@@ -152,6 +176,18 @@ public class TutorEducationServiceTests
 		}
 	}
 
+	/// <summary>
+	/// Test GetByTutorIdAsync với TutorId không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void GetByTutorIdAsync_WithInvalidTutorId_ThrowsArgumentException(int tutorId)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.GetByTutorIdAsync(tutorId));
+		Assert.That(exception.Message, Does.Contain("TutorId must be greater than 0"));
+	}
 
 	/// <summary>
 	/// Test GetByInstitutionIdAsync với số lượng khác nhau - trả về danh sách DTOs đúng số lượng
@@ -179,6 +215,18 @@ public class TutorEducationServiceTests
 		Assert.That(result.Count, Is.EqualTo(count));
 	}
 
+	/// <summary>
+	/// Test GetByInstitutionIdAsync với InstitutionId không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void GetByInstitutionIdAsync_WithInvalidInstitutionId_ThrowsArgumentException(int institutionId)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.GetByInstitutionIdAsync(institutionId));
+		Assert.That(exception.Message, Does.Contain("InstitutionId must be greater than 0"));
+	}
 
 	/// <summary>
 	/// Test GetByVerifiedStatusAsync với các trạng thái xác thực khác nhau - trả về danh sách đúng trạng thái
@@ -782,6 +830,19 @@ public class TutorEducationServiceTests
 		_tutorEducationRepositoryMock.Verify(r => r.RemoveByIdAsync(id), Times.Once);
 	}
 
+	/// <summary>
+	/// Test DeleteAsync với ID không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void DeleteAsync_WithInvalidId_ThrowsArgumentException(int id)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.DeleteAsync(id));
+		Assert.That(exception.Message, Does.Contain("ID must be greater than 0"));
+	}
+
 
 	/// <summary>
 	/// Test DeleteByTutorIdAsync với các TutorId khác nhau - gọi repository để xóa tất cả tutor education của tutor
@@ -802,6 +863,19 @@ public class TutorEducationServiceTests
 
 		// Assert
 		_tutorEducationRepositoryMock.Verify(r => r.RemoveByTutorIdAsync(tutorId), Times.Once);
+	}
+
+	/// <summary>
+	/// Test DeleteByTutorIdAsync với TutorId không hợp lệ - ném ArgumentException
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void DeleteByTutorIdAsync_WithInvalidTutorId_ThrowsArgumentException(int tutorId)
+	{
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.DeleteByTutorIdAsync(tutorId));
+		Assert.That(exception.Message, Does.Contain("TutorId must be greater than 0"));
 	}
 
 }

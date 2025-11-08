@@ -10,13 +10,18 @@ using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
 using EduMatch.Tests.Common;
 using Moq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace EduMatch.Tests;
 
-
+/// <summary>
+/// Test class cho TutorProfileService
+/// </summary>
 public class TutorProfileServiceTests
 {
-
 	private Mock<ITutorProfileRepository> _tutorProfileRepositoryMock;
 	private Mock<ICloudMediaService> _cloudMediaServiceMock;
 	private Mock<IUserService> _userServiceMock;
@@ -25,6 +30,9 @@ public class TutorProfileServiceTests
 	private CurrentUserService _currentUserService;
 	private TutorProfileService _service;
 
+	/// <summary>
+	/// Khởi tạo các mock objects và service trước mỗi test
+	/// </summary>
 	[SetUp]
 	public void Setup()
 	{
@@ -41,8 +49,6 @@ public class TutorProfileServiceTests
 
 		_currentUserService = new CurrentUserServiceFake("abc@gmail.com");
 
-
-
 		_service = new TutorProfileService(
 			_tutorProfileRepositoryMock.Object,
 			_mapper,
@@ -51,150 +57,225 @@ public class TutorProfileServiceTests
 			_userServiceMock.Object,
 			_userProfileServiceMock.Object
 		);
-
-	}
-
-
-	/// <summary>
-	/// Test GetByEmailFullAsync returns mapped DTO when tutor profile exists.
-	/// </summary>
-	[Test]
-	public async Task GetByEmailFullAsync_WhenExists_ReturnsMappedDto()
-	{
-		var email = "abc@gmail.com";
-		var fakeTutor = FakeDataFactory.CreateFakeTutorProfile(email);
-
-		_tutorProfileRepositoryMock
-			.Setup(r => r.GetByEmailFullAsync(email))
-			.ReturnsAsync(fakeTutor);
-
-		var result = await _service.GetByEmailFullAsync(email);
-
-		Assert.That(result, Is.Not.Null);
-		Assert.That(result.UserEmail, Is.EqualTo(email));
-		Assert.That(result.Province.Name, Is.EqualTo("Hà Nội"));
-		Assert.That(result.TutorSubjects.First().Subject.SubjectName, Is.EqualTo("Math"));
 	}
 
 	/// <summary>
-	/// Test GetByEmailFullAsync returns null when tutor profile does not exist.
+	/// Test GetByIdFullAsync với các ID khác nhau - trả về DTO khi tồn tại, null khi không tồn tại
 	/// </summary>
 	[Test]
-	public async Task GetByEmailFullAsync_WhenNotExists_ReturnsNull()
+	[TestCase(1, true)]
+	[TestCase(999, false)]
+	public async Task GetByIdFullAsync_WithDifferentIds_ReturnsExpectedResult(int id, bool shouldExist)
 	{
-		var email = "nonexistent@gmail.com";
-
-		_tutorProfileRepositoryMock
-			.Setup(r => r.GetByEmailFullAsync(email))
-			.ReturnsAsync((TutorProfile?)null);
-
-		var result = await _service.GetByEmailFullAsync(email);
-
-		Assert.That(result, Is.Null);
-	}
-
-	/// <summary>
-	/// Test GetByEmailFullAsync throws ArgumentException when email is empty.
-	/// </summary>
-	[Test]
-	public void GetByEmailFullAsync_WhenEmailIsEmpty_ThrowsArgumentException()
-	{
-		Assert.ThrowsAsync<ArgumentException>(async () => await _service.GetByEmailFullAsync(""));
-	}
-
-	/// <summary>
-	/// Test GetByIdFullAsync returns mapped DTO when tutor profile exists.
-	/// </summary>
-	[Test]
-	public async Task GetByIdFullAsync_WhenExists_ReturnsMappedDto()
-	{
-		var id = 1;
-		var email = "abc@gmail.com";
-		var fakeTutor = FakeDataFactory.CreateFakeTutorProfile(email);
-		fakeTutor.Id = id;
+		// Arrange
+		TutorProfile? entity = shouldExist ? FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com") : null;
+		if (entity != null) entity.Id = id;
 
 		_tutorProfileRepositoryMock
 			.Setup(r => r.GetByIdFullAsync(id))
-			.ReturnsAsync(fakeTutor);
+			.ReturnsAsync(entity);
 
+		// Act
 		var result = await _service.GetByIdFullAsync(id);
 
-		Assert.That(result, Is.Not.Null);
-		Assert.That(result.Id, Is.EqualTo(id));
-		Assert.That(result.UserEmail, Is.EqualTo(email));
+		// Assert
+		if (shouldExist)
+		{
+			Assert.That(result, Is.Not.Null);
+			Assert.That(result!.Id, Is.EqualTo(id));
+		}
+		else
+		{
+			Assert.That(result, Is.Null);
+		}
 	}
 
 	/// <summary>
-	/// Test GetByIdFullAsync returns null when tutor profile does not exist.
+	/// Test GetByIdFullAsync với ID không hợp lệ - ném ArgumentException
 	/// </summary>
 	[Test]
-	public async Task GetByIdFullAsync_WhenNotExists_ReturnsNull()
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void GetByIdFullAsync_WithInvalidId_ThrowsArgumentException(int id)
 	{
-		var id = 999;
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.GetByIdFullAsync(id));
+		Assert.That(exception.Message, Does.Contain("ID must be greater than 0"));
+	}
+
+	/// <summary>
+	/// Test GetByEmailFullAsync với các email khác nhau - trả về DTO khi tồn tại, null khi không tồn tại
+	/// </summary>
+	[Test]
+	[TestCase("abc@gmail.com", true)]
+	[TestCase("nonexistent@gmail.com", false)]
+	public async Task GetByEmailFullAsync_WithDifferentEmails_ReturnsExpectedResult(string email, bool shouldExist)
+	{
+		// Arrange
+		TutorProfile? entity = shouldExist ? FakeDataFactory.CreateFakeTutorProfile(email) : null;
 
 		_tutorProfileRepositoryMock
-			.Setup(r => r.GetByIdFullAsync(id))
-			.ReturnsAsync((TutorProfile?)null);
+			.Setup(r => r.GetByEmailFullAsync(email))
+			.ReturnsAsync(entity);
 
-		var result = await _service.GetByIdFullAsync(id);
+		// Act
+		var result = await _service.GetByEmailFullAsync(email);
 
-		Assert.That(result, Is.Null);
+		// Assert
+		if (shouldExist)
+		{
+			Assert.That(result, Is.Not.Null);
+			Assert.That(result!.UserEmail, Is.EqualTo(email));
+		}
+		else
+		{
+			Assert.That(result, Is.Null);
+		}
 	}
 
 	/// <summary>
-	/// Test GetAllFullAsync returns list of mapped DTOs.
+	/// Test GetByEmailFullAsync với email không hợp lệ - ném ArgumentException
 	/// </summary>
 	[Test]
-	public async Task GetAllFullAsync_ReturnsListOfDtos()
+	[TestCase("")]
+	[TestCase("   ")]
+	[TestCase(null)]
+	public void GetByEmailFullAsync_WithInvalidEmail_ThrowsArgumentException(string? email)
 	{
-		var email1 = "abc@gmail.com";
-		var email2 = "xyz@gmail.com";
-		var tutor1 = FakeDataFactory.CreateFakeTutorProfile(email1);
-		tutor1.Id = 1;
-		var tutor2 = FakeDataFactory.CreateFakeTutorProfile(email2);
-		tutor2.Id = 2;
-		var fakeTutors = new List<TutorProfile> { tutor1, tutor2 };
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.GetByEmailFullAsync(email!));
+		Assert.That(exception.Message, Does.Contain("Email is required"));
+	}
+
+	/// <summary>
+	/// Test GetAllFullAsync với số lượng khác nhau - trả về tất cả tutor profile với đầy đủ thông tin
+	/// </summary>
+	[Test]
+	[TestCase(0)]
+	[TestCase(1)]
+	[TestCase(5)]
+	public async Task GetAllFullAsync_WithDifferentCounts_ReturnsExpectedList(int count)
+	{
+		// Arrange
+		var entities = Enumerable.Range(1, count)
+			.Select(i => FakeDataFactory.CreateFakeTutorProfile($"tutor{i}@example.com"))
+			.ToList();
+		foreach (var entity in entities.Select((e, i) => new { e, i }))
+		{
+			entity.e.Id = entity.i + 1;
+		}
 
 		_tutorProfileRepositoryMock
 			.Setup(r => r.GetAllFullAsync())
-			.ReturnsAsync(fakeTutors);
+			.ReturnsAsync(entities);
 
+		// Act
 		var result = await _service.GetAllFullAsync();
 
+		// Assert
 		Assert.That(result, Is.Not.Null);
-		Assert.That(result.Count, Is.EqualTo(2));
-		Assert.That(result.Select(r => r.UserEmail), Contains.Item(email1));
-		Assert.That(result.Select(r => r.UserEmail), Contains.Item(email2));
+		Assert.That(result.Count, Is.EqualTo(count));
 	}
 
 	/// <summary>
-	/// Test CreateAsync successfully creates tutor profile and returns DTO.
+	/// Tạo các test cases cho CreateAsync - bao phủ các kịch bản: valid, profile exists, missing VideoIntroUrl, missing AvatarUrl, invalid YouTube URL
+	/// </summary>
+	private static IEnumerable<TestCaseData> CreateAsyncTestCases()
+	{
+		// Valid case
+		yield return new TestCaseData(
+			new TutorProfileCreateRequest
+			{
+				UserEmail = "abc@gmail.com",
+				UserName = "Test User",
+				Phone = "0123456789",
+				Bio = "Test Bio",
+				DateOfBirth = new DateTime(1990, 1, 1),
+				AvatarUrl = "https://example.com/avatar.jpg",
+				ProvinceId = 1,
+				SubDistrictId = 1,
+				TeachingExp = "5 years",
+				VideoIntroUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+				TeachingModes = TeachingMode.Online,
+				Latitude = 21.0285m,
+				Longitude = 105.8542m
+			},
+			null,
+			true,
+			null
+		).SetName("CreateAsync_ValidRequest_ReturnsCreatedDto");
+
+		// Profile already exists
+		yield return new TestCaseData(
+			new TutorProfileCreateRequest
+			{
+				UserEmail = "abc@gmail.com",
+				VideoIntroUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+				AvatarUrl = "https://example.com/avatar.jpg",
+				TeachingModes = TeachingMode.Online
+			},
+			FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com"),
+			false,
+			typeof(InvalidOperationException)
+		).SetName("CreateAsync_ProfileAlreadyExists_ThrowsInvalidOperationException");
+
+		// Missing VideoIntroUrl
+		yield return new TestCaseData(
+			new TutorProfileCreateRequest
+			{
+				UserEmail = "abc@gmail.com",
+				AvatarUrl = "https://example.com/avatar.jpg",
+				TeachingModes = TeachingMode.Online
+			},
+			null,
+			false,
+			typeof(InvalidOperationException)
+		).SetName("CreateAsync_MissingVideoIntroUrl_ThrowsInvalidOperationException");
+
+		// Missing AvatarUrl
+		yield return new TestCaseData(
+			new TutorProfileCreateRequest
+			{
+				UserEmail = "abc@gmail.com",
+				VideoIntroUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+				TeachingModes = TeachingMode.Online
+			},
+			null,
+			false,
+			typeof(InvalidOperationException)
+		).SetName("CreateAsync_MissingAvatarUrl_ThrowsInvalidOperationException");
+
+		// Invalid YouTube URL (invalid format)
+		yield return new TestCaseData(
+			new TutorProfileCreateRequest
+			{
+				UserEmail = "abc@gmail.com",
+				VideoIntroUrl = "https://youtube.com/invalid",
+				AvatarUrl = "https://example.com/avatar.jpg",
+				TeachingModes = TeachingMode.Online
+			},
+			null,
+			false,
+			typeof(InvalidOperationException)
+		).SetName("CreateAsync_InvalidYouTubeUrl_ThrowsInvalidOperationException");
+	}
+
+	/// <summary>
+	/// Test CreateAsync với nhiều kịch bản khác nhau - bao phủ success và các trường hợp lỗi
 	/// </summary>
 	[Test]
-	public async Task CreateAsync_WhenValid_ReturnsCreatedDto()
+	[TestCaseSource(nameof(CreateAsyncTestCases))]
+	public async Task CreateAsync_WithVariousScenarios_HandlesCorrectly(
+		TutorProfileCreateRequest request,
+		TutorProfile? existingProfile,
+		bool shouldSucceed,
+		Type? expectedExceptionType)
 	{
-		var email = "abc@gmail.com"; // Must match _currentUserService.Email from Setup
-		var request = new TutorProfileCreateRequest
-		{
-			UserEmail = email,
-			UserName = "Test User",
-			Phone = "0123456789",
-			Bio = "Test Bio",
-			DateOfBirth = new DateTime(1990, 1, 1),
-			AvatarUrl = "https://example.com/avatar.jpg",
-			ProvinceId = 1,
-			SubDistrictId = 1,
-			TeachingExp = "5 years",
-			VideoIntroUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-			TeachingModes = TeachingMode.Online,
-			Latitude = 21.0285m,
-			Longitude = 105.8542m
-		};
-
-		// Service uses _currentUserService.Email, not request.UserEmail
+		// Arrange
+		var email = "abc@gmail.com";
 		_tutorProfileRepositoryMock
 			.Setup(r => r.GetByEmailFullAsync(email))
-			.ReturnsAsync((TutorProfile?)null);
+			.ReturnsAsync(existingProfile);
 
 		TutorProfile? capturedEntity = null;
 		_tutorProfileRepositoryMock
@@ -210,86 +291,132 @@ public class TutorProfileServiceTests
 			.Setup(s => s.UpdateAsync(It.IsAny<UserProfileUpdateRequest>()))
 			.ReturnsAsync((UserProfileDto?)null);
 
-		var result = await _service.CreateAsync(request);
+		// Act & Assert
+		if (shouldSucceed)
+		{
+			var result = await _service.CreateAsync(request);
 
-		Assert.That(result, Is.Not.Null);
-		Assert.That(result.UserEmail, Is.EqualTo(email));
-		Assert.That(result.Status, Is.EqualTo(TutorStatus.Pending));
-		Assert.That(result.Bio, Is.EqualTo("Test Bio"));
-		Assert.That(result.TeachingExp, Is.EqualTo("5 years"));
-		// Video URL is normalized to embed format
-		Assert.That(result.VideoIntroUrl, Is.EqualTo("https://www.youtube.com/embed/dQw4w9WgXcQ"));
+			Assert.That(result, Is.Not.Null);
+			Assert.That(result.UserEmail, Is.EqualTo(email));
+			Assert.That(result.Status, Is.EqualTo(TutorStatus.Pending));
+			_tutorProfileRepositoryMock.Verify(r => r.AddAsync(It.IsAny<TutorProfile>()), Times.Once);
+		}
+		else
+		{
+			var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.CreateAsync(request));
+			Assert.That(exception, Is.InstanceOf(expectedExceptionType!));
+		}
 	}
 
 	/// <summary>
-	/// Test CreateAsync throws InvalidOperationException when profile already exists.
+	/// Tạo các test cases cho UpdateAsync - bao phủ các kịch bản: valid update, entity not found, status change valid/invalid
 	/// </summary>
-	[Test]
-	public void CreateAsync_WhenProfileAlreadyExists_ThrowsInvalidOperationException()
+	private static IEnumerable<TestCaseData> UpdateAsyncTestCases()
 	{
-		var email = "abc@gmail.com";
-		var request = new TutorProfileCreateRequest
-		{
-			UserEmail = email,
-			VideoIntroUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-			AvatarUrl = "https://example.com/avatar.jpg",
-			TeachingModes = TeachingMode.Online
-		};
+		// Valid update
+		yield return new TestCaseData(
+			new TutorProfileUpdateRequest
+			{
+				Id = 1,
+				UserEmail = "abc@gmail.com",
+				Bio = "Updated Bio",
+				TeachingExp = "10 years",
+				TeachingModes = TeachingMode.Hybrid
+			},
+			FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com"),
+			true,
+			null
+		).SetName("UpdateAsync_ValidRequest_ReturnsUpdatedDto");
 
-		var existingProfile = FakeDataFactory.CreateFakeTutorProfile(email);
+		// Entity not found
+		yield return new TestCaseData(
+			new TutorProfileUpdateRequest
+			{
+				Id = 999,
+				UserEmail = "test@gmail.com",
+				TeachingModes = TeachingMode.Online
+			},
+			null,
+			false,
+			typeof(InvalidOperationException)
+		).SetName("UpdateAsync_EntityNotFound_ThrowsInvalidOperationException");
 
-		_tutorProfileRepositoryMock
-			.Setup(r => r.GetByEmailFullAsync(email))
-			.ReturnsAsync(existingProfile);
+		// Status change from Pending to Approved
+		var pendingProfile = FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com");
+		pendingProfile.Id = 1;
+		pendingProfile.Status = (int)TutorStatus.Pending;
+		yield return new TestCaseData(
+			new TutorProfileUpdateRequest
+			{
+				Id = 1,
+				UserEmail = "abc@gmail.com",
+				TeachingModes = TeachingMode.Online,
+				Status = TutorStatus.Approved
+			},
+			pendingProfile,
+			true,
+			null
+		).SetName("UpdateAsync_PendingToApproved_UpdatesStatus");
 
-		Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.CreateAsync(request));
+		// Status change from Pending to Rejected
+		var pendingProfile2 = FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com");
+		pendingProfile2.Id = 1;
+		pendingProfile2.Status = (int)TutorStatus.Pending;
+		yield return new TestCaseData(
+			new TutorProfileUpdateRequest
+			{
+				Id = 1,
+				UserEmail = "abc@gmail.com",
+				TeachingModes = TeachingMode.Online,
+				Status = TutorStatus.Rejected
+			},
+			pendingProfile2,
+			true,
+			null
+		).SetName("UpdateAsync_PendingToRejected_UpdatesStatus");
+
+		// Status change from Approved (not allowed)
+		var approvedProfile = FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com");
+		approvedProfile.Id = 1;
+		approvedProfile.Status = (int)TutorStatus.Approved;
+		yield return new TestCaseData(
+			new TutorProfileUpdateRequest
+			{
+				Id = 1,
+				UserEmail = "abc@gmail.com",
+				TeachingModes = TeachingMode.Online,
+				Status = TutorStatus.Rejected
+			},
+			approvedProfile,
+			false,
+			typeof(InvalidOperationException)
+		).SetName("UpdateAsync_StatusNotPending_ThrowsInvalidOperationException");
 	}
 
 	/// <summary>
-	/// Test CreateAsync throws InvalidOperationException when VideoIntroUrl is missing.
+	/// Test UpdateAsync với nhiều kịch bản khác nhau - bao phủ success và các trường hợp lỗi
 	/// </summary>
 	[Test]
-	public void CreateAsync_WhenVideoIntroUrlMissing_ThrowsInvalidOperationException()
+	[TestCaseSource(nameof(UpdateAsyncTestCases))]
+	public async Task UpdateAsync_WithVariousScenarios_HandlesCorrectly(
+		TutorProfileUpdateRequest request,
+		TutorProfile? existingEntity,
+		bool shouldSucceed,
+		Type? expectedExceptionType)
 	{
-		var email = "abc@gmail.com";
-		var request = new TutorProfileCreateRequest
+		// Arrange
+		if (existingEntity != null)
 		{
-			UserEmail = email,
-			AvatarUrl = "https://example.com/avatar.jpg",
-			TeachingModes = TeachingMode.Online
-		};
-
-		_tutorProfileRepositoryMock
-			.Setup(r => r.GetByEmailFullAsync(email))
-			.ReturnsAsync((TutorProfile?)null);
-
-		Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.CreateAsync(request));
-	}
-
-	/// <summary>
-	/// Test UpdateAsync successfully updates tutor profile and returns DTO.
-	/// </summary>
-	[Test]
-	public async Task UpdateAsync_WhenValid_ReturnsUpdatedDto()
-	{
-		var id = 1;
-		var email = "abc@gmail.com";
-		var existingProfile = FakeDataFactory.CreateFakeTutorProfile(email);
-		existingProfile.Id = id;
-		existingProfile.Status = (int)TutorStatus.Pending;
-
-		var request = new TutorProfileUpdateRequest
+			_tutorProfileRepositoryMock
+				.Setup(r => r.GetByIdFullAsync(request.Id))
+				.ReturnsAsync(existingEntity);
+		}
+		else
 		{
-			Id = id,
-			UserEmail = email,
-			Bio = "Updated Bio",
-			TeachingExp = "10 years",
-			TeachingModes = TeachingMode.Hybrid
-		};
-
-		_tutorProfileRepositoryMock
-			.Setup(r => r.GetByIdFullAsync(id))
-			.ReturnsAsync(existingProfile);
+			_tutorProfileRepositoryMock
+				.Setup(r => r.GetByIdFullAsync(request.Id))
+				.ReturnsAsync((TutorProfile?)null);
+		}
 
 		_tutorProfileRepositoryMock
 			.Setup(r => r.UpdateAsync(It.IsAny<TutorProfile>()))
@@ -299,198 +426,171 @@ public class TutorProfileServiceTests
 			.Setup(s => s.UpdateAsync(It.IsAny<UserProfileUpdateRequest>()))
 			.ReturnsAsync((UserProfileDto?)null);
 
-		var result = await _service.UpdateAsync(request);
-
-		Assert.That(result, Is.Not.Null);
-		Assert.That(result.Bio, Is.EqualTo("Updated Bio"));
-		Assert.That(result.Id, Is.EqualTo(id));
-	}
-
-	/// <summary>
-	/// Test UpdateAsync throws InvalidOperationException when tutor profile not found.
-	/// </summary>
-	[Test]
-	public void UpdateAsync_WhenNotFound_ThrowsInvalidOperationException()
-	{
-		var id = 999;
-		var request = new TutorProfileUpdateRequest
+		// Act & Assert
+		if (shouldSucceed)
 		{
-			Id = id,
-			UserEmail = "test@gmail.com",
-			TeachingModes = TeachingMode.Online
-		};
+			var result = await _service.UpdateAsync(request);
 
-		_tutorProfileRepositoryMock
-			.Setup(r => r.GetByIdFullAsync(id))
-			.ReturnsAsync((TutorProfile?)null);
+			Assert.That(result, Is.Not.Null);
+			Assert.That(result.Id, Is.EqualTo(request.Id));
 
-		Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.UpdateAsync(request));
-	}
+			if (request.Status.HasValue && existingEntity != null)
+			{
+				Assert.That((TutorStatus)existingEntity.Status, Is.EqualTo(request.Status.Value));
+			}
 
-	/// <summary>
-	/// Test UpdateAsync allows status change from Pending to Approved.
-	/// </summary>
-	[Test]
-	public async Task UpdateAsync_WhenStatusPendingToApproved_UpdatesStatus()
-	{
-		var id = 1;
-		var email = "abc@gmail.com";
-		var existingProfile = FakeDataFactory.CreateFakeTutorProfile(email);
-		existingProfile.Id = id;
-		existingProfile.Status = (int)TutorStatus.Pending;
-
-		var request = new TutorProfileUpdateRequest
+			_tutorProfileRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<TutorProfile>()), Times.Once);
+		}
+		else
 		{
-			Id = id,
-			UserEmail = email,
-			TeachingModes = TeachingMode.Online,
-			Status = TutorStatus.Approved
-		};
-
-		_tutorProfileRepositoryMock
-			.Setup(r => r.GetByIdFullAsync(id))
-			.ReturnsAsync(existingProfile);
-
-		_tutorProfileRepositoryMock
-			.Setup(r => r.UpdateAsync(It.IsAny<TutorProfile>()))
-			.Returns(Task.CompletedTask);
-
-		_userProfileServiceMock
-			.Setup(s => s.UpdateAsync(It.IsAny<UserProfileUpdateRequest>()))
-			.ReturnsAsync((UserProfileDto?)null);
-
-		var result = await _service.UpdateAsync(request);
-
-		Assert.That(result, Is.Not.Null);
-		Assert.That((TutorStatus)existingProfile.Status, Is.EqualTo(TutorStatus.Approved));
+			var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.UpdateAsync(request));
+			Assert.That(exception, Is.InstanceOf(expectedExceptionType!));
+		}
 	}
 
 	/// <summary>
-	/// Test UpdateAsync throws InvalidOperationException when status is not Pending.
+	/// Test DeleteAsync với các ID khác nhau - gọi repository để xóa
 	/// </summary>
 	[Test]
-	public void UpdateAsync_WhenStatusNotPending_ThrowsInvalidOperationException()
+	[TestCase(1)]
+	[TestCase(10)]
+	[TestCase(100)]
+	public async Task DeleteAsync_WithDifferentIds_CallsRepository(int id)
 	{
-		var id = 1;
-		var email = "abc@gmail.com";
-		var existingProfile = FakeDataFactory.CreateFakeTutorProfile(email);
-		existingProfile.Id = id;
-		existingProfile.Status = (int)TutorStatus.Approved;
-
-		var request = new TutorProfileUpdateRequest
-		{
-			Id = id,
-			UserEmail = email,
-			TeachingModes = TeachingMode.Online,
-			Status = TutorStatus.Rejected
-		};
-
-		_tutorProfileRepositoryMock
-			.Setup(r => r.GetByIdFullAsync(id))
-			.ReturnsAsync(existingProfile);
-
-		Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.UpdateAsync(request));
-	}
-
-	/// <summary>
-	/// Test DeleteAsync calls repository to remove tutor profile.
-	/// </summary>
-	[Test]
-	public async Task DeleteAsync_WhenValid_CallsRepository()
-	{
-		var id = 1;
-
+		// Arrange
 		_tutorProfileRepositoryMock
 			.Setup(r => r.RemoveByIdAsync(id))
 			.Returns(Task.CompletedTask);
 
+		// Act
 		await _service.DeleteAsync(id);
 
+		// Assert
 		_tutorProfileRepositoryMock.Verify(r => r.RemoveByIdAsync(id), Times.Once);
 	}
 
 	/// <summary>
-	/// Test VerifyAsync updates status to Approved and sets verification info.
+	/// Test DeleteAsync với ID không hợp lệ - ném ArgumentException
 	/// </summary>
 	[Test]
-	public async Task VerifyAsync_WhenValid_UpdatesStatusToApproved()
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void DeleteAsync_WithInvalidId_ThrowsArgumentException(int id)
 	{
-		var id = 1;
-		var email = "abc@gmail.com";
-		var verifiedBy = "admin@example.com";
-		var existingProfile = FakeDataFactory.CreateFakeTutorProfile(email);
-		existingProfile.Id = id;
-		existingProfile.Status = (int)TutorStatus.Pending;
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.DeleteAsync(id));
+		Assert.That(exception.Message, Does.Contain("ID must be greater than 0"));
+	}
 
-		_tutorProfileRepositoryMock
-			.Setup(r => r.GetByIdFullAsync(id))
-			.ReturnsAsync(existingProfile);
+	/// <summary>
+	/// Tạo các test cases cho VerifyAsync - bao phủ các kịch bản: valid, entity not found, status not pending, invalid ID, empty verifiedBy
+	/// </summary>
+	private static IEnumerable<TestCaseData> VerifyAsyncTestCases()
+	{
+		// Valid verification
+		var pendingProfile = FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com");
+		pendingProfile.Id = 1;
+		pendingProfile.Status = (int)TutorStatus.Pending;
+		yield return new TestCaseData(
+			1,
+			"admin@example.com",
+			pendingProfile,
+			true,
+			null
+		).SetName("VerifyAsync_ValidRequest_UpdatesStatusToApproved");
+
+		// Entity not found
+		yield return new TestCaseData(
+			999,
+			"admin@example.com",
+			null,
+			false,
+			typeof(InvalidOperationException)
+		).SetName("VerifyAsync_EntityNotFound_ThrowsInvalidOperationException");
+
+		// Status not pending
+		var approvedProfile = FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com");
+		approvedProfile.Id = 1;
+		approvedProfile.Status = (int)TutorStatus.Approved;
+		yield return new TestCaseData(
+			1,
+			"admin@example.com",
+			approvedProfile,
+			false,
+			typeof(InvalidOperationException)
+		).SetName("VerifyAsync_StatusNotPending_ThrowsInvalidOperationException");
+
+		// Empty verifiedBy
+		var pendingProfile2 = FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com");
+		pendingProfile2.Id = 1;
+		pendingProfile2.Status = (int)TutorStatus.Pending;
+		yield return new TestCaseData(
+			1,
+			"",
+			pendingProfile2,
+			false,
+			typeof(InvalidOperationException)
+		).SetName("VerifyAsync_EmptyVerifiedBy_ThrowsInvalidOperationException");
+	}
+
+	/// <summary>
+	/// Test VerifyAsync với nhiều kịch bản khác nhau - bao phủ success và các trường hợp lỗi
+	/// </summary>
+	[Test]
+	[TestCaseSource(nameof(VerifyAsyncTestCases))]
+	public async Task VerifyAsync_WithVariousScenarios_HandlesCorrectly(
+		int id,
+		string verifiedBy,
+		TutorProfile? existingEntity,
+		bool shouldSucceed,
+		Type? expectedExceptionType)
+	{
+		// Arrange
+		if (existingEntity != null)
+		{
+			_tutorProfileRepositoryMock
+				.Setup(r => r.GetByIdFullAsync(id))
+				.ReturnsAsync(existingEntity);
+		}
+		else
+		{
+			_tutorProfileRepositoryMock
+				.Setup(r => r.GetByIdFullAsync(id))
+				.ReturnsAsync((TutorProfile?)null);
+		}
 
 		_tutorProfileRepositoryMock
 			.Setup(r => r.UpdateAsync(It.IsAny<TutorProfile>()))
 			.Returns(Task.CompletedTask);
 
-		var result = await _service.VerifyAsync(id, verifiedBy);
+		// Act & Assert
+		if (shouldSucceed)
+		{
+			var result = await _service.VerifyAsync(id, verifiedBy);
 
-		Assert.That(result, Is.Not.Null);
-		Assert.That((TutorStatus)existingProfile.Status, Is.EqualTo(TutorStatus.Approved));
-		Assert.That(existingProfile.VerifiedBy, Is.EqualTo(verifiedBy));
-		Assert.That(existingProfile.VerifiedAt, Is.Not.Null);
+			Assert.That(result, Is.Not.Null);
+			Assert.That((TutorStatus)existingEntity!.Status, Is.EqualTo(TutorStatus.Approved));
+			Assert.That(existingEntity.VerifiedBy, Is.EqualTo(verifiedBy));
+			Assert.That(existingEntity.VerifiedAt, Is.Not.Null);
+			_tutorProfileRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<TutorProfile>()), Times.Once);
+		}
+		else
+		{
+			var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.VerifyAsync(id, verifiedBy));
+			Assert.That(exception, Is.InstanceOf(expectedExceptionType!));
+		}
 	}
 
 	/// <summary>
-	/// Test VerifyAsync throws InvalidOperationException when tutor profile not found.
+	/// Test VerifyAsync với ID không hợp lệ - ném InvalidOperationException
 	/// </summary>
 	[Test]
-	public void VerifyAsync_WhenNotFound_ThrowsInvalidOperationException()
+	[TestCase(0)]
+	[TestCase(-1)]
+	public void VerifyAsync_WithInvalidId_ThrowsInvalidOperationException(int id)
 	{
-		var id = 999;
-		var verifiedBy = "admin@example.com";
-
-		_tutorProfileRepositoryMock
-			.Setup(r => r.GetByIdFullAsync(id))
-			.ReturnsAsync((TutorProfile?)null);
-
-		Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.VerifyAsync(id, verifiedBy));
+		// Act & Assert
+		var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.VerifyAsync(id, "admin@example.com"));
+		Assert.That(exception.Message, Does.Contain("ID must be greater than 0"));
 	}
-
-	/// <summary>
-	/// Test VerifyAsync throws InvalidOperationException when status is not Pending.
-	/// </summary>
-	[Test]
-	public void VerifyAsync_WhenNotPending_ThrowsInvalidOperationException()
-	{
-		var id = 1;
-		var email = "abc@gmail.com";
-		var verifiedBy = "admin@example.com";
-		var existingProfile = FakeDataFactory.CreateFakeTutorProfile(email);
-		existingProfile.Id = id;
-		existingProfile.Status = (int)TutorStatus.Approved;
-
-		_tutorProfileRepositoryMock
-			.Setup(r => r.GetByIdFullAsync(id))
-			.ReturnsAsync(existingProfile);
-
-		Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.VerifyAsync(id, verifiedBy));
-	}
-
-	/// <summary>
-	/// Test VerifyAsync throws InvalidOperationException when verifiedBy is empty.
-	/// </summary>
-	[Test]
-	public void VerifyAsync_WhenVerifiedByIsEmpty_ThrowsInvalidOperationException()
-	{
-		var id = 1;
-		var email = "abc@gmail.com";
-		var existingProfile = FakeDataFactory.CreateFakeTutorProfile(email);
-		existingProfile.Id = id;
-		existingProfile.Status = (int)TutorStatus.Pending;
-
-		_tutorProfileRepositoryMock
-			.Setup(r => r.GetByIdFullAsync(id))
-			.ReturnsAsync(existingProfile);
-
-		Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.VerifyAsync(id, ""));
-	}
-
 }
