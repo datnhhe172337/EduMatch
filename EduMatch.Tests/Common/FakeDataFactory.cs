@@ -199,5 +199,55 @@ namespace EduMatch.Tests.Common
 				} : null
 			};
 		}
+
+		/// <summary>
+		/// Tạo TimeSlot giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static TimeSlot CreateFakeTimeSlot(
+			int id = 1,
+			TimeOnly? startTime = null,
+			TimeOnly? endTime = null)
+		{
+			return new TimeSlot
+			{
+				Id = id,
+				StartTime = startTime ?? new TimeOnly(8, 0),
+				EndTime = endTime ?? new TimeOnly(10, 0)
+			};
+		}
+
+		/// <summary>
+		/// Tạo TutorAvailability giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static TutorAvailability CreateFakeTutorAvailability(
+			int id = 1,
+			int tutorId = 1,
+			int slotId = 1,
+			DateTime? startDate = null,
+			int status = 0)
+		{
+			var date = startDate ?? DateTime.UtcNow.Date;
+			return new TutorAvailability
+			{
+				Id = id,
+				TutorId = tutorId,
+				SlotId = slotId,
+				StartDate = date.AddHours(8),
+				EndDate = date.AddHours(10),
+				Status = status,
+				CreatedAt = DateTime.UtcNow,
+				Tutor = new TutorProfile
+				{
+					Id = tutorId,
+					UserEmail = $"tutor{tutorId}@example.com"
+				},
+				Slot = new TimeSlot
+				{
+					Id = slotId,
+					StartTime = new TimeOnly(8, 0),
+					EndTime = new TimeOnly(10, 0)
+				}
+			};
+		}
 	}
 }
