@@ -140,5 +140,64 @@ namespace EduMatch.Tests.Common
 				}
 			};
 		}
+
+		/// <summary>
+		/// Tạo Subject giả với ID cụ thể (dùng cho test)
+		/// </summary>
+		public static Subject CreateFakeSubject(int id = 1)
+		{
+			return new Subject
+			{
+				Id = id,
+				SubjectName = $"Subject {id}"
+			};
+		}
+
+		/// <summary>
+		/// Tạo Level giả với ID cụ thể (dùng cho test)
+		/// </summary>
+		public static Level CreateFakeLevel(int id = 1)
+		{
+			return new Level
+			{
+				Id = id,
+				Name = $"Level {id}"
+			};
+		}
+
+		/// <summary>
+		/// Tạo TutorSubject giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static TutorSubject CreateFakeTutorSubject(
+			int id = 1,
+			int tutorId = 1,
+			int subjectId = 1,
+			int? levelId = 1,
+			decimal? hourlyRate = 200000)
+		{
+			return new TutorSubject
+			{
+				Id = id,
+				TutorId = tutorId,
+				SubjectId = subjectId,
+				LevelId = levelId,
+				HourlyRate = hourlyRate,
+				Tutor = new TutorProfile
+				{
+					Id = tutorId,
+					UserEmail = $"tutor{tutorId}@example.com"
+				},
+				Subject = new Subject
+				{
+					Id = subjectId,
+					SubjectName = $"Subject {subjectId}"
+				},
+				Level = levelId.HasValue ? new Level
+				{
+					Id = levelId.Value,
+					Name = $"Level {levelId.Value}"
+				} : null
+			};
+		}
 	}
 }
