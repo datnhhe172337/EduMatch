@@ -249,5 +249,51 @@ namespace EduMatch.Tests.Common
 				}
 			};
 		}
+
+		/// <summary>
+		/// Tạo CertificateType giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static CertificateType CreateFakeCertificateType(
+			int id = 1,
+			string? code = null,
+			string? name = null)
+		{
+			return new CertificateType
+			{
+				Id = id,
+				Code = code ?? $"CERT{id}",
+				Name = name ?? $"Certificate Type {id}"
+			};
+		}
+
+		/// <summary>
+		/// Tạo TutorCertificate giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static TutorCertificate CreateFakeTutorCertificate(
+			int id = 1,
+			int tutorId = 1,
+			int certificateTypeId = 1,
+			DateTime? issueDate = null,
+			DateTime? expiryDate = null,
+			string? certificateUrl = null,
+			VerifyStatus verified = VerifyStatus.Pending,
+			string? rejectReason = null)
+		{
+			return new TutorCertificate
+			{
+				Id = id,
+				TutorId = tutorId,
+				CertificateTypeId = certificateTypeId,
+				IssueDate = issueDate ?? new DateTime(2020, 1, 1),
+				ExpiryDate = expiryDate ?? new DateTime(2025, 12, 31),
+				CertificateUrl = certificateUrl ?? "https://example.com/certificate.jpg",
+				CertificatePublicId = null,
+				CreatedAt = DateTime.UtcNow,
+				Verified = (int)verified,
+				RejectReason = rejectReason,
+				Tutor = CreateFakeTutorProfile(tutorId),
+				CertificateType = CreateFakeCertificateType(certificateTypeId)
+			};
+		}
 	}
 }
