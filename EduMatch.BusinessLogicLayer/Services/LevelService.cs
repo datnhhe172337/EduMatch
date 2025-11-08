@@ -28,6 +28,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<LevelDto?> GetByIdAsync(int id)
 		{
+			if (id <= 0)
+				throw new ArgumentException("ID must be greater than 0");
 			var entity = await _levelRepository.GetByIdAsync(id);
 			return entity != null ? _mapper.Map<LevelDto>(entity) : null;
 		}
@@ -46,6 +48,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<IReadOnlyList<LevelDto>> GetByNameAsync(string name)
 		{
+			if (string.IsNullOrWhiteSpace(name))
+				throw new ArgumentException("Name is required");
 			var entities = await _levelRepository.GetByNameAsync(name);
 			return _mapper.Map<IReadOnlyList<LevelDto>>(entities);
 		}
@@ -117,6 +121,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
+			if (id <= 0)
+				throw new ArgumentException("ID must be greater than 0");
 			await _levelRepository.RemoveByIdAsync(id);
 		}
 	}

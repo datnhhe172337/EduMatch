@@ -43,6 +43,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<TutorCertificateDto?> GetByIdFullAsync(int id)
 		{
+			if (id <= 0)
+				throw new ArgumentException("ID must be greater than 0");
 			var entity = await _tutorCertificateRepository.GetByIdFullAsync(id);
 			return entity != null ? _mapper.Map<TutorCertificateDto>(entity) : null;
 		}
@@ -52,6 +54,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<TutorCertificateDto?> GetByTutorIdFullAsync(int tutorId)
 		{
+			if (tutorId <= 0)
+				throw new ArgumentException("TutorId must be greater than 0");
 			var entity = await _tutorCertificateRepository.GetByTutorIdFullAsync(tutorId);
 			return entity != null ? _mapper.Map<TutorCertificateDto>(entity) : null;
 		}
@@ -61,6 +65,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<IReadOnlyList<TutorCertificateDto>> GetByTutorIdAsync(int tutorId)
 		{
+			if (tutorId <= 0)
+				throw new ArgumentException("TutorId must be greater than 0");
 			var entities = await _tutorCertificateRepository.GetByTutorIdAsync(tutorId);
 			return _mapper.Map<IReadOnlyList<TutorCertificateDto>>(entities);
 		}
