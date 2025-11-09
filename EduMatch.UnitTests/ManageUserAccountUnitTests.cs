@@ -142,6 +142,51 @@ namespace EduMatch.UnitTests
             Assert.Empty(result);
         }
 
+        [Fact]
+        public async Task GetUserByRoleAsync_Fail_RepoReturnsNull()
+        {
+            // Arrange
+            _userRepoMock.Setup(r => r.GetLearnerAsync())
+                         .ReturnsAsync((List<User>)null);
+
+            // Act + Assert
+            await Assert.ThrowsAsync<NullReferenceException>(
+                async () => await _userService.GetUserByRoleAsync(1)
+            );
+        }
+
+        [Fact]
+        public async Task GetUserByRoleAsync_Fail_MissingRoleName()
+        {
+            // Arrange
+            var list = new List<User> { new User { Email = "a@b.com", Role = null } };
+            _userRepoMock.Setup(r => r.GetTutorAsync()).ReturnsAsync(list);
+
+            // Act + Assert
+            await Assert.ThrowsAsync<NullReferenceException>(
+                async () => await _userService.GetUserByRoleAsync(2)
+            );
+        }
+
+        [Fact]
+        public async Task GetUserByRoleAsync_Fail_TutorProfileNull_ThrowsException()
+        {
+            // Arrange
+            var tutors = new List<User>
+            {
+            new User
+                {
+                    Email = "tutor@example.com",
+                    Role = new Role { RoleName = "Tutor" },
+                    TutorProfile = null // Lỗi: null nhưng service vẫn truy cập CreatedAt
+                }
+            };
+            _userRepoMock.Setup(r => r.GetTutorAsync()).ReturnsAsync(tutors);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<NullReferenceException>(() => _userService.GetUserByRoleAsync(2));
+        }
+
         // ==========================================================
         // TEST ActivateUserAsync & DeactivateUserAsync
         // ==========================================================
@@ -223,6 +268,18 @@ namespace EduMatch.UnitTests
             await Assert.ThrowsAsync<InvalidOperationException>(
                 async () => await _userService.CreateAdminAccAsync("exist@example.com", "pass123")
             );
+        } 
+
+        [Fact]
+        public async Task CreateAdminAccAsync_Fail_InvalidEmailFormat_ThrowsException()
+        {
+            // Arrange
+            _userRepoMock.Setup(r => r.GetUserByEmailAsync("invalidemail"))
+                         .ReturnsAsync((User)null);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<IndexOutOfRangeException>(() =>
+                _userService.CreateAdminAccAsync("invalidemail", "pass123"));
         }
     }
 }
