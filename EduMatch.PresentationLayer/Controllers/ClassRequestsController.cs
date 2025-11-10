@@ -21,6 +21,7 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
         [Authorize(Roles = "Learner")]
+        [Authorize(Roles = "Tutor")]
         [HttpPost("Create")]
         public async Task<IActionResult> CreateClassRequestAsync([FromBody] ClassCreateRequest dto)
         {
@@ -55,7 +56,6 @@ namespace EduMatch.PresentationLayer.Controllers
         /// </summary>
         /// <param name="id"> Id của ClassRequest</param>
         /// <returns></returns>
-        [Authorize]
         [HttpGet("{id}", Name = "GetById")]
         public async Task<IActionResult> GetByIdAsync(int id)
         {

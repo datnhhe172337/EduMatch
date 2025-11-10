@@ -53,7 +53,6 @@ namespace EduMatch.PresentationLayer.Controllers
         /// <param name="classRequestId"></param>
         /// <returns></returns>
         [HttpGet("class-request/{classRequestId}")]
-        [Authorize(Roles = "Learner")]
         public async Task<IActionResult> GetTutorApplicationsByClassRequestIdAsync(int classRequestId)
         {
             var learnerEmail = User.FindFirst(ClaimTypes.Email)?.Value;
