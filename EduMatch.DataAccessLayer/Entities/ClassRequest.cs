@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EduMatch.DataAccessLayer.Enum;
+using System;
 using System.Collections.Generic;
 
 namespace EduMatch.DataAccessLayer.Entities;
@@ -19,7 +20,7 @@ public partial class ClassRequest
 
     public string? TutorRequirement { get; set; }
 
-    public int Mode { get; set; }
+    public TeachingMode Mode { get; set; }
 
     public int? ProvinceId { get; set; }
 
@@ -39,7 +40,7 @@ public partial class ClassRequest
 
     public decimal? TargetUnitPriceMax { get; set; }
 
-    public int Status { get; set; }
+    public ClassRequestStatus Status { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
