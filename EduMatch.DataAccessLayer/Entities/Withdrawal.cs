@@ -1,5 +1,4 @@
-﻿using EduMatch.DataAccessLayer.Enum;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace EduMatch.DataAccessLayer.Entities;
@@ -12,7 +11,7 @@ public partial class Withdrawal
 
     public decimal Amount { get; set; }
 
-    public WithdrawalStatus Status { get; set; }
+    public int Status { get; set; }
 
     public int UserBankAccountId { get; set; }
 

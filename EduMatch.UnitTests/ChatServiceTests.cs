@@ -227,7 +227,6 @@ namespace EduMatch.Tests.Services
             await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName(paramName);
         }
 
-        // --- NEW TEST ---
         [Fact]
         public async Task SendMessageAsync_ShouldPropagateException_WhenRepoFails()
         {
