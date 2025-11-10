@@ -45,6 +45,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<TutorEducationDto?> GetByIdFullAsync(int id)
 		{
+			if (id <= 0)
+				throw new ArgumentException("ID must be greater than 0");
 			var entity = await _tutorEducationRepository.GetByIdFullAsync(id);
 			return entity != null ? _mapper.Map<TutorEducationDto>(entity) : null;
 		}
@@ -54,6 +56,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<TutorEducationDto?> GetByTutorIdFullAsync(int tutorId)
 		{
+			if (tutorId <= 0)
+				throw new ArgumentException("TutorId must be greater than 0");
 			var entity = await _tutorEducationRepository.GetByTutorIdFullAsync(tutorId);
 			return entity != null ? _mapper.Map<TutorEducationDto>(entity) : null;
 		}
@@ -63,6 +67,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<IReadOnlyList<TutorEducationDto>> GetByTutorIdAsync(int tutorId)
 		{
+			if (tutorId <= 0)
+				throw new ArgumentException("TutorId must be greater than 0");
 			var entities = await _tutorEducationRepository.GetByTutorIdAsync(tutorId);
 			return _mapper.Map<IReadOnlyList<TutorEducationDto>>(entities);
 		}
@@ -72,6 +78,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<IReadOnlyList<TutorEducationDto>> GetByInstitutionIdAsync(int institutionId)
 		{
+			if (institutionId <= 0)
+				throw new ArgumentException("InstitutionId must be greater than 0");
 			var entities = await _tutorEducationRepository.GetByInstitutionIdAsync(institutionId);
 			return _mapper.Map<IReadOnlyList<TutorEducationDto>>(entities);
 		}
@@ -237,6 +245,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
+			if (id <= 0)
+				throw new ArgumentException("ID must be greater than 0");
 			await _tutorEducationRepository.RemoveByIdAsync(id);
 		}
 
@@ -245,6 +255,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task DeleteByTutorIdAsync(int tutorId)
 		{
+			if (tutorId <= 0)
+				throw new ArgumentException("TutorId must be greater than 0");
 			await _tutorEducationRepository.RemoveByTutorIdAsync(tutorId);
 		}
 	}

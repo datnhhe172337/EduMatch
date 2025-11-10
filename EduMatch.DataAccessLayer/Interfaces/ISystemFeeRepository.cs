@@ -34,5 +34,9 @@ namespace EduMatch.DataAccessLayer.Interfaces
         /// Xóa SystemFee theo ID
         /// </summary>
         Task DeleteAsync(int id);
+        /// <summary>
+        /// Lấy SystemFee đang hoạt động (IsActive = true, EffectiveFrom <= now, EffectiveTo >= now hoặc null), lấy Id nhỏ nhất
+        /// </summary>
+        Task<SystemFee?> GetActiveSystemFeeAsync();
     }
 }

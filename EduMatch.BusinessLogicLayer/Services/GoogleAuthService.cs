@@ -94,14 +94,42 @@ namespace EduMatch.BusinessLogicLayer.Services
 		}
 		
 
-		public string GenerateAuthUrlDat()
+		//public string GenerateAuthUrlDat()
+		//{
+		//	string scopes = string.Join(" ",
+		//		new[]
+		//		{
+		//			"https://www.googleapis.com/auth/calendar.events",
+		//			"https://www.googleapis.com/auth/calendar"
+		//		});
+
+		//	string url =
+		//		"https://accounts.google.com/o/oauth2/v2/auth" +
+		//		"?response_type=code" +
+		//		$"&client_id={_googleCalendarSettings.ClientId}" +
+		//		$"&redirect_uri={Uri.EscapeDataString(_googleCalendarSettings.RedirectUri)}" +
+		//		$"&scope={Uri.EscapeDataString(scopes)}" +
+		//		"&access_type=offline" +
+		//		"&prompt=consent" + // ép lấy refresh_token
+		//		$"&login_hint={Uri.EscapeDataString(_googleCalendarSettings.SystemAccountEmail)}";
+
+		//	return url;
+		//}
+
+		public async Task<string> GenerateAuthUrlDat()
 		{
 			string scopes = string.Join(" ",
 				new[]
 				{
-					"https://www.googleapis.com/auth/calendar.events",
-					"https://www.googleapis.com/auth/calendar"
+			"https://www.googleapis.com/auth/calendar.events",
+			"https://www.googleapis.com/auth/calendar"
 				});
+
+			var existingToken = await _googleTokenRepository.GetByEmailAsync(_googleCalendarSettings.SystemAccountEmail);
+
+			string prompt = string.IsNullOrEmpty(existingToken?.RefreshToken)
+				? "&prompt=consent" // chỉ yêu cầu lại quyền khi chưa có refresh token
+				: "";
 
 			string url =
 				"https://accounts.google.com/o/oauth2/v2/auth" +
@@ -110,11 +138,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 				$"&redirect_uri={Uri.EscapeDataString(_googleCalendarSettings.RedirectUri)}" +
 				$"&scope={Uri.EscapeDataString(scopes)}" +
 				"&access_type=offline" +
-				"&prompt=consent" + // ép lấy refresh_token
+				prompt +
 				$"&login_hint={Uri.EscapeDataString(_googleCalendarSettings.SystemAccountEmail)}";
 
 			return url;
 		}
+
 
 
 

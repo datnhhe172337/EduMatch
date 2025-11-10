@@ -12,6 +12,7 @@ using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.PresentationLayer.Common;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using EduMatch.BusinessLogicLayer.Constants;
 using Microsoft.AspNetCore.Http;
@@ -72,7 +73,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Đăng ký trở thành gia sư với đầy đủ thông tin profile, education, certificate, subject và availability
 		/// </summary>
-		[Authorize(Roles = Roles.BusinessAdmin + ","  + Roles.Tutor)]
+		[Authorize(Roles = Roles.BusinessAdmin + ","  + Roles.Learner)]
 		[HttpPost("become-tutor")]
 		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
@@ -261,6 +262,34 @@ namespace EduMatch.PresentationLayer.Controllers
 			catch (Exception ex)
 			{
 				return BadRequest(ApiResponse<string>.Fail("Failed to get tutors", ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Lấy thông tin gia sư theo Email. Trả lỗi nếu không tìm thấy hoặc email chưa đăng ký gia sư
+		/// </summary>
+		[HttpGet("get-tutor-by-email")]
+		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		public async Task<IActionResult> GetTutorByEmail([FromQuery] string email)
+		{
+			try
+			{
+				if (string.IsNullOrWhiteSpace(email))
+					return BadRequest(ApiResponse<string>.Fail("Email không hợp lệ."));
+				if (!new EmailAddressAttribute().IsValid(email))
+					return BadRequest(ApiResponse<string>.Fail("Email không đúng định dạng."));
+
+				var tutor = await _tutorProfileService.GetByEmailFullAsync(email);
+				if (tutor == null)
+					return NotFound(ApiResponse<string>.Fail("Không tìm thấy gia sư hoặc bạn chưa phải là gia sư."));
+
+				return Ok(ApiResponse<TutorProfileDto>.Ok(tutor));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail("Lỗi khi lấy thông tin gia sư.", ex.Message));
 			}
 		}
 

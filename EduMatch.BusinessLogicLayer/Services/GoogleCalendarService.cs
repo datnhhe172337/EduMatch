@@ -64,8 +64,16 @@ namespace EduMatch.BusinessLogicLayer.Services
 				GrantType = "refresh_token"
 			};
 
-			var content = new StringContent(JsonConvert.SerializeObject(refreshRequest), Encoding.UTF8, "application/json");
-			var response = await _httpClient.PostAsync(_googleCalendarSettings.TokenEndpoint, content);
+			// chuyển sang dictionary để gửi form-urlencoded
+			var formContent = new FormUrlEncodedContent(new[]
+			{
+				new KeyValuePair<string, string>("client_id", refreshRequest.ClientId),
+				new KeyValuePair<string, string>("client_secret", refreshRequest.ClientSecret),
+				new KeyValuePair<string, string>("refresh_token", refreshRequest.RefreshToken),
+				new KeyValuePair<string, string>("grant_type", refreshRequest.GrantType),
+			});
+
+			var response = await _httpClient.PostAsync(_googleCalendarSettings.TokenEndpoint, formContent);
 			var json = await response.Content.ReadAsStringAsync();
 
 			if (!response.IsSuccessStatusCode)
@@ -122,7 +130,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 			_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
 			string calendarId = _googleCalendarSettings.SystemAccountEmail;
-			string endpoint = $"{_googleCalendarSettings.CalendarApiBaseUrl}/calendars/{calendarId}/events/{eventId}?conferenceDataVersion=1";
+			string endpoint = $"{_googleCalendarSettings.CalendarApiBaseUrl}/calendars/{calendarId}/events/{eventId}?conferenceDataVersion=1&sendUpdates=none";
 
 			var jsonBody = JsonConvert.SerializeObject(eventRequest);
 			var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");

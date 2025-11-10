@@ -102,5 +102,14 @@ namespace EduMatch.BusinessLogicLayer.Services
         {
             await _systemFeeRepository.DeleteAsync(id);
         }
+
+        /// <summary>
+        /// Lấy SystemFee đang hoạt động (IsActive = true), lấy giá trị đầu tiên
+        /// </summary>
+        public async Task<SystemFeeDto?> GetActiveSystemFeeAsync()
+        {
+            var entity = await _systemFeeRepository.GetActiveSystemFeeAsync();
+            return entity == null ? null : _mapper.Map<SystemFeeDto>(entity);
+        }
     }
 }

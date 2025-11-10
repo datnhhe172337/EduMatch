@@ -27,28 +27,40 @@ namespace EduMatch.DataAccessLayer.Repositories
 			=> await IncludeAll().FirstOrDefaultAsync(t => t.Id == id);
 
 		/// <summary>
-		/// Lấy danh sách TutorAvailability theo TutorId
+		/// Lấy danh sách TutorAvailability theo TutorId (chỉ lấy những ngày còn tương lai)
 		/// </summary>
 		public async Task<IReadOnlyList<TutorAvailability>> GetByTutorIdAsync(int tutorId)
-			=> await IncludeAll().Where(t => t.TutorId == tutorId).ToListAsync();
+		{
+			var now = DateTime.UtcNow.Date;
+			return await IncludeAll().Where(t => t.TutorId == tutorId && t.StartDate.Date >= now).ToListAsync();
+		}
 
 		/// <summary>
-		/// Lấy danh sách TutorAvailability theo TutorId với đầy đủ thông tin
+		/// Lấy danh sách TutorAvailability theo TutorId với đầy đủ thông tin (chỉ lấy những ngày còn tương lai)
 		/// </summary>
 		public async Task<IReadOnlyList<TutorAvailability>> GetByTutorIdFullAsync(int tutorId)
-			=> await IncludeAll().Where(t => t.TutorId == tutorId).ToListAsync();
+		{
+			var now = DateTime.UtcNow.Date;
+			return await IncludeAll().Where(t => t.TutorId == tutorId && t.StartDate.Date >= now).ToListAsync();
+		}
 
 		/// <summary>
-		/// Lấy danh sách TutorAvailability theo trạng thái
+		/// Lấy danh sách TutorAvailability theo trạng thái (chỉ lấy những ngày còn tương lai)
 		/// </summary>
 		public async Task<IReadOnlyList<TutorAvailability>> GetByStatusAsync(TutorAvailabilityStatus status)
-			=> await IncludeAll().Where(t => t.Status == (int)status).ToListAsync();
+		{
+			var now = DateTime.UtcNow.Date;
+			return await IncludeAll().Where(t => t.Status == (int)status && t.StartDate.Date >= now).ToListAsync();
+		}
 
 		/// <summary>
-		/// Lấy tất cả TutorAvailability với đầy đủ thông tin
+		/// Lấy tất cả TutorAvailability với đầy đủ thông tin (chỉ lấy những ngày còn tương lai)
 		/// </summary>
 		public async Task<IReadOnlyList<TutorAvailability>> GetAllFullAsync()
-			=> await IncludeAll().ToListAsync();
+		{
+			var now = DateTime.UtcNow.Date;
+			return await IncludeAll().Where(t => t.StartDate.Date >= now).ToListAsync();
+		}
 
 		/// <summary>
 		/// Thêm TutorAvailability mới
