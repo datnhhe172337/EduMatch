@@ -58,7 +58,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy danh sách Booking theo LearnerEmail có phân trang và lọc theo Status, TutorSubjectId
 		/// </summary>
-		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Learner)]
 		[HttpGet("get-all-by-learner-email-paging")]
 		[ProducesResponseType(typeof(ApiResponse<PagedResult<BookingDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -103,7 +103,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy danh sách Booking theo LearnerEmail (không phân trang) và lọc theo Status, TutorSubjectId
 		/// </summary>
-		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
+		[Authorize (Roles = Roles.BusinessAdmin + "," +  Roles.Learner)]
 		[HttpGet("get-all-by-learner-email-no-paging")]
 		[ProducesResponseType(typeof(ApiResponse<IEnumerable<BookingDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -211,7 +211,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Tạo Booking mới và tính phí hệ thống theo SystemFee đang hoạt động. Tự động lấy SystemFee có Id nhỏ nhất đang hoạt động.
 		/// Sau khi tạo Booking thành công, lấy ID của Booking để tạo Schedule. BookingId trong request Schedule có thể truyền bất kỳ số nào > 0, sẽ được ghi đè bằng ID của Booking vừa tạo.
 		/// </summary>
-		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
+		[Authorize (Roles = Roles.BusinessAdmin + ","  + Roles.Learner)]
 		[HttpPost("create-booking")]
 		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -257,7 +257,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Cập nhật Booking và tính lại các giá trị liên quan khi thay đổi (TotalSessions, TutorSubjectId). Nếu thay đổi TotalSessions sẽ tính lại SystemFeeAmount
 		/// </summary>
-		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
+		[Authorize (Roles = Roles.BusinessAdmin +  "," + Roles.Learner)]
 		[HttpPut("update-booking")]
 		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]

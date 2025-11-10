@@ -152,7 +152,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Nếu là online thì tạo MeetingSession tự động
 		/// Optional vì booking là tạo luôn booking và schedule và meeting session(nếu là online) cùng lúc
 		/// </summary>
-		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
+		[Authorize (Roles = Roles.BusinessAdmin)]
 		[HttpPost("create-schedule")]
 		[ProducesResponseType(typeof(ApiResponse<ScheduleDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -177,7 +177,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Tạo danh sách Schedule cho một Booking. Tổng số Schedule sau khi tạo phải bằng TotalSessions của Booking
 		/// Optional vì booking là tạo luôn booking và schedule và meeting session(nếu là online) cùng lúc
 		/// </summary>
-		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
 		[HttpPost("create-schedule-list")]
 		[ProducesResponseType(typeof(ApiResponse<IEnumerable<ScheduleDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
