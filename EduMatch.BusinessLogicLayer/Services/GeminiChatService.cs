@@ -42,41 +42,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task<string> GenerateTextAsync(string prompt)
         {
-            for (int attempt = 1; attempt <= MaxRetries; attempt++)
-            {
-                try
-                {
-                    var response = await _model.GenerateContentAsync(prompt);
-                    return response.Text;
-                }
-                // Chỉ bắt lỗi API có Code 429 (Resource Exhausted) hoặc 503 (Service Unavailable)
-                catch (ApiException ex) when (ex.ErrorCode == 429 || ex.ErrorCode == 503)
-                {
-                    if (attempt == MaxRetries)
-                    {
-                        // Lần thử cuối cùng, ném lỗi để ứng dụng xử lý
-                        throw;
-                    }
-
-                    // Tính toán thời gian chờ: 2^attempt giây (ví dụ: 2s, 4s, 8s, 16s,...)
-                    int delayInSeconds = (int)Math.Pow(2, attempt);
-
-                    // In log hoặc thông báo
-                    Console.WriteLine(
-                        $"Attempt {attempt} failed with Code {ex.ErrorCode}. Retrying in {delayInSeconds} seconds...");
-
-                    // Tạm dừng ứng dụng
-                    await Task.Delay(TimeSpan.FromSeconds(delayInSeconds));
-                    continue; // Quay lại vòng lặp để thử lại
-                }
-                catch (Exception)
-                {
-                    // Bắt các lỗi khác (ví dụ: 400, 404,...) và ném ra
-                    throw;
-                }
-            }
-            throw new Exception("Failed to generate content after all retries.");
-
+            var response = await _model.GenerateContentAsync(prompt);
+            return response.Text;
         }
     }
 }
