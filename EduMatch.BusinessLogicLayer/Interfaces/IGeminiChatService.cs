@@ -8,6 +8,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 {
     public interface IGeminiChatService
     {
-        Task<string?> AskAsync(string query);
+        Task<string> GenerateTextAsync(string prompt);
     }
 }

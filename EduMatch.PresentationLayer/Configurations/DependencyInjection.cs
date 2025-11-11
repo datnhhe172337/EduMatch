@@ -108,7 +108,7 @@ namespace EduMatch.PresentationLayer.Configurations
 			
             services.AddSingleton<IUserIdProvider, EmailUserIdProvider>();
 
-<<<<<<< Updated upstream
+
             services.AddScoped<IWalletService, WalletService>();
             services.AddScoped<IBankService, BankService>();
             services.AddScoped<IUserBankAccountService, UserBankAccountService>();
@@ -116,10 +116,9 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IVnpayService, VnpayService>();
             services.AddScoped<IWithdrawalService, WithdrawalService>();
             services.AddScoped<IAdminWalletService, AdminWalletService>();
-=======
+
             services.AddSingleton<IGeminiChatService, GeminiChatService>();
 
->>>>>>> Stashed changes
             // Bind "CloudinarySettings" 
             services.Configure<CloudinaryRootOptions>(configuration.GetSection("CloudinarySettings"));
 
