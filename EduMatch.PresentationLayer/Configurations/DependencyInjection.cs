@@ -63,6 +63,8 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IDepositRepository, DepositRepository>();
             services.AddScoped<IWalletTransactionRepository, WalletTransactionRepository>();
             services.AddScoped<IWithdrawalRepository, WithdrawalRepository>();
+            services.AddScoped<INotificationRepository, NotificationRepository>();
+
             // Services
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<CurrentUserService>();
@@ -93,10 +95,10 @@ namespace EduMatch.PresentationLayer.Configurations
 
             services.AddScoped<ISystemFeeRepository, SystemFeeRepository>();
             services.AddScoped<ChatService>();
-            
-			
-			
-			
+            services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<INotificationPusher, NotificationPusher>();
+
+
             services.AddSingleton<IUserIdProvider, EmailUserIdProvider>();
 
             services.AddScoped<IWalletService, WalletService>();
