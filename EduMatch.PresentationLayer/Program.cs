@@ -1,5 +1,6 @@
 ﻿using DotNetEnv;
 using EduMatch.BusinessLogicLayer.Services;
+using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.PresentationLayer.Configurations;
 using EduMatch.PresentationLayer.Hubs;
@@ -20,6 +21,10 @@ builder.Configuration
 // Add services to the container.
 
 builder.Services.ConfigureApplication(builder.Configuration);
+
+// Gemini
+builder.Services.Configure<GeminiSettings>(
+    builder.Configuration.GetSection("Gemini"));
 
 
 // Background Service
