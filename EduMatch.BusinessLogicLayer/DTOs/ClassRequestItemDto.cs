@@ -9,7 +9,7 @@ namespace EduMatch.BusinessLogicLayer.DTOs
     public class ClassRequestItemDto
     {
         public int Id { get; set; }
-        //public string LearnerEmail { get; set; }
+        public string LearnerEmail { get; set; }
         public string LearnerName { get; set; }
 
         public string? AvatarUrl { get; set; }

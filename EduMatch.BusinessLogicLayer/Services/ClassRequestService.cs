@@ -242,7 +242,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             return result.Select(r => new ClassRequestItemDto
             {
                 Id = r.Id,
-                //LearnerEmail = r.LearnerEmail,
+                LearnerEmail = r.LearnerEmail,
                 AvatarUrl = r.LearnerEmailNavigation.UserProfile?.AvatarUrl,
                 LearnerName = r.LearnerEmailNavigation.UserName,
                 Title = r.Title,
@@ -272,7 +272,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             return result.Select(r => new ClassRequestItemDto
             {
                 Id = r.Id,
-                //LearnerEmail = r.LearnerEmail,
+                LearnerEmail = r.LearnerEmail,
                 AvatarUrl = r.LearnerEmailNavigation.UserProfile?.AvatarUrl,
                 LearnerName = r.LearnerEmailNavigation.UserName,
                 SubjectName = r.Subject.SubjectName,
@@ -301,7 +301,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             return result.Select(r => new ClassRequestItemDto
             {
                 Id = r.Id,
-                //LearnerEmail = r.LearnerEmail,
+                LearnerEmail = r.LearnerEmail,
                 AvatarUrl = r.LearnerEmailNavigation.UserProfile?.AvatarUrl,
                 LearnerName = r.LearnerEmailNavigation.UserName,
                 SubjectName = r.Subject.SubjectName,
@@ -331,7 +331,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             return result.Select(r => new ClassRequestItemDto
             {
                 Id = r.Id,
-                //LearnerEmail = r.LearnerEmail,
+                LearnerEmail = r.LearnerEmail,
                 AvatarUrl = r.LearnerEmailNavigation.UserProfile?.AvatarUrl,
                 LearnerName = r.LearnerEmailNavigation.UserName,
                 SubjectName = r.Subject.SubjectName,
@@ -361,7 +361,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             return result.Select(r => new ClassRequestItemDto
             {
                 Id = r.Id,
-                //LearnerEmail = r.LearnerEmail,
+                LearnerEmail = r.LearnerEmail,
                 AvatarUrl = r.LearnerEmailNavigation.UserProfile?.AvatarUrl,
                 LearnerName = r.LearnerEmailNavigation.UserName,
                 SubjectName = r.Subject.SubjectName,
@@ -391,7 +391,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             return result.Select(r => new ClassRequestItemDto
             {
                 Id = r.Id,
-                //LearnerEmail = r.LearnerEmail,
+                LearnerEmail = r.LearnerEmail,
                 AvatarUrl = r.LearnerEmailNavigation.UserProfile?.AvatarUrl,
                 LearnerName = r.LearnerEmailNavigation.UserName,
                 SubjectName = r.Subject.SubjectName,
@@ -421,7 +421,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             return result.Select(r => new ClassRequestItemDto
             {
                 Id = r.Id,
-                //LearnerEmail = r.LearnerEmail,
+                LearnerEmail = r.LearnerEmail,
                 AvatarUrl = r.LearnerEmailNavigation.UserProfile?.AvatarUrl,
                 LearnerName = r.LearnerEmailNavigation.UserName,
                 SubjectName = r.Subject.SubjectName,
@@ -451,7 +451,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             return result.Select(r => new ClassRequestItemDto
             {
                 Id = r.Id,
-                //LearnerEmail = r.LearnerEmail,
+                LearnerEmail = r.LearnerEmail,
                 AvatarUrl = r.LearnerEmailNavigation.UserProfile?.AvatarUrl,
                 LearnerName = r.LearnerEmailNavigation.UserName,
                 SubjectName = r.Subject.SubjectName,
