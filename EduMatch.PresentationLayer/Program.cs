@@ -50,7 +50,7 @@ builder.Services.AddSignalR();
 var app = builder.Build();
 
 app.MapHub<ChatHub>("/chatHub");
-
+app.MapHub<NotificationHub>("/notificationHub");
 // NHẬN header từ reverse proxy 
 app.UseForwardedHeaders(new ForwardedHeadersOptions {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
