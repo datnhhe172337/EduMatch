@@ -425,10 +425,10 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 
 			// SubDistrict mappings
 			CreateMap<SubDistrict, SubDistrictDto>();
-		
 
 
-        
+            CreateMap<Notification, NotificationDto>();
+
         }
     }
 }
