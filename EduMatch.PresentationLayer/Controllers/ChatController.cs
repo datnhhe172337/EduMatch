@@ -68,7 +68,9 @@ namespace EduMatch.PresentationLayer.Controllers
                 return BadRequest(ApiResponse<string>.Fail("Failed to load chat messages.", ex.Message));
             }
         }
-
+        /// <summary>
+        /// Gets an existing chat room or creates a new one.
+        /// </summary>
         [HttpPost("room")]
         [ProducesResponseType(typeof(ApiResponse<ChatRoom>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
