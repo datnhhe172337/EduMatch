@@ -15,7 +15,6 @@ public partial class EduMatchContext : DbContext
     {
     }
 
-
     public virtual DbSet<Bank> Banks { get; set; }
 
     public virtual DbSet<Booking> Bookings { get; set; }
@@ -32,18 +31,21 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<ClassRequestSlotsAvailability> ClassRequestSlotsAvailabilities { get; set; }
 
-
     public virtual DbSet<Deposit> Deposits { get; set; }
 
     public virtual DbSet<EducationInstitution> EducationInstitutions { get; set; }
 
     public virtual DbSet<FavoriteTutor> FavoriteTutors { get; set; }
 
+    public virtual DbSet<FeedbackCriterion> FeedbackCriteria { get; set; }
+
     public virtual DbSet<GoogleToken> GoogleTokens { get; set; }
 
     public virtual DbSet<Level> Levels { get; set; }
 
     public virtual DbSet<MeetingSession> MeetingSessions { get; set; }
+
+    public virtual DbSet<Notification> Notifications { get; set; }
 
     public virtual DbSet<Province> Provinces { get; set; }
 
@@ -69,6 +71,10 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<TutorEducation> TutorEducations { get; set; }
 
+    public virtual DbSet<TutorFeedback> TutorFeedbacks { get; set; }
+
+    public virtual DbSet<TutorFeedbackDetail> TutorFeedbackDetails { get; set; }
+
     public virtual DbSet<TutorProfile> TutorProfiles { get; set; }
 
     public virtual DbSet<TutorSubject> TutorSubjects { get; set; }
@@ -85,6 +91,9 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<Withdrawal> Withdrawals { get; set; }
 
+//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+//        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -364,8 +373,6 @@ public partial class EduMatchContext : DbContext
 
             entity.ToTable("deposits");
 
-            entity.HasIndex(e => e.GatewayTransactionCode, "UQ__deposits__24392C0D39A9253B").IsUnique();
-
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Amount)
                 .HasColumnType("decimal(18, 2)")
@@ -443,6 +450,19 @@ public partial class EduMatchContext : DbContext
                 .HasConstraintName("FK_favorite_tutors_users");
         });
 
+        modelBuilder.Entity<FeedbackCriterion>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Feedback__3214EC0700F318AC");
+
+            entity.HasIndex(e => e.Code, "UQ__Feedback__A25C5AA767EB3903").IsUnique();
+
+            entity.Property(e => e.Code).HasMaxLength(50);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Description).HasMaxLength(300);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Name).HasMaxLength(200);
+        });
+
         modelBuilder.Entity<GoogleToken>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__google_t__3213E83FBEA09237");
@@ -486,6 +506,8 @@ public partial class EduMatchContext : DbContext
 
             entity.ToTable("meeting_sessions");
 
+            entity.HasIndex(e => e.ScheduleId, "UQ_meeting_sessions_scheduleId").IsUnique();
+
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CreatedAt).HasColumnName("createdAt");
             entity.Property(e => e.EndTime).HasColumnName("endTime");
@@ -514,13 +536,38 @@ public partial class EduMatchContext : DbContext
 
             entity.HasOne(d => d.Schedule).WithOne(p => p.MeetingSession)
                 .HasForeignKey<MeetingSession>(d => d.ScheduleId)
+                .HasConstraintName("FK_meeting_sessions_schedule");
+        });
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.ToTable("notifications");
+
+            entity.HasIndex(e => new { e.UserEmail, e.IsRead }, "IX_notifications_user_isRead");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnType("datetime")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.IsRead).HasColumnName("isRead");
+            entity.Property(e => e.LinkUrl)
+                .HasMaxLength(500)
+                .HasColumnName("linkUrl");
+            entity.Property(e => e.Message)
+                .HasMaxLength(500)
+                .HasColumnName("message");
+            entity.Property(e => e.ReadAt)
+                .HasColumnType("datetime")
+                .HasColumnName("readAt");
+            entity.Property(e => e.UserEmail)
+                .HasMaxLength(100)
+                .HasColumnName("userEmail");
+
+            entity.HasOne(d => d.UserEmailNavigation).WithMany(p => p.Notifications)
+                .HasForeignKey(d => d.UserEmail)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Meeting_Schedule");
-            
-            // Ensure 1-1 relationship: ScheduleId must be unique
-            entity.HasIndex(e => e.ScheduleId)
-                .IsUnique()
-                .HasDatabaseName("IX_MeetingSession_ScheduleId");
+                .HasConstraintName("FK_notifications_users");
         });
 
         modelBuilder.Entity<Province>(entity =>
@@ -799,6 +846,33 @@ public partial class EduMatchContext : DbContext
                 .HasConstraintName("FK__tutor_edu__tutor__6A30C649");
         });
 
+        modelBuilder.Entity<TutorFeedback>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TutorFee__3214EC07BA27576C");
+
+            entity.ToTable("TutorFeedback");
+
+            entity.HasIndex(e => new { e.BookingId, e.LearnerEmail, e.TutorId }, "UQ_TutorFeedback").IsUnique();
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.LearnerEmail).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<TutorFeedbackDetail>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TutorFee__3214EC077C9D771F");
+
+            entity.HasOne(d => d.Criterion).WithMany(p => p.TutorFeedbackDetails)
+                .HasForeignKey(d => d.CriterionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TutorFeedbackDetails_Criteria");
+
+            entity.HasOne(d => d.Feedback).WithMany(p => p.TutorFeedbackDetails)
+                .HasForeignKey(d => d.FeedbackId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TutorFeedbackDetails_Feedback");
+        });
+
         modelBuilder.Entity<TutorProfile>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__tutor_pr__3213E83F924DBCEA");
@@ -1032,8 +1106,7 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.ReferenceCode)
                 .HasMaxLength(100)
                 .HasColumnName("referenceCode");
-            entity.Property(e => e.Status)
-                .HasColumnName("status");
+            entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.TransactionType).HasColumnName("transactionType");
             entity.Property(e => e.WalletId).HasColumnName("walletId");
             entity.Property(e => e.WithdrawalId).HasColumnName("withdrawalId");
@@ -1091,30 +1164,6 @@ public partial class EduMatchContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_withdrawals_wallets");
         });
-
-        modelBuilder.Entity<Bank>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__banks__3213E83FD8904DBA");
-
-            entity.ToTable("banks");
-
-            entity.HasIndex(e => e.Code, "UQ__banks__357D4CF9377AEDED").IsUnique();
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Code)
-                .HasMaxLength(50)
-                .HasColumnName("code");
-            entity.Property(e => e.LogoUrl)
-                .HasMaxLength(255)
-                .HasColumnName("logoUrl");
-            entity.Property(e => e.Name)
-                .HasMaxLength(200)
-                .HasColumnName("name");
-            entity.Property(e => e.ShortName)
-                .HasMaxLength(100)
-                .HasColumnName("shortName");
-        });
-
 
         OnModelCreatingPartial(modelBuilder);
     }
