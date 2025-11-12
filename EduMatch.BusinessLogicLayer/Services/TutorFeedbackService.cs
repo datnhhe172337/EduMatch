@@ -177,7 +177,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         {
             var feedback = await _repo.GetFeedbackByBookingAsync(request.BookingId, learnerEmail, request.TutorId);
             if (feedback == null)
-                throw new InvalidOperationException("Khong tim thay feedback");
+                throw new InvalidOperationException("Không tìm thấy feedback");
 
             if(feedback.UpdatedAt != null || (DateTime.UtcNow - feedback.CreatedAt).TotalHours > 48)
                 throw new InvalidOperationException("Bạn không được phép cập nhật feedback nữa");
