@@ -41,7 +41,8 @@ namespace EduMatch.BusinessLogicLayer.Services
                 TutorId = request.TutorId,
                 Comment = request.Comment,
                 OverallRating = overall,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = null
             };
 
             await _repo.AddFeedbackAsync(feedback);
@@ -170,6 +171,50 @@ namespace EduMatch.BusinessLogicLayer.Services
                     Rating = d.Rating
                 }).ToList()
             }).ToList();
+        }
+
+        public async Task<TutorFeedbackDto> UpdateFeedbackAsync(UpdateTutorFeedbackRequest request, string learnerEmail)
+        {
+            var feedback = await _repo.GetFeedbackByBookingAsync(request.BookingId, learnerEmail, request.TutorId);
+            if (feedback == null)
+                throw new InvalidOperationException("Khong tim thay feedback");
+
+            if(feedback.UpdatedAt != null || (DateTime.UtcNow - feedback.CreatedAt).TotalHours > 48)
+                throw new InvalidOperationException("Bạn không được phép cập nhật feedback nữa");
+
+            feedback.Comment = request.Comment;
+            feedback.OverallRating = request.FeedbackDetails.Average(d => d.Rating);
+            feedback.UpdatedAt = DateTime.UtcNow;
+
+            var oldDetails = feedback.TutorFeedbackDetails.ToList();
+
+            await _repo.RemoveFeedbackDetailsAsync(oldDetails);
+
+            feedback.TutorFeedbackDetails = request.FeedbackDetails.Select(d => new TutorFeedbackDetail
+            {
+                CriterionId = d.CriterionId,
+                Rating = d.Rating
+            }).ToList();
+
+            await _repo.UpdateFeedbackAsync(feedback);
+
+            return new TutorFeedbackDto
+            {
+                Id = feedback.Id,
+                BookingId = feedback.BookingId,
+                TutorId = feedback.TutorId,
+                LearnerEmail = feedback.LearnerEmail,
+                Comment = feedback.Comment,
+                OverallRating = feedback.OverallRating,
+                CreatedAt = feedback.CreatedAt,
+                UpdateAt = feedback.UpdatedAt,
+                FeedbackDetails = feedback.TutorFeedbackDetails.Select(d => new TutorFeedbackDetailDto
+                {
+                    CriterionId = d.CriterionId,
+                    CriteriaName = d.Criterion?.Name ?? "(Unknown)",
+                    Rating = d.Rating
+                }).ToList()
+            };
         }
     }
 }

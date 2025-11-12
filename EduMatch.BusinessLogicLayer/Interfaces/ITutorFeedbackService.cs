@@ -16,6 +16,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task<List<FeedbackCriterion>> GetAllCriteriaAsync();
         Task<List<TutorFeedbackDto>> GetAllFeedbacksAsync();
         Task<TutorFeedbackDto> GetFeedbackByIdAsync(int feedbackId);
+        Task<TutorFeedbackDto> UpdateFeedbackAsync(UpdateTutorFeedbackRequest request, string learnerEmail);
     }
 
 }

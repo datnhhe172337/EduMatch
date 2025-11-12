@@ -102,5 +102,17 @@ namespace EduMatch.DataAccessLayer.Repositories
             .OrderByDescending(f => f.CreatedAt)
             .ToListAsync();
         }
+
+        public async Task UpdateFeedbackAsync(TutorFeedback feedback)
+        {
+            _context.TutorFeedbacks.Update(feedback);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task RemoveFeedbackDetailsAsync(IEnumerable<TutorFeedbackDetail> details)
+        {
+            _context.TutorFeedbackDetails.RemoveRange(details);
+            await _context.SaveChangesAsync();
+        }
     }
 }

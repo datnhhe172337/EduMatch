@@ -15,6 +15,7 @@ namespace EduMatch.BusinessLogicLayer.DTOs
         public double OverallRating { get; set; }
         public string? Comment { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
         public List<TutorFeedbackDetailDto> FeedbackDetails { get; set; } = new();
     }
     public class TutorFeedbackDetailDto

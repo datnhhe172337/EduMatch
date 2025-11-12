@@ -21,5 +21,7 @@ namespace EduMatch.DataAccessLayer.Interfaces
         Task<List<TutorFeedback>> GetFeedbackByLearnerEmailAsync(string learnerEmail);
         Task<List<TutorFeedback>> GetFeedbackByTutorIdAsync(int tutorId);
         Task<List<TutorFeedback>> GetAllFeedbacksAsync();
+        Task UpdateFeedbackAsync(TutorFeedback feedback);
+        Task RemoveFeedbackDetailsAsync(IEnumerable<TutorFeedbackDetail> details);
     }
 }

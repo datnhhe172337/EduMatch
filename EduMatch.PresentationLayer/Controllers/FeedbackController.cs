@@ -31,7 +31,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
                 var learnerEmail = User.FindFirst(ClaimTypes.Email)?.Value;
                 if (string.IsNullOrEmpty(learnerEmail))
-                    return Unauthorized(new { Message = "User authentication failed." });
+                    return Unauthorized(ApiResponse<string>.Fail("Không lấy được email người dùng"));
 
                 var result = await _feedbackService.CreateFeedbackAsync(request, learnerEmail);
                 return Ok(ApiResponse<TutorFeedbackDto>.Ok(result, "Gửi feedback gia sư thành công."));
@@ -101,6 +101,33 @@ namespace EduMatch.PresentationLayer.Controllers
         {
             var feedbacks = await _feedbackService.GetAllFeedbacksAsync();
             return Ok(ApiResponse<List<TutorFeedbackDto>>.Ok(feedbacks, "Lấy tất cả feedback thành công"));
+        }
+
+        [Authorize(Roles = "Learner")]
+        [HttpPut("Update-Feedback")]
+        public async Task<IActionResult> UpdateFeedback(UpdateTutorFeedbackRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var learnerEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+                if (string.IsNullOrEmpty(learnerEmail))
+                    return Unauthorized(ApiResponse<string>.Fail("Không lấy được email người dùng"));
+
+                var result = await _feedbackService.UpdateFeedbackAsync(request, learnerEmail);
+
+                return Ok(ApiResponse<TutorFeedbackDto>.Ok(result, "Cập nhật feedback thành công"));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.Fail("Đã xảy ra lỗi hệ thống: " + ex.Message));
+            }
         }
     }
 }
