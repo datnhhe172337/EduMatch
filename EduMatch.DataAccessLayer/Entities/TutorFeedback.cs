@@ -18,6 +18,7 @@ public partial class TutorFeedback
     public string? Comment { get; set; }
 
     public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     public virtual ICollection<TutorFeedbackDetail> TutorFeedbackDetails { get; set; } = new List<TutorFeedbackDetail>();
 }
