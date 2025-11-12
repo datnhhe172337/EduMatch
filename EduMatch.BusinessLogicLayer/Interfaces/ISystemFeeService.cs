@@ -35,5 +35,9 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// Xóa SystemFee theo ID
         /// </summary>
         Task DeleteAsync(int id);
+        /// <summary>
+        /// Lấy SystemFee đang hoạt động (IsActive = true), lấy giá trị đầu tiên
+        /// </summary>
+        Task<SystemFeeDto?> GetActiveSystemFeeAsync();
     }
 }

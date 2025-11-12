@@ -20,17 +20,20 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IMapper _mapper;
         private readonly ITutorProfileRepository _tutorProfileRepository;
         private readonly ITimeSlotRepository _timeSlotRepository;
+        private readonly IScheduleRepository _scheduleRepository;
 
         public TutorAvailabilityService(
             ITutorAvailabilityRepository repository,
             IMapper mapper,
             ITimeSlotRepository timeSlotRepository,
-            ITutorProfileRepository tutorProfileRepository)
+            ITutorProfileRepository tutorProfileRepository,
+            IScheduleRepository scheduleRepository)
         {
             _repository = repository;
             _mapper = mapper;
             _timeSlotRepository = timeSlotRepository;
             _tutorProfileRepository = tutorProfileRepository;
+            _scheduleRepository = scheduleRepository;
         }
 
         /// <summary>
@@ -38,6 +41,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<TutorAvailabilityDto?> GetByIdFullAsync(int id)
         {
+            if (id <= 0)
+                throw new ArgumentException("ID must be greater than 0");
             var entity = await _repository.GetByIdFullAsync(id);
             return entity != null ? _mapper.Map<TutorAvailabilityDto>(entity) : null;
         }
@@ -47,6 +52,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByTutorIdAsync(int tutorId)
         {
+            if (tutorId <= 0)
+                throw new ArgumentException("TutorId must be greater than 0");
             var entities = await _repository.GetByTutorIdAsync(tutorId);
             return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
         }
@@ -56,6 +63,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<IReadOnlyList<TutorAvailabilityDto>> GetByTutorIdFullAsync(int tutorId)
         {
+            if (tutorId <= 0)
+                throw new ArgumentException("TutorId must be greater than 0");
             var entities = await _repository.GetByTutorIdFullAsync(tutorId);
             return _mapper.Map<IReadOnlyList<TutorAvailabilityDto>>(entities);
         }
@@ -92,12 +101,17 @@ namespace EduMatch.BusinessLogicLayer.Services
 				if (timeSlot is null)
 					throw new ArgumentException($"timeSlot with ID {request.SlotId} not found.");
 
-				// Kiểm tra trùng: cùng TutorId + cùng ngày (Date) + cùng SlotId đã tồn tại
+                // Kiểm tra trùng: cùng TutorId + cùng ngày (Date) + cùng SlotId đã tồn tại
 				var desiredDate = request.StartDate.Date;
 				var existingForTutor = await _repository.GetByTutorIdAsync(request.TutorId);
 				var isDuplicate = existingForTutor.Any(a => a.SlotId == request.SlotId && a.StartDate.Date == desiredDate);
 				if (isDuplicate)
 					throw new InvalidOperationException("TutorAvailability đã tồn tại cho ngày và slot này");
+
+                // Kiểm tra xung đột với lịch học (Schedule) hiện có của tutor
+                var hasScheduleConflict = await _scheduleRepository.HasTutorScheduleOnSlotDateAsync(request.TutorId, request.SlotId, desiredDate);
+                if (hasScheduleConflict)
+                    throw new InvalidOperationException($"Lịch dạy của gia sư trùng với lịch học đã đặt: ngày {desiredDate:dd/MM/yyyy}, khung {timeSlot.StartTime:hh\\:mm}-{timeSlot.EndTime:hh\\:mm} (SlotId {request.SlotId})");
 
 				var entity = new TutorAvailability
 				{
@@ -151,12 +165,17 @@ namespace EduMatch.BusinessLogicLayer.Services
 				if (timeSlot is null)
 					throw new ArgumentException($"timeSlot with ID {request.SlotId} not found.");
 
-				// Kiểm tra trùng trước khi set ngày/giờ mới
+                // Kiểm tra trùng trước khi set ngày/giờ mới
 				var desiredDate = request.StartDate.Date;
 				var existingForTutor = await _repository.GetByTutorIdAsync(request.TutorId);
 				var isDuplicate = existingForTutor.Any(a => a.Id != request.Id && a.SlotId == request.SlotId && a.StartDate.Date == desiredDate);
 				if (isDuplicate)
 					throw new InvalidOperationException("TutorAvailability đã tồn tại cho ngày và slot này");
+
+                // Kiểm tra xung đột với lịch học (Schedule) hiện có của tutor
+                var hasScheduleConflict = await _scheduleRepository.HasTutorScheduleOnSlotDateAsync(request.TutorId, request.SlotId, desiredDate);
+                if (hasScheduleConflict)
+                    throw new InvalidOperationException($"Lịch dạy của gia sư trùng với lịch học đã đặt: ngày {desiredDate:dd/MM/yyyy}, khung {timeSlot.StartTime:hh\\:mm}-{timeSlot.EndTime:hh\\:mm} (SlotId {request.SlotId})");
 
 				existingEntity.StartDate = request.StartDate.Date.Add(timeSlot.StartTime.ToTimeSpan());
 				existingEntity.EndDate = request.StartDate.Date.Add(timeSlot.EndTime.ToTimeSpan());
@@ -194,11 +213,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             }
         }
 
+
         /// <summary>
         /// Cập nhật trạng thái của TutorAvailability (Available/Booked/InProgress/Cancelled)
         /// </summary>
         public async Task<TutorAvailabilityDto> UpdateStatusAsync(int id, TutorAvailabilityStatus status)
         {
+            if (id <= 0)
+                throw new ArgumentException("ID must be greater than 0");
             var existingEntity = await _repository.GetByIdFullAsync(id)
                 ?? throw new ArgumentException($"Tutor availability with ID {id} not found");
 
@@ -214,6 +236,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task DeleteAsync(int id)
         {
+            if (id <= 0)
+                throw new ArgumentException("ID must be greater than 0");
             await _repository.RemoveByIdAsync(id);
         }
 

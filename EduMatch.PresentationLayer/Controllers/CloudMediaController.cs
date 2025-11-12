@@ -1,6 +1,11 @@
 ﻿using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.Requests.Cloudinary;
 using EduMatch.BusinessLogicLayer.Requests.Common;
+using EduMatch.BusinessLogicLayer.Services;
+using EduMatch.BusinessLogicLayer.Utils;
 using EduMatch.DataAccessLayer.Enum;
+using EduMatch.PresentationLayer.Common;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
@@ -11,90 +16,115 @@ namespace EduMatch.PresentationLayer.Controllers
 	[ApiController]
 	public class CloudMediaController : ControllerBase
 	{
-		//private readonly ICloudMediaService _cloudService;
+		private readonly ICloudMediaService _cloudService;
+		private readonly CurrentUserService _currentUserService;
+		private readonly IMediaValidator _mediaValidator;
 
-		//public CloudMediaController(ICloudMediaService cloudService)
-		//{
-		//	_cloudService = cloudService;
-		//}
+		public CloudMediaController(ICloudMediaService cloudService, CurrentUserService currentUserService, IMediaValidator mediaValidator )
+		{
+			_cloudService = cloudService;
+			_currentUserService = currentUserService;
+			_mediaValidator = mediaValidator;
 
-		///// <summary>
-		///// Upload file từ máy người dùng (multipart/form-data)
-		///// </summary>
-		//[HttpPost("upload")]
-		//[Consumes("multipart/form-data")] // 👈 bắt buộc để swagger biết đây là form upload
-		//public async Task<IActionResult> Upload([FromForm] UploadMediaFormRequest request)
-		//{
-		//	if (request.File == null || request.File.Length == 0)
-		//		return BadRequest("File rỗng hoặc không tồn tại");
+		}
 
-		//	using var stream = request.File.OpenReadStream();
+		/// <summary>
+		/// Upload media file to cloud storage
+		/// </summary>
+		[Authorize]		
+		[HttpPost("upload")]
+		[Consumes("multipart/form-data")]
+		public async Task<IActionResult> Upload([FromForm] UploadMediaFormRequest request, CancellationToken ct)
+		{
+			try
+			{
+				if (request?.File == null || request.File.Length == 0)
+					return BadRequest(ApiResponse<string>.Fail("File rỗng hoặc không tồn tại"));
 
-		//	var uploadRequest = new UploadToCloudRequest(
-		//		Content: stream,
-		//		FileName: request.File.FileName,
-		//		ContentType: request.File.ContentType ?? "application/octet-stream",
-		//		LengthBytes: request.File.Length,
-		//		OwnerEmail: request.OwnerEmail,
-		//		MediaType: request.MediaType
-		//	);
+				if (string.IsNullOrWhiteSpace(_currentUserService.Email))
+					return BadRequest(ApiResponse<string>.Fail("User email is missing"));
 
-		//	var result = await _cloudService.UploadAsync(uploadRequest);
-		//	return Ok(result);
-		//}
+				// Mở stream 1 lần và dùng nó cho validate + upload
+				await using var stream = request.File.OpenReadStream();
 
-		///// <summary>
-		///// Upload file từ một URL có sẵn (link ảnh hoặc video)
-		///// </summary>
-		//[HttpPost("upload-from-url")]
-		//public async Task<IActionResult> UploadFromUrl([FromBody] UploadFromUrlDto dto)
-		//{
-		//	if (string.IsNullOrWhiteSpace(dto.FileUrl))
-		//		return BadRequest("FileUrl không hợp lệ");
+				var uploadRequest = new UploadToCloudRequest(
+					Content: stream,
+					FileName: request.File.FileName,
+					ContentType: request.File.ContentType ?? "application/octet-stream",
+					LengthBytes: request.File.Length,
+					OwnerEmail: _currentUserService.Email,
+					MediaType: request.MediaType
+				);
 
-		//	var result = await _cloudService.UploadFromUrlAsync(
-		//		dto.FileUrl,
-		//		dto.OwnerEmail
-		//	);
+				// Gọi validator (sẽ đọc config từ IOptionsMonitor bên trong validator)
+				await _mediaValidator.ValidateAsync(uploadRequest, ct);
 
-		//	return Ok(result);
-		//}
+				//  đảm bảo pointer ở đầu trước khi upload
+				if (stream.CanSeek) stream.Position = 0;
 
-		///// <summary>
-		///// Xoá file theo publicId
-		///// </summary>
-		//[HttpDelete("{publicId}")]
-		//public async Task<IActionResult> Delete(string publicId, [FromQuery] MediaType mediaType)
-		//{
-		//	if (string.IsNullOrWhiteSpace(publicId))
-		//		return BadRequest("Thiếu publicId");
+				// Gọi service upload (service có thể gọi validator lại; chấp nhận được)
+				var result = await _cloudService.UploadAsync(uploadRequest, ct);
 
-		//	var result = await _cloudService.DeleteByPublicIdAsync(publicId, mediaType);
-		//	return Ok(result);
-		//}
+				if (result.Ok)
+					return Ok(ApiResponse<object>.Ok(result, "Upload thành công"));
+
+				return BadRequest(ApiResponse<string>.Fail(result.ErrorMessage ?? "Upload thất bại"));
+
+			}
+			catch (InvalidOperationException ioe)
+			{
+				// validator sẽ ném InvalidOperationException cho các rule invalid
+				return BadRequest(ApiResponse<string>.Fail(ioe.Message));
+			}
+			catch (Exception ex)
+			{
+				// fallback
+				return StatusCode(500, ApiResponse<string>.Fail("Đã xảy ra lỗi khi upload file", ex.Message));
+			}
+		}
+
 	}
 
 	/// <summary>
-	/// DTO upload file từ form-data
+	/// Upload file từ một URL có sẵn (link ảnh hoặc video)
 	/// </summary>
-	//public class UploadMediaFormRequest
+	//[HttpPost("upload-from-url")]
+	//public async Task<IActionResult> UploadFromUrl([FromBody] UploadFromUrlDto dto)
 	//{
-	//	[Required]
-	//	public IFormFile File { get; set; } = default!;
+	//	if (string.IsNullOrWhiteSpace(dto.FileUrl))
+	//		return BadRequest("FileUrl không hợp lệ");
 
-	//	[Required]
-	//	public string OwnerEmail { get; set; } = string.Empty;
+	//	var result = await _cloudService.UploadFromUrlAsync(
+	//		dto.FileUrl,
+	//		dto.OwnerEmail
+	//	);
 
-	//	[Required]
-	//	public MediaType MediaType { get; set; }
+	//	return Ok(result);
 	//}
 
-	///// <summary>
-	///// DTO hỗ trợ upload từ URL
-	///// </summary>
+	/// <summary>
+	/// Xoá file theo publicId
+	/// </summary>
+	//[HttpDelete("{publicId}")]
+	//public async Task<IActionResult> Delete(string publicId, [FromQuery] MediaType mediaType)
+	//{
+	//	if (string.IsNullOrWhiteSpace(publicId))
+	//		return BadRequest("Thiếu publicId");
+
+	//	var result = await _cloudService.DeleteByPublicIdAsync(publicId, mediaType);
+	//	return Ok(result);
+	//}
+}
+
+
+	
+
+	/// <summary>
+	/// DTO hỗ trợ upload từ URL
+	/// </summary>
 	//public class UploadFromUrlDto
 	//{
 	//	public string FileUrl { get; set; } = string.Empty;
 	//	public string OwnerEmail { get; set; } = string.Empty;
 	//}
-}
+

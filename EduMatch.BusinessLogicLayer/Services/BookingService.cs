@@ -9,7 +9,6 @@ using EduMatch.BusinessLogicLayer.Requests.Booking;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
-using Microsoft.EntityFrameworkCore;
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
@@ -20,7 +19,10 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly ISystemFeeRepository _systemFeeRepository;
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
-        private readonly EduMatchContext _context;
+        private readonly IScheduleRepository _scheduleRepository;
+        private readonly IMeetingSessionRepository _meetingSessionRepository;
+        private readonly ITutorAvailabilityRepository _tutorAvailabilityRepository;
+        private readonly IGoogleCalendarService _googleCalendarService;
 
         public BookingService(
             IBookingRepository bookingRepository,
@@ -28,42 +30,56 @@ namespace EduMatch.BusinessLogicLayer.Services
             ISystemFeeRepository systemFeeRepository,
             IUserRepository userRepository,
             IMapper mapper,
-            EduMatchContext context)
+            IScheduleRepository scheduleRepository,
+            IMeetingSessionRepository meetingSessionRepository,
+            ITutorAvailabilityRepository tutorAvailabilityRepository,
+            IGoogleCalendarService googleCalendarService)
         {
             _bookingRepository = bookingRepository;
             _tutorSubjectRepository = tutorSubjectRepository;
             _systemFeeRepository = systemFeeRepository;
             _userRepository = userRepository;
             _mapper = mapper;
-            _context = context;
+            _scheduleRepository = scheduleRepository;
+            _meetingSessionRepository = meetingSessionRepository;
+            _tutorAvailabilityRepository = tutorAvailabilityRepository;
+            _googleCalendarService = googleCalendarService;
         }
 
         /// <summary>
         /// Lấy danh sách Booking theo learnerEmail với phân trang và lọc theo status, tutorSubjectId
         /// </summary>
-        public async Task<List<BookingDto>> GetAllByLearnerEmailAsync(string email, int? status, int? tutorSubjectId, int page = 1, int pageSize = 10)
+        public async Task<List<BookingDto>> GetAllByLearnerEmailAsync(string email, BookingStatus? status, int? tutorSubjectId, int page = 1, int pageSize = 10)
         {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new Exception("Email không được để trống");
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
-            var entities = await _bookingRepository.GetAllByLearnerEmailAsync(email, status, tutorSubjectId, page, pageSize);
+            int? statusInt = status.HasValue ? (int?)status.Value : null;
+            var entities = await _bookingRepository.GetAllByLearnerEmailAsync(email, statusInt, tutorSubjectId, page, pageSize);
             return _mapper.Map<List<BookingDto>>(entities);
         }
 
         /// <summary>
         /// Đếm tổng số Booking theo learnerEmail với lọc theo status, tutorSubjectId
         /// </summary>
-        public Task<int> CountByLearnerEmailAsync(string email, int? status, int? tutorSubjectId)
+        public Task<int> CountByLearnerEmailAsync(string email, BookingStatus? status, int? tutorSubjectId)
         {
-            return _bookingRepository.CountByLearnerEmailAsync(email, status, tutorSubjectId);
+            if (string.IsNullOrWhiteSpace(email))
+                throw new Exception("Email không được để trống");
+            int? statusInt = status.HasValue ? (int?)status.Value : null;
+            return _bookingRepository.CountByLearnerEmailAsync(email, statusInt, tutorSubjectId);
         }
 
         /// <summary>
         /// Lấy danh sách Booking theo learnerEmail (không phân trang)
         /// </summary>
-
-        public async Task<List<BookingDto>> GetAllByLearnerEmailNoPagingAsync(string email, int? status, int? tutorSubjectId)
+        public async Task<List<BookingDto>> GetAllByLearnerEmailNoPagingAsync(string email, BookingStatus? status, int? tutorSubjectId)
         {
-            var entities = await _bookingRepository.GetAllByLearnerEmailNoPagingAsync(email, status, tutorSubjectId);
+            if (string.IsNullOrWhiteSpace(email))
+                throw new Exception("Email không được để trống");
+            int? statusInt = status.HasValue ? (int?)status.Value : null;
+            var entities = await _bookingRepository.GetAllByLearnerEmailNoPagingAsync(email, statusInt, tutorSubjectId);
             return _mapper.Map<List<BookingDto>>(entities);
         }
 
@@ -71,28 +87,37 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// <summary>
         /// Lấy danh sách Booking theo tutorId với phân trang và lọc theo status, tutorSubjectId
         /// </summary>
-        public async Task<List<BookingDto>> GetAllByTutorIdAsync(int tutorId, int? status, int? tutorSubjectId, int page = 1, int pageSize = 10)
+        public async Task<List<BookingDto>> GetAllByTutorIdAsync(int tutorId, BookingStatus? status, int? tutorSubjectId, int page = 1, int pageSize = 10)
         {
+            if (tutorId <= 0)
+                throw new Exception("TutorId phải lớn hơn 0");
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
-            var entities = await _bookingRepository.GetAllByTutorIdAsync(tutorId, status, tutorSubjectId, page, pageSize);
+            int? statusInt = status.HasValue ? (int?)status.Value : null;
+            var entities = await _bookingRepository.GetAllByTutorIdAsync(tutorId, statusInt, tutorSubjectId, page, pageSize);
             return _mapper.Map<List<BookingDto>>(entities);
         }
 
         /// <summary>
         /// Đếm tổng số Booking theo tutorId với lọc theo status, tutorSubjectId
         /// </summary>
-        public Task<int> CountByTutorIdAsync(int tutorId, int? status, int? tutorSubjectId)
+        public Task<int> CountByTutorIdAsync(int tutorId, BookingStatus? status, int? tutorSubjectId)
         {
-            return _bookingRepository.CountByTutorIdAsync(tutorId, status, tutorSubjectId);
+            if (tutorId <= 0)
+                throw new Exception("TutorId phải lớn hơn 0");
+            int? statusInt = status.HasValue ? (int?)status.Value : null;
+            return _bookingRepository.CountByTutorIdAsync(tutorId, statusInt, tutorSubjectId);
         }
 
         /// <summary>
         /// Lấy danh sách Booking theo tutorId (không phân trang)
         /// </summary>
-        public async Task<List<BookingDto>> GetAllByTutorIdNoPagingAsync(int tutorId, int? status, int? tutorSubjectId)
+        public async Task<List<BookingDto>> GetAllByTutorIdNoPagingAsync(int tutorId, BookingStatus? status, int? tutorSubjectId)
         {
-            var entities = await _bookingRepository.GetAllByTutorIdNoPagingAsync(tutorId, status, tutorSubjectId);
+            if (tutorId <= 0)
+                throw new Exception("TutorId phải lớn hơn 0");
+            int? statusInt = status.HasValue ? (int?)status.Value : null;
+            var entities = await _bookingRepository.GetAllByTutorIdNoPagingAsync(tutorId, statusInt, tutorSubjectId);
             return _mapper.Map<List<BookingDto>>(entities);
         }
 
@@ -101,6 +126,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<BookingDto?> GetByIdAsync(int id)
         {
+            if (id <= 0)
+                throw new Exception("Id phải lớn hơn 0");
             var entity = await _bookingRepository.GetByIdAsync(id);
             return entity == null ? null : _mapper.Map<BookingDto>(entity);
         }
@@ -125,14 +152,10 @@ namespace EduMatch.BusinessLogicLayer.Services
             var totalSessions = request.TotalSessions ?? 1;
 
             // Get active SystemFee
-            var now = DateTime.UtcNow;
-            var activeSystemFee = await _context.SystemFees
-                .Where(sf => sf.IsActive == true 
-                    && sf.EffectiveFrom <= now 
-                    && (sf.EffectiveTo == null || sf.EffectiveTo >= now))
-                .OrderByDescending(sf => sf.EffectiveFrom)
-                .FirstOrDefaultAsync()
+            var activeSystemFee = await _systemFeeRepository.GetActiveSystemFeeAsync()
                 ?? throw new Exception("Không tìm thấy SystemFee đang hoạt động");
+
+            var now = DateTime.UtcNow;
 
             // Calculate base amount (tổng đơn hàng)
             var baseAmount = unitPrice * totalSessions;
@@ -231,22 +254,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 // TotalAmount giữ nguyên giá gốc, không cộng phí
                 entity.TotalAmount = baseAmount;
             }
-
-            if (request.PaymentStatus.HasValue)
-                entity.PaymentStatus = (int)request.PaymentStatus.Value;
-
-            if (request.RefundedAmount.HasValue)
-            {
-                if (request.RefundedAmount.Value < 0)
-                    throw new Exception("RefundedAmount không được âm");
-                if (request.RefundedAmount.Value > entity.TotalAmount)
-                    throw new Exception("RefundedAmount không được vượt quá TotalAmount");
-                entity.RefundedAmount = request.RefundedAmount.Value;
-            }
-
-            if (request.Status.HasValue)
-                entity.Status = (int)request.Status.Value;
-
+            
             entity.UpdatedAt = DateTime.UtcNow;
 
             await _bookingRepository.UpdateAsync(entity);
@@ -276,7 +284,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
-        /// Cập nhật Status của Booking
+        /// Cập nhật Status của Booking. Nếu status là Cancelled thì hủy tất cả Schedule liên quan
         /// </summary>
         public async Task<BookingDto> UpdateStatusAsync(int id, BookingStatus status)
         {
@@ -286,7 +294,57 @@ namespace EduMatch.BusinessLogicLayer.Services
             entity.Status = (int)status;
             entity.UpdatedAt = DateTime.UtcNow;
             await _bookingRepository.UpdateAsync(entity);
+
+            // Nếu status là Cancelled thì hủy tất cả Schedule liên quan
+            if (status == BookingStatus.Cancelled)
+            {
+                await CancelAllSchedulesByBookingAsync(id);
+            }
+
             return _mapper.Map<BookingDto>(entity);
+        }
+
+        /// <summary>
+        /// Hủy toàn bộ Schedule theo bookingId: set Status=Cancelled, xóa MeetingSession (bao gồm Google Calendar event), trả Availability về Available
+        /// </summary>
+        private async Task CancelAllSchedulesByBookingAsync(int bookingId)
+        {
+            var schedules = (await _scheduleRepository.GetAllByBookingIdOrderedAsync(bookingId)).ToList();
+            foreach (var schedule in schedules)
+            {
+                // Delete meeting session first (includes Google event deletion)
+                var meetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(schedule.Id);
+                if (meetingSession != null)
+                {
+                    // Xóa Google Calendar event nếu có
+                    if (!string.IsNullOrEmpty(meetingSession.EventId))
+                    {
+                        try
+                        {
+                            await _googleCalendarService.DeleteEventAsync(meetingSession.EventId);
+                        }
+                        catch
+                        {
+                            // Log error but continue
+                        }
+                    }
+                    // Xóa meeting session
+                    await _meetingSessionRepository.DeleteAsync(meetingSession.Id);
+                }
+
+                // Mark schedule as cancelled
+                schedule.Status = (int)ScheduleStatus.Cancelled;
+                schedule.UpdatedAt = DateTime.UtcNow;
+                await _scheduleRepository.UpdateAsync(schedule);
+
+                // Return availability to Available
+                var availability = await _tutorAvailabilityRepository.GetByIdFullAsync(schedule.AvailabilitiId);
+                if (availability != null)
+                {
+                    availability.Status = (int)TutorAvailabilityStatus.Available;
+                    await _tutorAvailabilityRepository.UpdateAsync(availability);
+                }
+            }
         }
     }
 }

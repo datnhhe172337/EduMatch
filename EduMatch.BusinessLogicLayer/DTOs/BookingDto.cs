@@ -20,6 +20,9 @@ namespace EduMatch.BusinessLogicLayer.DTOs
 		public decimal RefundedAmount { get; set; }
 		public BookingStatus Status { get; set; }
 		public DateTime CreatedAt { get; set; }
+		public DateTime? UpdatedAt { get; set; }
+		public SystemFeeDto SystemFee { get; set; }
+		public decimal SystemFeeAmount { get; set; }
 
 		// Optional nested schedules
 		public List<ScheduleDto>? Schedules { get; set; }

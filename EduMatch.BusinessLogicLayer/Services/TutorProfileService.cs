@@ -44,6 +44,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<TutorProfileDto?> GetByIdFullAsync(int id)
 		{
+			if (id <= 0)
+				throw new ArgumentException("ID must be greater than 0");
 			var entity = await _tutorProfileRepository.GetByIdFullAsync(id);
 			return entity is null ? null : _mapper.Map<TutorProfileDto>(entity);
 		}
@@ -252,6 +254,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task DeleteAsync(int id)
 		{
+			if (id <= 0)
+				throw new ArgumentException("ID must be greater than 0");
 			await _tutorProfileRepository.RemoveByIdAsync(id);
 		}
 
