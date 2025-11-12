@@ -12,23 +12,23 @@ namespace EduMatch.BusinessLogicLayer.Services
 {
     public class UserProfileService : IUserProfileService
     {
-        private readonly UserProfileRepository _repo;
+        private readonly IUserProfileRepository _repo;
         private readonly IMapper _mapper;
         private readonly ICloudMediaService _cloudMedia;
-        private readonly CurrentUserService _currentUserService;
+       
         private readonly IUserService _userService;
      
         public UserProfileService( 
-            UserProfileRepository repo,
+            IUserProfileRepository repo,
             IMapper mapper,
             ICloudMediaService cloudMedia,
-            CurrentUserService currentUserService,
+          
             IUserService userService)
         {
             _repo = repo;
             _mapper = mapper;
             _cloudMedia = cloudMedia;
-            _currentUserService = currentUserService;
+            
             _userService = userService;
         }
 
