@@ -18,7 +18,6 @@ namespace EduMatch.BusinessLogicLayer.Services
     {
         private readonly string _apiKey;
         private readonly GenerativeModel _model;
-        private const int MaxRetries = 5; // Số lần thử lại tối đa
 
         public GeminiChatService(IOptions<GeminiSettings> options)
         {

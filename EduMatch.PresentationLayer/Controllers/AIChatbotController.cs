@@ -11,10 +11,12 @@ namespace EduMatch.PresentationLayer.Controllers
     public class AIChatbotController : ControllerBase
     {
         private readonly IGeminiChatService _gemini;
+        private readonly IEmbeddingService _embedding;
 
-        public AIChatbotController(IGeminiChatService gemini)
+        public AIChatbotController(IGeminiChatService gemini, IEmbeddingService embedding)
         {
             _gemini = gemini;
+            _embedding = embedding;
         }
 
         [HttpPost("chat")]
@@ -22,6 +24,11 @@ namespace EduMatch.PresentationLayer.Controllers
         {
             if (string.IsNullOrWhiteSpace(req.Message))
                 return BadRequest("Message is required");
+
+            // Step 2: Embedding
+            var vector = await _embedding.GenerateEmbeddingAsync(req.Message);
+            // Step 3: Vector DB search (top-k)
+
 
             var response = await _gemini.GenerateTextAsync(req.Message);
             var resp = new ChatResponseDto { Reply = response };
