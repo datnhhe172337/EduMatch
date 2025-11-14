@@ -37,6 +37,8 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<FavoriteTutor> FavoriteTutors { get; set; }
 
+    public virtual DbSet<FeedbackCriterion> FeedbackCriteria { get; set; }
+
     public virtual DbSet<GoogleToken> GoogleTokens { get; set; }
 
     public virtual DbSet<Level> Levels { get; set; }
@@ -68,6 +70,10 @@ public partial class EduMatchContext : DbContext
     public virtual DbSet<TutorCertificate> TutorCertificates { get; set; }
 
     public virtual DbSet<TutorEducation> TutorEducations { get; set; }
+
+    public virtual DbSet<TutorFeedback> TutorFeedbacks { get; set; }
+
+    public virtual DbSet<TutorFeedbackDetail> TutorFeedbackDetails { get; set; }
 
     public virtual DbSet<TutorProfile> TutorProfiles { get; set; }
 
@@ -442,6 +448,19 @@ public partial class EduMatchContext : DbContext
                 .HasForeignKey(d => d.UserEmail)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_favorite_tutors_users");
+        });
+
+        modelBuilder.Entity<FeedbackCriterion>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Feedback__3214EC0700F318AC");
+
+            entity.HasIndex(e => e.Code, "UQ__Feedback__A25C5AA767EB3903").IsUnique();
+
+            entity.Property(e => e.Code).HasMaxLength(50);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Description).HasMaxLength(300);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Name).HasMaxLength(200);
         });
 
         modelBuilder.Entity<GoogleToken>(entity =>
@@ -825,6 +844,33 @@ public partial class EduMatchContext : DbContext
                 .HasForeignKey(d => d.TutorId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__tutor_edu__tutor__6A30C649");
+        });
+
+        modelBuilder.Entity<TutorFeedback>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TutorFee__3214EC07BA27576C");
+
+            entity.ToTable("TutorFeedback");
+
+            entity.HasIndex(e => new { e.BookingId, e.LearnerEmail, e.TutorId }, "UQ_TutorFeedback").IsUnique();
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.LearnerEmail).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<TutorFeedbackDetail>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TutorFee__3214EC077C9D771F");
+
+            entity.HasOne(d => d.Criterion).WithMany(p => p.TutorFeedbackDetails)
+                .HasForeignKey(d => d.CriterionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TutorFeedbackDetails_Criteria");
+
+            entity.HasOne(d => d.Feedback).WithMany(p => p.TutorFeedbackDetails)
+                .HasForeignKey(d => d.FeedbackId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TutorFeedbackDetails_Feedback");
         });
 
         modelBuilder.Entity<TutorProfile>(entity =>

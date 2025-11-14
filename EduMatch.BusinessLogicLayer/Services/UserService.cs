@@ -413,6 +413,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             if (existing == null) return null; // invalid token
 
+            var user = await _userRepo.GetUserByEmailAsync(existing.UserEmail);
+            if (user == null)
+                return null;
+
             // Rotate: revoke existing and create new
             var newRefreshToken = GenerateRefreshToken();
             var newHash = ComputeSha256Hash(newRefreshToken);
@@ -424,7 +428,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             await _refreshRepo.UpdateRefreshTokenAsync(existing);
 
-            var access = GenerateJwtToken(existing.UserEmailNavigation);
+            var access = GenerateJwtToken(user);
 
             return new LoginResponseDto
             {
