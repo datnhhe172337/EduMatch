@@ -107,6 +107,8 @@ namespace EduMatch.DataAccessLayer.Repositories
             return await _context.ClassRequests
                 .Include(r => r.Subject)
                 .Include(r => r.Level)
+                .Include(t => t.LearnerEmailNavigation)
+                    .ThenInclude(u => u.UserProfile)
                 .Where(x => x.LearnerEmail == learnerEmail)
                 .OrderByDescending(u => u.CreatedAt)
                 .ToListAsync();
