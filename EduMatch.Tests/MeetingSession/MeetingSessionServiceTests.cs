@@ -159,7 +159,7 @@ namespace EduMatch.Tests
 		private static IEnumerable<TestCaseData> CreateAsyncTestCases()
 		{
 			// Valid case
-			var validSchedule = FakeDataFactory.CreateFakeSchedule(1, 1, 1) as ScheduleEntity;
+			var validSchedule = FakeDataFactory.CreateFakeSchedule(1, 1, 1);
 			var validGoogleToken = FakeDataFactory.CreateFakeGoogleToken("system@edumatch.com");
 			var validGoogleResponse = new GoogleEventCreatedResponse
 			{
@@ -208,7 +208,7 @@ namespace EduMatch.Tests
 		[TestCaseSource(nameof(CreateAsyncTestCases))]
 		public async Task CreateAsync_WithVariousScenarios_HandlesCorrectly(
 			MeetingSessionCreateRequest request,
-			ScheduleEntity? schedule,
+			Schedule? schedule,
 			MeetingSession? existingMeetingSession,
 			GoogleToken? googleToken,
 			GoogleEventCreatedResponse? googleEventResponse,
@@ -236,7 +236,7 @@ namespace EduMatch.Tests
 					{
 						_scheduleRepositoryMock
 							.Setup(r => r.GetAllByBookingIdOrderedAsync(It.IsAny<int>()))
-							.ReturnsAsync(new List<ScheduleEntity> { schedule });
+							.ReturnsAsync(new List<Schedule> { schedule });
 
 						_googleCalendarServiceMock
 							.Setup(s => s.CreateEventAsync(It.IsAny<EduMatch.BusinessLogicLayer.Requests.GoogleMeeting.CreateMeetingRequest>()))
@@ -273,7 +273,7 @@ namespace EduMatch.Tests
 		{
 			// Valid case
 			var existingEntity = FakeDataFactory.CreateFakeMeetingSession(1, 1);
-			var validSchedule = FakeDataFactory.CreateFakeSchedule(1, 1, 1) as ScheduleEntity;
+			var validSchedule = FakeDataFactory.CreateFakeSchedule(1, 1, 1);
 			var validGoogleResponse = new GoogleEventCreatedResponse
 			{
 				EventId = "event123",
@@ -325,7 +325,7 @@ namespace EduMatch.Tests
 		public async Task UpdateAsync_WithVariousScenarios_HandlesCorrectly(
 			MeetingSessionUpdateRequest request,
 			MeetingSession? existingEntity,
-			ScheduleEntity? schedule,
+			Schedule? schedule,
 			GoogleEventCreatedResponse? googleEventResponse,
 			bool shouldSucceed,
 			Type? expectedExceptionType)

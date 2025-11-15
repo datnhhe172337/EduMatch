@@ -14,7 +14,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ScheduleEntity = EduMatch.DataAccessLayer.Entities.Schedule;
 
 namespace EduMatch.Tests
 {
@@ -68,7 +67,7 @@ namespace EduMatch.Tests
 		public async Task GetByIdAsync_WithDifferentIds_ReturnsExpectedResult(int id, bool shouldExist)
 		{
 			// Arrange
-			ScheduleEntity? entity = shouldExist ? FakeDataFactory.CreateFakeSchedule(id) : null;
+			EduMatch.DataAccessLayer.Entities.Schedule? entity = shouldExist ? FakeDataFactory.CreateFakeSchedule(id) : null;
 
 			_scheduleRepositoryMock
 				.Setup(r => r.GetByIdAsync(id))
@@ -111,7 +110,7 @@ namespace EduMatch.Tests
 		public async Task GetByAvailabilityIdAsync_WithDifferentAvailabilityIds_ReturnsExpectedResult(int availabilityId, bool shouldExist)
 		{
 			// Arrange
-			ScheduleEntity? entity = shouldExist ? FakeDataFactory.CreateFakeSchedule(1, availabilityId) : null;
+			EduMatch.DataAccessLayer.Entities.Schedule? entity = shouldExist ? FakeDataFactory.CreateFakeSchedule(1, availabilityId) : null;
 
 			_scheduleRepositoryMock
 				.Setup(r => r.GetByAvailabilityIdAsync(availabilityId))
@@ -156,12 +155,12 @@ namespace EduMatch.Tests
 		{
 			// Arrange
 			var schedules = expectedCount > 0
-				? new List<ScheduleEntity>
+				? new List<EduMatch.DataAccessLayer.Entities.Schedule>
 				{
 					FakeDataFactory.CreateFakeSchedule(1, bookingId: bookingId),
 					FakeDataFactory.CreateFakeSchedule(2, bookingId: bookingId)
 				}.Take(expectedCount).ToList()
-				: new List<ScheduleEntity>();
+				: new List<EduMatch.DataAccessLayer.Entities.Schedule>();
 
 			int? statusInt = status.HasValue ? (int?)status.Value : null;
 
@@ -187,12 +186,12 @@ namespace EduMatch.Tests
 		{
 			// Arrange
 			var schedules = expectedCount > 0
-				? new List<ScheduleEntity>
+				? new List<EduMatch.DataAccessLayer.Entities.Schedule>
 				{
 					FakeDataFactory.CreateFakeSchedule(1, bookingId: 1),
 					FakeDataFactory.CreateFakeSchedule(2, bookingId: 2)
 				}
-				: new List<ScheduleEntity>();
+				: new List<EduMatch.DataAccessLayer.Entities.Schedule>();
 
 			_scheduleRepositoryMock
 				.Setup(r => r.GetAllByLearnerEmailAsync(learnerEmail, null, null, null))
@@ -216,12 +215,12 @@ namespace EduMatch.Tests
 		{
 			// Arrange
 			var schedules = expectedCount > 0
-				? new List<ScheduleEntity>
+				? new List<EduMatch.DataAccessLayer.Entities.Schedule>
 				{
 					FakeDataFactory.CreateFakeSchedule(1),
 					FakeDataFactory.CreateFakeSchedule(2)
 				}
-				: new List<ScheduleEntity>();
+				: new List<EduMatch.DataAccessLayer.Entities.Schedule>();
 
 			_scheduleRepositoryMock
 				.Setup(r => r.GetAllByTutorEmailAsync(tutorEmail, null, null, null))
@@ -310,7 +309,7 @@ namespace EduMatch.Tests
 			BookingDto? bookingDto,
 			TutorProfileDto? tutorProfile,
 			int currentCount,
-			ScheduleEntity? existingSchedule,
+			EduMatch.DataAccessLayer.Entities.Schedule? existingSchedule,
 			bool shouldSucceed,
 			Type? expectedExceptionType)
 		{
@@ -344,7 +343,7 @@ namespace EduMatch.Tests
 			if (shouldSucceed)
 			{
 				_scheduleRepositoryMock
-					.Setup(r => r.CreateAsync(It.IsAny<ScheduleEntity>()))
+					.Setup(r => r.CreateAsync(It.IsAny<EduMatch.DataAccessLayer.Entities.Schedule>()))
 					.Returns(Task.CompletedTask);
 
 				_tutorAvailabilityServiceMock
@@ -417,10 +416,10 @@ namespace EduMatch.Tests
 		[TestCaseSource(nameof(UpdateAsyncTestCases))]
 		public async Task UpdateAsync_WithVariousScenarios_HandlesCorrectly(
 			ScheduleUpdateRequest request,
-			ScheduleEntity? existingEntity,
+			EduMatch.DataAccessLayer.Entities.Schedule? existingEntity,
 			TutorAvailabilityDto? newAvailability,
 			BookingDto? bookingDto,
-			ScheduleEntity? existingSchedule,
+			EduMatch.DataAccessLayer.Entities.Schedule? existingSchedule,
 			bool shouldSucceed,
 			Type? expectedExceptionType)
 		{
@@ -454,7 +453,7 @@ namespace EduMatch.Tests
 					.ReturnsAsync((MeetingSessionDto?)null);
 
 				_scheduleRepositoryMock
-					.Setup(r => r.UpdateAsync(It.IsAny<ScheduleEntity>()))
+					.Setup(r => r.UpdateAsync(It.IsAny<EduMatch.DataAccessLayer.Entities.Schedule>()))
 					.Returns(Task.CompletedTask);
 			}
 
@@ -481,7 +480,7 @@ namespace EduMatch.Tests
 		public async Task DeleteAsync_WithDifferentIds_HandlesCorrectly(int id, bool shouldExist)
 		{
 			// Arrange
-			ScheduleEntity? entity = shouldExist ? FakeDataFactory.CreateFakeSchedule(id) : null;
+			EduMatch.DataAccessLayer.Entities.Schedule? entity = shouldExist ? FakeDataFactory.CreateFakeSchedule(id) : null;
 
 			_scheduleRepositoryMock
 				.Setup(r => r.GetByIdAsync(id))

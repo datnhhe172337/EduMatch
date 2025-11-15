@@ -336,7 +336,7 @@ namespace EduMatch.Tests.Common
 		/// <summary>
 		/// Tạo Booking giả với các tham số tùy chỉnh (dùng cho test)
 		/// </summary>
-		public static BookingEntity CreateFakeBooking(
+		public static Booking CreateFakeBooking(
 			int id = 1,
 			string? learnerEmail = null,
 			int tutorSubjectId = 1,
@@ -347,7 +347,7 @@ namespace EduMatch.Tests.Common
 			int paymentStatus = 0,
 			int status = 0)
 		{
-			return new BookingEntity
+			return new Booking
 			{
 				Id = id,
 				LearnerEmail = learnerEmail ?? "learner@example.com",
@@ -394,7 +394,7 @@ namespace EduMatch.Tests.Common
 		/// <summary>
 		/// Tạo Schedule giả với các tham số tùy chỉnh (dùng cho test)
 		/// </summary>
-		public static ScheduleEntity CreateFakeSchedule(
+		public static Schedule CreateFakeSchedule(
 			int id = 1,
 			int availabilityId = 1,
 			int bookingId = 1,
@@ -402,7 +402,7 @@ namespace EduMatch.Tests.Common
 			bool includeBooking = true,
 			bool includeAvailability = true)
 		{
-			var schedule = new ScheduleEntity
+			var schedule = new Schedule
 			{
 				Id = id,
 				AvailabilitiId = availabilityId,
@@ -433,7 +433,7 @@ namespace EduMatch.Tests.Common
 		/// <summary>
 		/// Tạo MeetingSession giả với các tham số tùy chỉnh (dùng cho test)
 		/// </summary>
-		public static MeetingSessionEntity CreateFakeMeetingSession(
+		public static MeetingSession CreateFakeMeetingSession(
 			int id = 1,
 			int scheduleId = 1,
 			string? organizerEmail = null,
@@ -445,7 +445,7 @@ namespace EduMatch.Tests.Common
 			int meetingType = 0)
 		{
 			var now = DateTime.UtcNow;
-			return new MeetingSessionEntity
+			return new MeetingSession
 			{
 				Id = id,
 				ScheduleId = scheduleId,
@@ -459,7 +459,7 @@ namespace EduMatch.Tests.Common
 				CreatedAt = now,
 				UpdatedAt = null,
 				OrganizerEmailNavigation = CreateFakeGoogleToken(organizerEmail ?? "system@edumatch.com"),
-				Schedule = CreateFakeSchedule(scheduleId) as ScheduleEntity
+				Schedule = CreateFakeSchedule(scheduleId)
 			};
 		}
 	}
