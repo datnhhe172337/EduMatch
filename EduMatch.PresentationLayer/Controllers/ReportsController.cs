@@ -22,6 +22,9 @@ namespace EduMatch.PresentationLayer.Controllers
             _currentUserService = currentUserService;
         }
 
+        /// <summary>
+        /// Creates a report from the current Learner or Tutor.
+        /// </summary>
         [Authorize(Roles = Roles.Learner + "," + Roles.Tutor)]
         [HttpPost]
         public async Task<IActionResult> CreateReportAsync([FromBody] ReportCreateRequest request)
@@ -48,6 +51,9 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
+        /// <summary>
+        /// Returns all reports submitted by the current learner.
+        /// </summary>
         [Authorize(Roles = Roles.Learner)]
         [HttpGet("learner")]
         public async Task<IActionResult> GetReportsByLearnerAsync()
@@ -67,6 +73,9 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
+        /// <summary>
+        /// Allows a learner to update their pending report.
+        /// </summary>
         [Authorize(Roles = Roles.Learner)]
         [HttpPut("{id:int}/learner")]
         public async Task<IActionResult> UpdateReportByLearnerAsync(int id, [FromBody] ReportUpdateByLearnerRequest request)
@@ -97,6 +106,9 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
+        /// <summary>
+        /// Allows a learner to cancel their pending report.
+        /// </summary>
         [Authorize(Roles = Roles.Learner)]
         [HttpDelete("{id:int}/learner")]
         public async Task<IActionResult> CancelReportByLearnerAsync(int id)
@@ -124,6 +136,9 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
+        /// <summary>
+        /// Returns reports where the current tutor is accused.
+        /// </summary>
         [Authorize(Roles = Roles.Tutor)]
         [HttpGet("tutor")]
         public async Task<IActionResult> GetReportsByTutorAsync()
@@ -143,6 +158,9 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
+        /// <summary>
+        /// Gets detailed report information. Restricted to admins or involved users.
+        /// </summary>
         [Authorize]
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetReportDetailAsync(int id)
@@ -164,6 +182,9 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
+        /// <summary>
+        /// Allows admin to update report status and notes.
+        /// </summary>
         [Authorize(Roles = Roles.BusinessAdmin + "," + Roles.SystemAdmin)]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateReportAsync(int id, [FromBody] ReportUpdateRequest request)
@@ -186,6 +207,9 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
+        /// <summary>
+        /// Tutor submits defense/complaint for a report.
+        /// </summary>
         [Authorize(Roles = Roles.Tutor)]
         [HttpPut("{id:int}/complaint")]
         public async Task<IActionResult> SubmitTutorComplaintAsync(int id, [FromBody] TutorComplaintRequest request)
@@ -216,6 +240,9 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
+        /// <summary>
+        /// Permanently deletes a report (admin only).
+        /// </summary>
         [Authorize(Roles = Roles.BusinessAdmin + "," + Roles.SystemAdmin)]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteReportAsync(int id)
