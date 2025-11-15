@@ -121,6 +121,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (!tutorEmail.Trim().Equals(report.ReportedUserEmail, StringComparison.OrdinalIgnoreCase))
                 throw new UnauthorizedAccessException("You cannot respond to this report.");
 
+            if (report.StatusEnum != ReportStatus.UnderReview)
+                throw new InvalidOperationException("Tutor defense is allowed only after the report is approved for review by an admin.");
+
             report.TutorDefenseNote = request.DefenseNote.Trim();
             report.UpdatedAt = DateTime.UtcNow;
 
@@ -141,6 +144,29 @@ namespace EduMatch.BusinessLogicLayer.Services
             report.StatusEnum = request.Status;
             report.AdminNotes = string.IsNullOrWhiteSpace(request.AdminNotes) ? null : request.AdminNotes.Trim();
             report.HandledByAdminEmail = adminEmail.Trim();
+            report.UpdatedAt = DateTime.UtcNow;
+
+            var updated = await _reportRepository.UpdateAsync(report);
+            return _mapper.Map<ReportDetailDto>(updated);
+        }
+
+        public async Task<ReportDetailDto> UpdateReportByLearnerAsync(int reportId, ReportUpdateByLearnerRequest request, string learnerEmail)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(learnerEmail))
+                throw new ArgumentException("Learner email is required.", nameof(learnerEmail));
+
+            var report = await _reportRepository.GetByIdAsync(reportId)
+                ?? throw new KeyNotFoundException("Report not found.");
+
+            if (!learnerEmail.Trim().Equals(report.ReporterUserEmail, StringComparison.OrdinalIgnoreCase))
+                throw new UnauthorizedAccessException("You cannot edit this report.");
+
+            if (report.StatusEnum != ReportStatus.Pending)
+                throw new InvalidOperationException("Reports can only be edited while pending review.");
+
+            report.Reason = request.Reason.Trim();
             report.UpdatedAt = DateTime.UtcNow;
 
             var updated = await _reportRepository.UpdateAsync(report);
