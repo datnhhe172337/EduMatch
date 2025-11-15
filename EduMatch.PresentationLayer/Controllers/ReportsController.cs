@@ -67,6 +67,36 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
+        [Authorize(Roles = Roles.Learner)]
+        [HttpPut("{id:int}/learner")]
+        public async Task<IActionResult> UpdateReportByLearnerAsync(int id, [FromBody] ReportUpdateByLearnerRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ApiResponse<string>.Fail("Invalid request payload.", ModelState));
+
+            var learnerEmail = _currentUserService.Email;
+            if (string.IsNullOrWhiteSpace(learnerEmail))
+                return Unauthorized(ApiResponse<string>.Fail("User email not found in token."));
+
+            try
+            {
+                var result = await _reportService.UpdateReportByLearnerAsync(id, request, learnerEmail);
+                return Ok(ApiResponse<ReportDetailDto>.Ok(result, "Report updated successfully."));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
+            }
+        }
+
         [Authorize(Roles = Roles.Tutor)]
         [HttpGet("tutor")]
         public async Task<IActionResult> GetReportsByTutorAsync()
@@ -148,6 +178,10 @@ namespace EduMatch.PresentationLayer.Controllers
             catch (KeyNotFoundException ex)
             {
                 return NotFound(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
             }
             catch (UnauthorizedAccessException ex)
             {
