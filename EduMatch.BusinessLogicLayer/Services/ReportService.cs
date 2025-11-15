@@ -172,5 +172,26 @@ namespace EduMatch.BusinessLogicLayer.Services
             var updated = await _reportRepository.UpdateAsync(report);
             return _mapper.Map<ReportDetailDto>(updated);
         }
+
+        public async Task<ReportDetailDto> CancelReportByLearnerAsync(int reportId, string learnerEmail)
+        {
+            if (string.IsNullOrWhiteSpace(learnerEmail))
+                throw new ArgumentException("Learner email is required.", nameof(learnerEmail));
+
+            var report = await _reportRepository.GetByIdAsync(reportId)
+                ?? throw new KeyNotFoundException("Report not found.");
+
+            if (!learnerEmail.Trim().Equals(report.ReporterUserEmail, StringComparison.OrdinalIgnoreCase))
+                throw new UnauthorizedAccessException("You cannot cancel this report.");
+
+            if (report.StatusEnum != ReportStatus.Pending)
+                throw new InvalidOperationException("Reports can only be canceled before an admin handles them.");
+
+            report.StatusEnum = ReportStatus.Dismissed;
+            report.UpdatedAt = DateTime.UtcNow;
+
+            var updated = await _reportRepository.UpdateAsync(report);
+            return _mapper.Map<ReportDetailDto>(updated);
+        }
     }
 }
