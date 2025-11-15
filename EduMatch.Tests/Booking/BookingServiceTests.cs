@@ -16,7 +16,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using BookingEntity = EduMatch.DataAccessLayer.Entities.Booking;
 
-namespace EduMatch.Tests.Booking
+namespace EduMatch.Tests
 {
 	/// <summary>
 	/// Test class cho BookingService

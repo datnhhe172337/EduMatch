@@ -17,9 +17,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using MeetingSessionEntity = EduMatch.DataAccessLayer.Entities.MeetingSession;
+using EduMatch.DataAccessLayer.Entities;
 
-namespace EduMatch.Tests.MeetingSession
+namespace EduMatch.Tests
 {
 	/// <summary>
 	/// Test class cho MeetingSessionService
@@ -76,7 +76,7 @@ namespace EduMatch.Tests.MeetingSession
 		public async Task GetByIdAsync_WithDifferentIds_ReturnsExpectedResult(int id, bool shouldExist)
 		{
 			// Arrange
-			MeetingSessionEntity? entity = shouldExist ? FakeDataFactory.CreateFakeMeetingSession(id) : null;
+			MeetingSession? entity = shouldExist ? FakeDataFactory.CreateFakeMeetingSession(id) : null;
 
 			_meetingSessionRepositoryMock
 				.Setup(r => r.GetByIdAsync(id))
@@ -119,7 +119,7 @@ namespace EduMatch.Tests.MeetingSession
 		public async Task GetByScheduleIdAsync_WithDifferentScheduleIds_ReturnsExpectedResult(int scheduleId, bool shouldExist)
 		{
 			// Arrange
-			MeetingSessionEntity? entity = shouldExist ? FakeDataFactory.CreateFakeMeetingSession(1, scheduleId) : null;
+			MeetingSession? entity = shouldExist ? FakeDataFactory.CreateFakeMeetingSession(1, scheduleId) : null;
 
 			_meetingSessionRepositoryMock
 				.Setup(r => r.GetByScheduleIdAsync(scheduleId))
@@ -159,7 +159,7 @@ namespace EduMatch.Tests.MeetingSession
 		private static IEnumerable<TestCaseData> CreateAsyncTestCases()
 		{
 			// Valid case
-			var validSchedule = FakeDataFactory.CreateFakeSchedule(1, 1, 1);
+			var validSchedule = FakeDataFactory.CreateFakeSchedule(1, 1, 1) as ScheduleEntity;
 			var validGoogleToken = FakeDataFactory.CreateFakeGoogleToken("system@edumatch.com");
 			var validGoogleResponse = new GoogleEventCreatedResponse
 			{
@@ -208,8 +208,8 @@ namespace EduMatch.Tests.MeetingSession
 		[TestCaseSource(nameof(CreateAsyncTestCases))]
 		public async Task CreateAsync_WithVariousScenarios_HandlesCorrectly(
 			MeetingSessionCreateRequest request,
-			Schedule? schedule,
-			MeetingSessionEntity? existingMeetingSession,
+			ScheduleEntity? schedule,
+			MeetingSession? existingMeetingSession,
 			GoogleToken? googleToken,
 			GoogleEventCreatedResponse? googleEventResponse,
 			bool shouldSucceed,
@@ -236,7 +236,7 @@ namespace EduMatch.Tests.MeetingSession
 					{
 						_scheduleRepositoryMock
 							.Setup(r => r.GetAllByBookingIdOrderedAsync(It.IsAny<int>()))
-							.ReturnsAsync(new List<Schedule> { schedule });
+							.ReturnsAsync(new List<ScheduleEntity> { schedule });
 
 						_googleCalendarServiceMock
 							.Setup(s => s.CreateEventAsync(It.IsAny<EduMatch.BusinessLogicLayer.Requests.GoogleMeeting.CreateMeetingRequest>()))
@@ -245,7 +245,7 @@ namespace EduMatch.Tests.MeetingSession
 						if (googleEventResponse != null)
 						{
 						_meetingSessionRepositoryMock
-							.Setup(r => r.CreateAsync(It.IsAny<MeetingSessionEntity>()))
+							.Setup(r => r.CreateAsync(It.IsAny<MeetingSession>()))
 							.Returns(Task.CompletedTask);
 						}
 					}
@@ -273,7 +273,7 @@ namespace EduMatch.Tests.MeetingSession
 		{
 			// Valid case
 			var existingEntity = FakeDataFactory.CreateFakeMeetingSession(1, 1);
-			var validSchedule = FakeDataFactory.CreateFakeSchedule(1, 1, 1);
+			var validSchedule = FakeDataFactory.CreateFakeSchedule(1, 1, 1) as ScheduleEntity;
 			var validGoogleResponse = new GoogleEventCreatedResponse
 			{
 				EventId = "event123",
@@ -324,8 +324,8 @@ namespace EduMatch.Tests.MeetingSession
 		[TestCaseSource(nameof(UpdateAsyncTestCases))]
 		public async Task UpdateAsync_WithVariousScenarios_HandlesCorrectly(
 			MeetingSessionUpdateRequest request,
-			MeetingSessionEntity? existingEntity,
-			Schedule? schedule,
+			MeetingSession? existingEntity,
+			ScheduleEntity? schedule,
 			GoogleEventCreatedResponse? googleEventResponse,
 			bool shouldSucceed,
 			Type? expectedExceptionType)
@@ -356,7 +356,7 @@ namespace EduMatch.Tests.MeetingSession
 				}
 
 				_meetingSessionRepositoryMock
-					.Setup(r => r.UpdateAsync(It.IsAny<MeetingSessionEntity>()))
+					.Setup(r => r.UpdateAsync(It.IsAny<MeetingSession>()))
 					.Returns(Task.CompletedTask);
 			}
 
@@ -383,7 +383,7 @@ namespace EduMatch.Tests.MeetingSession
 		public async Task DeleteAsync_WithDifferentIds_HandlesCorrectly(int id, bool shouldExist)
 		{
 			// Arrange
-			MeetingSessionEntity? entity = shouldExist ? FakeDataFactory.CreateFakeMeetingSession(id) : null;
+			MeetingSession? entity = shouldExist ? FakeDataFactory.CreateFakeMeetingSession(id) : null;
 
 			_meetingSessionRepositoryMock
 				.Setup(r => r.GetByIdAsync(id))
@@ -428,6 +428,7 @@ namespace EduMatch.Tests.MeetingSession
 			var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.DeleteAsync(id));
 			Assert.That(exception.Message, Does.Contain("ID must be greater than 0"));
 		}
+
 	}
 }
 

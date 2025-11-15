@@ -81,7 +81,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         public async Task<ScheduleDto?> GetByAvailabilityIdAsync(int availabilitiId)
         {
             if (availabilitiId <= 0)
-                throw new Exception("AvailabilitiId phải lớn hơn 0");
+                throw new ArgumentException("AvailabilitiId must be greater than 0");
             var entity = await _scheduleRepository.GetByAvailabilityIdAsync(availabilitiId);
             return entity == null ? null : _mapper.Map<ScheduleDto>(entity);
         }
@@ -92,7 +92,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         public async Task<ScheduleDto?> GetByIdAsync(int id)
         {
             if (id <= 0)
-                throw new Exception("Id phải lớn hơn 0");
+                throw new ArgumentException("ID must be greater than 0");
             var entity = await _scheduleRepository.GetByIdAsync(id);
             return entity == null ? null : _mapper.Map<ScheduleDto>(entity);
         }
@@ -334,6 +334,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task DeleteAsync(int id)
         {
+            if (id <= 0)
+                throw new ArgumentException("ID must be greater than 0");
             // Xóa MeetingSession trước qua service (service sẽ xóa Google Event rồi xóa DB)
             var meetingSessionDto = await _meetingSessionService.GetByScheduleIdAsync(id);
             if (meetingSessionDto != null)

@@ -5,9 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static EduMatch.DataAccessLayer.Enum.InstitutionType;
-using BookingEntity = EduMatch.DataAccessLayer.Entities.Booking;
-using MeetingSessionEntity = EduMatch.DataAccessLayer.Entities.MeetingSession;
+using  EduMatch.DataAccessLayer.Enum;
 
 namespace EduMatch.Tests.Common
 {
@@ -396,7 +394,7 @@ namespace EduMatch.Tests.Common
 		/// <summary>
 		/// Tạo Schedule giả với các tham số tùy chỉnh (dùng cho test)
 		/// </summary>
-		public static Schedule CreateFakeSchedule(
+		public static ScheduleEntity CreateFakeSchedule(
 			int id = 1,
 			int availabilityId = 1,
 			int bookingId = 1,
@@ -404,7 +402,7 @@ namespace EduMatch.Tests.Common
 			bool includeBooking = true,
 			bool includeAvailability = true)
 		{
-			var schedule = new Schedule
+			var schedule = new ScheduleEntity
 			{
 				Id = id,
 				AvailabilitiId = availabilityId,
@@ -461,7 +459,7 @@ namespace EduMatch.Tests.Common
 				CreatedAt = now,
 				UpdatedAt = null,
 				OrganizerEmailNavigation = CreateFakeGoogleToken(organizerEmail ?? "system@edumatch.com"),
-				Schedule = CreateFakeSchedule(scheduleId)
+				Schedule = CreateFakeSchedule(scheduleId) as ScheduleEntity
 			};
 		}
 	}
