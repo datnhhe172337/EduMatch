@@ -97,6 +97,33 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
+        [Authorize(Roles = Roles.Learner)]
+        [HttpDelete("{id:int}/learner")]
+        public async Task<IActionResult> CancelReportByLearnerAsync(int id)
+        {
+            var learnerEmail = _currentUserService.Email;
+            if (string.IsNullOrWhiteSpace(learnerEmail))
+                return Unauthorized(ApiResponse<string>.Fail("User email not found in token."));
+
+            try
+            {
+                var result = await _reportService.CancelReportByLearnerAsync(id, learnerEmail);
+                return Ok(ApiResponse<ReportDetailDto>.Ok(result, "Report canceled successfully."));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
+            }
+        }
+
         [Authorize(Roles = Roles.Tutor)]
         [HttpGet("tutor")]
         public async Task<IActionResult> GetReportsByTutorAsync()
