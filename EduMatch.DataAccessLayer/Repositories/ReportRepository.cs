@@ -1,6 +1,7 @@
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -73,6 +74,26 @@ namespace EduMatch.DataAccessLayer.Repositories
             _context.Reports.Update(report);
             await _context.SaveChangesAsync();
             return (await GetByIdAsync(report.Id))!;
+        }
+
+        public async Task<bool> ExistsSimilarReportAsync(string reporterEmail, string reportedEmail, string reason, int? excludeReportId = null, int lookbackDays = 7)
+        {
+            if (string.IsNullOrWhiteSpace(reporterEmail) || string.IsNullOrWhiteSpace(reportedEmail) || string.IsNullOrWhiteSpace(reason))
+                return false;
+
+            var normalizedReason = reason.Trim();
+            var cutoff = DateTime.UtcNow.AddDays(-lookbackDays);
+
+            var query = _context.Reports.AsQueryable();
+
+            if (excludeReportId.HasValue)
+                query = query.Where(r => r.Id != excludeReportId.Value);
+
+            return await query.AnyAsync(r =>
+                r.ReporterUserEmail == reporterEmail &&
+                r.ReportedUserEmail == reportedEmail &&
+                r.Reason == normalizedReason &&
+                r.CreatedAt >= cutoff);
         }
     }
 }
