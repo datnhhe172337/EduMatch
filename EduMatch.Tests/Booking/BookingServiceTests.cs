@@ -194,76 +194,111 @@ namespace EduMatch.Tests.Booking
 		}
 
 		/// <summary>
+		/// Tạo các test cases cho CreateAsync - bao phủ các kịch bản: valid, learner not found, tutorSubject not found, no hourly rate, systemFee not found
+		/// </summary>
+		private static IEnumerable<TestCaseData> CreateAsyncTestCases()
+		{
+			// Valid case
+			yield return new TestCaseData(
+				new BookingCreateRequest
+				{
+					LearnerEmail = "learner@example.com",
+					TutorSubjectId = 1,
+					TotalSessions = 1
+				},
+				FakeDataFactory.CreateFakeUser("learner@example.com"),
+				FakeDataFactory.CreateFakeTutorSubject(1, hourlyRate: 200000),
+				FakeDataFactory.CreateFakeSystemFee(),
+				true
+			).SetName("CreateAsync_ValidRequest_ReturnsCreatedDto");
+
+			// LearnerEmail not found
+			yield return new TestCaseData(
+				new BookingCreateRequest
+				{
+					LearnerEmail = "learner@example.com",
+					TutorSubjectId = 1,
+					TotalSessions = 1
+				},
+				null,
+				FakeDataFactory.CreateFakeTutorSubject(1, hourlyRate: 200000),
+				FakeDataFactory.CreateFakeSystemFee(),
+				false
+			).SetName("CreateAsync_LearnerEmailNotFound_ThrowsException");
+
+			// TutorSubject not found
+			yield return new TestCaseData(
+				new BookingCreateRequest
+				{
+					LearnerEmail = "learner@example.com",
+					TutorSubjectId = 999,
+					TotalSessions = 1
+				},
+				FakeDataFactory.CreateFakeUser("learner@example.com"),
+				null,
+				FakeDataFactory.CreateFakeSystemFee(),
+				false
+			).SetName("CreateAsync_TutorSubjectNotFound_ThrowsException");
+
+			// TutorSubject no hourly rate
+			yield return new TestCaseData(
+				new BookingCreateRequest
+				{
+					LearnerEmail = "learner@example.com",
+					TutorSubjectId = 1,
+					TotalSessions = 1
+				},
+				FakeDataFactory.CreateFakeUser("learner@example.com"),
+				FakeDataFactory.CreateFakeTutorSubject(1, hourlyRate: null),
+				FakeDataFactory.CreateFakeSystemFee(),
+				false
+			).SetName("CreateAsync_TutorSubjectNoHourlyRate_ThrowsException");
+
+			// SystemFee not found
+			yield return new TestCaseData(
+				new BookingCreateRequest
+				{
+					LearnerEmail = "learner@example.com",
+					TutorSubjectId = 1,
+					TotalSessions = 1
+				},
+				FakeDataFactory.CreateFakeUser("learner@example.com"),
+				FakeDataFactory.CreateFakeTutorSubject(1, hourlyRate: 200000),
+				null,
+				false
+			).SetName("CreateAsync_SystemFeeNotFound_ThrowsException");
+		}
+
+		/// <summary>
 		/// Test CreateAsync với các scenarios khác nhau
 		/// </summary>
 		[Test]
-		[TestCase(true, true, true, true, true)] // Valid
-		[TestCase(false, true, true, true, false)] // LearnerEmail not found
-		[TestCase(true, false, true, true, false)] // TutorSubject not found
-		[TestCase(true, true, false, true, false)] // TutorSubject no hourly rate
-		[TestCase(true, true, true, false, false)] // SystemFee not found
+		[TestCaseSource(nameof(CreateAsyncTestCases))]
 		public async Task CreateAsync_WithVariousScenarios_HandlesCorrectly(
-			bool learnerExists,
-			bool tutorSubjectExists,
-			bool hasHourlyRate,
-			bool systemFeeExists,
+			BookingCreateRequest request,
+			User? learner,
+			TutorSubject? tutorSubject,
+			SystemFee? systemFee,
 			bool shouldSucceed)
 		{
 			// Arrange
-			var request = new BookingCreateRequest
-			{
-				LearnerEmail = "learner@example.com",
-				TutorSubjectId = 1,
-				TotalSessions = 1
-			};
+			_userRepositoryMock
+				.Setup(r => r.GetUserByEmailAsync(request.LearnerEmail))
+				.ReturnsAsync(learner);
 
-			if (learnerExists)
-			{
-				_userRepositoryMock
-					.Setup(r => r.GetUserByEmailAsync(request.LearnerEmail))
-					.ReturnsAsync(FakeDataFactory.CreateFakeUser(request.LearnerEmail));
-			}
-			else
-			{
-				_userRepositoryMock
-					.Setup(r => r.GetUserByEmailAsync(request.LearnerEmail))
-					.ReturnsAsync((User?)null);
-			}
+			_tutorSubjectRepositoryMock
+				.Setup(r => r.GetByIdFullAsync(request.TutorSubjectId))
+				.ReturnsAsync(tutorSubject);
 
-			if (tutorSubjectExists)
-			{
-				var tutorSubject = FakeDataFactory.CreateFakeTutorSubject(
-					id: request.TutorSubjectId,
-					hourlyRate: hasHourlyRate ? 200000 : null);
-				_tutorSubjectRepositoryMock
-					.Setup(r => r.GetByIdFullAsync(request.TutorSubjectId))
-					.ReturnsAsync(tutorSubject);
-			}
-			else
-			{
-				_tutorSubjectRepositoryMock
-					.Setup(r => r.GetByIdFullAsync(request.TutorSubjectId))
-					.ReturnsAsync((TutorSubject?)null);
-			}
-
-			if (systemFeeExists)
-			{
-				_systemFeeRepositoryMock
-					.Setup(r => r.GetActiveSystemFeeAsync())
-					.ReturnsAsync(FakeDataFactory.CreateFakeSystemFee());
-			}
-			else
-			{
-				_systemFeeRepositoryMock
-					.Setup(r => r.GetActiveSystemFeeAsync())
-					.ReturnsAsync((SystemFee?)null);
-			}
+			_systemFeeRepositoryMock
+				.Setup(r => r.GetActiveSystemFeeAsync())
+				.ReturnsAsync(systemFee);
 
 			if (shouldSucceed)
 			{
-			_bookingRepositoryMock
-				.Setup(r => r.CreateAsync(It.IsAny<BookingEntity>()))
-				.Returns(Task.CompletedTask);
+				_bookingRepositoryMock
+					.Setup(r => r.CreateAsync(It.IsAny<BookingEntity>()))
+					.Returns(Task.CompletedTask);
 
 				// Act
 				var result = await _service.CreateAsync(request);
@@ -281,85 +316,135 @@ namespace EduMatch.Tests.Booking
 		}
 
 		/// <summary>
+		/// Tạo các test cases cho UpdateAsync - bao phủ các kịch bản: valid, booking not found, learner not found, tutorSubject not found, systemFee not found
+		/// </summary>
+		private static IEnumerable<TestCaseData> UpdateAsyncTestCases()
+		{
+			// Valid case
+			yield return new TestCaseData(
+				new BookingUpdateRequest
+				{
+					Id = 1,
+					LearnerEmail = "newlearner@example.com",
+					TutorSubjectId = 2,
+					TotalSessions = 2
+				},
+				FakeDataFactory.CreateFakeBooking(1),
+				FakeDataFactory.CreateFakeUser("newlearner@example.com"),
+				FakeDataFactory.CreateFakeTutorSubject(2),
+				FakeDataFactory.CreateFakeSystemFee(),
+				true
+			).SetName("UpdateAsync_ValidRequest_ReturnsUpdatedDto");
+
+			// Booking not found
+			yield return new TestCaseData(
+				new BookingUpdateRequest
+				{
+					Id = 999,
+					LearnerEmail = "newlearner@example.com",
+					TutorSubjectId = 2,
+					TotalSessions = 2
+				},
+				null,
+				FakeDataFactory.CreateFakeUser("newlearner@example.com"),
+				FakeDataFactory.CreateFakeTutorSubject(2),
+				FakeDataFactory.CreateFakeSystemFee(),
+				false
+			).SetName("UpdateAsync_BookingNotFound_ThrowsException");
+
+			// LearnerEmail not found (when updating)
+			yield return new TestCaseData(
+				new BookingUpdateRequest
+				{
+					Id = 1,
+					LearnerEmail = "newlearner@example.com",
+					TutorSubjectId = 2,
+					TotalSessions = 2
+				},
+				FakeDataFactory.CreateFakeBooking(1),
+				null,
+				FakeDataFactory.CreateFakeTutorSubject(2),
+				FakeDataFactory.CreateFakeSystemFee(),
+				false
+			).SetName("UpdateAsync_LearnerEmailNotFound_ThrowsException");
+
+			// TutorSubject not found (when updating)
+			yield return new TestCaseData(
+				new BookingUpdateRequest
+				{
+					Id = 1,
+					LearnerEmail = "newlearner@example.com",
+					TutorSubjectId = 999,
+					TotalSessions = 2
+				},
+				FakeDataFactory.CreateFakeBooking(1),
+				FakeDataFactory.CreateFakeUser("newlearner@example.com"),
+				null,
+				FakeDataFactory.CreateFakeSystemFee(),
+				false
+			).SetName("UpdateAsync_TutorSubjectNotFound_ThrowsException");
+
+			// SystemFee not found (when recalculating)
+			yield return new TestCaseData(
+				new BookingUpdateRequest
+				{
+					Id = 1,
+					LearnerEmail = "newlearner@example.com",
+					TutorSubjectId = 2,
+					TotalSessions = 2
+				},
+				FakeDataFactory.CreateFakeBooking(1),
+				FakeDataFactory.CreateFakeUser("newlearner@example.com"),
+				FakeDataFactory.CreateFakeTutorSubject(2),
+				null,
+				false
+			).SetName("UpdateAsync_SystemFeeNotFound_ThrowsException");
+		}
+
+		/// <summary>
 		/// Test UpdateAsync với các scenarios khác nhau
 		/// </summary>
 		[Test]
-		[TestCase(true, true, true, true, true)] // Valid
-		[TestCase(false, true, true, true, false)] // Booking not found
-		[TestCase(true, false, true, true, false)] // LearnerEmail not found (when updating)
-		[TestCase(true, true, false, true, false)] // TutorSubject not found (when updating)
-		[TestCase(true, true, true, false, false)] // SystemFee not found (when recalculating)
+		[TestCaseSource(nameof(UpdateAsyncTestCases))]
 		public async Task UpdateAsync_WithVariousScenarios_HandlesCorrectly(
-			bool bookingExists,
-			bool learnerExists,
-			bool tutorSubjectExists,
-			bool systemFeeExists,
+			BookingUpdateRequest request,
+			BookingEntity? existingBooking,
+			User? learner,
+			TutorSubject? tutorSubject,
+			SystemFee? systemFee,
 			bool shouldSucceed)
 		{
 			// Arrange
-			var request = new BookingUpdateRequest
-			{
-				Id = 1,
-				LearnerEmail = "newlearner@example.com",
-				TutorSubjectId = 2,
-				TotalSessions = 2
-			};
+			_bookingRepositoryMock
+				.Setup(r => r.GetByIdAsync(request.Id))
+				.ReturnsAsync(existingBooking);
 
-			if (bookingExists)
+			if (existingBooking != null)
 			{
-				var existingBooking = FakeDataFactory.CreateFakeBooking(request.Id);
-				_bookingRepositoryMock
-					.Setup(r => r.GetByIdAsync(request.Id))
-					.ReturnsAsync(existingBooking);
-
-				if (learnerExists)
+				if (request.LearnerEmail != null)
 				{
 					_userRepositoryMock
-						.Setup(r => r.GetUserByEmailAsync(request.LearnerEmail!))
-						.ReturnsAsync(FakeDataFactory.CreateFakeUser(request.LearnerEmail!));
-				}
-				else
-				{
-					_userRepositoryMock
-						.Setup(r => r.GetUserByEmailAsync(request.LearnerEmail!))
-						.ReturnsAsync((User?)null);
+						.Setup(r => r.GetUserByEmailAsync(request.LearnerEmail))
+						.ReturnsAsync(learner);
 				}
 
-				if (tutorSubjectExists)
+				if (request.TutorSubjectId.HasValue)
 				{
 					_tutorSubjectRepositoryMock
-						.Setup(r => r.GetByIdFullAsync(request.TutorSubjectId!.Value))
-						.ReturnsAsync(FakeDataFactory.CreateFakeTutorSubject(request.TutorSubjectId.Value));
-				}
-				else
-				{
-					_tutorSubjectRepositoryMock
-						.Setup(r => r.GetByIdFullAsync(request.TutorSubjectId!.Value))
-						.ReturnsAsync((TutorSubject?)null);
+						.Setup(r => r.GetByIdFullAsync(request.TutorSubjectId.Value))
+						.ReturnsAsync(tutorSubject);
 				}
 
-				if (systemFeeExists)
+				if (request.TotalSessions.HasValue)
 				{
 					_systemFeeRepositoryMock
 						.Setup(r => r.GetByIdAsync(It.IsAny<int>()))
-						.ReturnsAsync(FakeDataFactory.CreateFakeSystemFee());
-				}
-				else
-				{
-					_systemFeeRepositoryMock
-						.Setup(r => r.GetByIdAsync(It.IsAny<int>()))
-						.ReturnsAsync((SystemFee?)null);
+						.ReturnsAsync(systemFee);
 				}
 
 				_bookingRepositoryMock
 					.Setup(r => r.UpdateAsync(It.IsAny<BookingEntity>()))
 					.Returns(Task.CompletedTask);
-			}
-			else
-			{
-				_bookingRepositoryMock
-					.Setup(r => r.GetByIdAsync(request.Id))
-					.ReturnsAsync((BookingEntity?)null);
 			}
 
 			if (shouldSucceed)
