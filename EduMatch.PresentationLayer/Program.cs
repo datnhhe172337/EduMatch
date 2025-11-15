@@ -26,6 +26,14 @@ builder.Services.ConfigureApplication(builder.Configuration);
 builder.Services.Configure<GeminiSettings>(
     builder.Configuration.GetSection("Gemini"));
 
+builder.Services.Configure<QdrantSettings>(
+    builder.Configuration.GetSection("Qdrant"));
+
+builder.Services.AddHttpClient("qdrant", c =>
+{
+    c.BaseAddress = new Uri("http://localhost:6333");
+});
+
 
 // Background Service
 builder.Services.AddHostedService<ClassRequestExpireBackgroundService>();

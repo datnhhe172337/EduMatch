@@ -8,6 +8,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 {
     public interface IEmbeddingService
     {
-        Task<float[]> GenerateEmbeddingAsync(string text);
+        Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken ct = default);
     }
 }

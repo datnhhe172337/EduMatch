@@ -22,7 +22,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             _embeddingModel = new EmbeddingModel(apiKey, embeddingModelName);
         }
 
-        public async Task<float[]> GenerateEmbeddingAsync(string text)
+        public async Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(text))
                 return Array.Empty<float>();
@@ -30,7 +30,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             try
             {
                 var response = await _embeddingModel.EmbedContentAsync(
-                    new EmbedContentRequest
+                    new EmbedContentRequest     
                     {
                         Content = new Content
                         {
