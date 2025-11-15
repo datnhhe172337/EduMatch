@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static EduMatch.DataAccessLayer.Enum.InstitutionType;
+using BookingEntity = EduMatch.DataAccessLayer.Entities.Booking;
 
 namespace EduMatch.Tests.Common
 {
@@ -293,6 +294,79 @@ namespace EduMatch.Tests.Common
 				RejectReason = rejectReason,
 				Tutor = CreateFakeTutorProfile(tutorId),
 				CertificateType = CreateFakeCertificateType(certificateTypeId)
+			};
+		}
+
+		/// <summary>
+		/// Tạo SystemFee giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static SystemFee CreateFakeSystemFee(
+			int id = 1,
+			string? name = null,
+			decimal? percentage = 10,
+			decimal? fixedAmount = 5000,
+			bool? isActive = true)
+		{
+			return new SystemFee
+			{
+				Id = id,
+				Name = name ?? $"System Fee {id}",
+				Percentage = percentage,
+				FixedAmount = fixedAmount,
+				EffectiveFrom = DateTime.UtcNow.AddDays(-30),
+				EffectiveTo = null,
+				IsActive = isActive,
+				CreatedAt = DateTime.UtcNow,
+				UpdatedAt = null
+			};
+		}
+
+		/// <summary>
+		/// Tạo User giả với email cụ thể (dùng cho test)
+		/// </summary>
+		public static User CreateFakeUser(string email = "learner@example.com")
+		{
+			return new User
+			{
+				Email = email,
+				UserName = "Test User",
+				LoginProvider = "Email"
+			};
+		}
+
+		/// <summary>
+		/// Tạo Booking giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static BookingEntity CreateFakeBooking(
+			int id = 1,
+			string? learnerEmail = null,
+			int tutorSubjectId = 1,
+			int totalSessions = 1,
+			decimal unitPrice = 200000,
+			int systemFeeId = 1,
+			decimal systemFeeAmount = 25000,
+			int paymentStatus = 0,
+			int status = 0)
+		{
+			return new BookingEntity
+			{
+				Id = id,
+				LearnerEmail = learnerEmail ?? "learner@example.com",
+				TutorSubjectId = tutorSubjectId,
+				BookingDate = DateTime.UtcNow,
+				TotalSessions = totalSessions,
+				UnitPrice = unitPrice,
+				TotalAmount = unitPrice * totalSessions,
+				PaymentStatus = paymentStatus,
+				RefundedAmount = 0,
+				Status = status,
+				SystemFeeId = systemFeeId,
+				SystemFeeAmount = systemFeeAmount,
+				CreatedAt = DateTime.UtcNow,
+				UpdatedAt = null,
+				LearnerEmailNavigation = CreateFakeUser(learnerEmail ?? "learner@example.com"),
+				TutorSubject = CreateFakeTutorSubject(tutorSubjectId),
+				SystemFee = CreateFakeSystemFee(systemFeeId)
 			};
 		}
 	}
