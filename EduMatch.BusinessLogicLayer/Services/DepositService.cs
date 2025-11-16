@@ -18,15 +18,18 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly EduMatchContext _context; // For transactions
+        private readonly INotificationService _notificationService;
 
         public DepositService(
             IUnitOfWork unitOfWork,
             IMapper mapper,
-            EduMatchContext context)
+            EduMatchContext context,
+            INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _context = context;
+            _notificationService = notificationService;
         }
 
         // --- THIS IS THE METHOD YOU ASKED ABOUT ---
@@ -61,6 +64,9 @@ namespace EduMatch.BusinessLogicLayer.Services
         {
             bool amountMismatch = false;
             string? mismatchMessage = null;
+            bool depositCompleted = false;
+            string? notifiedUserEmail = null;
+            decimal creditedAmount = 0;
 
             using var dbTransaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             try
@@ -119,6 +125,10 @@ namespace EduMatch.BusinessLogicLayer.Services
                         DepositId = deposit.Id
                     };
                     await _unitOfWork.WalletTransactions.AddAsync(newTransaction);
+
+                    depositCompleted = true;
+                    notifiedUserEmail = wallet.UserEmail;
+                    creditedAmount = deposit.Amount;
                 }
 
                 await _unitOfWork.CompleteAsync();
@@ -128,6 +138,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 await dbTransaction.RollbackAsync();
                 throw;
+            }
+
+            if (depositCompleted && notifiedUserEmail != null)
+            {
+                await _notificationService.CreateNotificationAsync(
+                    notifiedUserEmail,
+                    $"Deposit of {creditedAmount:N0} VND completed successfully.",
+                    "/wallet/my-wallet");
             }
 
             if (amountMismatch && mismatchMessage != null)
