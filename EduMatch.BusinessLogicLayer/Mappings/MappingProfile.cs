@@ -354,8 +354,8 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 							UserName = src.TutorSubject.Tutor.UserEmailNavigation != null ? src.TutorSubject.Tutor.UserEmailNavigation.UserName : null,
 							AvatarUrl = src.TutorSubject.Tutor.UserEmailNavigation != null && src.TutorSubject.Tutor.UserEmailNavigation.UserProfile != null 
 								? src.TutorSubject.Tutor.UserEmailNavigation.UserProfile.AvatarUrl : null,
-							TeachingModes = src.TutorSubject.Tutor.TeachingModes,
-							Status = src.TutorSubject.Tutor.Status
+							TeachingModes = (TeachingMode) src.TutorSubject.Tutor.TeachingModes,
+							Status = (TutorStatus)src.TutorSubject.Tutor.Status
 						} : null
 					} : null))
 				.ForMember(dest => dest.Schedules,
