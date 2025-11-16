@@ -7,6 +7,7 @@ using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Data;
 using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.Services
@@ -43,11 +44,20 @@ namespace EduMatch.BusinessLogicLayer.Services
                 throw new Exception("Invalid bank account.");
             }
 
-            using var dbTransaction = await _context.Database.BeginTransactionAsync();
+            using var dbTransaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             try
             {
+                wallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(userEmail)
+                    ?? throw new Exception("Wallet not found.");
+
+                await _context.Entry(wallet).ReloadAsync();
+
+                if (wallet.Balance < request.Amount)
+                {
+                    throw new Exception("Insufficient funds. (Kh�ng d? s? du)");
+                }
+
                 var balanceBefore = wallet.Balance;
-                var lockedBalanceBefore = wallet.LockedBalance;
 
                 var newWithdrawal = new Withdrawal
                 {
