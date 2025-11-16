@@ -7,6 +7,7 @@ using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -58,66 +59,83 @@ namespace EduMatch.BusinessLogicLayer.Services
         // --- THIS IS THE WEBHOOK METHOD FOR VNPAY ---
         public async Task<bool> ProcessVnpayPaymentAsync(int depositId, string transactionId, decimal amountPaid)
         {
-            var deposit = await _unitOfWork.Deposits.GetByIdAsync(depositId);
-            if (deposit == null) throw new Exception($"Deposit {depositId} not found.");
+            bool amountMismatch = false;
+            string? mismatchMessage = null;
 
-            // Check 1: Already completed
-            if (deposit.Status == TransactionStatus.Completed) return true;
-
-            // Check 2: Amount mismatch
-            if (deposit.Amount != amountPaid)
-            {
-                deposit.Status = TransactionStatus.Failed;
-                _unitOfWork.Deposits.Update(deposit);
-                await _unitOfWork.CompleteAsync();
-                throw new Exception($"Amount mismatch for deposit {depositId}. Expected: {deposit.Amount}, Got: {amountPaid}");
-            }
-
-            // All checks passed, get the wallet
-            var wallet = deposit.Wallet;
-            if (wallet == null) throw new Exception($"Wallet {deposit.WalletId} not found.");
-
-            var balanceBefore = wallet.Balance;
-            var balanceAfter = balanceBefore + deposit.Amount;
-
-            // Start database transaction
-            using var dbTransaction = await _context.Database.BeginTransactionAsync();
+            using var dbTransaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             try
             {
-                deposit.Status = TransactionStatus.Completed;
-                deposit.GatewayTransactionCode = transactionId;
-                deposit.CompletedAt = DateTime.UtcNow;
-                _unitOfWork.Deposits.Update(deposit);
+                var deposit = await _unitOfWork.Deposits.GetByIdAsync(depositId);
+                if (deposit == null) throw new Exception($"Deposit {depositId} not found.");
 
-                wallet.Balance = balanceAfter;
-                wallet.UpdatedAt = DateTime.UtcNow;
-                _unitOfWork.Wallets.Update(wallet);
-
-                var newTransaction = new WalletTransaction
+                if (deposit.Status == TransactionStatus.Completed)
                 {
-                    WalletId = wallet.Id,
-                    Amount = deposit.Amount,
-                    TransactionType = WalletTransactionType.Credit,
-                    Reason = WalletTransactionReason.Deposit,
-                    Status = TransactionStatus.Completed,
-                    BalanceBefore = balanceBefore,
-                    BalanceAfter = balanceAfter,
-                    CreatedAt = DateTime.UtcNow,
-                    ReferenceCode = $"VNPAY_{transactionId}",
-                    DepositId = deposit.Id
-                };
-                await _unitOfWork.WalletTransactions.AddAsync(newTransaction);
+                    await dbTransaction.RollbackAsync();
+                    return true;
+                }
+
+                if (deposit.Status != TransactionStatus.Pending)
+                {
+                    await dbTransaction.RollbackAsync();
+                    return false;
+                }
+
+                if (deposit.Amount != amountPaid)
+                {
+                    deposit.Status = TransactionStatus.Failed;
+                    deposit.CompletedAt = DateTime.UtcNow;
+                    _unitOfWork.Deposits.Update(deposit);
+                    amountMismatch = true;
+                    mismatchMessage = $"Amount mismatch for deposit {depositId}. Expected: {deposit.Amount}, Got: {amountPaid}";
+                }
+                else
+                {
+                    var wallet = deposit.Wallet;
+                    if (wallet == null) throw new Exception($"Wallet {deposit.WalletId} not found.");
+
+                    var balanceBefore = wallet.Balance;
+                    var balanceAfter = balanceBefore + deposit.Amount;
+
+                    deposit.Status = TransactionStatus.Completed;
+                    deposit.GatewayTransactionCode = transactionId;
+                    deposit.CompletedAt = DateTime.UtcNow;
+                    _unitOfWork.Deposits.Update(deposit);
+
+                    wallet.Balance = balanceAfter;
+                    wallet.UpdatedAt = DateTime.UtcNow;
+                    _unitOfWork.Wallets.Update(wallet);
+
+                    var newTransaction = new WalletTransaction
+                    {
+                        WalletId = wallet.Id,
+                        Amount = deposit.Amount,
+                        TransactionType = WalletTransactionType.Credit,
+                        Reason = WalletTransactionReason.Deposit,
+                        Status = TransactionStatus.Completed,
+                        BalanceBefore = balanceBefore,
+                        BalanceAfter = balanceAfter,
+                        CreatedAt = DateTime.UtcNow,
+                        ReferenceCode = $"VNPAY_{transactionId}",
+                        DepositId = deposit.Id
+                    };
+                    await _unitOfWork.WalletTransactions.AddAsync(newTransaction);
+                }
 
                 await _unitOfWork.CompleteAsync();
                 await dbTransaction.CommitAsync();
-
-                return true;
             }
             catch (Exception)
             {
                 await dbTransaction.RollbackAsync();
                 throw;
             }
+
+            if (amountMismatch && mismatchMessage != null)
+            {
+                throw new Exception(mismatchMessage);
+            }
+
+            return !amountMismatch;
         }
 
 
