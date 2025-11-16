@@ -336,6 +336,7 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 					{
 						Id = src.TutorSubject.Id,
 						TutorId = src.TutorSubject.TutorId,
+						TutorEmail = src.TutorSubject.Tutor.UserEmail ,
 						HourlyRate = src.TutorSubject.HourlyRate,
 						Subject = src.TutorSubject.Subject != null ? new SubjectDto
 						{
@@ -346,16 +347,6 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 						{
 							Id = src.TutorSubject.Level.Id,
 							Name = src.TutorSubject.Level.Name
-						} : null,
-						Tutor = src.TutorSubject.Tutor != null ? new TutorProfileDto
-						{
-							Id = src.TutorSubject.Tutor.Id,
-							UserEmail = src.TutorSubject.Tutor.UserEmail,
-							UserName = src.TutorSubject.Tutor.UserEmailNavigation != null ? src.TutorSubject.Tutor.UserEmailNavigation.UserName : null,
-							AvatarUrl = src.TutorSubject.Tutor.UserEmailNavigation != null && src.TutorSubject.Tutor.UserEmailNavigation.UserProfile != null 
-								? src.TutorSubject.Tutor.UserEmailNavigation.UserProfile.AvatarUrl : null,
-							TeachingModes = (TeachingMode) src.TutorSubject.Tutor.TeachingModes,
-							Status = (TutorStatus)src.TutorSubject.Tutor.Status
 						} : null
 					} : null))
 				.ForMember(dest => dest.Schedules,
