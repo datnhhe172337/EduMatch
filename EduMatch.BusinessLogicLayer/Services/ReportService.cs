@@ -18,13 +18,20 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
         private readonly IReportContentValidator _contentValidator;
+        private readonly INotificationService _notificationService;
 
-        public ReportService(IReportRepository reportRepository, IUserRepository userRepository, IMapper mapper, IReportContentValidator contentValidator)
+        public ReportService(
+            IReportRepository reportRepository,
+            IUserRepository userRepository,
+            IMapper mapper,
+            IReportContentValidator contentValidator,
+            INotificationService notificationService)
         {
             _reportRepository = reportRepository;
             _userRepository = userRepository;
             _mapper = mapper;
             _contentValidator = contentValidator;
+            _notificationService = notificationService;
         }
 
         public async Task<ReportDetailDto> CreateReportAsync(ReportCreateRequest request, string reporterEmail)
@@ -61,6 +68,11 @@ namespace EduMatch.BusinessLogicLayer.Services
             report.StatusEnum = ReportStatus.Pending;
 
             var created = await _reportRepository.CreateAsync(report);
+
+            var reporterName = string.IsNullOrWhiteSpace(reporter.UserName) ? reporter.Email : reporter.UserName;
+            var tutorMessage = $"Bạn vừa nhận được một báo cáo mới từ {reporterName}. Lý do: {report.Reason}";
+            await _notificationService.CreateNotificationAsync(reported.Email, tutorMessage);
+
             return _mapper.Map<ReportDetailDto>(created);
         }
 
@@ -132,6 +144,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             report.UpdatedAt = DateTime.UtcNow;
 
             var updated = await _reportRepository.UpdateAsync(report);
+
+            await NotifyReporterStatusChangeAsync(report);
+
             return _mapper.Map<ReportDetailDto>(updated);
         }
 
@@ -198,6 +213,21 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             var updated = await _reportRepository.UpdateAsync(report);
             return _mapper.Map<ReportDetailDto>(updated);
+        }
+
+        private async Task NotifyReporterStatusChangeAsync(Report report)
+        {
+            var statusMessage = report.StatusEnum switch
+            {
+                ReportStatus.Pending => "đang chờ xử lý",
+                ReportStatus.UnderReview => "đang được xem xét",
+                ReportStatus.Resolved => "đã được giải quyết",
+                ReportStatus.Dismissed => "đã bị từ chối",
+                _ => report.StatusEnum.ToString()
+            };
+
+            var message = $"Báo cáo của bạn đối với {report.ReportedUserEmail} hiện {statusMessage}.";
+            await _notificationService.CreateNotificationAsync(report.ReporterUserEmail, message);
         }
     }
 }
