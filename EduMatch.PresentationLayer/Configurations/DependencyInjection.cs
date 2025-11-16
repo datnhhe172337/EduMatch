@@ -121,12 +121,7 @@ namespace EduMatch.PresentationLayer.Configurations
                             // Services for Chatbot AI
             services.AddSingleton<IGeminiChatService, GeminiChatService>();
             services.AddSingleton<IEmbeddingService, EmbeddingService>();
-
-            //services.AddSingleton<IHybridSearchService, QdrantVectorSearchService>();
             services.AddSingleton<IQdrantService, QdrantService>();
-
-            services.AddSingleton<IHybridSearchService, HybridSearchService>();
-            services.AddSingleton<ILLMRerankService, LLMRerankService>();
 
 
             // Bind "CloudinarySettings" 

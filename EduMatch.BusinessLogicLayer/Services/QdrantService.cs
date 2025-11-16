@@ -1,4 +1,5 @@
-﻿using EduMatch.BusinessLogicLayer.Interfaces;
+﻿using EduMatch.BusinessLogicLayer.DTOs;
+using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Settings;
 using Microsoft.Extensions.Options;
 using Qdrant.Client;
@@ -6,7 +7,6 @@ using Qdrant.Client.Grpc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,64 +14,110 @@ namespace EduMatch.BusinessLogicLayer.Services
 {
     public class QdrantService : IQdrantService
     {
-        private readonly HttpClient _http;
+        private readonly QdrantClient _client;
+        private readonly IEmbeddingService _embeddingService;
         private readonly string _collectionName = "tutors";
+        private readonly QdrantSettings _settings;
 
-        public QdrantService(IHttpClientFactory httpFactory)
+        public QdrantService(IEmbeddingService embeddingService, IOptions<QdrantSettings> options)
         {
-            _http = httpFactory.CreateClient("qdrant");
+            _settings = options.Value;
+            _client = new QdrantClient(_settings.Endpoint);
+            _embeddingService = embeddingService;
         }
 
-        public async Task UpsertAsync(int tutorId, float[] vector, string searchText, string tutorInfo, CancellationToken ct = default)
+        /// <summary>
+        /// Upsert single tutor
+        /// </summary>
+        public async Task UpsertTutorAsync(TutorProfileDto tutor)
         {
-            var payload = new
-            {
-                tutorId = tutorId,
-                search_text = searchText,
-                tutorInfo = tutorInfo
-            };
+            var point = await CreatePointAsync(tutor);
 
-            var body = new
+            await _client.UpsertAsync(_collectionName, new List<PointStruct> { point });
+        }
+
+        /// <summary>
+        /// Batch upsert nhiều tutor
+        /// </summary>
+        public async Task UpsertTutorsAsync(IEnumerable<TutorProfileDto> tutors)
+        {
+            var points = new List<PointStruct>();
+
+            foreach (var tutor in tutors)
             {
-                points = new[]
-                {
-                new
-                {
-                    id = tutorId,
-                    vector = vector,
-                    payload = payload
-                }
+                var point = await CreatePointAsync(tutor);
+                points.Add(point);
             }
-            };
 
-            var response = await _http.PutAsJsonAsync(
-                $"/collections/{_collectionName}/points?wait=true",
-                body,
-                cancellationToken: ct
+            await _client.UpsertAsync(_collectionName, points);
+        }
+
+        // <summary>
+        /// Tạo PointStruct từ TutorProfileDto
+        /// </summary>
+        private async Task<PointStruct> CreatePointAsync(TutorProfileDto tutor)
+        {
+            string embeddingText = string.Join(" ",
+                new[]
+                {
+                    $"Tên: {tutor.UserName ?? "Không rõ"}",
+                    $"Giới tính: {tutor.Gender?.ToString() ?? "Không rõ"}",
+                    $"Ngày sinh: {tutor.Dob?.ToString("yyyy-MM-dd") ?? "Không rõ"}",
+                    $"Tiểu sử: {tutor.Bio ?? "Không có"}",
+                    $"Kinh nghiệm: {tutor.TeachingExp ?? "Chưa có"}",
+                    $"Môn học: {string.Join(", ", tutor.TutorSubjects?.Select(s => s.Subject.SubjectName) ?? Enumerable.Empty<string>())}",
+                    $"Giá: {string.Join(", ", tutor.TutorSubjects?.Select(s => s.HourlyRate) ?? Enumerable.Empty<decimal?>())}",
+                    $"Hình thức dạy: {tutor.TeachingModes}",
+                    $"Tỉnh/Thành: {tutor.Province?.Name ?? "Không rõ"}",
+                    $"Xã: {tutor.SubDistrict?.Name ?? "Không rõ"}"
+                }.Where(s => !string.IsNullOrWhiteSpace(s))
             );
 
-            response.EnsureSuccessStatusCode();
+
+
+            var vector = await _embeddingService.GenerateEmbeddingAsync(embeddingText) ?? Array.Empty<float>(); ;
+
+            var metadata = new Dictionary<string, Value>
+            {
+                ["tutorId"] = new Value { IntegerValue = tutor.Id },
+                ["name"] = new Value { StringValue = tutor.UserName },
+                ["gender"] = new Value { StringValue = tutor.Gender.ToString() },
+                ["bio"] = new Value { StringValue = tutor.Bio},
+                ["experience"] = new Value { StringValue = tutor.TeachingExp },
+                ["subjects"] = new Value
+                {
+                    ListValue = new ListValue
+                    {
+                        Values =
+                        {
+                             tutor.TutorSubjects?.Select(ts =>
+                                new Value
+                                {
+                                    StructValue = new Struct
+                                    {
+                                        Fields =
+                                        {
+                                            ["name"] = new Value { StringValue = ts.Subject.SubjectName },
+                                            ["hourlyRate"] = new Value { DoubleValue = (double)ts.HourlyRate }
+                                        }
+                                    }
+                                }) ?? Enumerable.Empty<Value>()
+                        }
+                    }
+                },
+                ["teachingModes"] = new Value { StringValue = tutor.TeachingModes.ToString() },
+                ["province"] = new Value { StringValue = tutor.Province?.Name },
+                ["subdistrict"] = new Value { StringValue = tutor.SubDistrict?.Name },
+            };
+
+            var point = new PointStruct
+            {
+                Id = (ulong)tutor.Id,      
+                Vectors = vector,
+                Payload = { metadata }    
+            };
+
+            return point;
         }
-
-        //public async Task UpsertAsync(int tutorId, float[] vector, string searchText, string tutorInfo, CancellationToken ct = default)
-        //{
-        //    if (vector == null || vector.Length == 0)
-        //        throw new ArgumentException("Embedding vector is empty.");
-
-        //    var point = new PointStruct
-        //    {
-        //        Id = (ulong)tutorId,
-        //        Vectors = vector
-        //    };
-
-        //    point.Payload["tutorId"] = tutorId;
-        //    point.Payload["search_text"] = searchText;
-        //    point.Payload["tutorInfo"] = tutorInfo;
-
-
-        //    await _client.UpsertAsync(_collectionName, new[] { point }, cancellationToken: ct);
-        //}
-
-
     }
 }

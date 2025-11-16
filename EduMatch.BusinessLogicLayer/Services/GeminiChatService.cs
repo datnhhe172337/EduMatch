@@ -27,18 +27,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         }
 
-        //public async Task<string> AskAsync(string query)
-        //{
-        //    var model = new GenerativeModel(_apiKey, "models/gemini-1.5-flash");
-
-        //    var response = await model.GenerateContentAsync(new Content
-        //    {
-        //        Parts = { new TextPart(query) }
-        //    });
-
-        //    return response.Text;
-        //}
-
         public async Task<string> GenerateTextAsync(string prompt)
         {
             var response = await _model.GenerateContentAsync(prompt);

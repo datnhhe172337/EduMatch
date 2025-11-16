@@ -29,9 +29,6 @@ builder.Services.Configure<GeminiSettings>(
 builder.Services.Configure<QdrantSettings>(
     builder.Configuration.GetSection("Qdrant"));
 
-builder.Services.Configure<HybridOptions>(
-    builder.Configuration.GetSection("Hybrid"));
-
 builder.Services.AddHttpClient("qdrant", c =>
 {
     c.BaseAddress = new Uri("http://localhost:6333");
