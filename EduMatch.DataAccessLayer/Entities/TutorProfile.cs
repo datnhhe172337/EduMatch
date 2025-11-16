@@ -29,6 +29,8 @@ public partial class TutorProfile
 
     public DateTime? VerifiedAt { get; set; }
 
+    public DateTime? LastSync { get; set; }
+
     public virtual ICollection<ChatRoom> ChatRooms { get; set; } = new List<ChatRoom>();
 
     public virtual ICollection<FavoriteTutor> FavoriteTutors { get; set; } = new List<FavoriteTutor>();

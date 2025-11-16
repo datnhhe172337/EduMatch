@@ -31,7 +31,15 @@ public partial class User
 
     public virtual ICollection<FavoriteTutor> FavoriteTutors { get; set; } = new List<FavoriteTutor>();
 
+    public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+
+    public virtual ICollection<Report> ReportHandledByAdminEmailNavigations { get; set; } = new List<Report>();
+
+    public virtual ICollection<Report> ReportReportedUserEmailNavigations { get; set; } = new List<Report>();
+
+    public virtual ICollection<Report> ReportReporterUserEmailNavigations { get; set; } = new List<Report>();
 
     public virtual Role Role { get; set; } = null!;
 
