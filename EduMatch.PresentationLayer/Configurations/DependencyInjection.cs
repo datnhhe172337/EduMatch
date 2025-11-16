@@ -120,7 +120,7 @@ namespace EduMatch.PresentationLayer.Configurations
 
                             // Services for Chatbot AI
             services.AddSingleton<IGeminiChatService, GeminiChatService>();
-            services.AddScoped<IEmbeddingService, EmbeddingService>();
+            services.AddSingleton<IEmbeddingService, EmbeddingService>();
 
             //services.AddSingleton<IHybridSearchService, QdrantVectorSearchService>();
             services.AddSingleton<IQdrantService, QdrantService>();

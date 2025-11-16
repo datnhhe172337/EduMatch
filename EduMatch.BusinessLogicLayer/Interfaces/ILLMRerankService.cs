@@ -11,6 +11,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
     {
         //Task<List<(int TutorId, double FinalScore)>> RerankAsync(string userQuery, List<HybridSearchResult> candidates, CancellationToken ct = default);
 
-        Task<List<HybridSearchHit>> RerankAsync(string userQuery, List<HybridSearchHit> items, CancellationToken ct = default);
+        Task<List<(int TutorId, double FinalScore)>> RerankAsync(string userQuery, List<HybridSearchHit> candidates, CancellationToken ct = default);
     }
 }

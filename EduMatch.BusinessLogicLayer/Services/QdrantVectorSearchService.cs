@@ -1,4 +1,5 @@
-﻿using EduMatch.BusinessLogicLayer.Interfaces;
+﻿using EduMatch.BusinessLogicLayer.DTOs;
+using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Responses;
 using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Entities;
@@ -25,21 +26,31 @@ namespace EduMatch.BusinessLogicLayer.Services
             _embeddingService = embeddingService;
         }
 
-        public async Task<List<VectorSearchResult>> SearchAsync(float[] queryVector)
-        {
-            var result = await _client.SearchAsync(_collectionName, queryVector, limit: 5);
+        //public async Task<List<VectorSearchResult>> SearchAsync(float[] queryVector)
+        //{
+        //    var result = await _client.SearchAsync(_collectionName, queryVector, limit: 5);
 
-            return result.Select(x => new VectorSearchResult
-            {
-                Id = x.Id.ToString(),
-                Score = x.Score,
-                Metadata = x.Payload.ContainsKey("tutorInfo")
-                    ? x.Payload["tutorInfo"].StringValue
-                    : null
-            }).ToList();
-        }
+        //    return result.Select(x => new VectorSearchResult
+        //    {
+        //        Id = x.Id.ToString(),
+        //        Score = x.Score,
+        //        Metadata = x.Payload.ContainsKey("tutorInfo")
+        //            ? x.Payload["tutorInfo"].StringValue
+        //            : null
+        //    }).ToList();
+        //}
 
         public Task<List<HybridSearchHit>> SearchAsync(string queryText, float[] vector, int topK = 10, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<HybridSearchHit>> SearchAsync(string queryText, float[] vector, int topK = 10, string? subject = null, string? province = null, string? district = null, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task UpsertTutorsAsync(IEnumerable<TutorProfileDto> tutors, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }

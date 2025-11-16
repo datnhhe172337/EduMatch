@@ -8,6 +8,7 @@ namespace EduMatch.BusinessLogicLayer.Settings
 {
     public class QdrantSettings
     {
-        public string Endpoint { get; set; } = "http://localhost:6334";
+        public string Endpoint { get; set; } = "http://localhost:6333";
+        public int VectorSize { get; set; } = 768;
     }
 }

@@ -1,4 +1,5 @@
-﻿using EduMatch.BusinessLogicLayer.Responses;
+﻿using EduMatch.BusinessLogicLayer.DTOs;
+using EduMatch.BusinessLogicLayer.Responses;
 using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Entities;
 using System;
@@ -14,10 +15,21 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         //Task<List<VectorSearchResult>> SearchAsync(float[] queryVector);
         //Task<List<HybridSearchResult>> SearchAsync(string userQuery, CancellationToken ct = default);
 
+        //Task<List<HybridSearchHit>> SearchAsync(
+        //        string queryText,
+        //        float[] vector,
+        //        int topK = 10,
+        //        CancellationToken ct = default);
+
+        Task UpsertTutorsAsync(IEnumerable<TutorProfileDto> tutors, CancellationToken ct = default);
+
         Task<List<HybridSearchHit>> SearchAsync(
-                string queryText,
-                float[] vector,
-                int topK = 10,
-                CancellationToken ct = default);
+        string queryText,
+        float[] vector,
+        int topK = 10,
+        string? subject = null,
+        string? province = null,
+        string? district = null,
+        CancellationToken ct = default);
     }
 }

@@ -18,7 +18,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         public EmbeddingService (IOptions<GeminiSettings> options)
         {
             var apiKey = options.Value.ApiKey;
-            var embeddingModelName = options.Value.EmbeddingModel ?? "gemini-embedding-001";
+            var embeddingModelName = options.Value.EmbeddingModel ?? "text-embedding-004";
             _embeddingModel = new EmbeddingModel(apiKey, embeddingModelName);
         }
 

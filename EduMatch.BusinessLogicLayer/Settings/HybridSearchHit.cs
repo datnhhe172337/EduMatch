@@ -10,6 +10,8 @@ namespace EduMatch.BusinessLogicLayer.Settings
     {
         public int TutorId { get; set; }
         public double Score { get; set; }
-        public string TutorInfo { get; set; }
+        public double VectorScore { get; set; }
+        public double KeywordScore { get; set; }
+        public string TutorInfo { get; set; } = "";
     }
 }

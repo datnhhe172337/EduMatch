@@ -8,6 +8,8 @@ namespace EduMatch.BusinessLogicLayer.Settings
 {
     public class HybridOptions
     {
+        public double VectorWeight { get; set; } = 0.5;
+        public double KeywordWeight { get; set; } = 0.5;
         public int RerankTopN { get; set; } = 30;
         public int ReturnTopK { get; set; } = 10;
     }
