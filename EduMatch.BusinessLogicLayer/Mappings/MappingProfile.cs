@@ -361,6 +361,7 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 						RefundedAt = s.RefundedAt,
 						CreatedAt = s.CreatedAt,
 						UpdatedAt = s.UpdatedAt,
+						Availability = null,
 						MeetingSession = s.MeetingSession != null ? new MeetingSessionDto
 						{
 							Id = s.MeetingSession.Id,
@@ -379,6 +380,26 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 			CreateMap<Schedule, ScheduleDto>()
 				.ForMember(dest => dest.Status,
 					opt => opt.MapFrom(src => (ScheduleStatus)src.Status))
+				.ForMember(dest => dest.Availability,
+					opt => opt.MapFrom(src => src.Availabiliti != null ? new TutorAvailabilityDto
+					{
+						Id = src.Availabiliti.Id,
+						TutorId = src.Availabiliti.TutorId,
+						SlotId = src.Availabiliti.SlotId,
+						StartDate = src.Availabiliti.StartDate,
+						EndDate = src.Availabiliti.EndDate ?? (src.Availabiliti.Slot != null 
+							? src.Availabiliti.StartDate.Date.Add(src.Availabiliti.Slot.EndTime.ToTimeSpan())
+							: src.Availabiliti.StartDate),
+						Status = (TutorAvailabilityStatus)src.Availabiliti.Status,
+						CreatedAt = src.Availabiliti.CreatedAt,
+						UpdatedAt = src.Availabiliti.UpdatedAt,
+						Slot = src.Availabiliti.Slot != null ? new TimeSlotDto
+						{
+							Id = src.Availabiliti.Slot.Id,
+							StartTime = src.Availabiliti.Slot.StartTime,
+							EndTime = src.Availabiliti.Slot.EndTime
+						} : null
+					} : null))
 				.ForMember(dest => dest.MeetingSession,
 					opt => opt.MapFrom(src => src.MeetingSession != null ? new MeetingSessionDto
 					{
