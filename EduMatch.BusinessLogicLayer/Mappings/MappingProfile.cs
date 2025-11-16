@@ -331,6 +331,33 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 				.ForMember(dest => dest.Status,
 					opt => opt.MapFrom(src => (BookingStatus)src.Status))
 				.ForMember(dest => dest.SystemFee, opt => opt.MapFrom(src => src.SystemFee != null ? src.SystemFee : null))
+				.ForMember(dest => dest.TutorSubject,
+					opt => opt.MapFrom(src => src.TutorSubject != null ? new TutorSubjectDto
+					{
+						Id = src.TutorSubject.Id,
+						TutorId = src.TutorSubject.TutorId,
+						HourlyRate = src.TutorSubject.HourlyRate,
+						Subject = src.TutorSubject.Subject != null ? new SubjectDto
+						{
+							Id = src.TutorSubject.Subject.Id,
+							SubjectName = src.TutorSubject.Subject.SubjectName
+						} : null,
+						Level = src.TutorSubject.Level != null ? new LevelDto
+						{
+							Id = src.TutorSubject.Level.Id,
+							Name = src.TutorSubject.Level.Name
+						} : null,
+						Tutor = src.TutorSubject.Tutor != null ? new TutorProfileDto
+						{
+							Id = src.TutorSubject.Tutor.Id,
+							UserEmail = src.TutorSubject.Tutor.UserEmail,
+							UserName = src.TutorSubject.Tutor.UserEmailNavigation != null ? src.TutorSubject.Tutor.UserEmailNavigation.UserName : null,
+							AvatarUrl = src.TutorSubject.Tutor.UserEmailNavigation != null && src.TutorSubject.Tutor.UserEmailNavigation.UserProfile != null 
+								? src.TutorSubject.Tutor.UserEmailNavigation.UserProfile.AvatarUrl : null,
+							TeachingModes = src.TutorSubject.Tutor.TeachingModes,
+							Status = src.TutorSubject.Tutor.Status
+						} : null
+					} : null))
 				.ForMember(dest => dest.Schedules,
 					opt => opt.MapFrom(src => src.Schedules != null ? src.Schedules.Select(s => new ScheduleDto
 					{

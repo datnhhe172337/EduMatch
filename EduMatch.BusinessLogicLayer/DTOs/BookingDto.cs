@@ -24,7 +24,8 @@ namespace EduMatch.BusinessLogicLayer.DTOs
 		public SystemFeeDto SystemFee { get; set; }
 		public decimal SystemFeeAmount { get; set; }
 
-		// Optional nested schedules
+		// Optional nested objects
+		public TutorSubjectDto? TutorSubject { get; set; }
 		public List<ScheduleDto>? Schedules { get; set; }
 	}
 }
