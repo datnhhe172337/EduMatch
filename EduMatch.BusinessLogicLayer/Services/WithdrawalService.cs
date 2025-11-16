@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests.Wallet;
@@ -17,44 +17,40 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly EduMatchContext _context;
         private readonly IMapper _mapper;
+        private readonly INotificationService _notificationService;
 
-        public WithdrawalService(IUnitOfWork unitOfWork, EduMatchContext context, IMapper mapper)
+        public WithdrawalService(IUnitOfWork unitOfWork, EduMatchContext context, IMapper mapper, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _context = context;
+            _notificationService = notificationService;
         }
 
         public async Task CreateWithdrawalRequestAsync(CreateWithdrawalRequest request, string userEmail)
         {
-            var wallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(userEmail);
-            if (wallet == null)
-            {
-                throw new Exception("Wallet not found.");
-            }
-
-            if (wallet.Balance < request.Amount)
-            {
-                throw new Exception("Insufficient funds. (Không đủ số dư)");
-            }
-
             var bankAccount = await _unitOfWork.UserBankAccounts.GetByIdAsync(request.UserBankAccountId);
             if (bankAccount == null || bankAccount.UserEmail != userEmail)
             {
                 throw new Exception("Invalid bank account.");
             }
 
+            bool withdrawalCreated = false;
+            int createdWithdrawalId = 0;
+            string? notifiedEmail = null;
+            decimal requestedAmount = request.Amount;
+
             using var dbTransaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             try
             {
-                wallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(userEmail)
+                var wallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(userEmail)
                     ?? throw new Exception("Wallet not found.");
 
                 await _context.Entry(wallet).ReloadAsync();
 
                 if (wallet.Balance < request.Amount)
                 {
-                    throw new Exception("Insufficient funds. (Kh�ng d? s? du)");
+                    throw new Exception("Insufficient funds. (Kh?ng d? s? du)");
                 }
 
                 var balanceBefore = wallet.Balance;
@@ -63,12 +59,12 @@ namespace EduMatch.BusinessLogicLayer.Services
                 {
                     WalletId = wallet.Id,
                     Amount = request.Amount,
-                    Status = WithdrawalStatus.Pending, 
+                    Status = WithdrawalStatus.Pending,
                     UserBankAccountId = request.UserBankAccountId,
                     CreatedAt = DateTime.UtcNow
                 };
                 await _unitOfWork.Withdrawals.AddAsync(newWithdrawal);
-                await _unitOfWork.CompleteAsync(); 
+                await _unitOfWork.CompleteAsync();
 
                 wallet.Balance -= request.Amount;
                 wallet.LockedBalance += request.Amount;
@@ -92,11 +88,23 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                 await _unitOfWork.CompleteAsync();
                 await dbTransaction.CommitAsync();
+
+                withdrawalCreated = true;
+                createdWithdrawalId = newWithdrawal.Id;
+                notifiedEmail = wallet.UserEmail;
             }
             catch (Exception)
             {
                 await dbTransaction.RollbackAsync();
                 throw;
+            }
+
+            if (withdrawalCreated && notifiedEmail != null)
+            {
+                await _notificationService.CreateNotificationAsync(
+                    notifiedEmail,
+                    $"Withdrawal request #{createdWithdrawalId} for {requestedAmount:N0} VND submitted and pending review.",
+                    "/wallet/withdrawals");
             }
         }
 
@@ -203,3 +211,4 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
     }
 }
+
