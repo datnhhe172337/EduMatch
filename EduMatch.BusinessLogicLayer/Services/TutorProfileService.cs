@@ -342,5 +342,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
-	}
+        public async Task<IReadOnlyList<TutorProfileDto>> GetTutorsUpdatedAfterAsync(DateTime lastSync)
+        {
+            var entities = await _tutorProfileRepository.GetTutorsUpdatedAfterAsync(lastSync);
+            return _mapper.Map<IReadOnlyList<TutorProfileDto>>(entities);
+        }
+
+    }
 }

@@ -1,5 +1,6 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Requests.TutorProfile;
+using EduMatch.DataAccessLayer.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,5 +39,10 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		/// Xác thực TutorProfile
 		/// </summary>
 		Task<TutorProfileDto> VerifyAsync(int id, string verifiedBy);
-	}
+
+
+        //Task<List<TutorProfileDto>> GetTutorsUpdatedAfterAsync(DateTime lastSync);
+        Task<IReadOnlyList<TutorProfileDto>> GetTutorsUpdatedAfterAsync(DateTime lastSync);
+
+    }
 }

@@ -1,8 +1,10 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.BusinessLogicLayer.Settings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Org.BouncyCastle.Asn1.Crmf;
 
@@ -14,11 +16,15 @@ namespace EduMatch.PresentationLayer.Controllers
     {
         private readonly IGeminiChatService _gemini;
         private readonly IEmbeddingService _embedding;
+        private readonly ITutorProfileService _service;
+        private readonly IQdrantService _qdrantService;
 
-        public AIChatbotController(IGeminiChatService gemini, IEmbeddingService embedding)
+        public AIChatbotController(IGeminiChatService gemini, IEmbeddingService embedding, ITutorProfileService service, IQdrantService qdrantService)
         {
             _gemini = gemini;
             _embedding = embedding;
+            _service = service;
+            _qdrantService = qdrantService;
         }
 
         [HttpPost("chat")]
@@ -61,5 +67,23 @@ namespace EduMatch.PresentationLayer.Controllers
             catch(InvalidOperationException ex) { throw new Exception(ex.Message); }
             
         }
+
+        [HttpPost("sync-tutors")]
+        public async Task<IActionResult> SyncAllTutors()
+        {
+            var tutors = await _service.GetAllFullAsync(); // Lấy tất cả tutor từ DB
+
+            await _qdrantService.UpsertTutorsAsync(tutors);
+
+            foreach (var tutor in tutors)
+            {
+                tutor. = DateTime.UtcNow; // cập nhật LastSync
+            }
+
+            await _dbContext.SaveChangesAsync();
+            return Ok(new { message = "All tutors synced to Qdrant successfully." });
+        }
+
+
     }
 }

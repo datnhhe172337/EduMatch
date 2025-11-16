@@ -33,5 +33,8 @@ namespace EduMatch.DataAccessLayer.Interfaces
 		/// Xóa TutorProfile theo ID
 		/// </summary>
 		Task RemoveByIdAsync(int id);
-	}
+
+        //Task<List<TutorProfile>> GetTutorsUpdatedAfterAsync(DateTime lastSync);
+        Task<IReadOnlyList<TutorProfile>> GetTutorsUpdatedAfterAsync(DateTime lastSync);
+    }
 }

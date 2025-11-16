@@ -66,6 +66,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                     $"Tiểu sử: {tutor.Bio ?? "Không có"}",
                     $"Kinh nghiệm: {tutor.TeachingExp ?? "Chưa có"}",
                     $"Môn học: {string.Join(", ", tutor.TutorSubjects?.Select(s => s.Subject.SubjectName) ?? Enumerable.Empty<string>())}",
+                    $"Lớp: {string.Join(", ", tutor.TutorSubjects?.Select(s => s.Level.Name) ?? Enumerable.Empty<string>())}",
                     $"Giá: {string.Join(", ", tutor.TutorSubjects?.Select(s => s.HourlyRate) ?? Enumerable.Empty<decimal?>())}",
                     $"Hình thức dạy: {tutor.TeachingModes}",
                     $"Tỉnh/Thành: {tutor.Province?.Name ?? "Không rõ"}",
@@ -98,6 +99,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                                         Fields =
                                         {
                                             ["name"] = new Value { StringValue = ts.Subject.SubjectName },
+                                            ["level"] = new Value { StringValue = ts.Level.Name },
                                             ["hourlyRate"] = new Value { DoubleValue = (double)ts.HourlyRate }
                                         }
                                     }

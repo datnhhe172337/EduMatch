@@ -1,5 +1,5 @@
 ﻿using DotNetEnv;
-using EduMatch.BusinessLogicLayer.Services;
+using EduMatch.BusinessLogicLayer.BackgroundServices;
 using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.PresentationLayer.Configurations;
@@ -38,6 +38,7 @@ builder.Services.AddHttpClient("qdrant", c =>
 
 // Background Service
 builder.Services.AddHostedService<ClassRequestExpireBackgroundService>();
+builder.Services.AddHostedService<TutorSyncBackgroundService>();
 
 // Add services to the container.
 builder.Services.AddControllers()
