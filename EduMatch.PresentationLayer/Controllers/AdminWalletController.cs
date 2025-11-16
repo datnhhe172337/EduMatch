@@ -1,4 +1,5 @@
-﻿using EduMatch.BusinessLogicLayer.DTOs;
+﻿using EduMatch.BusinessLogicLayer.Constants;
+using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.PresentationLayer.Common;
@@ -9,7 +10,7 @@ namespace EduMatch.PresentationLayer.Controllers
 {
     [Route("api/admin/wallet")]
     [ApiController]
-    [Authorize(Roles = "3")] 
+    [Authorize(Roles = Roles.BusinessAdmin + "," + Roles.SystemAdmin)]
     public class AdminWalletController : ControllerBase
     {
         private readonly IWalletService _walletService;

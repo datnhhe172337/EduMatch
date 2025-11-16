@@ -93,6 +93,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IScheduleService, ScheduleService>();
             services.AddScoped<IMeetingSessionService, MeetingSessionService>();
             services.AddScoped<IReportService, ReportService>();
+            services.AddScoped<IReportContentValidator, ReportContentValidator>();
 
             services.AddScoped<IUserProfileService, UserProfileService>();
             services.AddScoped<IManageTutorProfileService, ManageTutorProfileService>();

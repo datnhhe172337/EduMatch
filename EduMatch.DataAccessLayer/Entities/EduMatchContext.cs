@@ -37,6 +37,8 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<FavoriteTutor> FavoriteTutors { get; set; }
 
+    public virtual DbSet<FeedbackCriterion> FeedbackCriteria { get; set; }
+
     public virtual DbSet<GoogleToken> GoogleTokens { get; set; }
 
     public virtual DbSet<Level> Levels { get; set; }
@@ -48,6 +50,8 @@ public partial class EduMatchContext : DbContext
     public virtual DbSet<Province> Provinces { get; set; }
 
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
+
+    public virtual DbSet<Report> Reports { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
 
@@ -68,6 +72,10 @@ public partial class EduMatchContext : DbContext
     public virtual DbSet<TutorCertificate> TutorCertificates { get; set; }
 
     public virtual DbSet<TutorEducation> TutorEducations { get; set; }
+
+    public virtual DbSet<TutorFeedback> TutorFeedbacks { get; set; }
+
+    public virtual DbSet<TutorFeedbackDetail> TutorFeedbackDetails { get; set; }
 
     public virtual DbSet<TutorProfile> TutorProfiles { get; set; }
 
@@ -444,6 +452,19 @@ public partial class EduMatchContext : DbContext
                 .HasConstraintName("FK_favorite_tutors_users");
         });
 
+        modelBuilder.Entity<FeedbackCriterion>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Feedback__3214EC0700F318AC");
+
+            entity.HasIndex(e => e.Code, "UQ__Feedback__A25C5AA767EB3903").IsUnique();
+
+            entity.Property(e => e.Code).HasMaxLength(50);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Description).HasMaxLength(300);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Name).HasMaxLength(200);
+        });
+
         modelBuilder.Entity<GoogleToken>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__google_t__3213E83FBEA09237");
@@ -589,6 +610,47 @@ public partial class EduMatchContext : DbContext
                 .HasForeignKey(d => d.UserEmail)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__refresh_t__userE__5BE2A6F2");
+        });
+
+        modelBuilder.Entity<Report>(entity =>
+        {
+            entity.ToTable("reports");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AdminNotes).HasColumnName("adminNotes");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnType("datetime")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.HandledByAdminEmail)
+                .HasMaxLength(100)
+                .HasColumnName("handledByAdminEmail");
+            entity.Property(e => e.Reason).HasColumnName("reason");
+            entity.Property(e => e.ReportedUserEmail)
+                .HasMaxLength(100)
+                .HasColumnName("reportedUserEmail");
+            entity.Property(e => e.ReporterUserEmail)
+                .HasMaxLength(100)
+                .HasColumnName("reporterUserEmail");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.TutorDefenseNote).HasColumnName("tutorDefenseNote");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime")
+                .HasColumnName("updatedAt");
+
+            entity.HasOne(d => d.HandledByAdminEmailNavigation).WithMany(p => p.ReportHandledByAdminEmailNavigations)
+                .HasForeignKey(d => d.HandledByAdminEmail)
+                .HasConstraintName("FK_reports_admin_users");
+
+            entity.HasOne(d => d.ReportedUserEmailNavigation).WithMany(p => p.ReportReportedUserEmailNavigations)
+                .HasForeignKey(d => d.ReportedUserEmail)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_reports_reported_users");
+
+            entity.HasOne(d => d.ReporterUserEmailNavigation).WithMany(p => p.ReportReporterUserEmailNavigations)
+                .HasForeignKey(d => d.ReporterUserEmail)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_reports_reporter_users");
         });
 
         modelBuilder.Entity<Role>(entity =>
@@ -825,6 +887,31 @@ public partial class EduMatchContext : DbContext
                 .HasForeignKey(d => d.TutorId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__tutor_edu__tutor__6A30C649");
+        });
+
+        modelBuilder.Entity<TutorFeedback>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TutorFee__3214EC07BA27576C");
+
+            entity.ToTable("TutorFeedback");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.LearnerEmail).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<TutorFeedbackDetail>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TutorFee__3214EC077C9D771F");
+
+            entity.HasOne(d => d.Criterion).WithMany(p => p.TutorFeedbackDetails)
+                .HasForeignKey(d => d.CriterionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TutorFeedbackDetails_Criteria");
+
+            entity.HasOne(d => d.Feedback).WithMany(p => p.TutorFeedbackDetails)
+                .HasForeignKey(d => d.FeedbackId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TutorFeedbackDetails_Feedback");
         });
 
         modelBuilder.Entity<TutorProfile>(entity =>
