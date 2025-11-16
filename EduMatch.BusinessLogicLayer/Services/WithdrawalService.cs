@@ -126,6 +126,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task ApproveWithdrawalAsync(int withdrawalId, string adminEmail)
         {
+            string? userEmail = null;
+            decimal approvedAmount = 0;
+
             using var dbTransaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -143,7 +146,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 }
 
                 //update statuses
-                withdrawal.Status = WithdrawalStatus.Completed; 
+                withdrawal.Status = WithdrawalStatus.Completed;
                 withdrawal.ProcessedAt = DateTime.UtcNow;
                 withdrawal.AdminEmail = adminEmail;
                 _unitOfWork.Withdrawals.Update(withdrawal);
@@ -153,22 +156,36 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                 //update the user's wallet
                 var wallet = withdrawal.Wallet;
-                wallet.LockedBalance -= withdrawal.Amount; 
+                wallet.LockedBalance -= withdrawal.Amount;
                 wallet.UpdatedAt = DateTime.UtcNow;
                 _unitOfWork.Wallets.Update(wallet);
 
                 await _unitOfWork.CompleteAsync();
                 await dbTransaction.CommitAsync();
+
+                userEmail = wallet.UserEmail;
+                approvedAmount = withdrawal.Amount;
             }
             catch (Exception)
             {
                 await dbTransaction.RollbackAsync();
                 throw;
             }
+
+            if (userEmail != null)
+            {
+                await _notificationService.CreateNotificationAsync(
+                    userEmail,
+                    $"Your withdrawal request #{withdrawalId} for {approvedAmount:N0} VND has been approved.",
+                    "/wallet/withdrawals");
+            }
         }
 
         public async Task RejectWithdrawalAsync(int withdrawalId, string adminEmail, string reason)
         {
+            string? userEmail = null;
+            decimal rejectedAmount = 0;
+
             using var dbTransaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -195,18 +212,35 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                 // return the money to the user's main balance
                 var wallet = withdrawal.Wallet;
-                wallet.LockedBalance -= withdrawal.Amount; 
-                wallet.Balance += withdrawal.Amount; 
+                wallet.LockedBalance -= withdrawal.Amount;
+                wallet.Balance += withdrawal.Amount;
                 wallet.UpdatedAt = DateTime.UtcNow;
                 _unitOfWork.Wallets.Update(wallet);
 
                 await _unitOfWork.CompleteAsync();
                 await dbTransaction.CommitAsync();
+
+                userEmail = wallet.UserEmail;
+                rejectedAmount = withdrawal.Amount;
             }
             catch (Exception)
             {
                 await dbTransaction.RollbackAsync();
                 throw;
+            }
+
+            if (userEmail != null)
+            {
+                var message = $"Your withdrawal request #{withdrawalId} for {rejectedAmount:N0} VND was rejected.";
+                if (!string.IsNullOrWhiteSpace(reason))
+                {
+                    message += $" Reason: {reason}";
+                }
+
+                await _notificationService.CreateNotificationAsync(
+                    userEmail,
+                    message,
+                    "/wallet/withdrawals");
             }
         }
     }
