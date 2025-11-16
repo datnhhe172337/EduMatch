@@ -7,6 +7,9 @@ namespace EduMatch.PresentationLayer.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    /// <summary>
+    /// Exposes read-only bank metadata for populating drop-downs.
+    /// </summary>
     public class BanksController : ControllerBase
     {
         private readonly IBankService _bankService;
@@ -16,7 +19,9 @@ namespace EduMatch.PresentationLayer.Controllers
             _bankService = bankService;
         }
 
-        // GET: api/Banks
+        /// <summary>
+        /// Lists all supported banks.
+        /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<BankDto>>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]

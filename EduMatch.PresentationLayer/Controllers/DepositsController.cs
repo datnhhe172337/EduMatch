@@ -10,6 +10,9 @@ namespace EduMatch.PresentationLayer.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
+    /// <summary>
+    /// Manages deposit requests and VNPay interactions for authenticated users.
+    /// </summary>
     public class DepositsController : ControllerBase
     {
         private readonly IDepositService _depositService;
@@ -26,6 +29,9 @@ namespace EduMatch.PresentationLayer.Controllers
             _currentUserService = currentUserService;
         }
 
+        /// <summary>
+        /// Creates a VNPay payment request for the current user.
+        /// </summary>
         [HttpPost("create-vnpay-request")]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
@@ -55,6 +61,9 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
+        /// <summary>
+        /// Allows administrators to mark pending deposits older than 24h as failed.
+        /// </summary>
         [HttpPost("admin/cleanup-expired")]
         [Authorize(Roles = "3")] 
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
@@ -72,6 +81,9 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
+        /// <summary>
+        /// Cancels a pending deposit belonging to the current user.
+        /// </summary>
         [HttpPost("{id}/cancel")]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
