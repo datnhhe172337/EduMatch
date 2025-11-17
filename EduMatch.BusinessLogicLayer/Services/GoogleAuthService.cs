@@ -116,33 +116,99 @@ namespace EduMatch.BusinessLogicLayer.Services
 		//	return url;
 		//}
 
-		public async Task<string> GenerateAuthUrlDat()
+	public async Task<string> GenerateAuthUrlDat()
+	{
+		string scopes = string.Join(" ",
+			new[]
+			{
+		"https://www.googleapis.com/auth/calendar.events",
+		"https://www.googleapis.com/auth/calendar"
+			});
+
+		var existingToken = await _googleTokenRepository.GetByEmailAsync(_googleCalendarSettings.SystemAccountEmail);
+
+		bool needsReauth = false;
+
+		// Kiểm tra nếu không có refresh token
+		if (string.IsNullOrEmpty(existingToken?.RefreshToken))
 		{
-			string scopes = string.Join(" ",
-				new[]
-				{
-			"https://www.googleapis.com/auth/calendar.events",
-			"https://www.googleapis.com/auth/calendar"
-				});
-
-			var existingToken = await _googleTokenRepository.GetByEmailAsync(_googleCalendarSettings.SystemAccountEmail);
-
-			string prompt = string.IsNullOrEmpty(existingToken?.RefreshToken)
-				? "&prompt=consent" // chỉ yêu cầu lại quyền khi chưa có refresh token
-				: "";
-
-			string url =
-				"https://accounts.google.com/o/oauth2/v2/auth" +
-				"?response_type=code" +
-				$"&client_id={_googleCalendarSettings.ClientId}" +
-				$"&redirect_uri={Uri.EscapeDataString(_googleCalendarSettings.RedirectUri)}" +
-				$"&scope={Uri.EscapeDataString(scopes)}" +
-				"&access_type=offline" +
-				prompt +
-				$"&login_hint={Uri.EscapeDataString(_googleCalendarSettings.SystemAccountEmail)}";
-
-			return url;
+			needsReauth = true;
 		}
+		else
+		{
+			// Kiểm tra xem refresh token có bị revoked không
+			bool isRevoked = await IsRefreshTokenRevokedAsync(existingToken);
+			if (isRevoked)
+			{
+				needsReauth = true;
+			}
+		}
+
+		string prompt = needsReauth
+			? "&prompt=consent" // yêu cầu lại quyền khi chưa có refresh token hoặc token bị revoked
+			: "";
+
+		string url =
+			"https://accounts.google.com/o/oauth2/v2/auth" +
+			"?response_type=code" +
+			$"&client_id={_googleCalendarSettings.ClientId}" +
+			$"&redirect_uri={Uri.EscapeDataString(_googleCalendarSettings.RedirectUri)}" +
+			$"&scope={Uri.EscapeDataString(scopes)}" +
+			"&access_type=offline" +
+			prompt +
+			$"&login_hint={Uri.EscapeDataString(_googleCalendarSettings.SystemAccountEmail)}";
+
+		return url;
+	}
+
+	/// <summary>
+	/// Kiểm tra xem refresh token có bị revoked hoặc invalid không
+	/// </summary>
+	private async Task<bool> IsRefreshTokenRevokedAsync(GoogleToken token)
+	{
+		if (string.IsNullOrEmpty(token.RefreshToken))
+			return true;
+
+		try
+		{
+			var refreshRequest = new Dictionary<string, string>
+			{
+				{ "client_id", _googleCalendarSettings.ClientId },
+				{ "client_secret", _googleCalendarSettings.ClientSecret },
+				{ "refresh_token", token.RefreshToken },
+				{ "grant_type", "refresh_token" }
+			};
+
+			var response = await _httpClient.PostAsync(
+				_googleCalendarSettings.TokenEndpoint,
+				new FormUrlEncodedContent(refreshRequest)
+			);
+
+			var json = await response.Content.ReadAsStringAsync();
+
+			// Nếu response không thành công và chứa "invalid_grant", token đã bị revoked
+			if (!response.IsSuccessStatusCode)
+			{
+				if (json.Contains("invalid_grant") || json.Contains("Token has been expired or revoked"))
+				{
+					// Xóa refresh token vì đã không còn hợp lệ
+					token.RefreshToken = null;
+					token.AccessToken = null;
+					token.ExpiresAt = null;
+					token.UpdatedAt = DateTime.UtcNow;
+					await _googleTokenRepository.UpdateAsync(token);
+					return true;
+				}
+			}
+
+			return false;
+		}
+		catch
+		{
+			// Nếu có lỗi khi kiểm tra, giả định token vẫn hợp lệ để tránh false positive
+			return false;
+		}
+	}
 
 
 
