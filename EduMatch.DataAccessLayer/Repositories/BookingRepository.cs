@@ -236,18 +236,22 @@ namespace EduMatch.DataAccessLayer.Repositories
         }
 
         /// <summary>
-        /// Lấy danh sách booking pending cần auto-cancel nếu quá 3 ngày chưa xác nhận hoặc lịch học chuẩn bị diễn ra
+        /// Lấy danh sách booking cần auto-cancel nếu quá hạn xác nhận/thanh toán hoặc lịch học sắp diễn ra
         /// </summary>
-        public async Task<List<Booking>> GetPendingBookingsNeedingAutoCancelAsync(DateTime createdBeforeUtc, DateTime scheduleStartBeforeUtc)
+        public async Task<List<Booking>> GetPendingBookingsNeedingAutoCancelAsync(DateTime createdBefore, DateTime scheduleStartBefore)
         {
             return await _context.Bookings
                 .AsSplitQuery()
                 .Include(b => b.Schedules)
                     .ThenInclude(s => s.Availabiliti)
-                .Where(b => b.Status == (int)BookingStatus.Pending &&
+                .Where(b =>
                     (
-                        b.CreatedAt <= createdBeforeUtc ||
-                        b.Schedules.Any(s => s.Availabiliti.StartDate <= scheduleStartBeforeUtc)
+                        b.Status == (int)BookingStatus.Pending ||
+                        (b.Status == (int)BookingStatus.Confirmed && b.PaymentStatus == (int)PaymentStatus.Pending)
+                    ) &&
+                    (
+                        b.CreatedAt <= createdBefore ||
+                        b.Schedules.Any(s => s.Availabiliti.StartDate <= scheduleStartBefore)
                     ))
                 .ToListAsync();
         }
