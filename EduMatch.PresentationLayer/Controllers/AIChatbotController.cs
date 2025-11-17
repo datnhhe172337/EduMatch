@@ -77,6 +77,9 @@ namespace EduMatch.PresentationLayer.Controllers
         [HttpPost("sync-tutors")]
         public async Task<IActionResult> SyncAllTutors()
         {
+            await _qdrantService.DeleteCollectionAsync("tutors");
+            await _qdrantService.CreateCollectionAsync("tutors", 768);
+
             var count = await _service.SyncAllTutorsAsync();
 
             return Ok(new
