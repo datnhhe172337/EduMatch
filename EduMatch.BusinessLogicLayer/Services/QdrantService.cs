@@ -2,6 +2,7 @@
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Enum;
+using Google.Protobuf.Collections;
 using Microsoft.Extensions.Options;
 using Qdrant.Client;
 using Qdrant.Client.Grpc;
@@ -12,6 +13,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
 
@@ -19,343 +21,210 @@ namespace EduMatch.BusinessLogicLayer.Services
 {
     public class QdrantService : IQdrantService
     {
-        private readonly HttpClient _httpClient;
+        private readonly QdrantClient _client;
         private readonly IEmbeddingService _embeddingService;
         private readonly string _collectionName = "tutors";
-        private readonly QdrantSettings _settings;
 
-        public QdrantService(IEmbeddingService embeddingService, IOptions<QdrantSettings> options, IHttpClientFactory httpFactory)
+        public QdrantService(IEmbeddingService embeddingService, IOptions<QdrantSettings> options)
         {
-            _httpClient = httpFactory.CreateClient("qdrant");
-            _settings = options.Value ?? throw new ArgumentNullException(nameof(options));
+            _client = new QdrantClient("localhost", 6334);
             _embeddingService = embeddingService;
-        }
-
-        /// <summary>
-        /// Upsert single tutor
-        /// </summary>
-        public async Task UpsertTutorAsync(TutorProfileDto tutor)
-        {
-            var point = await CreatePointAsync(tutor);
-
-            await UpsertPointsAsync(new[] { point });
-        }
-
-        /// <summary>
-        /// Batch upsert nhiều tutor
-        /// </summary>
-        public async Task UpsertTutorsAsync(IEnumerable<TutorProfileDto> tutors)
-        {
-            var points = new List<object>();
-
-            foreach (var tutor in tutors)
-            {
-                var point = await CreatePointAsync(tutor);
-                points.Add(point);
-            }
-
-            await UpsertPointsAsync(points);
-        }
-
-        //private async Task UpsertPointsAsync(IEnumerable<object> points)
-        //{
-        //    // Chuyển sang lists riêng
-        //    var ids = new List<ulong>();
-        //    var vectors = new List<float[]>();
-        //    var payloads = new List<object>();
-
-        //    foreach (dynamic p in points)
-        //    {
-        //        ids.Add((ulong)p.id);
-        //        vectors.Add((float[])p.vector);
-        //        payloads.Add(p.payload);
-        //    }
-
-        //    // Chia batch <= 500 points mỗi lần
-        //    const int batchSize = 500;
-        //    for (int i = 0; i < ids.Count; i += batchSize)
-        //    {
-        //        var batchIds = ids.Skip(i).Take(batchSize).ToList();
-        //        var batchVectors = vectors.Skip(i).Take(batchSize).ToList();
-        //        var batchPayloads = payloads.Skip(i).Take(batchSize).ToList();
-
-        //        var requestBody = new
-        //        {
-        //            ids = batchIds,
-        //            vectors = batchVectors,
-        //            payloads = batchPayloads
-        //        };
-
-        //        var response = await _httpClient.PostAsJsonAsync($"/collections/{_collectionName}/points?wait=true", requestBody);
-
-        //        if (!response.IsSuccessStatusCode)
-        //        {
-        //            var content = await response.Content.ReadAsStringAsync();
-        //            throw new InvalidOperationException($"Qdrant returned {response.StatusCode}: {content}");
-        //        }
-        //    }
-        //}
-
-        //private async Task UpsertPointsAsync(IEnumerable<object> points)
-        //{
-        //    var ids = new List<ulong>();
-        //    var vectors = new List<Dictionary<string, float[]>>();
-        //    var payloads = new List<object>();
-
-        //    foreach (dynamic p in points)
-        //    {
-        //        ids.Add((ulong)p.id);
-
-        //        vectors.Add(new Dictionary<string, float[]>
-        //{
-        //    { "embedding", (float[])p.vector }
-        //});
-
-        //        payloads.Add(p.payload);
-        //    }
-
-        //    const int batchSize = 500;
-        //    for (int i = 0; i < ids.Count; i += batchSize)
-        //    {
-        //        var body = new
-        //        {
-        //            points = ids.Skip(i).Take(batchSize)
-        //                .Select((id, index) => new
-        //                {
-        //                    id = id,
-        //                    vector = vectors[i + index],
-        //                    payload = payloads[i + index]
-        //                })
-        //        };
-
-        //        var response = await _httpClient.PostAsJsonAsync(
-        //            $"/collections/{_collectionName}/points?wait=true", body);
-
-        //        var content = await response.Content.ReadAsStringAsync();
-
-        //        if (!response.IsSuccessStatusCode)
-        //            throw new Exception($"Upsert failed: {response.StatusCode}: {content}");
-        //    }
-        //}
-
-        private async Task UpsertPointsAsync(IEnumerable<object> points)
-        {
-            const int batchSize = 500;
-
-            var pointList = points.Select(p => new
-            {
-                id = (ulong)p.GetType().GetProperty("id").GetValue(p),
-                vector = (float[])p.GetType().GetProperty("vector").GetValue(p),
-                payload = p.GetType().GetProperty("payload").GetValue(p)
-            }).ToList();
-
-            for (int i = 0; i < pointList.Count; i += batchSize)
-            {
-                var batch = pointList.Skip(i).Take(batchSize).ToList();
-                var requestBody = new { points = batch };
-
-                var json = JsonSerializer.Serialize(requestBody, new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                });
-
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var resp = await _httpClient.PostAsync($"/collections/{_collectionName}/points?wait=true", content);
-
-                if (!resp.IsSuccessStatusCode)
-                {
-                    var respContent = await resp.Content.ReadAsStringAsync();
-                    throw new Exception($"Upsert failed: {resp.StatusCode}: {respContent}");
-                }
-            }
-        }
-
-
-
-
-
-
-        //private async Task UpsertPointsAsync(IEnumerable<object> points)
-        //{
-        //    const int batchSize = 500;
-
-        //    // Tạo list point với đúng format
-        //    var pointList = points.Select(p => new
-        //    {
-        //        id = (ulong)p.GetType().GetProperty("id").GetValue(p),
-        //        vector = new { embedding = (float[])p.GetType().GetProperty("vector").GetValue(p) },
-        //        payload = p.GetType().GetProperty("payload").GetValue(p)
-        //    }).ToList();
-
-        //    for (int i = 0; i < pointList.Count; i += batchSize)
-        //    {
-        //        var batch = pointList.Skip(i).Take(batchSize).ToList();
-        //        var requestBody = new { points = batch };
-
-        //        // Serialize manually để đảm bảo JSON chính xác
-        //        var json = JsonSerializer.Serialize(requestBody);
-        //        var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-        //        var response = await _httpClient.PostAsync($"/collections/{_collectionName}/points?wait=true", content);
-        //        if (!response.IsSuccessStatusCode)
-        //        {
-        //            var responseContent = await response.Content.ReadAsStringAsync();
-        //            throw new InvalidOperationException($"Qdrant returned {response.StatusCode}: {responseContent}");
-        //        }
-        //    }
-        //}
-
-
-        // <summary>
-        /// Tạo PointStruct từ TutorProfileDto
-        /// </summary>
-        private async Task<object> CreatePointAsync(TutorProfileDto tutor)
-        {
-            string embeddingText = string.Join(" ",
-            new[]
-            {
-                $"Tên: {tutor.UserName ?? ""}",
-                $"Giới tính: {tutor.Gender?.ToString() ?? ""}",
-                $"Ngày sinh: {tutor.Dob?.ToString("yyyy-MM-dd") ?? ""}",
-                $"Tiểu sử: {tutor.Bio ?? ""}",
-                $"Kinh nghiệm: {tutor.TeachingExp ?? ""}",
-                $"Môn học: {string.Join(", ", tutor.TutorSubjects?.Select(s => s.Subject?.SubjectName ?? "") ?? Enumerable.Empty<string>())}",
-                $"Lớp: {string.Join(", ", tutor.TutorSubjects?.Select(s => s.Level?.Name ?? "") ?? Enumerable.Empty<string>())}",
-                $"Giá: {string.Join(", ", tutor.TutorSubjects?.Select(s => s.HourlyRate?.ToString() ?? "0") ?? Enumerable.Empty<string>())}",
-                $"Hình thức dạy: {tutor.TeachingModes.ToString() ?? ""}",
-                $"Tỉnh/Thành: {tutor.Province?.Name ?? ""}",
-                $"Xã: {tutor.SubDistrict?.Name ?? ""}"
-            });
-
-            var vector = await _embeddingService.GenerateEmbeddingAsync(embeddingText) ?? Array.Empty<float>();
-            if (vector == null || vector.Length == 0)
-                throw new InvalidOperationException($"Embedding vector is null or empty for tutor {tutor.Id}");
-
-            var subjects = tutor.TutorSubjects?.Select(ts => new Dictionary<string, object> { ["name"] = ts.Subject?.SubjectName ?? "", ["level"] = ts.Level?.Name ?? "", ["hourlyRate"] = ts.HourlyRate ?? 0 }).ToArray() ?? Array.Empty<object>();
-
-            var payload = new Dictionary<string, object>
-            {
-                ["tutorId"] = tutor.Id,
-                ["name"] = tutor.UserName ?? "",
-                ["gender"] = tutor.Gender?.ToString() ?? "",
-                ["bio"] = tutor.Bio ?? "",
-                ["experience"] = tutor.TeachingExp ?? "",
-                ["province"] = tutor.Province?.Name ?? "",
-                ["subdistrict"] = tutor.SubDistrict?.Name ?? "",
-                ["teachingModes"] = tutor.TeachingModes.ToString() ?? "",
-                ["subjects"] = subjects
-            };
-
-
-            return new
-            {
-                id = (ulong)tutor.Id,
-                vector,
-                payload
-            };
-        }
-
-        public async Task<List<(TutorProfileDto Tutor, float Score)>> SearchTutorsAsync(float[] queryVector, int topK = 5)
-        {
-            var requestBody = new
-            {
-                vector = new Dictionary<string, float[]>
-                {
-                    ["embedding"] = queryVector
-                },
-                limit = topK
-            };
-
-            var json = JsonSerializer.Serialize(requestBody, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
-
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            var response = await _httpClient.PostAsync($"/collections/{_collectionName}/points/search", content);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var contentResp = await response.Content.ReadAsStringAsync();
-                throw new InvalidOperationException($"Qdrant search failed: {response.StatusCode} - {content}");
-            }
-
-            var jsonResp = await response.Content.ReadAsStringAsync();
-            var searchResult = JsonSerializer.Deserialize<QdrantSearchResult>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            if (searchResult == null || searchResult.Result.Count == 0) return new List<(TutorProfileDto, float)>();
-
-            var tutors = searchResult.Result.Select(p =>
-            {
-                var payload = p.Payload;
-                var subjects = new List<TutorSubjectDto>();
-
-                if (payload.ContainsKey("subjects") && payload["subjects"] is JsonElement jsonSubjects && jsonSubjects.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var sub in jsonSubjects.EnumerateArray())
-                    {
-                        var name = sub.GetProperty("name").GetString() ?? "";
-                        var level = sub.GetProperty("level").GetString() ?? "";
-                        var rate = sub.GetProperty("hourlyRate").GetInt32();
-                        subjects.Add(new TutorSubjectDto
-                        {
-                            Subject = new SubjectDto { SubjectName = name },
-                            Level = new LevelDto { Name = level },
-                            HourlyRate = rate
-                        });
-                    }
-                }
-
-                var tutor = new TutorProfileDto
-                {
-                    Id = (int)p.Id,
-                    UserName = payload.ContainsKey("name") ? payload["name"].ToString() : "",
-                    Gender = payload.ContainsKey("gender") && Enum.TryParse<EduMatch.DataAccessLayer.Enum.Gender>(
-                         payload["gender"].ToString(), true, out var genderVal)
-                            ? genderVal
-                            : null,
-                    Bio = payload.ContainsKey("bio") ? payload["bio"].ToString() : "",
-                    TeachingExp = payload.ContainsKey("experience") ? payload["experience"].ToString() : "",
-                    Province = new ProvinceDto { Name = payload.ContainsKey("province") ? payload["province"].ToString() : "" },
-                    SubDistrict = new SubDistrictDto { Name = payload.ContainsKey("subdistrict") ? payload["subdistrict"].ToString() : "" },
-                    TutorSubjects = subjects
-                };
-
-                return (tutor, p.Score);
-            }).ToList();
-
-            return tutors;
-        }
-
-        public async Task DeleteCollectionAsync(string collectionName)
-        {
-            var resp = await _httpClient.DeleteAsync($"/collections/{collectionName}?delete_payload=true&delete_vectors=true");
-            var content = await resp.Content.ReadAsStringAsync();
-
-            if (!resp.IsSuccessStatusCode)
-                throw new Exception($"Delete collection failed: {resp.StatusCode}, {content}");
         }
 
         public async Task CreateCollectionAsync(string name, int vectorSize)
         {
-            var body = new
+            // Nếu collection đã tồn tại → xóa
+            var exists = await _client.CollectionExistsAsync(name);
+            if (exists)
             {
-                vectors = new Dictionary<string, object>
-                {
-                    ["embedding"] = new
-                    {
-                        size = vectorSize,
-                        distance = "Cosine"
-                    }
-                }
+                await _client.DeleteCollectionAsync(name);
+            }
+
+            // Tạo collection với 1 vector "embedding"
+            var vectorParams = new VectorParams
+            {
+                Size = (uint)vectorSize,
+                Distance = Distance.Cosine
             };
 
-            var resp = await _httpClient.PutAsJsonAsync($"/collections/{name}", body);
-            var json = await resp.Content.ReadAsStringAsync();
+            await _client.CreateCollectionAsync(
+                collectionName: name,
+                vectorsConfig: vectorParams 
+            );
+        }
 
-            if (!resp.IsSuccessStatusCode)
-                throw new Exception($"Create collection failed: {resp.StatusCode}: {json}");
+       // ----------------------------------------------------------
+        // Upsert: Single tutor
+        // ----------------------------------------------------------
+        public async Task UpsertTutorAsync(TutorProfileDto tutor)
+        {
+            var point = await BuildPointAsync(tutor);
+            await _client.UpsertAsync(_collectionName, new[] { point });
+        }
+
+        // ----------------------------------------------------------
+        // Upsert: Batch
+        // ----------------------------------------------------------
+        public async Task UpsertTutorsAsync(IEnumerable<TutorProfileDto> tutors)
+        {
+            const int batch = 500;
+
+            var buffer = new List<PointStruct>(batch);
+
+            foreach (var t in tutors)
+            {
+                buffer.Add(await BuildPointAsync(t));
+
+                if (buffer.Count >= batch)
+                {
+                    await _client.UpsertAsync(_collectionName, buffer);
+                    buffer.Clear();
+                }
+            }
+
+            if (buffer.Count > 0)
+                await _client.UpsertAsync(_collectionName, buffer);
+        }
+
+        // ----------------------------------------------------------
+        // Build PointStruct for GRPC upsert
+        // ----------------------------------------------------------
+        private async Task<PointStruct> BuildPointAsync(TutorProfileDto tutor)
+        {
+            string textToEmbed = string.Join(" ",
+                 new[]
+                 {
+                    $"Tên: {tutor.UserName ?? ""}",
+                        $"Giới tính: {tutor.Gender?.ToString() ?? ""}",
+                        $"Ngày sinh: {tutor.Dob?.ToString("yyyy-MM-dd") ?? ""}",
+                        $"Tiểu sử: {tutor.Bio ?? ""}",
+                        $"Kinh nghiệm: {tutor.TeachingExp ?? ""}",
+                        $"Môn học: {string.Join(", ", tutor.TutorSubjects?.Select(s => s.Subject?.SubjectName ?? "") ?? Enumerable.Empty<string>())}",
+                        $"Lớp: {string.Join(", ", tutor.TutorSubjects?.Select(s => s.Level?.Name ?? "") ?? Enumerable.Empty<string>())}",
+                        $"Giá: {string.Join(", ", tutor.TutorSubjects?.Select(s => s.HourlyRate?.ToString() ?? "0") ?? Enumerable.Empty<string>())}",
+                        $"Hình thức dạy: {tutor.TeachingModes.ToString() ?? ""}",
+                        $"Tỉnh/Thành: {tutor.Province?.Name ?? ""}",
+                        $"Xã: {tutor.SubDistrict?.Name ?? ""}"
+                 }.Where(s => !string.IsNullOrWhiteSpace(s))
+             );
+
+            var vector = await _embeddingService.GenerateEmbeddingAsync(textToEmbed);
+            if (vector == null || vector.Length == 0)
+                throw new InvalidOperationException($"Embedding generation failed for tutor {tutor?.Id}");
+
+            var point = new PointStruct
+            {
+                Id = (ulong)tutor.Id,
+                Vectors = vector.ToArray()
+            };
+
+            point.Payload.Add("tutorId", new Value { IntegerValue = tutor.Id });
+            point.Payload.Add("name", new Value { StringValue = tutor.UserName ?? "" });
+            point.Payload.Add("gender", new Value { StringValue = tutor.Gender?.ToString() ?? "" });
+            point.Payload.Add("bio", new Value { StringValue = tutor.Bio ?? "" });
+            point.Payload.Add("teachingModes", new Value { StringValue = tutor.TeachingModes.ToString() ?? "" });
+            point.Payload.Add("experience", new Value { StringValue = tutor.TeachingExp ?? "" });
+            point.Payload.Add("province", new Value { StringValue = tutor.Province?.Name ?? "" });
+            point.Payload.Add("subdistrict", new Value { StringValue = tutor.SubDistrict?.Name ?? "" });
+
+            // Subjects → ListValue
+            if (tutor.TutorSubjects != null)
+            {
+                var listValue = new ListValue();
+                foreach (var s in tutor.TutorSubjects)
+                {
+                    var structValue = new Struct();
+                    structValue.Fields.Add("subjectId", new Value { IntegerValue = s.SubjectId });
+                    structValue.Fields.Add("subjectName", new Value { StringValue = s.Subject?.SubjectName ?? "" });
+                    structValue.Fields.Add("level", new Value { StringValue = s.Level?.Name ?? "" });
+                    structValue.Fields.Add("hourlyRate", new Value { DoubleValue = (double)s.HourlyRate });
+
+                    listValue.Values.Add(new Value { StructValue = structValue });
+                }
+
+                point.Payload.Add("subjects", new Value { ListValue = listValue });
+            }
+            else
+            {
+                point.Payload.Add("subjects", new Value { NullValue = NullValue.NullValue });
+            }
+
+            return point;
+        }
+
+        // Convert list → Qdrant JSON payload
+        private static Value JsonToValue(List<TutorSubjectDto> list)
+        {
+            var json = JsonSerializer.Serialize(list);
+            return Value.Parser.ParseJson(json);
+        }
+
+        // ----------------------------------------------------------
+        // Search
+        // ----------------------------------------------------------
+        public async Task<List<(TutorProfileDto Tutor, float Score)>> SearchTutorsAsync(
+            float[] queryVector, int topK = 5)
+        {
+            var result = await _client.SearchAsync(
+                collectionName: _collectionName,
+                vector: queryVector,
+                limit: (uint)topK
+            );
+
+            var final = new List<(TutorProfileDto, float)>();
+
+            string GetString(MapField<string, Value> payload, string key)
+                => payload.TryGetValue(key, out var val) ? val.StringValue : null;
+
+            foreach (var r in result)
+            {
+                var p = r.Payload;
+
+                var tutor = new TutorProfileDto
+                {
+                    Id = (int)r.Id.Num,
+                    UserName = GetString(p, "name"),
+                    Bio = GetString(p, "bio"),
+                    TeachingExp = GetString(p, "experience"),
+                    Gender = Enum.TryParse<Gender>(GetString(p, "gender"), out var g) ? g : null,
+                    Dob = DateTime.TryParse(GetString(p, "dob"), out var d) ? d : null,
+                    TeachingModes = Enum.TryParse<TeachingMode>(GetString(p, "teachingModes"), out var tm) ? tm : 0,
+                    Province = new ProvinceDto { Name = GetString(p, "province") },
+                    SubDistrict = new SubDistrictDto { Name = GetString(p, "subdistrict") },
+                    TutorSubjects = new List<TutorSubjectDto>()
+                };
+
+                // Parse subjects safely
+                if (p.TryGetValue("subjects", out var subjectsVal) && subjectsVal.ListValue != null)
+                {
+                    foreach (var sVal in subjectsVal.ListValue.Values)
+                    {
+                        if (sVal.StructValue != null)
+                        {
+                            var structFields = sVal.StructValue.Fields;
+
+                            int subjectId = structFields.TryGetValue("subjectId", out var sid) ? (int)sid.IntegerValue : 0;
+                            string subjectName = structFields.TryGetValue("subjectName", out var sname) ? sname.StringValue : null;
+                            string levelName = structFields.TryGetValue("level", out var l) ? l.StringValue : null;
+                            decimal hourlyRate = structFields.TryGetValue("hourlyRate", out var hr) ? (decimal)hr.DoubleValue : 0;
+
+                            var subject = new TutorSubjectDto
+                            {
+                                SubjectId = subjectId,
+                                Subject = new SubjectDto { SubjectName = subjectName },
+                                Level = new LevelDto { Name = levelName },
+                                HourlyRate = hourlyRate
+                            };
+
+                            tutor.TutorSubjects.Add(subject);
+                        }
+                    }
+                }
+
+                final.Add((tutor, r.Score));
+            }
+
+            return final;
         }
 
 

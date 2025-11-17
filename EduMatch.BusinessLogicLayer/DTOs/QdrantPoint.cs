@@ -2,14 +2,21 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.DTOs
 {
     public class QdrantPoint
     {
-        public ulong Id { get; set; }
+        [JsonPropertyName("id")]
+        public long Id { get; set; }
+
+        [JsonPropertyName("score")]
         public float Score { get; set; }
-        public Dictionary<string, object> Payload { get; set; } = new();
+
+        [JsonPropertyName("payload")]
+        public Dictionary<string, JsonElement> Payload { get; set; }
     }
 }
