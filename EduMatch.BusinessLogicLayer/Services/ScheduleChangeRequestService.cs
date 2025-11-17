@@ -200,16 +200,6 @@ namespace EduMatch.BusinessLogicLayer.Services
                     entity.Reason = request.Reason;
                 }
 
-                // Update Status nếu có
-                if (request.Status.HasValue)
-                {
-                    entity.Status = (int)request.Status.Value;
-                    if (request.Status.Value != ScheduleChangeRequestStatus.Pending)
-                    {
-                        entity.ProcessedAt = DateTime.UtcNow;
-                    }
-                }
-
                 // Update ScheduleChangeRequest
                 await _scheduleChangeRequestRepository.UpdateAsync(entity);
 

@@ -28,8 +28,6 @@ namespace EduMatch.BusinessLogicLayer.Requests.ScheduleChangeRequest
 		[MaxLength(500, ErrorMessage = "Reason không được vượt quá 500 ký tự")]
 		public string? Reason { get; set; }
 
-		[EnumDataType(typeof(ScheduleChangeRequestStatus), ErrorMessage = "Status phải là giá trị hợp lệ của ScheduleChangeRequestStatus")]
-		public ScheduleChangeRequestStatus? Status { get; set; }
 	}
 }
 
