@@ -516,29 +516,6 @@ namespace EduMatch.BusinessLogicLayer.Mappings
                         } : null
                     } : null));
 
-            CreateMap<ScheduleChangeRequestCreateRequest, ScheduleChangeRequest>()
-                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Now))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)ScheduleChangeRequestStatus.Pending))
-                .ForMember(dest => dest.ProcessedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.Schedule, opt => opt.Ignore())
-                .ForMember(dest => dest.OldAvailabiliti, opt => opt.Ignore())
-                .ForMember(dest => dest.NewAvailabiliti, opt => opt.Ignore())
-                .ForMember(dest => dest.RequesterEmailNavigation, opt => opt.Ignore())
-                .ForMember(dest => dest.RequestedToEmailNavigation, opt => opt.Ignore());
-
-            CreateMap<ScheduleChangeRequestUpdateRequest, ScheduleChangeRequest>()
-                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null))
-                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.Status, opt => opt.Condition((src, dest, srcMember, destMember, context) => src.Status.HasValue))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status!.Value))
-                .ForMember(dest => dest.ProcessedAt, opt => opt.Condition((src, dest, srcMember, destMember, context) => src.Status.HasValue && src.Status.Value != ScheduleChangeRequestStatus.Pending))
-                .ForMember(dest => dest.ProcessedAt, opt => opt.MapFrom(src => DateTime.Now))
-                .ForMember(dest => dest.Schedule, opt => opt.Ignore())
-                .ForMember(dest => dest.OldAvailabiliti, opt => opt.Ignore())
-                .ForMember(dest => dest.NewAvailabiliti, opt => opt.Ignore())
-                .ForMember(dest => dest.RequesterEmailNavigation, opt => opt.Ignore())
-                .ForMember(dest => dest.RequestedToEmailNavigation, opt => opt.Ignore());
 
         }
     }
