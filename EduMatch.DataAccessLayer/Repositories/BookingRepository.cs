@@ -39,7 +39,12 @@ namespace EduMatch.DataAccessLayer.Repositories
                 query = query.Where(b => b.Status == status.Value);
             if (tutorSubjectId.HasValue)
                 query = query.Where(b => b.TutorSubjectId == tutorSubjectId.Value);
-            return await query.OrderByDescending(b => b.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            return await query
+                .OrderByDescending(b => b.CreatedAt)
+                .ThenByDescending(b => b.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
         }
 
         /// <summary>
@@ -69,7 +74,10 @@ namespace EduMatch.DataAccessLayer.Repositories
                 query = query.Where(b => b.Status == status.Value);
             if (tutorSubjectId.HasValue)
                 query = query.Where(b => b.TutorSubjectId == tutorSubjectId.Value);
-            return await query.OrderByDescending(b => b.CreatedAt).ToListAsync();
+            return await query
+                .OrderByDescending(b => b.CreatedAt)
+                .ThenByDescending(b => b.Id)
+                .ToListAsync();
         }
 
         /// <summary>
@@ -113,7 +121,12 @@ namespace EduMatch.DataAccessLayer.Repositories
                 query = query.Where(b => b.Status == status.Value);
             if (tutorSubjectId.HasValue)
                 query = query.Where(b => b.TutorSubjectId == tutorSubjectId.Value);
-            return await query.OrderByDescending(b => b.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            return await query
+                .OrderByDescending(b => b.CreatedAt)
+                .ThenByDescending(b => b.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
         }
 
         /// <summary>
@@ -142,7 +155,10 @@ namespace EduMatch.DataAccessLayer.Repositories
                 query = query.Where(b => b.Status == status.Value);
             if (tutorSubjectId.HasValue)
                 query = query.Where(b => b.TutorSubjectId == tutorSubjectId.Value);
-            return await query.OrderByDescending(b => b.CreatedAt).ToListAsync();
+            return await query
+                .OrderByDescending(b => b.CreatedAt)
+                .ThenByDescending(b => b.Id)
+                .ToListAsync();
         }
 
         /// <summary>
@@ -181,6 +197,8 @@ namespace EduMatch.DataAccessLayer.Repositories
                         .ThenInclude(a => a.Slot)
                 .Include(b => b.Schedules)
                     .ThenInclude(s => s.MeetingSession)
+                .OrderByDescending(b => b.CreatedAt)
+                .ThenByDescending(b => b.Id)
                 .FirstOrDefaultAsync(b => b.Id == id);
         }
 

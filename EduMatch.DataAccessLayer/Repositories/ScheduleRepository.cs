@@ -27,7 +27,7 @@ namespace EduMatch.DataAccessLayer.Repositories
             if (status.HasValue)
                 query = query.Where(s => s.Status == status.Value);
             return await query
-                .OrderBy(s => s.CreatedAt)
+                .OrderBy(s => s.Availabiliti.StartDate)
                 .ThenBy(s => s.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -47,7 +47,7 @@ namespace EduMatch.DataAccessLayer.Repositories
             if (status.HasValue)
                 query = query.Where(s => s.Status == status.Value);
             return await query
-                .OrderBy(s => s.CreatedAt)
+                .OrderBy(s => s.Availabiliti.StartDate)
                 .ThenBy(s => s.Id)
                 .ToListAsync();
         }
@@ -101,7 +101,7 @@ namespace EduMatch.DataAccessLayer.Repositories
             return await _context.Schedules
                 .Where(s => s.BookingId == bookingId)
                 .Include(s => s.MeetingSession)
-                .OrderBy(s => s.CreatedAt)
+                .OrderBy(s => s.Availabiliti.StartDate)
                 .ThenBy(s => s.Id)
                 .ToListAsync();
         }
