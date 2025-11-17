@@ -364,14 +364,10 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 						Availability = null,
 						MeetingSession = s.MeetingSession != null ? new MeetingSessionDto
 						{
-							Id = s.MeetingSession.Id,
-							MeetingType = (MeetingType)s.MeetingSession.MeetingType,
 							StartTime = s.MeetingSession.StartTime,
 							EndTime = s.MeetingSession.EndTime,
 							MeetCode = s.MeetingSession.MeetCode,
 							MeetLink = s.MeetingSession.MeetLink,
-							CreatedAt = s.MeetingSession.CreatedAt,
-							UpdatedAt = s.MeetingSession.UpdatedAt,
 						} : null
 					}) : null));
 				

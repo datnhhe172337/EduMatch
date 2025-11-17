@@ -30,6 +30,8 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .Include(b => b.Schedules)
                     .ThenInclude(s => s.Availabiliti)
                         .ThenInclude(a => a.Slot)
+                .Include(b => b.Schedules)
+                    .ThenInclude(s => s.MeetingSession)
                 .AsQueryable();
             if (!string.IsNullOrEmpty(email))
                 query = query.Where(b => b.LearnerEmail == email);
@@ -58,6 +60,8 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .Include(b => b.Schedules)
                     .ThenInclude(s => s.Availabiliti)
                         .ThenInclude(a => a.Slot)
+                .Include(b => b.Schedules)
+                    .ThenInclude(s => s.MeetingSession)
                 .AsQueryable();
             if (!string.IsNullOrEmpty(email))
                 query = query.Where(b => b.LearnerEmail == email);
@@ -100,6 +104,8 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .Include(b => b.Schedules)
                     .ThenInclude(s => s.Availabiliti)
                         .ThenInclude(a => a.Slot)
+                .Include(b => b.Schedules)
+                    .ThenInclude(s => s.MeetingSession)
                 .Where(b => b.TutorSubject.TutorId == tutorId)   
                 .AsQueryable();
                 
@@ -128,6 +134,8 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .Include(b => b.Schedules)
                     .ThenInclude(s => s.Availabiliti)
                         .ThenInclude(a => a.Slot)
+                .Include(b => b.Schedules)
+                    .ThenInclude(s => s.MeetingSession)
                 .Where(b => b.TutorSubject.TutorId == tutorId)
                 .AsQueryable();
             if (status.HasValue)
@@ -171,6 +179,8 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .Include(b => b.Schedules)
                     .ThenInclude(s => s.Availabiliti)
                         .ThenInclude(a => a.Slot)
+                .Include(b => b.Schedules)
+                    .ThenInclude(s => s.MeetingSession)
                 .FirstOrDefaultAsync(b => b.Id == id);
         }
 
