@@ -121,5 +121,10 @@ namespace EduMatch.DataAccessLayer.Repositories
 			=> await IncludeAll()
 			.Where(t => t.LastSync > lastSync)
 			.ToListAsync();
+
+        public async Task SaveChangesAsync()
+		{ 
+            await _ctx.SaveChangesAsync();
+        }
     }
 }

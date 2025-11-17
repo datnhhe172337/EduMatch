@@ -44,5 +44,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         //Task<List<TutorProfileDto>> GetTutorsUpdatedAfterAsync(DateTime lastSync);
         Task<IReadOnlyList<TutorProfileDto>> GetTutorsUpdatedAfterAsync(DateTime lastSync);
 
+		Task<int> SyncAllTutorsAsync();
+
     }
 }

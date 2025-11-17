@@ -36,5 +36,7 @@ namespace EduMatch.DataAccessLayer.Interfaces
 
         //Task<List<TutorProfile>> GetTutorsUpdatedAfterAsync(DateTime lastSync);
         Task<IReadOnlyList<TutorProfile>> GetTutorsUpdatedAfterAsync(DateTime lastSync);
+
+		Task SaveChangesAsync();
     }
 }

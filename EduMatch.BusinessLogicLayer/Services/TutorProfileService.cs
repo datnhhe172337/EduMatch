@@ -8,6 +8,7 @@ using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
 using System;
+using Microsoft.EntityFrameworkCore;
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
@@ -19,6 +20,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		private readonly CurrentUserService _currentUserService;
 		private readonly IUserService _userService;
 		private readonly IUserProfileService _userProfileService;
+		private readonly IQdrantService _qdrantService;
 
 		public TutorProfileService(
 			ITutorProfileRepository repository,
@@ -26,7 +28,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 			 ICloudMediaService cloudMedia,
 			 CurrentUserService currentUserService,
 			 IUserService userService,
-			 IUserProfileService userProfileService
+			 IUserProfileService userProfileService, IQdrantService qdrantService
 			 ) 
 		{
 			_tutorProfileRepository = repository;
@@ -35,6 +37,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 			_currentUserService = currentUserService ;
 			_userService = userService;
 			_userProfileService = userProfileService;
+			_qdrantService = qdrantService;
 		}
 
 
@@ -348,5 +351,30 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<IReadOnlyList<TutorProfileDto>>(entities);
         }
 
-    }
+		public async Task<int> SyncAllTutorsAsync()
+		{
+			var tutors = await _tutorProfileRepository.GetAllFullAsync();
+            if (!tutors.Any())
+                return 0;
+
+			var tutorsDto = _mapper.Map<IReadOnlyList<TutorProfileDto>>(tutors);
+
+            await _qdrantService.UpsertTutorsAsync(tutorsDto);
+
+            // 4. Cập nhật LastSync
+            var now = DateTime.UtcNow;
+
+            foreach (var tutor in tutors)
+            {
+                tutor.LastSync = now;
+            }
+
+            await _tutorProfileRepository.SaveChangesAsync();
+
+            return tutors.Count;
+        }
+
+
+
+     }
 }

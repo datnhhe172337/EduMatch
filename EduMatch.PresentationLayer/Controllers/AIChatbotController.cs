@@ -42,11 +42,13 @@ namespace EduMatch.PresentationLayer.Controllers
                     throw new InvalidOperationException("Embedding vector is null or has invalid length.");
 
                 // Step 2: Vector search (Semantic search) - Qdrant
-
+                var topTutors = await _qdrantService.SearchTutorsAsync(embeddingVector, topK: 5);
                 // Step 3: LLM Rerank- Gemini
 
                 // Step 4: Buld Context + Prompt
-                var contextText = "";
+                var contextText = string.Join("\n", topTutors.Select((t, idx) =>
+            $"{idx + 1}. {t.Tutor.UserName} - Môn: {string.Join(", ", t.Tutor.TutorSubjects.Select(s => s.Subject.SubjectName))} - Kinh nghiệm: {t.Tutor.TeachingExp} - Score: {t.Score:F2}"
+                ));
 
                 var prompt = $@"
                 Bạn là một chatbot hỗ trợ người học tìm gia sư.
@@ -68,20 +70,21 @@ namespace EduMatch.PresentationLayer.Controllers
             
         }
 
+
+        /// <summary>
+        /// Đồng bộ toàn bộ tutor trong DB lên Qdrant
+        /// </summary>
         [HttpPost("sync-tutors")]
         public async Task<IActionResult> SyncAllTutors()
         {
-            var tutors = await _service.GetAllFullAsync(); // Lấy tất cả tutor từ DB
+            var count = await _service.SyncAllTutorsAsync();
 
-            await _qdrantService.UpsertTutorsAsync(tutors);
-
-            foreach (var tutor in tutors)
+            return Ok(new
             {
-                tutor. = DateTime.UtcNow; // cập nhật LastSync
-            }
-
-            await _dbContext.SaveChangesAsync();
-            return Ok(new { message = "All tutors synced to Qdrant successfully." });
+                message = "Sync completed",
+                tutorsSynced = count,
+                timestamp = DateTime.UtcNow
+            });
         }
 
 

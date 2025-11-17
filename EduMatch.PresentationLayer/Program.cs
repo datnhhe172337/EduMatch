@@ -31,7 +31,7 @@ builder.Services.Configure<QdrantSettings>(
 
 builder.Services.AddHttpClient("qdrant", c =>
 {
-    c.BaseAddress = new Uri("http://localhost:6333");
+    c.BaseAddress = new Uri("http://localhost:6333/");
     c.Timeout = TimeSpan.FromSeconds(30);
 });
 
