@@ -347,6 +347,38 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Cập nhật Status của Schedule (chỉ cho phép update tiến dần, ngoại lệ: Completed và Absent có thể update qua lại)
+		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
+		[HttpPut("update-status/{id:int}")]
+		[ProducesResponseType(typeof(ApiResponse<ScheduleDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<ScheduleDto>>> UpdateStatus(
+			int id,
+			[FromQuery] ScheduleStatus status)
+		{
+			try
+			{
+				if (id <= 0)
+				{
+					return BadRequest(ApiResponse<object>.Fail("Id phải lớn hơn 0"));
+				}
+
+				if (!Enum.IsDefined(typeof(ScheduleStatus), status))
+				{
+					return BadRequest(ApiResponse<object>.Fail("Status không hợp lệ"));
+				}
+
+				var updated = await _scheduleService.UpdateStatusAsync(id, status);
+				return Ok(ApiResponse<ScheduleDto>.Ok(updated, "Cập nhật Status thành công"));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+		}
+
 
 	}
 }

@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.BackgroundServices
 {
+	/// <summary>
+	/// Background service tự động hủy các ScheduleChangeRequest Pending quá 3 ngày hoặc sắp đến giờ học (chạy mỗi 1 giờ)
+	/// </summary>
 	public class ScheduleChangeRequestAutoCancelBackgroundService : BackgroundService
 	{
 		private readonly IServiceProvider _serviceProvider;

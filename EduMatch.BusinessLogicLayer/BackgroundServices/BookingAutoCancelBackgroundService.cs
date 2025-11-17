@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.BackgroundServices
 {
+	/// <summary>
+	/// Background service tự động hủy các Booking chưa được xác nhận (chạy mỗi 1 giờ)
+	/// </summary>
 	public class BookingAutoCancelBackgroundService : BackgroundService
 	{
 		private readonly IServiceProvider _serviceProvider;
