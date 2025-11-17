@@ -5,6 +5,7 @@ using EduMatch.BusinessLogicLayer.Requests.ScheduleChangeRequest;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +19,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IScheduleRepository _scheduleRepository;
         private readonly IUserRepository _userRepository;
         private readonly ITutorAvailabilityRepository _tutorAvailabilityRepository;
+        private readonly EduMatchContext _context;
         private readonly IMapper _mapper;
 
         public ScheduleChangeRequestService(
@@ -25,12 +27,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             IScheduleRepository scheduleRepository,
             IUserRepository userRepository,
             ITutorAvailabilityRepository tutorAvailabilityRepository,
+            EduMatchContext context,
             IMapper mapper)
         {
             _scheduleChangeRequestRepository = scheduleChangeRequestRepository;
             _scheduleRepository = scheduleRepository;
             _userRepository = userRepository;
             _tutorAvailabilityRepository = tutorAvailabilityRepository;
+            _context = context;
             _mapper = mapper;
         }
 
@@ -51,6 +55,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<ScheduleChangeRequestDto> CreateAsync(ScheduleChangeRequestCreateRequest request)
         {
+            using var dbTransaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 // Check Schedule tồn tại
@@ -99,11 +104,15 @@ namespace EduMatch.BusinessLogicLayer.Services
                     await _tutorAvailabilityRepository.UpdateAsync(newAvailability);
                 }
 
+                // Commit transaction
+                await dbTransaction.CommitAsync();
+
                 // Map entity sang DTO
                 return _mapper.Map<ScheduleChangeRequestDto>(entity);
             }
             catch (Exception ex)
             {
+                await dbTransaction.RollbackAsync();
                 throw new Exception($"CreateAsync - Lỗi khi tạo ScheduleChangeRequest: {ex.Message}", ex);
             }
         }
