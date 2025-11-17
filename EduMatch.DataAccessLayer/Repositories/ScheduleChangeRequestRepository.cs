@@ -50,9 +50,9 @@ namespace EduMatch.DataAccessLayer.Repositories
         /// <summary>
         /// Lấy danh sách ScheduleChangeRequest theo RequesterEmail, sắp xếp theo CreatedAt descending, Id descending
         /// </summary>
-        public async Task<IEnumerable<ScheduleChangeRequest>> GetAllByRequesterEmailAsync(string requesterEmail)
+        public async Task<IEnumerable<ScheduleChangeRequest>> GetAllByRequesterEmailAsync(string requesterEmail, int? status = null)
         {
-            return await _context.ScheduleChangeRequests
+            var query = _context.ScheduleChangeRequests
                 .AsSplitQuery()
                 .Include(scr => scr.Schedule)
                     .ThenInclude(s => s.Availabiliti)
@@ -61,7 +61,14 @@ namespace EduMatch.DataAccessLayer.Repositories
                     .ThenInclude(a => a.Slot)
                 .Include(scr => scr.NewAvailabiliti)
                     .ThenInclude(a => a.Slot)
-                .Where(scr => scr.RequesterEmail == requesterEmail)
+                .Where(scr => scr.RequesterEmail == requesterEmail);
+
+            if (status.HasValue)
+            {
+                query = query.Where(scr => scr.Status == status.Value);
+            }
+
+            return await query
                 .OrderByDescending(scr => scr.CreatedAt)
                 .ThenByDescending(scr => scr.Id)
                 .ToListAsync();
@@ -70,9 +77,9 @@ namespace EduMatch.DataAccessLayer.Repositories
         /// <summary>
         /// Lấy danh sách ScheduleChangeRequest theo RequestedToEmail, sắp xếp theo CreatedAt descending, Id descending
         /// </summary>
-        public async Task<IEnumerable<ScheduleChangeRequest>> GetAllByRequestedToEmailAsync(string requestedToEmail)
+        public async Task<IEnumerable<ScheduleChangeRequest>> GetAllByRequestedToEmailAsync(string requestedToEmail, int? status = null)
         {
-            return await _context.ScheduleChangeRequests
+            var query = _context.ScheduleChangeRequests
                 .AsSplitQuery()
                 .Include(scr => scr.Schedule)
                     .ThenInclude(s => s.Availabiliti)
@@ -81,7 +88,14 @@ namespace EduMatch.DataAccessLayer.Repositories
                     .ThenInclude(a => a.Slot)
                 .Include(scr => scr.NewAvailabiliti)
                     .ThenInclude(a => a.Slot)
-                .Where(scr => scr.RequestedToEmail == requestedToEmail)
+                .Where(scr => scr.RequestedToEmail == requestedToEmail);
+
+            if (status.HasValue)
+            {
+                query = query.Where(scr => scr.Status == status.Value);
+            }
+
+            return await query
                 .OrderByDescending(scr => scr.CreatedAt)
                 .ThenByDescending(scr => scr.Id)
                 .ToListAsync();

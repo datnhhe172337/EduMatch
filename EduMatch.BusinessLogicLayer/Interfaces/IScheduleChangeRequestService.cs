@@ -31,12 +31,12 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// <summary>
         /// Lấy danh sách ScheduleChangeRequest theo RequesterEmail
         /// </summary>
-        Task<List<ScheduleChangeRequestDto>> GetAllByRequesterEmailAsync(string requesterEmail);
+        Task<List<ScheduleChangeRequestDto>> GetAllByRequesterEmailAsync(string requesterEmail, ScheduleChangeRequestStatus? status = null);
 
         /// <summary>
         /// Lấy danh sách ScheduleChangeRequest theo RequestedToEmail
         /// </summary>
-        Task<List<ScheduleChangeRequestDto>> GetAllByRequestedToEmailAsync(string requestedToEmail);
+        Task<List<ScheduleChangeRequestDto>> GetAllByRequestedToEmailAsync(string requestedToEmail, ScheduleChangeRequestStatus? status = null);
     }
 }
 

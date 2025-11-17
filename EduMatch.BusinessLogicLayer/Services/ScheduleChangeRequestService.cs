@@ -281,24 +281,26 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// <summary>
         /// Lấy danh sách ScheduleChangeRequest theo RequesterEmail
         /// </summary>
-        public async Task<List<ScheduleChangeRequestDto>> GetAllByRequesterEmailAsync(string requesterEmail)
+        public async Task<List<ScheduleChangeRequestDto>> GetAllByRequesterEmailAsync(string requesterEmail, ScheduleChangeRequestStatus? status = null)
         {
             if (string.IsNullOrWhiteSpace(requesterEmail))
                 throw new ArgumentException("RequesterEmail không được để trống");
 
-            var entities = await _scheduleChangeRequestRepository.GetAllByRequesterEmailAsync(requesterEmail);
+            int? statusInt = status.HasValue ? (int?)status.Value : null;
+            var entities = await _scheduleChangeRequestRepository.GetAllByRequesterEmailAsync(requesterEmail, statusInt);
             return _mapper.Map<List<ScheduleChangeRequestDto>>(entities);
         }
 
         /// <summary>
         /// Lấy danh sách ScheduleChangeRequest theo RequestedToEmail
         /// </summary>
-        public async Task<List<ScheduleChangeRequestDto>> GetAllByRequestedToEmailAsync(string requestedToEmail)
+        public async Task<List<ScheduleChangeRequestDto>> GetAllByRequestedToEmailAsync(string requestedToEmail, ScheduleChangeRequestStatus? status = null)
         {
             if (string.IsNullOrWhiteSpace(requestedToEmail))
                 throw new ArgumentException("RequestedToEmail không được để trống");
 
-            var entities = await _scheduleChangeRequestRepository.GetAllByRequestedToEmailAsync(requestedToEmail);
+            int? statusInt = status.HasValue ? (int?)status.Value : null;
+            var entities = await _scheduleChangeRequestRepository.GetAllByRequestedToEmailAsync(requestedToEmail, statusInt);
             return _mapper.Map<List<ScheduleChangeRequestDto>>(entities);
         }
     }
