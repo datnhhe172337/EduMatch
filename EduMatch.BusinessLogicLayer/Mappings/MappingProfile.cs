@@ -362,13 +362,8 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 						CreatedAt = s.CreatedAt,
 						UpdatedAt = s.UpdatedAt,
 						Availability = null,
-						MeetingSession = s.MeetingSession != null ? new MeetingSessionDto
-						{
-							StartTime = s.MeetingSession.StartTime,
-							EndTime = s.MeetingSession.EndTime,
-							MeetCode = s.MeetingSession.MeetCode,
-							MeetLink = s.MeetingSession.MeetLink,
-						} : null
+						HasMeetingSession = s.MeetingSession != null,
+						MeetingSession = null
 					}) : null));
 				
 
@@ -396,6 +391,8 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 							EndTime = src.Availabiliti.Slot.EndTime
 						} : null
 					} : null))
+				.ForMember(dest => dest.HasMeetingSession,
+					opt => opt.MapFrom(src => src.MeetingSession != null))
 				.ForMember(dest => dest.MeetingSession,
 					opt => opt.MapFrom(src => src.MeetingSession != null ? new MeetingSessionDto
 					{
