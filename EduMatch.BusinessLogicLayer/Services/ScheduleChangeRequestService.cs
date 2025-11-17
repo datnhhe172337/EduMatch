@@ -90,9 +90,12 @@ namespace EduMatch.BusinessLogicLayer.Services
             // Create ScheduleChangeRequest
             await _scheduleChangeRequestRepository.CreateAsync(entity);
 
-            // Chuyển NewAvailabiliti sang Booked
-            newAvailability.Status = (int)TutorAvailabilityStatus.Booked;
-            await _tutorAvailabilityRepository.UpdateAsync(newAvailability);
+            // Nếu NewAvailabiliti là Available thì chuyển sang Booked
+            if (newAvailability.Status == (int)TutorAvailabilityStatus.Available)
+            {
+                newAvailability.Status = (int)TutorAvailabilityStatus.Booked;
+                await _tutorAvailabilityRepository.UpdateAsync(newAvailability);
+            }
 
             // Reload entity với đầy đủ thông tin
             var createdEntity = await _scheduleChangeRequestRepository.GetByIdAsync(entity.Id);
