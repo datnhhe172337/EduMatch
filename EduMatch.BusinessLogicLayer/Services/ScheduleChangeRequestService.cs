@@ -228,6 +228,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                 var oldStatus = (ScheduleChangeRequestStatus)entity.Status;
 
+                // Không cho phép update ngược lại: status mới phải >= status cũ (theo giá trị enum)
+                if ((int)status < (int)oldStatus)
+                {
+                    throw new Exception($"Không thể cập nhật Status từ {oldStatus} về {status}. Chỉ cho phép chuyển từ status nhỏ hơn sang status lớn hơn");
+                }
+
                 // Nếu từ Pending sang Approved: update OldAvailabiliti về Available
                 if (oldStatus == ScheduleChangeRequestStatus.Pending && status == ScheduleChangeRequestStatus.Approved)
                 {
