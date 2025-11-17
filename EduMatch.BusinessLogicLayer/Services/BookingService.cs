@@ -23,6 +23,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IMeetingSessionRepository _meetingSessionRepository;
         private readonly ITutorAvailabilityRepository _tutorAvailabilityRepository;
         private readonly IGoogleCalendarService _googleCalendarService;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly INotificationService _notificationService;
 
         public BookingService(
             IBookingRepository bookingRepository,
@@ -33,7 +35,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             IScheduleRepository scheduleRepository,
             IMeetingSessionRepository meetingSessionRepository,
             ITutorAvailabilityRepository tutorAvailabilityRepository,
-            IGoogleCalendarService googleCalendarService)
+            IGoogleCalendarService googleCalendarService,
+            IUnitOfWork unitOfWork,
+            INotificationService notificationService)
         {
             _bookingRepository = bookingRepository;
             _tutorSubjectRepository = tutorSubjectRepository;
@@ -44,6 +48,8 @@ namespace EduMatch.BusinessLogicLayer.Services
             _meetingSessionRepository = meetingSessionRepository;
             _tutorAvailabilityRepository = tutorAvailabilityRepository;
             _googleCalendarService = googleCalendarService;
+            _unitOfWork = unitOfWork;
+            _notificationService = notificationService;
         }
 
         /// <summary>
@@ -281,6 +287,74 @@ namespace EduMatch.BusinessLogicLayer.Services
             entity.UpdatedAt = DateTime.UtcNow;
             await _bookingRepository.UpdateAsync(entity);
             return _mapper.Map<BookingDto>(entity);
+        }
+
+        /// <summary>
+        /// Hoàn tiền booking về ví của học viên và cập nhật trạng thái đơn.
+        /// </summary>
+        public async Task<BookingDto> RefundBookingAsync(int bookingId)
+        {
+            if (bookingId <= 0)
+                throw new ArgumentException("BookingId must be greater than 0.");
+
+            var booking = await _bookingRepository.GetByIdAsync(bookingId)
+                ?? throw new Exception("Booking không tồn tại");
+
+            if (booking.PaymentStatus != (int)PaymentStatus.Paid)
+                throw new InvalidOperationException("Chỉ có thể hoàn tiền cho booking đã thanh toán.");
+
+            var amountToRefund = booking.TotalAmount - booking.RefundedAmount;
+            if (amountToRefund <= 0)
+                throw new InvalidOperationException("Booking đã được hoàn tiền trước đó.");
+
+            var wallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(booking.LearnerEmail);
+            if (wallet == null)
+            {
+                wallet = new Wallet
+                {
+                    UserEmail = booking.LearnerEmail,
+                    Balance = 0,
+                    LockedBalance = 0,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _unitOfWork.Wallets.AddAsync(wallet);
+                await _unitOfWork.CompleteAsync();
+            }
+
+            var balanceBefore = wallet.Balance;
+            wallet.Balance += amountToRefund;
+            wallet.UpdatedAt = DateTime.UtcNow;
+            _unitOfWork.Wallets.Update(wallet);
+
+            var refundTransaction = new WalletTransaction
+            {
+                WalletId = wallet.Id,
+                Amount = amountToRefund,
+                TransactionType = WalletTransactionType.Credit,
+                Reason = WalletTransactionReason.BookingRefund,
+                Status = TransactionStatus.Completed,
+                BalanceBefore = balanceBefore,
+                BalanceAfter = wallet.Balance,
+                CreatedAt = DateTime.UtcNow,
+                ReferenceCode = $"BOOKING_REFUND_{booking.Id}"
+            };
+            await _unitOfWork.WalletTransactions.AddAsync(refundTransaction);
+
+            await _unitOfWork.CompleteAsync();
+
+            booking.PaymentStatus = (int)PaymentStatus.Refunded;
+            booking.Status = (int)BookingStatus.Cancelled;
+            booking.RefundedAmount += amountToRefund;
+            booking.UpdatedAt = DateTime.UtcNow;
+
+            await _bookingRepository.UpdateAsync(booking);
+
+            await _notificationService.CreateNotificationAsync(
+                booking.LearnerEmail,
+                $"Booking #{booking.Id} đã được hoàn tiền {amountToRefund:N0} VND vào ví của bạn.",
+                "/wallet/my-wallet");
+
+            return _mapper.Map<BookingDto>(booking);
         }
 
         /// <summary>
