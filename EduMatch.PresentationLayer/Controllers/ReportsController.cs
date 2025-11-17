@@ -240,22 +240,22 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
-        /// <summary>
-        /// Permanently deletes a report (admin only).
-        /// </summary>
-        [Authorize(Roles = Roles.BusinessAdmin + "," + Roles.SystemAdmin)]
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> DeleteReportAsync(int id)
-        {
-            try
-            {
-                await _reportService.DeleteReportAsync(id);
-                return Ok(ApiResponse<string>.Ok(null, "Report deleted successfully."));
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ApiResponse<string>.Fail(ex.Message));
-            }
-        }
+        ///// <summary>
+        ///// Permanently deletes a report (admin only).
+        ///// </summary>
+        //[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.SystemAdmin)]
+        //[HttpDelete("{id:int}")]
+        //public async Task<IActionResult> DeleteReportAsync(int id)
+        //{
+        //    try
+        //    {
+        //        await _reportService.DeleteReportAsync(id);
+        //        return Ok(ApiResponse<string>.Ok(null, "Report deleted successfully."));
+        //    }
+        //    catch (KeyNotFoundException ex)
+        //    {
+        //        return NotFound(ApiResponse<string>.Fail(ex.Message));
+        //    }
+        //}
     }
 }
