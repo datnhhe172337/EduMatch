@@ -60,26 +60,26 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 // Check Schedule tồn tại
                 var schedule = await _scheduleRepository.GetByIdAsync(request.ScheduleId)
-                    ?? throw new Exception($"CreateAsync - Schedule không tồn tại với ScheduleId: {request.ScheduleId}");
+                    ?? throw new Exception($"Schedule không tồn tại với ScheduleId: {request.ScheduleId}");
 
                 // Check RequesterEmail tồn tại
                 var requesterUser = await _userRepository.GetUserByEmailAsync(request.RequesterEmail)
-                    ?? throw new Exception($"CreateAsync - RequesterEmail '{request.RequesterEmail}' không tồn tại");
+                    ?? throw new Exception($"RequesterEmail '{request.RequesterEmail}' không tồn tại");
 
                 // Check RequestedToEmail tồn tại
                 var requestedToUser = await _userRepository.GetUserByEmailAsync(request.RequestedToEmail)
-                    ?? throw new Exception($"CreateAsync - RequestedToEmail '{request.RequestedToEmail}' không tồn tại");
+                    ?? throw new Exception($"RequestedToEmail '{request.RequestedToEmail}' không tồn tại");
 
                 // Check OldAvailabiliti tồn tại
                 var oldAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.OldAvailabilitiId)
-                    ?? throw new Exception($"CreateAsync - OldAvailabiliti không tồn tại với OldAvailabilitiId: {request.OldAvailabilitiId}");
+                    ?? throw new Exception($"OldAvailabiliti không tồn tại với OldAvailabilitiId: {request.OldAvailabilitiId}");
 
                 // Check NewAvailabiliti tồn tại và phải Available
                 var newAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.NewAvailabilitiId)
-                    ?? throw new Exception($"CreateAsync - NewAvailabiliti không tồn tại với NewAvailabilitiId: {request.NewAvailabilitiId}");
+                    ?? throw new Exception($"NewAvailabiliti không tồn tại với NewAvailabilitiId: {request.NewAvailabilitiId}");
 
                 if (newAvailability.Status != (int)TutorAvailabilityStatus.Available)
-                    throw new Exception($"CreateAsync - NewAvailabiliti phải ở trạng thái Available, hiện tại: {newAvailability.Status}");
+                    throw new Exception($"NewAvailabiliti phải ở trạng thái Available, hiện tại: {newAvailability.Status}");
 
                 // Map request to entity manually
                 var entity = new ScheduleChangeRequest
@@ -113,7 +113,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             catch (Exception ex)
             {
                 await dbTransaction.RollbackAsync();
-                throw new Exception($"CreateAsync - Lỗi khi tạo ScheduleChangeRequest: {ex.Message}", ex);
+                throw new Exception($"Lỗi khi tạo ScheduleChangeRequest: {ex.Message}", ex);
             }
         }
 
@@ -126,13 +126,13 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 // Check ScheduleChangeRequest tồn tại
                 var entity = await _scheduleChangeRequestRepository.GetByIdAsync(request.Id)
-                    ?? throw new Exception($"UpdateAsync - ScheduleChangeRequest không tồn tại với Id: {request.Id}");
+                    ?? throw new Exception($"ScheduleChangeRequest không tồn tại với Id: {request.Id}");
 
                 // Check Schedule tồn tại nếu có thay đổi
                 if (request.ScheduleId.HasValue)
                 {
                     var schedule = await _scheduleRepository.GetByIdAsync(request.ScheduleId.Value)
-                        ?? throw new Exception($"UpdateAsync - Schedule không tồn tại với ScheduleId: {request.ScheduleId.Value}");
+                        ?? throw new Exception($"Schedule không tồn tại với ScheduleId: {request.ScheduleId.Value}");
                     entity.ScheduleId = request.ScheduleId.Value;
                 }
 
@@ -140,7 +140,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (!string.IsNullOrWhiteSpace(request.RequesterEmail))
                 {
                     var requesterUser = await _userRepository.GetUserByEmailAsync(request.RequesterEmail)
-                        ?? throw new Exception($"UpdateAsync - RequesterEmail '{request.RequesterEmail}' không tồn tại");
+                        ?? throw new Exception($"RequesterEmail '{request.RequesterEmail}' không tồn tại");
                     entity.RequesterEmail = request.RequesterEmail;
                 }
 
@@ -148,7 +148,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (!string.IsNullOrWhiteSpace(request.RequestedToEmail))
                 {
                     var requestedToUser = await _userRepository.GetUserByEmailAsync(request.RequestedToEmail)
-                        ?? throw new Exception($"UpdateAsync - RequestedToEmail '{request.RequestedToEmail}' không tồn tại");
+                        ?? throw new Exception($"RequestedToEmail '{request.RequestedToEmail}' không tồn tại");
                     entity.RequestedToEmail = request.RequestedToEmail;
                 }
 
@@ -156,7 +156,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (request.OldAvailabilitiId.HasValue)
                 {
                     var oldAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.OldAvailabilitiId.Value)
-                        ?? throw new Exception($"UpdateAsync - OldAvailabiliti không tồn tại với OldAvailabilitiId: {request.OldAvailabilitiId.Value}");
+                        ?? throw new Exception($"OldAvailabiliti không tồn tại với OldAvailabilitiId: {request.OldAvailabilitiId.Value}");
                     entity.OldAvailabilitiId = request.OldAvailabilitiId.Value;
                 }
 
@@ -164,10 +164,10 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (request.NewAvailabilitiId.HasValue)
                 {
                     var newAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.NewAvailabilitiId.Value)
-                        ?? throw new Exception($"UpdateAsync - NewAvailabiliti không tồn tại với NewAvailabilitiId: {request.NewAvailabilitiId.Value}");
+                        ?? throw new Exception($"NewAvailabiliti không tồn tại với NewAvailabilitiId: {request.NewAvailabilitiId.Value}");
 
                     if (newAvailability.Status != (int)TutorAvailabilityStatus.Available)
-                        throw new Exception($"UpdateAsync - NewAvailabiliti phải ở trạng thái Available, hiện tại: {newAvailability.Status}");
+                        throw new Exception($"NewAvailabiliti phải ở trạng thái Available, hiện tại: {newAvailability.Status}");
 
                     // Nếu đổi NewAvailabiliti, trả Old NewAvailabiliti về Available và chuyển New NewAvailabiliti sang Booked
                     var oldNewAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(entity.NewAvailabilitiId);
@@ -218,7 +218,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             }
             catch (Exception ex)
             {
-                throw new Exception($"UpdateAsync - Lỗi khi cập nhật ScheduleChangeRequest với Id: {request.Id}: {ex.Message}", ex);
+                throw new Exception($"Lỗi khi cập nhật ScheduleChangeRequest với Id: {request.Id}: {ex.Message}", ex);
             }
         }
 
@@ -230,10 +230,10 @@ namespace EduMatch.BusinessLogicLayer.Services
             try
             {
                 if (id <= 0)
-                    throw new ArgumentException($"UpdateStatusAsync - ID phải lớn hơn 0, nhận được: {id}");
+                    throw new ArgumentException($"ID phải lớn hơn 0, nhận được: {id}");
 
                 var entity = await _scheduleChangeRequestRepository.GetByIdAsync(id)
-                    ?? throw new Exception($"UpdateStatusAsync - ScheduleChangeRequest không tồn tại với Id: {id}");
+                    ?? throw new Exception($"ScheduleChangeRequest không tồn tại với Id: {id}");
 
                 entity.Status = (int)status;
                 if (status != ScheduleChangeRequestStatus.Pending)
@@ -248,7 +248,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             }
             catch (Exception ex)
             {
-                throw new Exception($"UpdateStatusAsync - Lỗi khi cập nhật Status của ScheduleChangeRequest với Id: {id}, Status: {status}: {ex.Message}", ex);
+                throw new Exception($"Lỗi khi cập nhật Status của ScheduleChangeRequest với Id: {id}, Status: {status}: {ex.Message}", ex);
             }
         }
 
