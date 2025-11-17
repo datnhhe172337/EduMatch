@@ -24,12 +24,24 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Tạo URL ủy quyền Google OAuth2 cho tài khoản hệ thống (system account) FE không cần quan tâm
 		/// </summary>
 
-		[HttpGet("authorize")]
-		public async Task<IActionResult> Authorize()
+	[HttpGet("authorize")]
+	public async Task<IActionResult> Authorize()
+	{
+		string result = await _googleAuthService.GenerateAuthUrlDat();
+		
+		// Kiểm tra xem result là URL hay message
+		// URL thường bắt đầu bằng "https://"
+		if (result.StartsWith("https://"))
 		{
-			string authUrl = await _googleAuthService.GenerateAuthUrlDat();
-			return Ok(new { authUrl });
+			// Trả về URL khi cần reauth
+			return Ok(new { authUrl = result, needsAuth = true });
 		}
+		else
+		{
+			// Trả về message khi refresh token còn hạn
+			return Ok(new { message = result, needsAuth = false });
+		}
+	}
 
 
 		/// <summary>
