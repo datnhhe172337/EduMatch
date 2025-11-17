@@ -2,6 +2,7 @@ using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests.ScheduleChangeRequest;
+using EduMatch.BusinessLogicLayer.Requests.Schedule;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
@@ -16,7 +17,7 @@ namespace EduMatch.BusinessLogicLayer.Services
     public class ScheduleChangeRequestService : IScheduleChangeRequestService
     {
         private readonly IScheduleChangeRequestRepository _scheduleChangeRequestRepository;
-        private readonly IScheduleRepository _scheduleRepository;
+        private readonly IScheduleService _scheduleService;
         private readonly IUserRepository _userRepository;
         private readonly ITutorAvailabilityRepository _tutorAvailabilityRepository;
         private readonly EduMatchContext _context;
@@ -24,14 +25,14 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public ScheduleChangeRequestService(
             IScheduleChangeRequestRepository scheduleChangeRequestRepository,
-            IScheduleRepository scheduleRepository,
+            IScheduleService scheduleService,
             IUserRepository userRepository,
             ITutorAvailabilityRepository tutorAvailabilityRepository,
             EduMatchContext context,
             IMapper mapper)
         {
             _scheduleChangeRequestRepository = scheduleChangeRequestRepository;
-            _scheduleRepository = scheduleRepository;
+            _scheduleService = scheduleService;
             _userRepository = userRepository;
             _tutorAvailabilityRepository = tutorAvailabilityRepository;
             _context = context;
@@ -59,7 +60,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             try
             {
                 // Check Schedule tồn tại
-                var schedule = await _scheduleRepository.GetByIdAsync(request.ScheduleId)
+                var schedule = await _scheduleService.GetByIdAsync(request.ScheduleId)
                     ?? throw new Exception($"Schedule không tồn tại với ScheduleId: {request.ScheduleId}");
 
                 // Check RequesterEmail tồn tại
@@ -131,7 +132,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 // Check Schedule tồn tại nếu có thay đổi
                 if (request.ScheduleId.HasValue)
                 {
-                    var schedule = await _scheduleRepository.GetByIdAsync(request.ScheduleId.Value)
+                    var schedule = await _scheduleService.GetByIdAsync(request.ScheduleId.Value)
                         ?? throw new Exception($"Schedule không tồn tại với ScheduleId: {request.ScheduleId.Value}");
                     entity.ScheduleId = request.ScheduleId.Value;
                 }
@@ -234,15 +235,24 @@ namespace EduMatch.BusinessLogicLayer.Services
                     throw new Exception($"Không thể cập nhật Status từ {oldStatus} về {status}. Chỉ cho phép chuyển từ status nhỏ hơn sang status lớn hơn");
                 }
 
-                // Nếu từ Pending sang Approved: update OldAvailabiliti về Available
+                // Nếu từ Pending sang Approved: update OldAvailabiliti về Available và update Schedule
                 if (oldStatus == ScheduleChangeRequestStatus.Pending && status == ScheduleChangeRequestStatus.Approved)
                 {
+                    // Update OldAvailabiliti về Available
                     var oldAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(entity.OldAvailabilitiId);
                     if (oldAvailability != null)
                     {
                         oldAvailability.Status = (int)TutorAvailabilityStatus.Available;
                         await _tutorAvailabilityRepository.UpdateAsync(oldAvailability);
                     }
+
+                    // Update Schedule: chuyển AvailabilitiId từ Old sang New (dùng service để đồng bộ MeetingSession)
+                    var scheduleUpdateRequest = new ScheduleUpdateRequest
+                    {
+                        Id = entity.ScheduleId,
+                        AvailabilitiId = entity.NewAvailabilitiId
+                    };
+                    await _scheduleService.UpdateAsync(scheduleUpdateRequest);
                 }
 
                 // Nếu từ Pending sang Rejected hoặc Cancelled: update NewAvailabiliti về Available
