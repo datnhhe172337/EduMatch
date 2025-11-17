@@ -10,6 +10,7 @@ using EduMatch.BusinessLogicLayer.Requests.CertificateType;
 using EduMatch.BusinessLogicLayer.Requests.Level;
 using EduMatch.BusinessLogicLayer.Requests.Subject;
 using EduMatch.BusinessLogicLayer.Requests.TimeSlot;
+using EduMatch.BusinessLogicLayer.Requests.ScheduleChangeRequest;
 
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
@@ -460,6 +461,84 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 
 
             CreateMap<Notification, NotificationDto>();
+
+            // ScheduleChangeRequest mappings
+            CreateMap<ScheduleChangeRequest, ScheduleChangeRequestDto>()
+                .ForMember(dest => dest.Status,
+                    opt => opt.MapFrom(src => (ScheduleChangeRequestStatus)src.Status))
+                .ForMember(dest => dest.Schedule,
+                    opt => opt.MapFrom(src => src.Schedule != null ? new ScheduleDto
+                    {
+                        Id = src.Schedule.Id,
+                        AvailabilitiId = src.Schedule.AvailabilitiId,
+                        BookingId = src.Schedule.BookingId,
+                        Status = (ScheduleStatus)src.Schedule.Status,
+                        AttendanceNote = src.Schedule.AttendanceNote,
+                        IsRefunded = src.Schedule.IsRefunded,
+                        RefundedAt = src.Schedule.RefundedAt,
+                        CreatedAt = src.Schedule.CreatedAt,
+                        UpdatedAt = src.Schedule.UpdatedAt
+                    } : null))
+                .ForMember(dest => dest.OldAvailability,
+                    opt => opt.MapFrom(src => src.OldAvailabiliti != null ? new TutorAvailabilityDto
+                    {
+                        Id = src.OldAvailabiliti.Id,
+                        TutorId = src.OldAvailabiliti.TutorId,
+                        SlotId = src.OldAvailabiliti.SlotId,
+                        StartDate = src.OldAvailabiliti.StartDate,
+                        EndDate = src.OldAvailabiliti.EndDate,
+                        Status = (TutorAvailabilityStatus)src.OldAvailabiliti.Status,
+                        CreatedAt = src.OldAvailabiliti.CreatedAt,
+                        UpdatedAt = src.OldAvailabiliti.UpdatedAt,
+                        Slot = src.OldAvailabiliti.Slot != null ? new TimeSlotDto
+                        {
+                            Id = src.OldAvailabiliti.Slot.Id,
+                            StartTime = src.OldAvailabiliti.Slot.StartTime,
+                            EndTime = src.OldAvailabiliti.Slot.EndTime
+                        } : null
+                    } : null))
+                .ForMember(dest => dest.NewAvailability,
+                    opt => opt.MapFrom(src => src.NewAvailabiliti != null ? new TutorAvailabilityDto
+                    {
+                        Id = src.NewAvailabiliti.Id,
+                        TutorId = src.NewAvailabiliti.TutorId,
+                        SlotId = src.NewAvailabiliti.SlotId,
+                        StartDate = src.NewAvailabiliti.StartDate,
+                        EndDate = src.NewAvailabiliti.EndDate,
+                        Status = (TutorAvailabilityStatus)src.NewAvailabiliti.Status,
+                        CreatedAt = src.NewAvailabiliti.CreatedAt,
+                        UpdatedAt = src.NewAvailabiliti.UpdatedAt,
+                        Slot = src.NewAvailabiliti.Slot != null ? new TimeSlotDto
+                        {
+                            Id = src.NewAvailabiliti.Slot.Id,
+                            StartTime = src.NewAvailabiliti.Slot.StartTime,
+                            EndTime = src.NewAvailabiliti.Slot.EndTime
+                        } : null
+                    } : null));
+
+            CreateMap<ScheduleChangeRequestCreateRequest, ScheduleChangeRequest>()
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.Now))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)ScheduleChangeRequestStatus.Pending))
+                .ForMember(dest => dest.ProcessedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.Schedule, opt => opt.Ignore())
+                .ForMember(dest => dest.OldAvailabiliti, opt => opt.Ignore())
+                .ForMember(dest => dest.NewAvailabiliti, opt => opt.Ignore())
+                .ForMember(dest => dest.RequesterEmailNavigation, opt => opt.Ignore())
+                .ForMember(dest => dest.RequestedToEmailNavigation, opt => opt.Ignore());
+
+            CreateMap<ScheduleChangeRequestUpdateRequest, ScheduleChangeRequest>()
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null))
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.Status, opt => opt.Condition((src, dest, srcMember, destMember, context) => src.Status.HasValue))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status!.Value))
+                .ForMember(dest => dest.ProcessedAt, opt => opt.Condition((src, dest, srcMember, destMember, context) => src.Status.HasValue && src.Status.Value != ScheduleChangeRequestStatus.Pending))
+                .ForMember(dest => dest.ProcessedAt, opt => opt.MapFrom(src => DateTime.Now))
+                .ForMember(dest => dest.Schedule, opt => opt.Ignore())
+                .ForMember(dest => dest.OldAvailabiliti, opt => opt.Ignore())
+                .ForMember(dest => dest.NewAvailabiliti, opt => opt.Ignore())
+                .ForMember(dest => dest.RequesterEmailNavigation, opt => opt.Ignore())
+                .ForMember(dest => dest.RequestedToEmailNavigation, opt => opt.Ignore());
 
         }
     }
