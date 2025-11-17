@@ -70,12 +70,15 @@ namespace EduMatch.BusinessLogicLayer.Services
             var created = await _reportRepository.CreateAsync(report);
 
             var reporterName = string.IsNullOrWhiteSpace(reporter.UserName) ? reporter.Email : reporter.UserName;
-            var tutorMessage = $"Bạn vừa nhận được một báo cáo mới từ {reporterName}. Lý do: {report.Reason}";
+            var tutorMessage = $"Bạn vừa nhận được một báo cáo mới từ {reporterName}. Lý do: {report.Reason}. Bạn có 2 ngày để gửi giải trình trước khi quản trị viên xem xét.";
             await _notificationService.CreateNotificationAsync(reported.Email, tutorMessage);
 
             return _mapper.Map<ReportDetailDto>(created);
         }
 
+        /// <summary>
+        /// Deletes the specified report permanently. Intended for admin cleanup only.
+        /// </summary>
         public async Task DeleteReportAsync(int reportId)
         {
             var report = await _reportRepository.GetByIdAsync(reportId)
@@ -137,8 +140,11 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (!tutorEmail.Trim().Equals(report.ReportedUserEmail, StringComparison.OrdinalIgnoreCase))
                 throw new UnauthorizedAccessException("Bạn không thể phản hồi báo cáo này.");
 
-            if (report.StatusEnum != ReportStatus.UnderReview)
-                throw new InvalidOperationException("Giải trình chỉ được gửi sau khi báo cáo được chuyển sang trạng thái xem xét.");
+            if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
+                throw new InvalidOperationException("Báo cáo đã được xử lý, không thể gửi giải trình.");
+
+            if (DateTime.UtcNow > report.CreatedAt.AddDays(2))
+                throw new InvalidOperationException("Đã quá hạn 2 ngày để gửi giải trình.");
 
             report.TutorDefenseNote = request.DefenseNote.Trim();
             report.UpdatedAt = DateTime.UtcNow;
@@ -159,6 +165,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             var report = await _reportRepository.GetByIdAsync(reportId)
                 ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
+
+            var reviewAllowedAt = report.CreatedAt.AddDays(2);
+            if (DateTime.UtcNow < reviewAllowedAt)
+                throw new InvalidOperationException("Quản trị viên chỉ được xử lý báo cáo sau 2 ngày kể từ khi được tạo để gia sư có thời gian giải trình.");
 
             report.StatusEnum = request.Status;
             report.AdminNotes = string.IsNullOrWhiteSpace(request.AdminNotes) ? null : request.AdminNotes.Trim();
