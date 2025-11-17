@@ -37,6 +37,11 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// Lấy danh sách ScheduleChangeRequest theo RequestedToEmail
         /// </summary>
         Task<List<ScheduleChangeRequestDto>> GetAllByRequestedToEmailAsync(string requestedToEmail, ScheduleChangeRequestStatus? status = null);
+
+        /// <summary>
+        /// Tự động hủy các ScheduleChangeRequest Pending quá 3 ngày hoặc sắp đến giờ học
+        /// </summary>
+        Task<int> AutoCancelExpiredPendingRequestsAsync();
     }
 }
 

@@ -1,5 +1,6 @@
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
+using EduMatch.DataAccessLayer.Enum;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -98,6 +99,24 @@ namespace EduMatch.DataAccessLayer.Repositories
             return await query
                 .OrderByDescending(scr => scr.CreatedAt)
                 .ThenByDescending(scr => scr.Id)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Lấy tất cả ScheduleChangeRequest có Status = Pending với đầy đủ thông tin liên quan
+        /// </summary>
+        public async Task<IEnumerable<ScheduleChangeRequest>> GetAllPendingAsync()
+        {
+            return await _context.ScheduleChangeRequests
+                .AsSplitQuery()
+                .Include(scr => scr.Schedule)
+                    .ThenInclude(s => s.Availabiliti)
+                        .ThenInclude(a => a.Slot)
+                .Include(scr => scr.OldAvailabiliti)
+                    .ThenInclude(a => a.Slot)
+                .Include(scr => scr.NewAvailabiliti)
+                    .ThenInclude(a => a.Slot)
+                .Where(scr => scr.Status == (int)EduMatch.DataAccessLayer.Enum.ScheduleChangeRequestStatus.Pending)
                 .ToListAsync();
         }
     }

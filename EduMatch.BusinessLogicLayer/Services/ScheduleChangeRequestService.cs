@@ -247,7 +247,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                 // Nếu từ Pending sang Rejected hoặc Cancelled: update NewAvailabiliti về Available
                 if (oldStatus == ScheduleChangeRequestStatus.Pending && 
-                    (status == ScheduleChangeRequestStatus.Rejected))
+                    (status == ScheduleChangeRequestStatus.Rejected || status == ScheduleChangeRequestStatus.Cancelled))
                 {
                     var newAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(entity.NewAvailabilitiId);
                     if (newAvailability != null)
@@ -302,6 +302,87 @@ namespace EduMatch.BusinessLogicLayer.Services
             int? statusInt = status.HasValue ? (int?)status.Value : null;
             var entities = await _scheduleChangeRequestRepository.GetAllByRequestedToEmailAsync(requestedToEmail, statusInt);
             return _mapper.Map<List<ScheduleChangeRequestDto>>(entities);
+        }
+
+        /// <summary>
+        /// Tự động hủy các ScheduleChangeRequest Pending quá 3 ngày hoặc sắp đến giờ học
+        /// </summary>
+        public async Task<int> AutoCancelExpiredPendingRequestsAsync()
+        {
+            int cancelledCount = 0;
+            try
+            {
+                var pendingRequests = await _scheduleChangeRequestRepository.GetAllPendingAsync();
+                var systemNow = DateTime.Now; // Giờ hệ thống
+                var utcNow = DateTime.UtcNow;
+                var vietnamNow = utcNow.AddHours(7); // Giờ Việt Nam (UTC+7)
+
+                foreach (var request in pendingRequests)
+                {
+                    bool shouldCancel = false;
+
+                    // Check 1: Nếu Pending quá 3 ngày (dùng giờ hệ thống)
+                    if (request.CreatedAt.AddDays(3) < systemNow)
+                    {
+                        shouldCancel = true;
+                    }
+
+                    // Check 2: Nếu gần sát giờ học 1 tiếng (dùng giờ Việt Nam)
+                    if (!shouldCancel && request.OldAvailabiliti != null)
+                    {
+                        var oldAvailability = request.OldAvailabiliti;
+                        
+                        // StartDate đã bao gồm slot rồi, dùng trực tiếp
+                        var classStartDateTime = oldAvailability.StartDate;
+                        
+                        // Nếu thời gian hiện tại (giờ VN) >= (thời gian bắt đầu học - 1 giờ) thì cancel
+                        var oneHourBeforeClass = classStartDateTime.AddHours(-1);
+                        
+                        if (vietnamNow >= oneHourBeforeClass)
+                        {
+                            shouldCancel = true;
+                        }
+                    }
+
+                    if (shouldCancel)
+                    {
+                        using var dbTransaction = await _context.Database.BeginTransactionAsync();
+                        try
+                        {
+                            // Update status thành Cancelled
+                            request.Status = (int)ScheduleChangeRequestStatus.Cancelled;
+                            request.ProcessedAt = DateTime.Now;
+
+                            // Update NewAvailabiliti về Available
+                            if (request.NewAvailabiliti != null)
+                            {
+                                var newAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.NewAvailabilitiId);
+                                if (newAvailability != null)
+                                {
+                                    newAvailability.Status = (int)TutorAvailabilityStatus.Available;
+                                    await _tutorAvailabilityRepository.UpdateAsync(newAvailability);
+                                }
+                            }
+
+                            await _scheduleChangeRequestRepository.UpdateAsync(request);
+                            await dbTransaction.CommitAsync();
+                            cancelledCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            await dbTransaction.RollbackAsync();
+                            // Log error nhưng tiếp tục với các request khác
+                            Console.WriteLine($"[AutoCancelExpiredPendingRequests] Error cancelling request {request.Id}: {ex.Message}");
+                        }
+                    }
+                }
+
+                return cancelledCount;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi khi tự động hủy các ScheduleChangeRequest Pending: {ex.Message}", ex);
+            }
         }
     }
 }

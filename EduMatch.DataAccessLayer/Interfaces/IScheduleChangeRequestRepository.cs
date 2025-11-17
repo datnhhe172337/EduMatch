@@ -30,6 +30,11 @@ namespace EduMatch.DataAccessLayer.Interfaces
         /// Lấy danh sách ScheduleChangeRequest theo RequestedToEmail, sắp xếp theo CreatedAt descending, Id descending
         /// </summary>
         Task<IEnumerable<ScheduleChangeRequest>> GetAllByRequestedToEmailAsync(string requestedToEmail, int? status = null);
+
+        /// <summary>
+        /// Lấy tất cả ScheduleChangeRequest có Status = Pending với đầy đủ thông tin liên quan
+        /// </summary>
+        Task<IEnumerable<ScheduleChangeRequest>> GetAllPendingAsync();
     }
 }
 
