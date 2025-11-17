@@ -138,9 +138,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (currentCountForBooking + 1 > booking.TotalSessions)
                 throw new Exception("Số lượng Schedule vượt quá TotalSessions của Booking");
 
-            // AvailabilitiId chưa được sử dụng
+            // AvailabilitiId chưa được sử dụng (trừ khi Schedule trước đó đã bị hủy)
             var existingSchedule = await _scheduleRepository.GetByAvailabilityIdAsync(request.AvailabilitiId);
-            if (existingSchedule != null)
+            if (existingSchedule != null && existingSchedule.Status != (int)ScheduleStatus.Cancelled)
                 throw new Exception("TutorAvailability này đã được sử dụng cho một Schedule khác");
 
             var now = DateTime.UtcNow;
