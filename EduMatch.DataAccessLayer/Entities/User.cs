@@ -43,6 +43,10 @@ public partial class User
 
     public virtual Role Role { get; set; } = null!;
 
+    public virtual ICollection<ScheduleChangeRequest> ScheduleChangeRequestRequestedToEmailNavigations { get; set; } = new List<ScheduleChangeRequest>();
+
+    public virtual ICollection<ScheduleChangeRequest> ScheduleChangeRequestRequesterEmailNavigations { get; set; } = new List<ScheduleChangeRequest>();
+
     public virtual TutorProfile? TutorProfile { get; set; }
 
     public virtual ICollection<UserBankAccount> UserBankAccounts { get; set; } = new List<UserBankAccount>();

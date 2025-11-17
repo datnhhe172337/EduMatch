@@ -21,6 +21,10 @@ public partial class TutorAvailability
 
     public DateTime? UpdatedAt { get; set; }
 
+    public virtual ICollection<ScheduleChangeRequest> ScheduleChangeRequestNewAvailabilitis { get; set; } = new List<ScheduleChangeRequest>();
+
+    public virtual ICollection<ScheduleChangeRequest> ScheduleChangeRequestOldAvailabilitis { get; set; } = new List<ScheduleChangeRequest>();
+
     public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
 
     public virtual TimeSlot Slot { get; set; } = null!;

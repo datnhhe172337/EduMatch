@@ -56,8 +56,8 @@ namespace EduMatch.PresentationLayer.Controllers
         public async Task<IActionResult> GetTutorApplicationsByClassRequestIdAsync(int classRequestId)
         {
             var learnerEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-            if (learnerEmail == null)
-                return Unauthorized(new { message = "Invalid learner token" });
+            //if (learnerEmail == null)
+            //    return Unauthorized(new { message = "Invalid learner token" });
 
             var result = await _service.GetTutorApplicationsByClassRequestAsync(classRequestId, learnerEmail);
             return Ok(result);

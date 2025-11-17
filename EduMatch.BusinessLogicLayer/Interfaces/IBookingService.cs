@@ -56,5 +56,9 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// Cập nhật Status của Booking
         /// </summary>
         Task<BookingDto> UpdateStatusAsync(int id, BookingStatus status);
+        /// <summary>
+        /// Tự động hủy các booking Pending quá hạn xác nhận
+        /// </summary>
+        Task<int> AutoCancelUnconfirmedBookingsAsync();
     }
 }

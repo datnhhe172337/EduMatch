@@ -19,6 +19,8 @@ namespace EduMatch.BusinessLogicLayer.DTOs
 		public DateTime CreatedAt { get; set; }
 		public DateTime? UpdatedAt { get; set; }
 
+		public TutorAvailabilityDto? Availability { get; set; }
+		public bool HasMeetingSession { get; set; }
 		public MeetingSessionDto? MeetingSession { get; set; }
 	}
 }

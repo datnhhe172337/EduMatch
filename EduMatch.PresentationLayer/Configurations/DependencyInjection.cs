@@ -55,10 +55,11 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ISystemFeeRepository, SystemFeeRepository>();
             services.AddScoped<IBookingRepository, BookingRepository>();
             services.AddScoped<IScheduleRepository, ScheduleRepository>();
+            services.AddScoped<IScheduleChangeRequestRepository, ScheduleChangeRequestRepository>();
             services.AddScoped<IMeetingSessionRepository, MeetingSessionRepository>();
             services.AddScoped<IReportRepository, ReportRepository>();
 
-
+            services.AddScoped<ITutorFeedbackRepository, TutorFeedbackRepository>();
 			
 			services.AddScoped<UserProfileRepository, UserProfileRepository>();
 			services.AddScoped<IManageTutorProfileRepository, ManageTutorProfileRepository>();
@@ -91,6 +92,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ISystemFeeService, SystemFeeService>();
             services.AddScoped<IBookingService, BookingService>();
             services.AddScoped<IScheduleService, ScheduleService>();
+            services.AddScoped<IScheduleChangeRequestService, ScheduleChangeRequestService>();
             services.AddScoped<IMeetingSessionService, MeetingSessionService>();
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IReportContentValidator, ReportContentValidator>();
@@ -107,6 +109,10 @@ namespace EduMatch.PresentationLayer.Configurations
 
             services.AddScoped<ISystemFeeRepository, SystemFeeRepository>();
             services.AddScoped<ChatService>();
+
+            services.AddScoped<ITutorFeedbackService, TutorFeedbackService>();
+			
+			
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<INotificationPusher, NotificationPusher>();
 

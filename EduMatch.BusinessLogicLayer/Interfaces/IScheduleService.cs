@@ -61,5 +61,10 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// Kiểm tra tutor có lịch học trùng với slot và ngày hay không (loại trừ Schedule bị Cancelled)
         /// </summary>
         Task<bool> HasTutorScheduleConflictAsync(int tutorId, int slotId, DateTime date);
+
+        /// <summary>
+        /// Cập nhật Status của Schedule (chỉ cho phép update tiến dần, ngoại lệ: Completed và Absent có thể update qua lại)
+        /// </summary>
+        Task<ScheduleDto> UpdateStatusAsync(int id, ScheduleStatus status);
     }
 }

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static EduMatch.DataAccessLayer.Enum.InstitutionType;
+using  EduMatch.DataAccessLayer.Enum;
 
 namespace EduMatch.Tests.Common
 {
@@ -293,6 +293,173 @@ namespace EduMatch.Tests.Common
 				RejectReason = rejectReason,
 				Tutor = CreateFakeTutorProfile(tutorId),
 				CertificateType = CreateFakeCertificateType(certificateTypeId)
+			};
+		}
+
+		/// <summary>
+		/// Tạo SystemFee giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static SystemFee CreateFakeSystemFee(
+			int id = 1,
+			string? name = null,
+			decimal? percentage = 10,
+			decimal? fixedAmount = 5000,
+			bool? isActive = true)
+		{
+			return new SystemFee
+			{
+				Id = id,
+				Name = name ?? $"System Fee {id}",
+				Percentage = percentage,
+				FixedAmount = fixedAmount,
+				EffectiveFrom = DateTime.UtcNow.AddDays(-30),
+				EffectiveTo = null,
+				IsActive = isActive,
+				CreatedAt = DateTime.UtcNow,
+				UpdatedAt = null
+			};
+		}
+
+		/// <summary>
+		/// Tạo User giả với email cụ thể (dùng cho test)
+		/// </summary>
+		public static User CreateFakeUser(string email = "learner@example.com")
+		{
+			return new User
+			{
+				Email = email,
+				UserName = "Test User",
+				LoginProvider = "Email"
+			};
+		}
+
+		/// <summary>
+		/// Tạo Booking giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static Booking CreateFakeBooking(
+			int id = 1,
+			string? learnerEmail = null,
+			int tutorSubjectId = 1,
+			int totalSessions = 1,
+			decimal unitPrice = 200000,
+			int systemFeeId = 1,
+			decimal systemFeeAmount = 25000,
+			int paymentStatus = 0,
+			int status = 0)
+		{
+			return new Booking
+			{
+				Id = id,
+				LearnerEmail = learnerEmail ?? "learner@example.com",
+				TutorSubjectId = tutorSubjectId,
+				BookingDate = DateTime.UtcNow,
+				TotalSessions = totalSessions,
+				UnitPrice = unitPrice,
+				TotalAmount = unitPrice * totalSessions,
+				PaymentStatus = paymentStatus,
+				RefundedAmount = 0,
+				Status = status,
+				SystemFeeId = systemFeeId,
+				SystemFeeAmount = systemFeeAmount,
+				CreatedAt = DateTime.UtcNow,
+				UpdatedAt = null,
+				LearnerEmailNavigation = CreateFakeUser(learnerEmail ?? "learner@example.com"),
+				TutorSubject = CreateFakeTutorSubject(tutorSubjectId),
+				SystemFee = CreateFakeSystemFee(systemFeeId)
+			};
+		}
+
+		/// <summary>
+		/// Tạo GoogleToken giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static GoogleToken CreateFakeGoogleToken(
+			string accountEmail = "system@edumatch.com",
+			string? accessToken = null,
+			string? refreshToken = null)
+		{
+			return new GoogleToken
+			{
+				Id = 1,
+				AccountEmail = accountEmail,
+				AccessToken = accessToken ?? "fake_access_token",
+				RefreshToken = refreshToken ?? "fake_refresh_token",
+				TokenType = "Bearer",
+				Scope = "https://www.googleapis.com/auth/calendar",
+				ExpiresAt = DateTime.UtcNow.AddHours(1),
+				CreatedAt = DateTime.UtcNow,
+				UpdatedAt = null
+			};
+		}
+
+		/// <summary>
+		/// Tạo Schedule giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static Schedule CreateFakeSchedule(
+			int id = 1,
+			int availabilityId = 1,
+			int bookingId = 1,
+			int status = 0,
+			bool includeBooking = true,
+			bool includeAvailability = true)
+		{
+			var schedule = new Schedule
+			{
+				Id = id,
+				AvailabilitiId = availabilityId,
+				BookingId = bookingId,
+				Status = status,
+				AttendanceNote = null,
+				IsRefunded = false,
+				RefundedAt = null,
+				CreatedAt = DateTime.UtcNow,
+				UpdatedAt = null
+			};
+
+			if (includeAvailability)
+			{
+				var availability = CreateFakeTutorAvailability(availabilityId);
+				schedule.Availabiliti = availability;
+			}
+
+			if (includeBooking)
+			{
+				var booking = CreateFakeBooking(bookingId);
+				schedule.Booking = booking;
+			}
+
+			return schedule;
+		}
+
+		/// <summary>
+		/// Tạo MeetingSession giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static MeetingSession CreateFakeMeetingSession(
+			int id = 1,
+			int scheduleId = 1,
+			string? organizerEmail = null,
+			string? meetLink = null,
+			string? meetCode = null,
+			string? eventId = null,
+			DateTime? startTime = null,
+			DateTime? endTime = null,
+			int meetingType = 0)
+		{
+			var now = DateTime.UtcNow;
+			return new MeetingSession
+			{
+				Id = id,
+				ScheduleId = scheduleId,
+				OrganizerEmail = organizerEmail ?? "system@edumatch.com",
+				MeetLink = meetLink ?? "https://meet.google.com/abc-defg-hij",
+				MeetCode = meetCode ?? "abc-defg-hij",
+				EventId = eventId ?? "event123",
+				StartTime = startTime ?? now.AddDays(1),
+				EndTime = endTime ?? now.AddDays(1).AddHours(2),
+				MeetingType = meetingType,
+				CreatedAt = now,
+				UpdatedAt = null,
+				OrganizerEmailNavigation = CreateFakeGoogleToken(organizerEmail ?? "system@edumatch.com"),
+				Schedule = CreateFakeSchedule(scheduleId)
 			};
 		}
 	}

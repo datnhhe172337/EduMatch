@@ -21,7 +21,6 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
         [Authorize(Roles = "Learner")]
-        [Authorize(Roles = "Tutor")]
         [HttpPost("Create")]
         public async Task<IActionResult> CreateClassRequestAsync([FromBody] ClassCreateRequest dto)
         {

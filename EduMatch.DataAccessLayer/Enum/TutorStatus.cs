@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,3 +15,4 @@ namespace EduMatch.DataAccessLayer.Enum
 		Deactivated = 4   // Ngừng hoạt động
 	}
 }
+
