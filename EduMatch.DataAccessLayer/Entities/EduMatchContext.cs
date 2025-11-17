@@ -51,9 +51,13 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
 
+    public virtual DbSet<Report> Reports { get; set; }
+
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<Schedule> Schedules { get; set; }
+
+    public virtual DbSet<ScheduleChangeRequest> ScheduleChangeRequests { get; set; }
 
     public virtual DbSet<SubDistrict> SubDistricts { get; set; }
 
@@ -610,6 +614,47 @@ public partial class EduMatchContext : DbContext
                 .HasConstraintName("FK__refresh_t__userE__5BE2A6F2");
         });
 
+        modelBuilder.Entity<Report>(entity =>
+        {
+            entity.ToTable("reports");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AdminNotes).HasColumnName("adminNotes");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnType("datetime")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.HandledByAdminEmail)
+                .HasMaxLength(100)
+                .HasColumnName("handledByAdminEmail");
+            entity.Property(e => e.Reason).HasColumnName("reason");
+            entity.Property(e => e.ReportedUserEmail)
+                .HasMaxLength(100)
+                .HasColumnName("reportedUserEmail");
+            entity.Property(e => e.ReporterUserEmail)
+                .HasMaxLength(100)
+                .HasColumnName("reporterUserEmail");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.TutorDefenseNote).HasColumnName("tutorDefenseNote");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime")
+                .HasColumnName("updatedAt");
+
+            entity.HasOne(d => d.HandledByAdminEmailNavigation).WithMany(p => p.ReportHandledByAdminEmailNavigations)
+                .HasForeignKey(d => d.HandledByAdminEmail)
+                .HasConstraintName("FK_reports_admin_users");
+
+            entity.HasOne(d => d.ReportedUserEmailNavigation).WithMany(p => p.ReportReportedUserEmailNavigations)
+                .HasForeignKey(d => d.ReportedUserEmail)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_reports_reported_users");
+
+            entity.HasOne(d => d.ReporterUserEmailNavigation).WithMany(p => p.ReportReporterUserEmailNavigations)
+                .HasForeignKey(d => d.ReporterUserEmail)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_reports_reporter_users");
+        });
+
         modelBuilder.Entity<Role>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__roles__3213E83F28BEE802");
@@ -651,6 +696,57 @@ public partial class EduMatchContext : DbContext
                 .HasForeignKey(d => d.BookingId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Schedule_Bookings");
+        });
+
+        modelBuilder.Entity<ScheduleChangeRequest>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__schedule__3213E83FB88FCF3B");
+
+            entity.ToTable("schedule_change_requests");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.NewAvailabilitiId).HasColumnName("newAvailabilitiId");
+            entity.Property(e => e.OldAvailabilitiId).HasColumnName("oldAvailabilitiId");
+            entity.Property(e => e.ProcessedAt).HasColumnName("processedAt");
+            entity.Property(e => e.Reason)
+                .HasMaxLength(500)
+                .HasColumnName("reason");
+            entity.Property(e => e.RequestedToEmail)
+                .HasMaxLength(100)
+                .HasColumnName("requestedToEmail");
+            entity.Property(e => e.RequesterEmail)
+                .HasMaxLength(100)
+                .HasColumnName("requesterEmail");
+            entity.Property(e => e.ScheduleId).HasColumnName("scheduleId");
+            entity.Property(e => e.Status).HasColumnName("status");
+
+            entity.HasOne(d => d.NewAvailabiliti).WithMany(p => p.ScheduleChangeRequestNewAvailabilitis)
+                .HasForeignKey(d => d.NewAvailabilitiId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SCR_NewAvail");
+
+            entity.HasOne(d => d.OldAvailabiliti).WithMany(p => p.ScheduleChangeRequestOldAvailabilitis)
+                .HasForeignKey(d => d.OldAvailabilitiId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SCR_OldAvail");
+
+            entity.HasOne(d => d.RequestedToEmailNavigation).WithMany(p => p.ScheduleChangeRequestRequestedToEmailNavigations)
+                .HasForeignKey(d => d.RequestedToEmail)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SCR_RequestedTo");
+
+            entity.HasOne(d => d.RequesterEmailNavigation).WithMany(p => p.ScheduleChangeRequestRequesterEmailNavigations)
+                .HasForeignKey(d => d.RequesterEmail)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SCR_Requester");
+
+            entity.HasOne(d => d.Schedule).WithMany(p => p.ScheduleChangeRequests)
+                .HasForeignKey(d => d.ScheduleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SCR_Schedule");
         });
 
         modelBuilder.Entity<SubDistrict>(entity =>
@@ -852,8 +948,6 @@ public partial class EduMatchContext : DbContext
 
             entity.ToTable("TutorFeedback");
 
-            entity.HasIndex(e => new { e.BookingId, e.LearnerEmail, e.TutorId }, "UQ_TutorFeedback").IsUnique();
-
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.LearnerEmail).HasMaxLength(100);
         });
@@ -884,6 +978,7 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Bio).HasColumnName("bio");
             entity.Property(e => e.CreatedAt).HasColumnName("createdAt");
+            entity.Property(e => e.LastSync).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.TeachingExp)
                 .HasMaxLength(500)

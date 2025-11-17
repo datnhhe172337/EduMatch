@@ -35,7 +35,17 @@ public partial class User
 
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 
+    public virtual ICollection<Report> ReportHandledByAdminEmailNavigations { get; set; } = new List<Report>();
+
+    public virtual ICollection<Report> ReportReportedUserEmailNavigations { get; set; } = new List<Report>();
+
+    public virtual ICollection<Report> ReportReporterUserEmailNavigations { get; set; } = new List<Report>();
+
     public virtual Role Role { get; set; } = null!;
+
+    public virtual ICollection<ScheduleChangeRequest> ScheduleChangeRequestRequestedToEmailNavigations { get; set; } = new List<ScheduleChangeRequest>();
+
+    public virtual ICollection<ScheduleChangeRequest> ScheduleChangeRequestRequesterEmailNavigations { get; set; } = new List<ScheduleChangeRequest>();
 
     public virtual TutorProfile? TutorProfile { get; set; }
 

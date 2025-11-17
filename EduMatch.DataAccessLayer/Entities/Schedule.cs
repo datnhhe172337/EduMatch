@@ -28,4 +28,6 @@ public partial class Schedule
     public virtual Booking Booking { get; set; } = null!;
 
     public virtual MeetingSession? MeetingSession { get; set; }
+
+    public virtual ICollection<ScheduleChangeRequest> ScheduleChangeRequests { get; set; } = new List<ScheduleChangeRequest>();
 }
