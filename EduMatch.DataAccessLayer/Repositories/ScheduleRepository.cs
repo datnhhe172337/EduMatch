@@ -145,7 +145,6 @@ namespace EduMatch.DataAccessLayer.Repositories
 
             return await query
                 .OrderBy(s => s.Availabiliti.StartDate)
-                .ThenBy(s => s.CreatedAt)
                 .ThenBy(s => s.Id)
                 .ToListAsync();
         }
@@ -189,7 +188,6 @@ namespace EduMatch.DataAccessLayer.Repositories
 
             return await query
                 .OrderBy(s => s.Availabiliti.StartDate)
-                .ThenBy(s => s.CreatedAt)
                 .ThenBy(s => s.Id)
                 .ToListAsync();
         }
