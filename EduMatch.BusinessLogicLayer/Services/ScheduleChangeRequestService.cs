@@ -91,7 +91,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                     NewAvailabilitiId = request.NewAvailabilitiId,
                     Reason = request.Reason,
                     Status = (int)ScheduleChangeRequestStatus.Pending,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now
                 };
 
                 // Create ScheduleChangeRequest
@@ -217,6 +217,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<ScheduleChangeRequestDto> UpdateStatusAsync(int id, ScheduleChangeRequestStatus status)
         {
+            using var dbTransaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 if (id <= 0)
@@ -225,19 +226,48 @@ namespace EduMatch.BusinessLogicLayer.Services
                 var entity = await _scheduleChangeRequestRepository.GetByIdAsync(id)
                     ?? throw new Exception($"ScheduleChangeRequest không tồn tại với Id: {id}");
 
+                var oldStatus = (ScheduleChangeRequestStatus)entity.Status;
+
+                // Nếu từ Pending sang Approved: update OldAvailabiliti về Available
+                if (oldStatus == ScheduleChangeRequestStatus.Pending && status == ScheduleChangeRequestStatus.Approved)
+                {
+                    var oldAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(entity.OldAvailabilitiId);
+                    if (oldAvailability != null)
+                    {
+                        oldAvailability.Status = (int)TutorAvailabilityStatus.Available;
+                        await _tutorAvailabilityRepository.UpdateAsync(oldAvailability);
+                    }
+                }
+
+                // Nếu từ Pending sang Rejected hoặc Cancelled: update NewAvailabiliti về Available
+                if (oldStatus == ScheduleChangeRequestStatus.Pending && 
+                    (status == ScheduleChangeRequestStatus.Rejected))
+                {
+                    var newAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(entity.NewAvailabilitiId);
+                    if (newAvailability != null)
+                    {
+                        newAvailability.Status = (int)TutorAvailabilityStatus.Available;
+                        await _tutorAvailabilityRepository.UpdateAsync(newAvailability);
+                    }
+                }
+
                 entity.Status = (int)status;
                 if (status != ScheduleChangeRequestStatus.Pending)
                 {
-                    entity.ProcessedAt = DateTime.UtcNow;
+                    entity.ProcessedAt = DateTime.Now;
                 }
 
                 await _scheduleChangeRequestRepository.UpdateAsync(entity);
+
+                // Commit transaction
+                await dbTransaction.CommitAsync();
 
                 // Map entity sang DTO
                 return _mapper.Map<ScheduleChangeRequestDto>(entity);
             }
             catch (Exception ex)
             {
+                await dbTransaction.RollbackAsync();
                 throw new Exception($"Lỗi khi cập nhật Status của ScheduleChangeRequest với Id: {id}, Status: {status}: {ex.Message}", ex);
             }
         }
