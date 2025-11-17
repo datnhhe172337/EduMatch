@@ -13,7 +13,9 @@ namespace EduMatch.BusinessLogicLayer.Requests.Schedule
         public string? AttendanceNote { get; set; }
         public bool? IsRefunded { get; set; }
 
-        
-        public bool? IsOnline { get; set; }
+        [EnumDataType(typeof(ScheduleStatus), ErrorMessage = " ScheduleStatus  không hợp lệ ")]
+        public ScheduleStatus? Status { get; set; }
+
+		public bool? IsOnline { get; set; }
     }
 }
