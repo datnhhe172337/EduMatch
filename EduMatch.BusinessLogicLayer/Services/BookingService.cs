@@ -304,6 +304,33 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<BookingDto>(entity);
         }
 
+		/// <summary>
+		/// Tự động hủy các booking Pending nếu quá 3 ngày chưa xác nhận hoặc lịch học sắp diễn ra
+		/// </summary>
+		public async Task<int> AutoCancelUnconfirmedBookingsAsync()
+		{
+			var serverNow = DateTime.Now;
+			var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+			var vietnamNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone);
+
+			var createdThreshold = serverNow.AddDays(-3);
+			var scheduleThreshold = vietnamNow.AddHours(1);
+
+			var pendingBookings = await _bookingRepository.GetPendingBookingsNeedingAutoCancelAsync(createdThreshold, scheduleThreshold);
+			int cancelledCount = 0;
+
+			foreach (var booking in pendingBookings)
+			{
+				if (booking.Status != (int)BookingStatus.Pending)
+					continue;
+
+				await UpdateStatusAsync(booking.Id, BookingStatus.Cancelled);
+				cancelledCount++;
+			}
+
+			return cancelledCount;
+		}
+
         /// <summary>
         /// Hủy toàn bộ Schedule theo bookingId: set Status=Cancelled, xóa MeetingSession (bao gồm Google Calendar event), trả Availability về Available
         /// </summary>

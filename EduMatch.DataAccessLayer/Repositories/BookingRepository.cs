@@ -1,6 +1,8 @@
 using EduMatch.DataAccessLayer.Entities;
+using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -231,6 +233,23 @@ namespace EduMatch.DataAccessLayer.Repositories
                 _context.Bookings.Remove(booking);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        /// <summary>
+        /// Lấy danh sách booking pending cần auto-cancel nếu quá 3 ngày chưa xác nhận hoặc lịch học chuẩn bị diễn ra
+        /// </summary>
+        public async Task<List<Booking>> GetPendingBookingsNeedingAutoCancelAsync(DateTime createdBeforeUtc, DateTime scheduleStartBeforeUtc)
+        {
+            return await _context.Bookings
+                .AsSplitQuery()
+                .Include(b => b.Schedules)
+                    .ThenInclude(s => s.Availabiliti)
+                .Where(b => b.Status == (int)BookingStatus.Pending &&
+                    (
+                        b.CreatedAt <= createdBeforeUtc ||
+                        b.Schedules.Any(s => s.Availabiliti.StartDate <= scheduleStartBeforeUtc)
+                    ))
+                .ToListAsync();
         }
     }
 }

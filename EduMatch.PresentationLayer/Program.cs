@@ -1,4 +1,5 @@
 ﻿using DotNetEnv;
+using EduMatch.BusinessLogicLayer.BackgroundServices;
 using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.PresentationLayer.Configurations;
@@ -24,6 +25,7 @@ builder.Services.ConfigureApplication(builder.Configuration);
 
 // Background Service
 builder.Services.AddHostedService<ClassRequestExpireBackgroundService>();
+builder.Services.AddHostedService<BookingAutoCancelBackgroundService>();
 
 // Add services to the container.
 builder.Services.AddControllers()
