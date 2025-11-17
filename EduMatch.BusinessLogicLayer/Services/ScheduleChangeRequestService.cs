@@ -74,10 +74,18 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (newAvailability.Status != (int)TutorAvailabilityStatus.Available)
                 throw new Exception("NewAvailabiliti phải ở trạng thái Available");
 
-            // Map request to entity
-            var entity = _mapper.Map<ScheduleChangeRequest>(request);
-            entity.Status = (int)ScheduleChangeRequestStatus.Pending;
-            entity.CreatedAt = DateTime.UtcNow;
+            // Map request to entity manually
+            var entity = new ScheduleChangeRequest
+            {
+                ScheduleId = request.ScheduleId,
+                RequesterEmail = request.RequesterEmail,
+                RequestedToEmail = request.RequestedToEmail,
+                OldAvailabilitiId = request.OldAvailabilitiId,
+                NewAvailabilitiId = request.NewAvailabilitiId,
+                Reason = request.Reason,
+                Status = (int)ScheduleChangeRequestStatus.Pending,
+                CreatedAt = DateTime.UtcNow
+            };
 
             // Create ScheduleChangeRequest
             await _scheduleChangeRequestRepository.CreateAsync(entity);
@@ -141,7 +149,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (newAvailability.Status != (int)TutorAvailabilityStatus.Available)
                     throw new Exception("NewAvailabiliti phải ở trạng thái Available");
 
-                // Nếu đổi NewAvailabiliti, trả OldAvailabiliti về Available và chuyển NewAvailabiliti sang Booked
+                // Nếu đổi NewAvailabiliti, trả Old NewAvailabiliti về Available và chuyển New NewAvailabiliti sang Booked
                 var oldNewAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(entity.NewAvailabilitiId);
                 if (oldNewAvailability != null && oldNewAvailability.Id != request.NewAvailabilitiId.Value)
                 {
@@ -152,6 +160,15 @@ namespace EduMatch.BusinessLogicLayer.Services
                     // Chuyển New NewAvailabiliti sang Booked
                     newAvailability.Status = (int)TutorAvailabilityStatus.Booked;
                     await _tutorAvailabilityRepository.UpdateAsync(newAvailability);
+                }
+                else if (oldNewAvailability == null || oldNewAvailability.Id == request.NewAvailabilitiId.Value)
+                {
+                    // Nếu là lần đầu set hoặc giữ nguyên, chỉ cần chuyển sang Booked nếu chưa Booked
+                    if (newAvailability.Status == (int)TutorAvailabilityStatus.Available)
+                    {
+                        newAvailability.Status = (int)TutorAvailabilityStatus.Booked;
+                        await _tutorAvailabilityRepository.UpdateAsync(newAvailability);
+                    }
                 }
 
                 entity.NewAvailabilitiId = request.NewAvailabilitiId.Value;
