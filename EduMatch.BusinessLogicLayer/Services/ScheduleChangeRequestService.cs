@@ -51,55 +51,61 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<ScheduleChangeRequestDto> CreateAsync(ScheduleChangeRequestCreateRequest request)
         {
-            // Check Schedule tồn tại
-            var schedule = await _scheduleRepository.GetByIdAsync(request.ScheduleId)
-                ?? throw new Exception("Schedule không tồn tại");
-
-            // Check RequesterEmail tồn tại
-            var requesterUser = await _userRepository.GetUserByEmailAsync(request.RequesterEmail)
-                ?? throw new Exception($"RequesterEmail '{request.RequesterEmail}' không tồn tại");
-
-            // Check RequestedToEmail tồn tại
-            var requestedToUser = await _userRepository.GetUserByEmailAsync(request.RequestedToEmail)
-                ?? throw new Exception($"RequestedToEmail '{request.RequestedToEmail}' không tồn tại");
-
-            // Check OldAvailabiliti tồn tại
-            var oldAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.OldAvailabilitiId)
-                ?? throw new Exception("OldAvailabiliti không tồn tại");
-
-            // Check NewAvailabiliti tồn tại và phải Available
-            var newAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.NewAvailabilitiId)
-                ?? throw new Exception("NewAvailabiliti không tồn tại");
-
-            if (newAvailability.Status != (int)TutorAvailabilityStatus.Available)
-                throw new Exception("NewAvailabiliti phải ở trạng thái Available");
-
-            // Map request to entity manually
-            var entity = new ScheduleChangeRequest
+            try
             {
-                ScheduleId = request.ScheduleId,
-                RequesterEmail = request.RequesterEmail,
-                RequestedToEmail = request.RequestedToEmail,
-                OldAvailabilitiId = request.OldAvailabilitiId,
-                NewAvailabilitiId = request.NewAvailabilitiId,
-                Reason = request.Reason,
-                Status = (int)ScheduleChangeRequestStatus.Pending,
-                CreatedAt = DateTime.UtcNow
-            };
+                // Check Schedule tồn tại
+                var schedule = await _scheduleRepository.GetByIdAsync(request.ScheduleId)
+                    ?? throw new Exception($"CreateAsync - Schedule không tồn tại với ScheduleId: {request.ScheduleId}");
 
-            // Create ScheduleChangeRequest
-            await _scheduleChangeRequestRepository.CreateAsync(entity);
+                // Check RequesterEmail tồn tại
+                var requesterUser = await _userRepository.GetUserByEmailAsync(request.RequesterEmail)
+                    ?? throw new Exception($"CreateAsync - RequesterEmail '{request.RequesterEmail}' không tồn tại");
 
-            // Nếu NewAvailabiliti là Available thì chuyển sang Booked
-            if (newAvailability.Status == (int)TutorAvailabilityStatus.Available)
-            {
-                newAvailability.Status = (int)TutorAvailabilityStatus.Booked;
-                await _tutorAvailabilityRepository.UpdateAsync(newAvailability);
+                // Check RequestedToEmail tồn tại
+                var requestedToUser = await _userRepository.GetUserByEmailAsync(request.RequestedToEmail)
+                    ?? throw new Exception($"CreateAsync - RequestedToEmail '{request.RequestedToEmail}' không tồn tại");
+
+                // Check OldAvailabiliti tồn tại
+                var oldAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.OldAvailabilitiId)
+                    ?? throw new Exception($"CreateAsync - OldAvailabiliti không tồn tại với OldAvailabilitiId: {request.OldAvailabilitiId}");
+
+                // Check NewAvailabiliti tồn tại và phải Available
+                var newAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.NewAvailabilitiId)
+                    ?? throw new Exception($"CreateAsync - NewAvailabiliti không tồn tại với NewAvailabilitiId: {request.NewAvailabilitiId}");
+
+                if (newAvailability.Status != (int)TutorAvailabilityStatus.Available)
+                    throw new Exception($"CreateAsync - NewAvailabiliti phải ở trạng thái Available, hiện tại: {newAvailability.Status}");
+
+                // Map request to entity manually
+                var entity = new ScheduleChangeRequest
+                {
+                    ScheduleId = request.ScheduleId,
+                    RequesterEmail = request.RequesterEmail,
+                    RequestedToEmail = request.RequestedToEmail,
+                    OldAvailabilitiId = request.OldAvailabilitiId,
+                    NewAvailabilitiId = request.NewAvailabilitiId,
+                    Reason = request.Reason,
+                    Status = (int)ScheduleChangeRequestStatus.Pending,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                // Create ScheduleChangeRequest
+                await _scheduleChangeRequestRepository.CreateAsync(entity);
+
+                // Nếu NewAvailabiliti là Available thì chuyển sang Booked
+                if (newAvailability.Status == (int)TutorAvailabilityStatus.Available)
+                {
+                    newAvailability.Status = (int)TutorAvailabilityStatus.Booked;
+                    await _tutorAvailabilityRepository.UpdateAsync(newAvailability);
+                }
+
+                // Map entity sang DTO
+                return _mapper.Map<ScheduleChangeRequestDto>(entity);
             }
-
-            // Reload entity với đầy đủ thông tin
-            var createdEntity = await _scheduleChangeRequestRepository.GetByIdAsync(entity.Id);
-            return _mapper.Map<ScheduleChangeRequestDto>(createdEntity);
+            catch (Exception ex)
+            {
+                throw new Exception($"CreateAsync - Lỗi khi tạo ScheduleChangeRequest: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
@@ -107,98 +113,104 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<ScheduleChangeRequestDto> UpdateAsync(ScheduleChangeRequestUpdateRequest request)
         {
-            // Check ScheduleChangeRequest tồn tại
-            var entity = await _scheduleChangeRequestRepository.GetByIdAsync(request.Id)
-                ?? throw new Exception("ScheduleChangeRequest không tồn tại");
-
-            // Check Schedule tồn tại nếu có thay đổi
-            if (request.ScheduleId.HasValue)
+            try
             {
-                var schedule = await _scheduleRepository.GetByIdAsync(request.ScheduleId.Value)
-                    ?? throw new Exception("Schedule không tồn tại");
-                entity.ScheduleId = request.ScheduleId.Value;
-            }
+                // Check ScheduleChangeRequest tồn tại
+                var entity = await _scheduleChangeRequestRepository.GetByIdAsync(request.Id)
+                    ?? throw new Exception($"UpdateAsync - ScheduleChangeRequest không tồn tại với Id: {request.Id}");
 
-            // Check RequesterEmail tồn tại nếu có thay đổi
-            if (!string.IsNullOrWhiteSpace(request.RequesterEmail))
-            {
-                var requesterUser = await _userRepository.GetUserByEmailAsync(request.RequesterEmail)
-                    ?? throw new Exception($"RequesterEmail '{request.RequesterEmail}' không tồn tại");
-                entity.RequesterEmail = request.RequesterEmail;
-            }
-
-            // Check RequestedToEmail tồn tại nếu có thay đổi
-            if (!string.IsNullOrWhiteSpace(request.RequestedToEmail))
-            {
-                var requestedToUser = await _userRepository.GetUserByEmailAsync(request.RequestedToEmail)
-                    ?? throw new Exception($"RequestedToEmail '{request.RequestedToEmail}' không tồn tại");
-                entity.RequestedToEmail = request.RequestedToEmail;
-            }
-
-            // Check OldAvailabiliti tồn tại nếu có thay đổi
-            if (request.OldAvailabilitiId.HasValue)
-            {
-                var oldAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.OldAvailabilitiId.Value)
-                    ?? throw new Exception("OldAvailabiliti không tồn tại");
-                entity.OldAvailabilitiId = request.OldAvailabilitiId.Value;
-            }
-
-            // Check NewAvailabiliti tồn tại và phải Available nếu có thay đổi
-            if (request.NewAvailabilitiId.HasValue)
-            {
-                var newAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.NewAvailabilitiId.Value)
-                    ?? throw new Exception("NewAvailabiliti không tồn tại");
-
-                if (newAvailability.Status != (int)TutorAvailabilityStatus.Available)
-                    throw new Exception("NewAvailabiliti phải ở trạng thái Available");
-
-                // Nếu đổi NewAvailabiliti, trả Old NewAvailabiliti về Available và chuyển New NewAvailabiliti sang Booked
-                var oldNewAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(entity.NewAvailabilitiId);
-                if (oldNewAvailability != null && oldNewAvailability.Id != request.NewAvailabilitiId.Value)
+                // Check Schedule tồn tại nếu có thay đổi
+                if (request.ScheduleId.HasValue)
                 {
-                    // Trả Old NewAvailabiliti về Available
-                    oldNewAvailability.Status = (int)TutorAvailabilityStatus.Available;
-                    await _tutorAvailabilityRepository.UpdateAsync(oldNewAvailability);
-
-                    // Chuyển New NewAvailabiliti sang Booked
-                    newAvailability.Status = (int)TutorAvailabilityStatus.Booked;
-                    await _tutorAvailabilityRepository.UpdateAsync(newAvailability);
+                    var schedule = await _scheduleRepository.GetByIdAsync(request.ScheduleId.Value)
+                        ?? throw new Exception($"UpdateAsync - Schedule không tồn tại với ScheduleId: {request.ScheduleId.Value}");
+                    entity.ScheduleId = request.ScheduleId.Value;
                 }
-                else if (oldNewAvailability == null || oldNewAvailability.Id == request.NewAvailabilitiId.Value)
+
+                // Check RequesterEmail tồn tại nếu có thay đổi
+                if (!string.IsNullOrWhiteSpace(request.RequesterEmail))
                 {
-                    // Nếu là lần đầu set hoặc giữ nguyên, chỉ cần chuyển sang Booked nếu chưa Booked
-                    if (newAvailability.Status == (int)TutorAvailabilityStatus.Available)
+                    var requesterUser = await _userRepository.GetUserByEmailAsync(request.RequesterEmail)
+                        ?? throw new Exception($"UpdateAsync - RequesterEmail '{request.RequesterEmail}' không tồn tại");
+                    entity.RequesterEmail = request.RequesterEmail;
+                }
+
+                // Check RequestedToEmail tồn tại nếu có thay đổi
+                if (!string.IsNullOrWhiteSpace(request.RequestedToEmail))
+                {
+                    var requestedToUser = await _userRepository.GetUserByEmailAsync(request.RequestedToEmail)
+                        ?? throw new Exception($"UpdateAsync - RequestedToEmail '{request.RequestedToEmail}' không tồn tại");
+                    entity.RequestedToEmail = request.RequestedToEmail;
+                }
+
+                // Check OldAvailabiliti tồn tại nếu có thay đổi
+                if (request.OldAvailabilitiId.HasValue)
+                {
+                    var oldAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.OldAvailabilitiId.Value)
+                        ?? throw new Exception($"UpdateAsync - OldAvailabiliti không tồn tại với OldAvailabilitiId: {request.OldAvailabilitiId.Value}");
+                    entity.OldAvailabilitiId = request.OldAvailabilitiId.Value;
+                }
+
+                // Check NewAvailabiliti tồn tại và phải Available nếu có thay đổi
+                if (request.NewAvailabilitiId.HasValue)
+                {
+                    var newAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(request.NewAvailabilitiId.Value)
+                        ?? throw new Exception($"UpdateAsync - NewAvailabiliti không tồn tại với NewAvailabilitiId: {request.NewAvailabilitiId.Value}");
+
+                    if (newAvailability.Status != (int)TutorAvailabilityStatus.Available)
+                        throw new Exception($"UpdateAsync - NewAvailabiliti phải ở trạng thái Available, hiện tại: {newAvailability.Status}");
+
+                    // Nếu đổi NewAvailabiliti, trả Old NewAvailabiliti về Available và chuyển New NewAvailabiliti sang Booked
+                    var oldNewAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(entity.NewAvailabilitiId);
+                    if (oldNewAvailability != null && oldNewAvailability.Id != request.NewAvailabilitiId.Value)
                     {
+                        // Trả Old NewAvailabiliti về Available
+                        oldNewAvailability.Status = (int)TutorAvailabilityStatus.Available;
+                        await _tutorAvailabilityRepository.UpdateAsync(oldNewAvailability);
+
+                        // Chuyển New NewAvailabiliti sang Booked
                         newAvailability.Status = (int)TutorAvailabilityStatus.Booked;
                         await _tutorAvailabilityRepository.UpdateAsync(newAvailability);
                     }
+                    else if (oldNewAvailability == null || oldNewAvailability.Id == request.NewAvailabilitiId.Value)
+                    {
+                        // Nếu là lần đầu set hoặc giữ nguyên, chỉ cần chuyển sang Booked nếu chưa Booked
+                        if (newAvailability.Status == (int)TutorAvailabilityStatus.Available)
+                        {
+                            newAvailability.Status = (int)TutorAvailabilityStatus.Booked;
+                            await _tutorAvailabilityRepository.UpdateAsync(newAvailability);
+                        }
+                    }
+
+                    entity.NewAvailabilitiId = request.NewAvailabilitiId.Value;
                 }
 
-                entity.NewAvailabilitiId = request.NewAvailabilitiId.Value;
-            }
-
-            // Update Reason nếu có
-            if (request.Reason != null)
-            {
-                entity.Reason = request.Reason;
-            }
-
-            // Update Status nếu có
-            if (request.Status.HasValue)
-            {
-                entity.Status = (int)request.Status.Value;
-                if (request.Status.Value != ScheduleChangeRequestStatus.Pending)
+                // Update Reason nếu có
+                if (request.Reason != null)
                 {
-                    entity.ProcessedAt = DateTime.UtcNow;
+                    entity.Reason = request.Reason;
                 }
+
+                // Update Status nếu có
+                if (request.Status.HasValue)
+                {
+                    entity.Status = (int)request.Status.Value;
+                    if (request.Status.Value != ScheduleChangeRequestStatus.Pending)
+                    {
+                        entity.ProcessedAt = DateTime.UtcNow;
+                    }
+                }
+
+                // Update ScheduleChangeRequest
+                await _scheduleChangeRequestRepository.UpdateAsync(entity);
+
+                // Map entity sang DTO
+                return _mapper.Map<ScheduleChangeRequestDto>(entity);
             }
-
-            // Update ScheduleChangeRequest
-            await _scheduleChangeRequestRepository.UpdateAsync(entity);
-
-            // Reload entity với đầy đủ thông tin
-            var updatedEntity = await _scheduleChangeRequestRepository.GetByIdAsync(entity.Id);
-            return _mapper.Map<ScheduleChangeRequestDto>(updatedEntity);
+            catch (Exception ex)
+            {
+                throw new Exception($"UpdateAsync - Lỗi khi cập nhật ScheduleChangeRequest với Id: {request.Id}: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
@@ -206,23 +218,29 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<ScheduleChangeRequestDto> UpdateStatusAsync(int id, ScheduleChangeRequestStatus status)
         {
-            if (id <= 0)
-                throw new ArgumentException("ID phải lớn hơn 0");
-
-            var entity = await _scheduleChangeRequestRepository.GetByIdAsync(id)
-                ?? throw new Exception("ScheduleChangeRequest không tồn tại");
-
-            entity.Status = (int)status;
-            if (status != ScheduleChangeRequestStatus.Pending)
+            try
             {
-                entity.ProcessedAt = DateTime.UtcNow;
+                if (id <= 0)
+                    throw new ArgumentException($"UpdateStatusAsync - ID phải lớn hơn 0, nhận được: {id}");
+
+                var entity = await _scheduleChangeRequestRepository.GetByIdAsync(id)
+                    ?? throw new Exception($"UpdateStatusAsync - ScheduleChangeRequest không tồn tại với Id: {id}");
+
+                entity.Status = (int)status;
+                if (status != ScheduleChangeRequestStatus.Pending)
+                {
+                    entity.ProcessedAt = DateTime.UtcNow;
+                }
+
+                await _scheduleChangeRequestRepository.UpdateAsync(entity);
+
+                // Map entity sang DTO
+                return _mapper.Map<ScheduleChangeRequestDto>(entity);
             }
-
-            await _scheduleChangeRequestRepository.UpdateAsync(entity);
-
-            // Reload entity với đầy đủ thông tin
-            var updatedEntity = await _scheduleChangeRequestRepository.GetByIdAsync(id);
-            return _mapper.Map<ScheduleChangeRequestDto>(updatedEntity);
+            catch (Exception ex)
+            {
+                throw new Exception($"UpdateStatusAsync - Lỗi khi cập nhật Status của ScheduleChangeRequest với Id: {id}, Status: {status}: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
