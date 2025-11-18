@@ -35,11 +35,6 @@ namespace EduMatch.BusinessLogicLayer.Services
                 throw new Exception("Invalid bank account.");
             }
 
-            bool withdrawalCreated = false;
-            int createdWithdrawalId = 0;
-            string? notifiedEmail = null;
-            decimal requestedAmount = request.Amount;
-
             using var dbTransaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             try
             {
@@ -59,15 +54,15 @@ namespace EduMatch.BusinessLogicLayer.Services
                 {
                     WalletId = wallet.Id,
                     Amount = request.Amount,
-                    Status = WithdrawalStatus.Pending,
+                    Status = WithdrawalStatus.Completed,
                     UserBankAccountId = request.UserBankAccountId,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    ProcessedAt = DateTime.UtcNow
                 };
                 await _unitOfWork.Withdrawals.AddAsync(newWithdrawal);
                 await _unitOfWork.CompleteAsync();
 
                 wallet.Balance -= request.Amount;
-                wallet.LockedBalance += request.Amount;
                 wallet.UpdatedAt = DateTime.UtcNow;
                 _unitOfWork.Wallets.Update(wallet);
 
@@ -77,7 +72,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                     Amount = request.Amount,
                     TransactionType = WalletTransactionType.Debit,
                     Reason = WalletTransactionReason.Withdrawal,
-                    Status = TransactionStatus.Pending,
+                    Status = TransactionStatus.Completed,
                     BalanceBefore = balanceBefore,
                     BalanceAfter = wallet.Balance,
                     CreatedAt = DateTime.UtcNow,
@@ -89,22 +84,15 @@ namespace EduMatch.BusinessLogicLayer.Services
                 await _unitOfWork.CompleteAsync();
                 await dbTransaction.CommitAsync();
 
-                withdrawalCreated = true;
-                createdWithdrawalId = newWithdrawal.Id;
-                notifiedEmail = wallet.UserEmail;
+                await _notificationService.CreateNotificationAsync(
+                    wallet.UserEmail,
+                    $"Withdrawal #{newWithdrawal.Id} for {request.Amount:N0} VND has been processed.",
+                    "/wallet/withdrawals");
             }
             catch (Exception)
             {
                 await dbTransaction.RollbackAsync();
                 throw;
-            }
-
-            if (withdrawalCreated && notifiedEmail != null)
-            {
-                await _notificationService.CreateNotificationAsync(
-                    notifiedEmail,
-                    $"Withdrawal request #{createdWithdrawalId} for {requestedAmount:N0} VND submitted and pending review.",
-                    "/wallet/withdrawals");
             }
         }
 
@@ -124,125 +112,11 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<IEnumerable<AdminWithdrawalDto>>(withdrawals);
         }
 
-        public async Task ApproveWithdrawalAsync(int withdrawalId, string adminEmail)
-        {
-            string? userEmail = null;
-            decimal approvedAmount = 0;
+        public Task ApproveWithdrawalAsync(int withdrawalId, string adminEmail)
+            => throw new NotSupportedException("Manual approvals are no longer required.");
 
-            using var dbTransaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                var withdrawal = await _unitOfWork.Withdrawals.GetWithdrawalByIdAsync(withdrawalId);
-                if (withdrawal == null || withdrawal.Status != WithdrawalStatus.Pending)
-                {
-                    throw new Exception("Withdrawal request not found or is not pending.");
-                }
-
-                //get the locked transaction
-                var tx = await _unitOfWork.WalletTransactions.GetPendingWithdrawalTransactionAsync(withdrawalId);
-                if (tx == null)
-                {
-                    throw new Exception("Associated transaction log not found.");
-                }
-
-                //update statuses
-                withdrawal.Status = WithdrawalStatus.Completed;
-                withdrawal.ProcessedAt = DateTime.UtcNow;
-                withdrawal.AdminEmail = adminEmail;
-                _unitOfWork.Withdrawals.Update(withdrawal);
-
-                tx.Status = TransactionStatus.Completed;
-                _unitOfWork.WalletTransactions.Update(tx);
-
-                //update the user's wallet
-                var wallet = withdrawal.Wallet;
-                wallet.LockedBalance -= withdrawal.Amount;
-                wallet.UpdatedAt = DateTime.UtcNow;
-                _unitOfWork.Wallets.Update(wallet);
-
-                await _unitOfWork.CompleteAsync();
-                await dbTransaction.CommitAsync();
-
-                userEmail = wallet.UserEmail;
-                approvedAmount = withdrawal.Amount;
-            }
-            catch (Exception)
-            {
-                await dbTransaction.RollbackAsync();
-                throw;
-            }
-
-            if (userEmail != null)
-            {
-                await _notificationService.CreateNotificationAsync(
-                    userEmail,
-                    $"Your withdrawal request #{withdrawalId} for {approvedAmount:N0} VND has been approved.",
-                    "/wallet/withdrawals");
-            }
-        }
-
-        public async Task RejectWithdrawalAsync(int withdrawalId, string adminEmail, string reason)
-        {
-            string? userEmail = null;
-            decimal rejectedAmount = 0;
-
-            using var dbTransaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                var withdrawal = await _unitOfWork.Withdrawals.GetWithdrawalByIdAsync(withdrawalId);
-                if (withdrawal == null || withdrawal.Status != WithdrawalStatus.Pending)
-                {
-                    throw new Exception("Withdrawal request not found or is not pending.");
-                }
-
-                var tx = await _unitOfWork.WalletTransactions.GetPendingWithdrawalTransactionAsync(withdrawalId);
-                if (tx == null)
-                {
-                    throw new Exception("Associated transaction log not found.");
-                }
-
-                withdrawal.Status = WithdrawalStatus.Rejected;
-                withdrawal.ProcessedAt = DateTime.UtcNow;
-                withdrawal.AdminEmail = adminEmail;
-                withdrawal.RejectReason = reason;
-                _unitOfWork.Withdrawals.Update(withdrawal);
-
-                tx.Status = TransactionStatus.Failed; //mark the log as failed
-                _unitOfWork.WalletTransactions.Update(tx);
-
-                // return the money to the user's main balance
-                var wallet = withdrawal.Wallet;
-                wallet.LockedBalance -= withdrawal.Amount;
-                wallet.Balance += withdrawal.Amount;
-                wallet.UpdatedAt = DateTime.UtcNow;
-                _unitOfWork.Wallets.Update(wallet);
-
-                await _unitOfWork.CompleteAsync();
-                await dbTransaction.CommitAsync();
-
-                userEmail = wallet.UserEmail;
-                rejectedAmount = withdrawal.Amount;
-            }
-            catch (Exception)
-            {
-                await dbTransaction.RollbackAsync();
-                throw;
-            }
-
-            if (userEmail != null)
-            {
-                var message = $"Your withdrawal request #{withdrawalId} for {rejectedAmount:N0} VND was rejected.";
-                if (!string.IsNullOrWhiteSpace(reason))
-                {
-                    message += $" Reason: {reason}";
-                }
-
-                await _notificationService.CreateNotificationAsync(
-                    userEmail,
-                    message,
-                    "/wallet/withdrawals");
-            }
-        }
+        public Task RejectWithdrawalAsync(int withdrawalId, string adminEmail, string reason)
+            => throw new NotSupportedException("Manual approvals are no longer required.");
     }
 }
 
