@@ -11,7 +11,7 @@ namespace EduMatch.DataAccessLayer.Enum
 		Pending = 0,        // Chưa thanh toán
 		Paid = 1,           // Đã thanh toán
 		RefundPending = 2,  // Chờ hoàn tiền
-		Refunded = 3        // Hoàn tiền
+		Refunded = 3        // Đã hoàn tiền
 	}
 }
 
