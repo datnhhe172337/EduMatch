@@ -45,5 +45,7 @@ public partial class TutorProfile
 
     public virtual ICollection<TutorSubject> TutorSubjects { get; set; } = new List<TutorSubject>();
 
+    public virtual ICollection<TutorVerificationRequest> TutorVerificationRequests { get; set; } = new List<TutorVerificationRequest>();
+
     public virtual User UserEmailNavigation { get; set; } = null!;
 }

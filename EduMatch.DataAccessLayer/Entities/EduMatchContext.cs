@@ -19,6 +19,8 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<Booking> Bookings { get; set; }
 
+    public virtual DbSet<BookingRefundRequest> BookingRefundRequests { get; set; }
+
     public virtual DbSet<CertificateType> CertificateTypes { get; set; }
 
     public virtual DbSet<CertificateTypeSubject> CertificateTypeSubjects { get; set; }
@@ -51,6 +53,8 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
 
+    public virtual DbSet<RefundPolicy> RefundPolicies { get; set; }
+
     public virtual DbSet<Report> Reports { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
@@ -82,6 +86,8 @@ public partial class EduMatchContext : DbContext
     public virtual DbSet<TutorProfile> TutorProfiles { get; set; }
 
     public virtual DbSet<TutorSubject> TutorSubjects { get; set; }
+
+    public virtual DbSet<TutorVerificationRequest> TutorVerificationRequests { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
 
@@ -151,6 +157,9 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.TotalSessions)
                 .HasDefaultValue(1)
                 .HasColumnName("totalSessions");
+            entity.Property(e => e.TutorReceiveAmount)
+                .HasColumnType("decimal(12, 2)")
+                .HasColumnName("tutorReceiveAmount");
             entity.Property(e => e.TutorSubjectId).HasColumnName("tutorSubjectId");
             entity.Property(e => e.UnitPrice)
                 .HasColumnType("decimal(10, 2)")
@@ -171,6 +180,52 @@ public partial class EduMatchContext : DbContext
                 .HasForeignKey(d => d.TutorSubjectId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Bookings_TutorSubjects");
+        });
+
+        modelBuilder.Entity<BookingRefundRequest>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__booking___3213E83FD5E3B0DB");
+
+            entity.ToTable("booking_refund_requests");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AdminNote)
+                .HasMaxLength(1000)
+                .HasColumnName("adminNote");
+            entity.Property(e => e.ApprovedAmount)
+                .HasColumnType("decimal(12, 2)")
+                .HasColumnName("approvedAmount");
+            entity.Property(e => e.BookingId).HasColumnName("bookingId");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.LearnerEmail)
+                .HasMaxLength(100)
+                .HasColumnName("learnerEmail");
+            entity.Property(e => e.ProcessedAt).HasColumnName("processedAt");
+            entity.Property(e => e.ProcessedBy)
+                .HasMaxLength(100)
+                .HasColumnName("processedBy");
+            entity.Property(e => e.Reason)
+                .HasMaxLength(1000)
+                .HasColumnName("reason");
+            entity.Property(e => e.RefundPolicyId).HasColumnName("refundPolicyId");
+            entity.Property(e => e.Status).HasColumnName("status");
+
+            entity.HasOne(d => d.Booking).WithMany(p => p.BookingRefundRequests)
+                .HasForeignKey(d => d.BookingId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_BRR_Booking");
+
+            entity.HasOne(d => d.LearnerEmailNavigation).WithMany(p => p.BookingRefundRequests)
+                .HasForeignKey(d => d.LearnerEmail)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_BRR_Learner");
+
+            entity.HasOne(d => d.RefundPolicy).WithMany(p => p.BookingRefundRequests)
+                .HasForeignKey(d => d.RefundPolicyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_BRR_RefundPolicy");
         });
 
         modelBuilder.Entity<CertificateType>(entity =>
@@ -614,6 +669,35 @@ public partial class EduMatchContext : DbContext
                 .HasConstraintName("FK__refresh_t__userE__5BE2A6F2");
         });
 
+        modelBuilder.Entity<RefundPolicy>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__refund_p__3213E83F5386015A");
+
+            entity.ToTable("refund_policies");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(100)
+                .HasColumnName("createdBy");
+            entity.Property(e => e.Description)
+                .HasMaxLength(500)
+                .HasColumnName("description");
+            entity.Property(e => e.IsActive).HasColumnName("isActive");
+            entity.Property(e => e.Name)
+                .HasMaxLength(200)
+                .HasColumnName("name");
+            entity.Property(e => e.RefundPercentage)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("refundPercentage");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updatedAt");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(100)
+                .HasColumnName("updatedBy");
+        });
+
         modelBuilder.Entity<Report>(entity =>
         {
             entity.ToTable("reports");
@@ -1032,6 +1116,42 @@ public partial class EduMatchContext : DbContext
                 .HasForeignKey(d => d.TutorId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__tutor_sub__tutor__5DCAEF64");
+        });
+
+        modelBuilder.Entity<TutorVerificationRequest>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__tutor_ve__3213E83FB0528B3E");
+
+            entity.ToTable("tutor_verification_requests");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AdminNote)
+                .HasMaxLength(1000)
+                .HasColumnName("adminNote");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.Description)
+                .HasMaxLength(1000)
+                .HasColumnName("description");
+            entity.Property(e => e.ProcessedAt).HasColumnName("processedAt");
+            entity.Property(e => e.ProcessedBy)
+                .HasMaxLength(100)
+                .HasColumnName("processedBy");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.TutorId).HasColumnName("tutorId");
+            entity.Property(e => e.UserEmail)
+                .HasMaxLength(100)
+                .HasColumnName("userEmail");
+
+            entity.HasOne(d => d.Tutor).WithMany(p => p.TutorVerificationRequests)
+                .HasForeignKey(d => d.TutorId)
+                .HasConstraintName("FK_TVR_Tutor");
+
+            entity.HasOne(d => d.UserEmailNavigation).WithMany(p => p.TutorVerificationRequests)
+                .HasForeignKey(d => d.UserEmail)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TVR_User");
         });
 
         modelBuilder.Entity<User>(entity =>
