@@ -12,9 +12,6 @@ namespace EduMatch.BusinessLogicLayer.Requests.BookingRefundRequest
 		[MaxLength(1000, ErrorMessage = "Reason không được vượt quá 1000 ký tự")]
 		public string? Reason { get; set; }
 
-		[Range(0, double.MaxValue, ErrorMessage = "ApprovedAmount phải >= 0")]
-		public decimal? ApprovedAmount { get; set; }
-
 		[MaxLength(1000, ErrorMessage = "AdminNote không được vượt quá 1000 ký tự")]
 		public string? AdminNote { get; set; }
 	}
