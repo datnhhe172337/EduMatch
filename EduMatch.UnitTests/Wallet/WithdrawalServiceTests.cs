@@ -114,7 +114,7 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task CreateWithdrawalRequestAsync_ValidInput_LocksFundsAndNotifies()
+    public async Task CreateWithdrawalRequestAsync_ValidInput_ProcessesImmediatelyAndNotifies()
     {
         const string userEmail = "student@test.com";
         var wallet = new Wallet { Id = 1, UserEmail = userEmail, Balance = 200_000m, LockedBalance = 0 };
@@ -131,14 +131,14 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
         await _sut.CreateWithdrawalRequestAsync(request, userEmail);
 
         wallet.Balance.Should().Be(150_000m);
-        wallet.LockedBalance.Should().Be(50_000m);
+        wallet.LockedBalance.Should().Be(0m);
         _withdrawalRepository.Verify(r => r.AddAsync(It.Is<Withdrawal>(w =>
             w.Amount == 50_000m &&
-            w.Status == WithdrawalStatus.Pending &&
+            w.Status == WithdrawalStatus.Completed &&
             w.UserBankAccountId == bankAccount.Id)), Times.Once);
         _notificationService.Verify(n => n.CreateNotificationAsync(
             userEmail,
-            It.Is<string>(msg => msg.Contains("Withdrawal request")),
+            It.Is<string>(msg => msg.Contains("Withdrawal #")),
             "/wallet/withdrawals"), Times.Once);
     }
 
@@ -175,68 +175,16 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ApproveWithdrawalAsync_CompletesWithdrawalAndSendsNotification()
+    public async Task ApproveWithdrawalAsync_IsNotSupported()
     {
-        const string adminEmail = "admin@test.com";
-        const string userEmail = "learner@test.com";
-        var wallet = new Wallet { Id = 10, UserEmail = userEmail, LockedBalance = 70_000m };
-        var withdrawal = new Withdrawal
-        {
-            Id = 4,
-            WalletId = wallet.Id,
-            Wallet = wallet,
-            Amount = 70_000m,
-            Status = WithdrawalStatus.Pending
-        };
-        var pendingTransaction = new WalletTransaction
-        {
-            Id = 99,
-            WithdrawalId = withdrawal.Id,
-            Status = TransactionStatus.Pending
-        };
-
-        _withdrawalRepository.Setup(r => r.GetWithdrawalByIdAsync(withdrawal.Id)).ReturnsAsync(withdrawal);
-        _walletTransactionRepository.Setup(r => r.GetPendingWithdrawalTransactionAsync(withdrawal.Id))
-            .ReturnsAsync(pendingTransaction);
-
-        await _sut.ApproveWithdrawalAsync(withdrawal.Id, adminEmail);
-
-        withdrawal.Status.Should().Be(WithdrawalStatus.Completed);
-        wallet.LockedBalance.Should().Be(0);
-        pendingTransaction.Status.Should().Be(TransactionStatus.Completed);
-        _notificationService.Verify(n => n.CreateNotificationAsync(
-            userEmail,
-            It.Is<string>(msg => msg.Contains("approved")),
-            "/wallet/withdrawals"), Times.Once);
+        await _sut.Invoking(s => s.ApproveWithdrawalAsync(1, "admin@test.com"))
+            .Should().ThrowAsync<NotSupportedException>();
     }
 
     [Fact]
-    public async Task RejectWithdrawalAsync_ReturnsFundsAndSendsReason()
+    public async Task RejectWithdrawalAsync_IsNotSupported()
     {
-        const string userEmail = "learner@test.com";
-        var wallet = new Wallet { Id = 5, UserEmail = userEmail, Balance = 10_000m, LockedBalance = 40_000m };
-        var withdrawal = new Withdrawal
-        {
-            Id = 8,
-            WalletId = wallet.Id,
-            Wallet = wallet,
-            Amount = 40_000m,
-            Status = WithdrawalStatus.Pending
-        };
-        var tx = new WalletTransaction { Id = 21, WithdrawalId = withdrawal.Id, Status = TransactionStatus.Pending };
-
-        _withdrawalRepository.Setup(r => r.GetWithdrawalByIdAsync(withdrawal.Id)).ReturnsAsync(withdrawal);
-        _walletTransactionRepository.Setup(r => r.GetPendingWithdrawalTransactionAsync(withdrawal.Id)).ReturnsAsync(tx);
-
-        await _sut.RejectWithdrawalAsync(withdrawal.Id, "admin@test.com", "Bank account invalid");
-
-        withdrawal.Status.Should().Be(WithdrawalStatus.Rejected);
-        tx.Status.Should().Be(TransactionStatus.Failed);
-        wallet.Balance.Should().Be(50_000m);
-        wallet.LockedBalance.Should().Be(0m);
-        _notificationService.Verify(n => n.CreateNotificationAsync(
-            userEmail,
-            It.Is<string>(msg => msg.Contains("rejected") && msg.Contains("Bank account invalid")),
-            "/wallet/withdrawals"), Times.Once);
+        await _sut.Invoking(s => s.RejectWithdrawalAsync(1, "admin@test.com", "reason"))
+            .Should().ThrowAsync<NotSupportedException>();
     }
 }
