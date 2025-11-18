@@ -77,6 +77,20 @@ namespace EduMatch.DataAccessLayer.Repositories
         }
 
         /// <summary>
+        /// Lấy tất cả BookingRefundRequest theo BookingId
+        /// </summary>
+        public async Task<IEnumerable<BookingRefundRequest>> GetAllByBookingIdAsync(int bookingId)
+        {
+            return await _context.BookingRefundRequests
+                .Include(brr => brr.Booking)
+                .Include(brr => brr.RefundPolicy)
+                .Include(brr => brr.LearnerEmailNavigation)
+                .Where(brr => brr.BookingId == bookingId)
+                .OrderByDescending(brr => brr.CreatedAt)
+                .ToListAsync();
+        }
+
+        /// <summary>
         /// Tạo BookingRefundRequest mới
         /// </summary>
         public async Task CreateAsync(BookingRefundRequest entity)

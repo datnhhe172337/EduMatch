@@ -22,6 +22,11 @@ namespace EduMatch.DataAccessLayer.Interfaces
         Task<IEnumerable<BookingRefundRequest>> GetAllByEmailAsync(string learnerEmail, int? status = null);
 
         /// <summary>
+        /// Lấy tất cả BookingRefundRequest theo BookingId
+        /// </summary>
+        Task<IEnumerable<BookingRefundRequest>> GetAllByBookingIdAsync(int bookingId);
+
+        /// <summary>
         /// Tạo BookingRefundRequest mới
         /// </summary>
         Task CreateAsync(BookingRefundRequest entity);

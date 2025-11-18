@@ -8,6 +8,7 @@ using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.Services
@@ -120,6 +121,22 @@ namespace EduMatch.BusinessLogicLayer.Services
                 // Validate Booking status phải là Confirmed
                 if (booking.Status != (int)BookingStatus.Confirmed)
                     throw new Exception("Chỉ có thể tạo yêu cầu hoàn tiền cho booking đã được xác nhận");
+
+                // Check xem đã có BookingRefundRequest nào cho BookingId này chưa
+                var existingRequests = await _bookingRefundRequestRepository.GetAllByBookingIdAsync(request.BookingId);
+                if (existingRequests != null && existingRequests.Any())
+                {
+                    // Kiểm tra xem có request nào với status Pending hoặc Approved không
+                    var hasPendingOrApproved = existingRequests.Any(r => 
+                        r.Status == (int)BookingRefundRequestStatus.Pending ||
+                        r.Status == (int)BookingRefundRequestStatus.Approved);
+                    
+                    if (hasPendingOrApproved)
+                    {
+                        throw new Exception("Đã tồn tại yêu cầu hoàn tiền đang chờ duyệt hoặc đã được duyệt cho booking này");
+                    }
+                    // Chỉ cho phép tạo mới nếu tất cả các request đều là Rejected
+                }
 
                 // Validate LearnerEmail exists
                 var learner = await _userRepository.GetUserByEmailAsync(request.LearnerEmail);
