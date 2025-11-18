@@ -2,12 +2,15 @@
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests.TutorProfile;
+using EduMatch.BusinessLogicLayer.Requests.TutorVerificationRequest;
 using EduMatch.BusinessLogicLayer.Requests.User;
 using EduMatch.BusinessLogicLayer.Requests.Common;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System;
+using System.Linq;
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
@@ -19,6 +22,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 		private readonly CurrentUserService _currentUserService;
 		private readonly IUserService _userService;
 		private readonly IUserProfileService _userProfileService;
+		private readonly ITutorVerificationRequestService _tutorVerificationRequestService;
+		private readonly ITutorVerificationRequestRepository _tutorVerificationRequestRepository;
+		private readonly EduMatchContext _context;
 
 		public TutorProfileService(
 			ITutorProfileRepository repository,
@@ -26,7 +32,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 			 ICloudMediaService cloudMedia,
 			 CurrentUserService currentUserService,
 			 IUserService userService,
-			 IUserProfileService userProfileService
+			 IUserProfileService userProfileService,
+			 ITutorVerificationRequestService tutorVerificationRequestService,
+			 ITutorVerificationRequestRepository tutorVerificationRequestRepository,
+			 EduMatchContext context
 			 ) 
 		{
 			_tutorProfileRepository = repository;
@@ -35,6 +44,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			_currentUserService = currentUserService ;
 			_userService = userService;
 			_userProfileService = userProfileService;
+			_tutorVerificationRequestService = tutorVerificationRequestService;
+			_tutorVerificationRequestRepository = tutorVerificationRequestRepository;
+			_context = context;
 		}
 
 
@@ -76,22 +88,25 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<TutorProfileDto> CreateAsync(TutorProfileCreateRequest request)
 		{
+			using var dbTransaction = await _context.Database.BeginTransactionAsync();
 			try
 			{
 				// CHECK IF TUTOR PROFILE EXISTS
 				if (string.IsNullOrWhiteSpace(_currentUserService.Email))
-					throw new ArgumentException("Current user email not found.");
+					throw new Exception("Không tìm thấy email người dùng hiện tại");
 				var userEmail = _currentUserService.Email!;
 				var existing = await _tutorProfileRepository.GetByEmailFullAsync(userEmail);
-				if (existing is not null)
-					throw new ArgumentException($"Tutor profile for email {userEmail} already exists.");
+				
+				// Nếu đã tồn tại và status không phải Pending, throw exception
+				if (existing is not null && existing.Status != (int)TutorStatus.Pending)
+					throw new Exception($"Hồ sơ gia sư với email {userEmail} đã tồn tại và không ở trạng thái Chờ duyệt");
 
 				// Validate URLs
 				if (string.IsNullOrWhiteSpace(request.VideoIntroUrl))
-					throw new ArgumentException("VideoIntroUrl is required.");
+					throw new Exception("VideoIntroUrl là bắt buộc");
 				
 				if (string.IsNullOrWhiteSpace(request.AvatarUrl))
-					throw new ArgumentException("AvatarUrl is required.");
+					throw new Exception("AvatarUrl là bắt buộc");
 
 				// Process video URL - YouTube or regular video link
 				string finalVideoUrl;
@@ -100,7 +115,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 					// If it's YouTube, normalize to embed format
 					var normalizedVideoUrl = NormalizeYouTubeEmbedUrlOrNull(request.VideoIntroUrl!);
 					if (normalizedVideoUrl is null)
-						throw new ArgumentException("VideoIntroUrl must be a valid YouTube link.");
+						throw new Exception("VideoIntroUrl phải là link YouTube hợp lệ");
 					finalVideoUrl = normalizedVideoUrl;
 				}
 				else
@@ -124,26 +139,80 @@ namespace EduMatch.BusinessLogicLayer.Services
 				};
 				await _userProfileService.UpdateAsync(userProfileUpdate);
 
-				// MAP  -> ENTITY
-				var entity = new TutorProfile
+				TutorProfile entity;
+				// Nếu đã tồn tại và status là Pending, update lại
+				if (existing is not null && existing.Status == (int)TutorStatus.Pending)
+				{
+					// Kiểm tra các TutorVerificationRequest hiện có
+					var existingRequests = await _tutorVerificationRequestRepository.GetAllByEmailOrTutorIdAsync(
+						email: userEmail,
+						tutorId: existing.Id,
+						status: null);
+
+					if (existingRequests != null && existingRequests.Any())
+					{
+						// Kiểm tra xem có request nào đang ở trạng thái Pending hoặc Approved không
+						var hasPendingOrApproved = existingRequests.Any(r => 
+							r.Status == (int)TutorVerificationRequestStatus.Pending || 
+							r.Status == (int)TutorVerificationRequestStatus.Approved);
+
+						if (hasPendingOrApproved)
+						{
+							throw new Exception("Không thể cập nhật hồ sơ. Yêu cầu xác minh đang chờ hệ thống duyệt hoặc xử lý. Chỉ có thể cập nhật khi tất cả các yêu cầu trước đó đều bị từ chối.");
+						}
+					}
+
+					// Update entity với dữ liệu mới
+					existing.Bio = request.Bio;
+					existing.TeachingExp = request.TeachingExp;
+					existing.VideoIntroUrl = finalVideoUrl;
+					existing.VideoIntroPublicId = null;
+					existing.TeachingModes = (int)request.TeachingModes;
+					existing.Status = (int)TutorStatus.Pending;
+					existing.UpdatedAt = DateTime.UtcNow;
+
+					await _tutorProfileRepository.UpdateAsync(existing);
+					entity = existing;
+				}
+				else
+				{
+					// Tạo mới entity
+					entity = new TutorProfile
+					{
+						UserEmail = userEmail,
+						Bio = request.Bio,
+						TeachingExp = request.TeachingExp,
+						VideoIntroUrl = finalVideoUrl,
+						VideoIntroPublicId = null, // No public ID for external URLs
+						TeachingModes = (int)request.TeachingModes,
+						Status = (int)TutorStatus.Pending,
+						CreatedAt = DateTime.UtcNow,
+						UpdatedAt = DateTime.UtcNow
+					};
+
+					await _tutorProfileRepository.AddAsync(entity);
+				}
+
+				// Tạo TutorVerificationRequest với TutorId và Email
+				var verificationRequest = new TutorVerificationRequestCreateRequest
 				{
 					UserEmail = userEmail,
-					Bio = request.Bio,
-					TeachingExp = request.TeachingExp,
-					VideoIntroUrl = finalVideoUrl,
-					VideoIntroPublicId = null, // No public ID for external URLs
-					TeachingModes = (int)request.TeachingModes,
-					Status = (int)TutorStatus.Pending,
-					CreatedAt = DateTime.UtcNow,
-					UpdatedAt = DateTime.UtcNow
+					TutorId = entity.Id,
+					Description = "Yêu cầu xác minh gia sư tự động tạo khi đăng ký hồ sơ"
 				};
 
-				await _tutorProfileRepository.AddAsync(entity);
+				await _tutorVerificationRequestService.CreateAsync(verificationRequest);
+
+				// Commit transaction
+				await dbTransaction.CommitAsync();
+
 				return _mapper.Map<TutorProfileDto>(entity);
 			}
 			catch (Exception ex)
 			{
-				throw new InvalidOperationException($"Failed to create tutor profile: {ex.Message}", ex);
+				// Rollback transaction nếu có lỗi
+				await dbTransaction.RollbackAsync();
+				throw new Exception($"Lỗi khi tạo hồ sơ gia sư: {ex.Message}", ex);
 			}
 		}
 
@@ -156,31 +225,32 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 	public async Task<TutorProfileDto> UpdateAsync(TutorProfileUpdateRequest request)
 		{
+			using var dbTransaction = await _context.Database.BeginTransactionAsync();
 			try
 			{
-			// Get email from current user service
-			var userEmail = _currentUserService.Email;
-			if (string.IsNullOrWhiteSpace(userEmail))
-				throw new ArgumentException("Current user email not found.");
+				// Get email from current user service
+				var userEmail = _currentUserService.Email;
+				if (string.IsNullOrWhiteSpace(userEmail))
+					throw new Exception("Không tìm thấy email người dùng hiện tại");
 
-			var existing = await _tutorProfileRepository.GetByIdFullAsync(request.Id);
-			if (existing is null)
-				throw new ArgumentException($"Tutor profile with ID {request.Id} not found.");
+				var existing = await _tutorProfileRepository.GetByIdFullAsync(request.Id);
+				if (existing is null)
+					throw new Exception($"Không tìm thấy hồ sơ gia sư với ID {request.Id}");
 
-			// Update user profile with new data if provided
-			var userProfileUpdate = new UserProfileUpdateRequest
-			{
-				UserEmail = userEmail,  
-				UserName = request.UserName ?? existing.UserEmailNavigation?.UserName,
-				Phone = request.Phone ?? existing.UserEmailNavigation?.Phone,
-				Dob = request.DateOfBirth ?? existing.UserEmailNavigation?.UserProfile?.Dob,
-				CityId = request.ProvinceId ?? existing.UserEmailNavigation?.UserProfile?.CityId,
-				SubDistrictId = request.SubDistrictId ?? existing.UserEmailNavigation?.UserProfile?.SubDistrictId,
-				AvatarUrl = request.AvatarUrl ?? existing.UserEmailNavigation?.UserProfile?.AvatarUrl,
-				Latitude = request.Latitude ?? existing.UserEmailNavigation?.UserProfile?.Latitude,
-				Longitude = request.Longitude ?? existing.UserEmailNavigation?.UserProfile?.Longitude
-			};
-			await _userProfileService.UpdateAsync(userProfileUpdate);
+				// Update user profile with new data if provided
+				var userProfileUpdate = new UserProfileUpdateRequest
+				{
+					UserEmail = userEmail,  
+					UserName = request.UserName ?? existing.UserEmailNavigation?.UserName,
+					Phone = request.Phone ?? existing.UserEmailNavigation?.Phone,
+					Dob = request.DateOfBirth ?? existing.UserEmailNavigation?.UserProfile?.Dob,
+					CityId = request.ProvinceId ?? existing.UserEmailNavigation?.UserProfile?.CityId,
+					SubDistrictId = request.SubDistrictId ?? existing.UserEmailNavigation?.UserProfile?.SubDistrictId,
+					AvatarUrl = request.AvatarUrl ?? existing.UserEmailNavigation?.UserProfile?.AvatarUrl,
+					Latitude = request.Latitude ?? existing.UserEmailNavigation?.UserProfile?.Latitude,
+					Longitude = request.Longitude ?? existing.UserEmailNavigation?.UserProfile?.Longitude
+				};
+				await _userProfileService.UpdateAsync(userProfileUpdate);
 
 				// Update tutor profile fields - only if provided
 				if (!string.IsNullOrWhiteSpace(request.Bio))
@@ -198,7 +268,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 						// If it's YouTube, normalize to embed format
 						var normalized = NormalizeYouTubeEmbedUrlOrNull(request.VideoIntroUrl!);
 						if (normalized is null)
-							throw new ArgumentException("VideoIntroUrl must be a valid YouTube link.");
+							throw new Exception("VideoIntroUrl phải là link YouTube hợp lệ");
 						finalVideoUrl = normalized;
 					}
 					else
@@ -210,39 +280,23 @@ namespace EduMatch.BusinessLogicLayer.Services
 					existing.VideoIntroPublicId = null; // No public ID for external URLs
 				}
 
-			// Update teaching modes if provided
-			existing.TeachingModes = (int)request.TeachingModes;
+				// Update teaching modes if provided
+				existing.TeachingModes = (int)request.TeachingModes;
 
-			// Update status if provided - only allow progression from Pending to other statuses
-			if (request.Status.HasValue)
-			{
-				var currentStatus = (TutorStatus)existing.Status;
-				var newStatus = request.Status.Value;
-				
-				// Only allow status progression: Pending -> Approved/Rejected, not backwards
-				if (currentStatus == TutorStatus.Pending && (newStatus == TutorStatus.Approved || newStatus == TutorStatus.Rejected))
-				{
-					existing.Status = (int)newStatus;
-				}
-				else if (currentStatus != TutorStatus.Pending)
-				{
-					// If not Pending, don't allow status changes
-					throw new ArgumentException($"Cannot change status from {currentStatus} to {newStatus}. Status can only be changed from Pending to Approved/Rejected.");
-				}
-				else
-				{
-					throw new ArgumentException($"Invalid status change from {currentStatus} to {newStatus}. Only Pending -> Approved/Rejected is allowed.");
-				}
-			}
+				existing.UpdatedAt = DateTime.UtcNow;
 
-			existing.UpdatedAt = DateTime.UtcNow;
+				await _tutorProfileRepository.UpdateAsync(existing);
 
-			await _tutorProfileRepository.UpdateAsync(existing);
-			return _mapper.Map<TutorProfileDto>(existing);
+				// Commit transaction
+				await dbTransaction.CommitAsync();
+
+				return _mapper.Map<TutorProfileDto>(existing);
 			}
 			catch (Exception ex)
 			{
-				throw new InvalidOperationException($"Failed to update tutor profile: {ex.Message}", ex);
+				// Rollback transaction nếu có lỗi
+				await dbTransaction.RollbackAsync();
+				throw new Exception($"Lỗi khi cập nhật hồ sơ gia sư: {ex.Message}", ex);
 			}
 		}
 

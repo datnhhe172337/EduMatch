@@ -6,6 +6,7 @@ using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,19 +21,22 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly ITutorProfileRepository _tutorProfileRepository;
         private readonly IMapper _mapper;
         private readonly CurrentUserService _currentUserService;
+        private readonly EduMatchContext _context;
 
         public TutorVerificationRequestService(
             ITutorVerificationRequestRepository tutorVerificationRequestRepository,
             IUserRepository userRepository,
             ITutorProfileRepository tutorProfileRepository,
             IMapper mapper,
-            CurrentUserService currentUserService)
+            CurrentUserService currentUserService,
+            EduMatchContext context)
         {
             _tutorVerificationRequestRepository = tutorVerificationRequestRepository;
             _userRepository = userRepository;
             _tutorProfileRepository = tutorProfileRepository;
             _mapper = mapper;
             _currentUserService = currentUserService;
+            _context = context;
         }
 
         /// <summary>
@@ -172,6 +176,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<TutorVerificationRequestDto> UpdateStatusAsync(int id, TutorVerificationRequestStatus status)
         {
+            using var dbTransaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 if (id <= 0)
@@ -217,6 +222,8 @@ namespace EduMatch.BusinessLogicLayer.Services
                 entity.ProcessedAt = DateTime.UtcNow;
                 entity.ProcessedBy = currentUserEmail;
 
+                var now = DateTime.UtcNow;
+
                 // Nếu update từ Pending sang Approved, cần update status của TutorProfile thành Approved
                 if (currentStatus == TutorVerificationRequestStatus.Pending && newStatus == TutorVerificationRequestStatus.Approved)
                 {
@@ -226,16 +233,42 @@ namespace EduMatch.BusinessLogicLayer.Services
                         if (tutorProfile != null)
                         {
                             tutorProfile.Status = (int)TutorStatus.Approved;
+                            tutorProfile.VerifiedBy = currentUserEmail;
+                            tutorProfile.VerifiedAt = now;
+                            tutorProfile.UpdatedAt = now;
+                            await _tutorProfileRepository.UpdateAsync(tutorProfile);
+                        }
+                    }
+                }
+
+                // Nếu update từ Pending sang Rejected, cần update status của TutorProfile thành Rejected
+                if (currentStatus == TutorVerificationRequestStatus.Pending && newStatus == TutorVerificationRequestStatus.Rejected)
+                {
+                    if (entity.TutorId.HasValue)
+                    {
+                        var tutorProfile = await _tutorProfileRepository.GetByIdFullAsync(entity.TutorId.Value);
+                        if (tutorProfile != null)
+                        {
+                            tutorProfile.Status = (int)TutorStatus.Rejected;
+                            tutorProfile.VerifiedBy = currentUserEmail;
+                            tutorProfile.VerifiedAt = now;
+                            tutorProfile.UpdatedAt = now;
                             await _tutorProfileRepository.UpdateAsync(tutorProfile);
                         }
                     }
                 }
 
                 await _tutorVerificationRequestRepository.UpdateAsync(entity);
+
+                // Commit transaction
+                await dbTransaction.CommitAsync();
+
                 return _mapper.Map<TutorVerificationRequestDto>(entity);
             }
             catch (Exception ex)
             {
+                // Rollback transaction nếu có lỗi
+                await dbTransaction.RollbackAsync();
                 throw new Exception($"Lỗi khi cập nhật trạng thái yêu cầu xác minh gia sư: {ex.Message}", ex);
             }
         }
