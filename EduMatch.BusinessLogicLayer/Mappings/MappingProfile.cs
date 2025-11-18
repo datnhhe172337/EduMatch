@@ -417,6 +417,29 @@ namespace EduMatch.BusinessLogicLayer.Mappings
             // SystemFee -> SystemFeeDto
             CreateMap<SystemFee, SystemFeeDto>();
 
+            // RefundPolicy -> RefundPolicyDto
+            CreateMap<RefundPolicy, RefundPolicyDto>();
+
+            // BookingRefundRequest -> BookingRefundRequestDto
+            CreateMap<BookingRefundRequest, BookingRefundRequestDto>()
+                .ForMember(dest => dest.Status,
+                    opt => opt.MapFrom(src => (BookingRefundRequestStatus)src.Status))
+                .ForMember(dest => dest.Booking,
+                    opt => opt.MapFrom(src => src.Booking != null ? src.Booking : null))
+                .ForMember(dest => dest.RefundPolicy,
+                    opt => opt.MapFrom(src => src.RefundPolicy != null ? src.RefundPolicy : null))
+                .ForMember(dest => dest.Learner,
+                    opt => opt.MapFrom(src => src.LearnerEmailNavigation != null ? src.LearnerEmailNavigation : null));
+
+            // TutorVerificationRequest -> TutorVerificationRequestDto
+            CreateMap<TutorVerificationRequest, TutorVerificationRequestDto>()
+                .ForMember(dest => dest.Status,
+                    opt => opt.MapFrom(src => (TutorVerificationRequestStatus)src.Status))
+                .ForMember(dest => dest.Tutor,
+                    opt => opt.MapFrom(src => src.Tutor != null ? src.Tutor : null))
+                .ForMember(dest => dest.User,
+                    opt => opt.MapFrom(src => src.UserEmailNavigation != null ? src.UserEmailNavigation : null));
+
 
 
 
