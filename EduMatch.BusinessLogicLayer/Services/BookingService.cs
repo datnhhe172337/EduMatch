@@ -284,12 +284,33 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
-        /// Cập nhật PaymentStatus của Booking
+        /// Cập nhật PaymentStatus của Booking (chỉ cho phép cập nhật theo thứ tự tăng dần)
         /// </summary>
         public async Task<BookingDto> UpdatePaymentStatusAsync(int id, PaymentStatus paymentStatus)
         {
             var entity = await _bookingRepository.GetByIdAsync(id)
                 ?? throw new Exception("Booking không tồn tại");
+
+            var currentStatus = (PaymentStatus)entity.PaymentStatus;
+            var newStatus = paymentStatus;
+
+            // Validate: Chỉ cho phép cập nhật theo thứ tự tăng dần
+            // Pending (0) -> Paid (1) -> RefundPending (2) -> Refunded (3)
+            if (newStatus <= currentStatus)
+                throw new Exception($"Không thể cập nhật PaymentStatus từ {currentStatus} về {newStatus}. Chỉ được phép cập nhật theo thứ tự tăng dần.");
+
+            // Validate: Không cho phép nhảy bước (ví dụ: Pending -> RefundPending)
+            if (currentStatus == PaymentStatus.Pending && newStatus != PaymentStatus.Paid)
+                throw new Exception("Từ trạng thái Pending chỉ có thể chuyển sang Paid");
+
+            if (currentStatus == PaymentStatus.Paid && newStatus != PaymentStatus.RefundPending)
+                throw new Exception("Từ trạng thái Paid chỉ có thể chuyển sang RefundPending");
+
+            if (currentStatus == PaymentStatus.RefundPending && newStatus != PaymentStatus.Refunded)
+                throw new Exception("Từ trạng thái RefundPending chỉ có thể chuyển sang Refunded");
+
+            if (currentStatus == PaymentStatus.Refunded)
+                throw new Exception("Không thể cập nhật PaymentStatus khi đã ở trạng thái Refunded");
 
             entity.PaymentStatus = (int)paymentStatus;
             entity.UpdatedAt = DateTime.UtcNow;
@@ -298,12 +319,30 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
-        /// Cập nhật Status của Booking. Nếu status là Cancelled thì hủy tất cả Schedule liên quan
+        /// Cập nhật Status của Booking (chỉ cho phép cập nhật khi trạng thái mới lớn hơn trạng thái hiện tại). Nếu status là Cancelled thì hủy tất cả Schedule liên quan
         /// </summary>
         public async Task<BookingDto> UpdateStatusAsync(int id, BookingStatus status)
         {
             var entity = await _bookingRepository.GetByIdAsync(id)
                 ?? throw new Exception("Booking không tồn tại");
+
+            var currentStatus = (BookingStatus)entity.Status;
+            var newStatus = status;
+
+            // Validate: Không cho phép cập nhật khi đã ở trạng thái Completed hoặc Cancelled
+            if (currentStatus == BookingStatus.Completed)
+                throw new Exception("Không thể cập nhật Status khi đã ở trạng thái Completed");
+
+            if (currentStatus == BookingStatus.Cancelled)
+                throw new Exception("Không thể cập nhật Status khi đã ở trạng thái Cancelled");
+
+            // Validate: Không cho phép nhảy bước từ Pending sang Completed
+            if (currentStatus == BookingStatus.Pending && newStatus == BookingStatus.Completed)
+                throw new Exception("Không thể cập nhật Status từ Pending sang Completed. Phải chuyển sang Confirmed trước.");
+
+            // Validate: Trạng thái mới phải lớn hơn trạng thái hiện tại
+            if (newStatus <= currentStatus)
+                throw new Exception($"Không thể cập nhật Status từ {currentStatus} về {newStatus}. Trạng thái mới phải lớn hơn trạng thái hiện tại.");
 
             entity.Status = (int)status;
             entity.UpdatedAt = DateTime.UtcNow;

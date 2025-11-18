@@ -8,9 +8,10 @@ namespace EduMatch.DataAccessLayer.Enum
 {
 	public enum PaymentStatus
 	{
-		Pending = 0,    // Chưa thanh toán
-		Paid = 1,       // Đã thanh toán
-		Refunded = 2    // Hoàn tiền
+		Pending = 0,        // Chưa thanh toán
+		Paid = 1,           // Đã thanh toán
+		RefundPending = 2,  // Chờ hoàn tiền
+		Refunded = 3        // Hoàn tiền
 	}
 }
 

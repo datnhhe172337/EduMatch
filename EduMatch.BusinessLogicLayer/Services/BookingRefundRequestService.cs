@@ -122,6 +122,10 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (booking.Status != (int)BookingStatus.Confirmed)
                     throw new Exception("Chỉ có thể tạo yêu cầu hoàn tiền cho booking đã được xác nhận");
 
+                // Validate Booking payment status phải là Paid
+                if (booking.PaymentStatus != (int)PaymentStatus.Paid)
+                    throw new Exception("Chỉ có thể tạo yêu cầu hoàn tiền cho booking đã thanh toán");
+
                 // Check xem đã có BookingRefundRequest nào cho BookingId này chưa
                 var existingRequests = await _bookingRefundRequestRepository.GetAllByBookingIdAsync(request.BookingId);
                 if (existingRequests != null && existingRequests.Any())
@@ -247,6 +251,28 @@ namespace EduMatch.BusinessLogicLayer.Services
                 var currentUserEmail = _currentUserService.Email;
                 if (string.IsNullOrWhiteSpace(currentUserEmail))
                     throw new Exception("Không thể xác định người dùng hiện tại");
+
+                var currentStatus = (BookingRefundRequestStatus)entity.Status;
+                var newStatus = status;
+
+                // Validation: Chỉ cho phép cập nhật status theo thứ tự tăng dần
+                // Không cho phép từ Approved về Rejected
+                if (currentStatus == BookingRefundRequestStatus.Approved && newStatus == BookingRefundRequestStatus.Rejected)
+                {
+                    throw new Exception("Không thể chuyển trạng thái từ Đã duyệt sang Bị từ chối");
+                }
+
+                // Không cho phép thay đổi nếu đã là Rejected
+                if (currentStatus == BookingRefundRequestStatus.Rejected)
+                {
+                    throw new Exception("Không thể thay đổi trạng thái của yêu cầu đã bị từ chối");
+                }
+
+                // Không cho phép chuyển ngược lại (ví dụ từ Approved về Pending)
+                if ((int)newStatus < (int)currentStatus)
+                {
+                    throw new Exception("Không thể chuyển trạng thái ngược lại");
+                }
 
                 entity.Status = (int)status;
                 entity.ProcessedAt = DateTime.UtcNow;
