@@ -177,6 +177,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             // TotalAmount giữ nguyên giá gốc
             var totalAmount = baseAmount;
 
+            // Calculate TutorReceiveAmount (số tiền tutor nhận được sau khi trừ phí hệ thống)
+            var tutorReceiveAmount = totalAmount - systemFeeAmount;
+
             // Create Booking entity
             var entity = new Booking
             {
@@ -191,6 +194,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 Status = (int)BookingStatus.Pending,
                 SystemFeeId = activeSystemFee.Id,
                 SystemFeeAmount = systemFeeAmount,
+                TutorReceiveAmount = tutorReceiveAmount,
                 CreatedAt = now,
                 UpdatedAt = null
             };
@@ -215,6 +219,8 @@ namespace EduMatch.BusinessLogicLayer.Services
                 entity.LearnerEmail = request.LearnerEmail;
             }
 
+            bool needRecalculate = false;
+
             if (request.TutorSubjectId.HasValue)
             {
                 var tutorSubject = await _tutorSubjectRepository.GetByIdFullAsync(request.TutorSubjectId.Value)
@@ -224,6 +230,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (tutorSubject.HourlyRate.HasValue && tutorSubject.HourlyRate.Value > 0)
                 {
                     entity.UnitPrice = tutorSubject.HourlyRate.Value;
+                    needRecalculate = true;
                 }
             }
 
@@ -231,7 +238,12 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (request.TotalSessions.HasValue && request.TotalSessions.Value > 0)
             {
                 entity.TotalSessions = request.TotalSessions.Value;
-                
+                needRecalculate = true;
+            }
+
+            // Recalculate amounts if needed
+            if (needRecalculate)
+            {
                 // Recalculate baseAmount and SystemFeeAmount
                 var baseAmount = entity.UnitPrice * entity.TotalSessions;
                 
@@ -253,6 +265,8 @@ namespace EduMatch.BusinessLogicLayer.Services
                 entity.SystemFeeAmount = systemFeeAmount;
                 // TotalAmount giữ nguyên giá gốc, không cộng phí
                 entity.TotalAmount = baseAmount;
+                // Recalculate TutorReceiveAmount
+                entity.TutorReceiveAmount = baseAmount - systemFeeAmount;
             }
             
             entity.UpdatedAt = DateTime.UtcNow;
