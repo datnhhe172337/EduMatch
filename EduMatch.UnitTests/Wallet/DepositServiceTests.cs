@@ -189,7 +189,7 @@ public sealed class DepositServiceTests : IAsyncLifetime
             t.TransactionType == WalletTransactionType.Credit)), Times.Once);
         _notificationService.Verify(n =>
             n.CreateNotificationAsync(wallet.UserEmail,
-                It.Is<string>(msg => msg.Contains("Deposit")),
+                It.Is<string>(msg => msg.Contains("n?p")),
                 "/wallet/my-wallet"),
             Times.Once);
     }

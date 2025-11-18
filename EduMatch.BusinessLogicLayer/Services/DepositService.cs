@@ -1,4 +1,4 @@
-ï»¿using AutoMapper;
+using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests.Wallet;
@@ -144,7 +144,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 await _notificationService.CreateNotificationAsync(
                     notifiedUserEmail,
-                    $"Deposit of {creditedAmount:N0} VND completed successfully.",
+                    $"B?n dã n?p thành công {creditedAmount:N0} VND vào ví.",
                     "/wallet/my-wallet");
             }
 

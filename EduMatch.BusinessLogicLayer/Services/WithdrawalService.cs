@@ -86,7 +86,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                 await _notificationService.CreateNotificationAsync(
                     wallet.UserEmail,
-                    $"Withdrawal #{newWithdrawal.Id} for {request.Amount:N0} VND has been processed.",
+                    $"Yêu c?u rút ti?n #{newWithdrawal.Id} s? ti?n {request.Amount:N0} VND dã du?c x? lý.",
                     "/wallet/withdrawals");
             }
             catch (Exception)

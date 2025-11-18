@@ -138,7 +138,7 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
             w.UserBankAccountId == bankAccount.Id)), Times.Once);
         _notificationService.Verify(n => n.CreateNotificationAsync(
             userEmail,
-            It.Is<string>(msg => msg.Contains("Withdrawal #")),
+            It.Is<string>(msg => msg.Contains("Yêu c?u rút ti?n")),
             "/wallet/withdrawals"), Times.Once);
     }
 
