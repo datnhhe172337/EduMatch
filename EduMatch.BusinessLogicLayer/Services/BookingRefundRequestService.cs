@@ -6,6 +6,7 @@ using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +22,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
         private readonly CurrentUserService _currentUserService;
+        private readonly EduMatchContext _context;
 
         public BookingRefundRequestService(
             IBookingRefundRequestRepository bookingRefundRequestRepository,
@@ -28,7 +30,8 @@ namespace EduMatch.BusinessLogicLayer.Services
             IRefundPolicyRepository refundPolicyRepository,
             IUserRepository userRepository,
             IMapper mapper,
-            CurrentUserService currentUserService)
+            CurrentUserService currentUserService,
+            EduMatchContext context)
         {
             _bookingRefundRequestRepository = bookingRefundRequestRepository;
             _bookingRepository = bookingRepository;
@@ -36,6 +39,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             _userRepository = userRepository;
             _mapper = mapper;
             _currentUserService = currentUserService;
+            _context = context;
         }
 
         /// <summary>
@@ -156,7 +160,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                     throw new Exception("Chính sách hoàn tiền không đang hoạt động");
 
                 // Tính ApprovedAmount dựa trên RefundPolicy
-                var approvedAmount = booking.TotalAmount * (refundPolicy.RefundPercentage / 100);
+                var approvedAmount = (booking.TotalAmount - booking.SystemFeeAmount) * (refundPolicy.RefundPercentage / 100);
 
                 var now = DateTime.UtcNow;
                 var entity = new BookingRefundRequest
@@ -239,6 +243,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<BookingRefundRequestDto> UpdateStatusAsync(int id, BookingRefundRequestStatus status)
         {
+            using var dbTransaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 if (id <= 0)
@@ -278,11 +283,45 @@ namespace EduMatch.BusinessLogicLayer.Services
                 entity.ProcessedAt = DateTime.UtcNow;
                 entity.ProcessedBy = currentUserEmail;
 
+                // Nếu status được update sang Approved, cần update Booking
+                if (newStatus == BookingRefundRequestStatus.Approved)
+                {
+                    // Kiểm tra ApprovedAmount có giá trị
+                    if (!entity.ApprovedAmount.HasValue || entity.ApprovedAmount.Value <= 0)
+                        throw new Exception("Không thể duyệt yêu cầu hoàn tiền khi ApprovedAmount không có giá trị hoặc bằng 0");
+
+                    // Lấy Booking
+                    var booking = await _bookingRepository.GetByIdAsync(entity.BookingId);
+                    if (booking == null)
+                        throw new Exception("Booking không tồn tại");
+
+                    // Update Booking: Status = Cancelled, PaymentStatus = RefundPending
+                    booking.Status = (int)BookingStatus.Cancelled;
+                    booking.PaymentStatus = (int)PaymentStatus.RefundPending;
+                    
+                    // Update RefundedAmount = ApprovedAmount
+                    booking.RefundedAmount = entity.ApprovedAmount.Value;
+
+                    // Tính lại TutorReceiveAmount = TotalAmount - SystemFeeAmount - RefundedAmount
+                    booking.TutorReceiveAmount = booking.TotalAmount - booking.SystemFeeAmount - booking.RefundedAmount;
+                    
+                    booking.UpdatedAt = DateTime.UtcNow;
+
+                    // Update Booking
+                    await _bookingRepository.UpdateAsync(booking);
+                }
+
                 await _bookingRefundRequestRepository.UpdateAsync(entity);
+                
+                // Commit transaction
+                await dbTransaction.CommitAsync();
+                
                 return _mapper.Map<BookingRefundRequestDto>(entity);
             }
             catch (Exception ex)
             {
+                // Rollback transaction nếu có lỗi
+                await dbTransaction.RollbackAsync();
                 throw new Exception($"Lỗi khi cập nhật trạng thái yêu cầu hoàn tiền: {ex.Message}", ex);
             }
         }
