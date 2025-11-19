@@ -31,6 +31,10 @@ namespace EduMatch.Tests
 		private Mock<IMeetingSessionRepository> _meetingSessionRepositoryMock;
 		private Mock<ITutorAvailabilityRepository> _tutorAvailabilityRepositoryMock;
 		private Mock<IGoogleCalendarService> _googleCalendarServiceMock;
+		private Mock<IUnitOfWork> _unitOfWorkMock;
+		private Mock<IWalletRepository> _walletRepositoryMock;
+		private Mock<IWalletTransactionRepository> _walletTransactionRepositoryMock;
+		private Mock<INotificationService> _notificationServiceMock;
 		private IMapper _mapper;
 		private BookingService _service;
 
@@ -48,6 +52,14 @@ namespace EduMatch.Tests
 			_meetingSessionRepositoryMock = new Mock<IMeetingSessionRepository>();
 			_tutorAvailabilityRepositoryMock = new Mock<ITutorAvailabilityRepository>();
 			_googleCalendarServiceMock = new Mock<IGoogleCalendarService>();
+			_unitOfWorkMock = new Mock<IUnitOfWork>();
+			_walletRepositoryMock = new Mock<IWalletRepository>();
+			_walletTransactionRepositoryMock = new Mock<IWalletTransactionRepository>();
+			_notificationServiceMock = new Mock<INotificationService>();
+
+			_unitOfWorkMock.SetupGet(u => u.Wallets).Returns(_walletRepositoryMock.Object);
+			_unitOfWorkMock.SetupGet(u => u.WalletTransactions).Returns(_walletTransactionRepositoryMock.Object);
+			_unitOfWorkMock.Setup(u => u.CompleteAsync()).ReturnsAsync(1);
 
 			var config = new MapperConfiguration(cfg =>
 			{
@@ -64,7 +76,9 @@ namespace EduMatch.Tests
 				_scheduleRepositoryMock.Object,
 				_meetingSessionRepositoryMock.Object,
 				_tutorAvailabilityRepositoryMock.Object,
-				_googleCalendarServiceMock.Object
+				_googleCalendarServiceMock.Object,
+				_unitOfWorkMock.Object,
+				_notificationServiceMock.Object
 			);
 		}
 
