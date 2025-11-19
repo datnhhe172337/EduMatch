@@ -14,7 +14,5 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task<IEnumerable<WithdrawalDto>> GetWithdrawalHistoryAsync(string userEmail);
 
         Task<IEnumerable<AdminWithdrawalDto>> GetPendingWithdrawalsAsync();
-        Task ApproveWithdrawalAsync(int withdrawalId, string adminEmail);
-        Task RejectWithdrawalAsync(int withdrawalId, string adminEmail, string reason);
     }
 }

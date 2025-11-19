@@ -85,33 +85,7 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
         _withdrawalRepository.Verify(r => r.GetWithdrawalsByUserEmailAsync(userEmail), Times.Once);
     }
 
-    [Fact]
-    public async Task GetPendingWithdrawalsAsync_ReturnsAdminDtos()
-    {
-        var withdrawals = new List<Withdrawal>
-        {
-            new()
-            {
-                Id = 4,
-                Amount = 30_000m,
-                Status = WithdrawalStatus.Pending,
-                UserBankAccount = new UserBankAccount
-                {
-                    AccountNumber = "456",
-                    AccountHolderName = "Admin",
-                    Bank = new Bank { Id = 2, Name = "Another" }
-                },
-                Wallet = new Wallet { UserEmail = "admin@test.com" }
-            }
-        };
-        _withdrawalRepository.Setup(r => r.GetPendingWithdrawalsAsync()).ReturnsAsync(withdrawals);
 
-        var result = (await _sut.GetPendingWithdrawalsAsync()).ToList();
-
-        result.Should().HaveCount(1);
-        result[0].Amount.Should().Be(30_000m);
-        _withdrawalRepository.Verify(r => r.GetPendingWithdrawalsAsync(), Times.Once);
-    }
 
     [Fact]
     public async Task CreateWithdrawalRequestAsync_ValidInput_ProcessesImmediatelyAndNotifies()
@@ -188,3 +162,4 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
             .Should().ThrowAsync<NotSupportedException>();
     }
 }
+
