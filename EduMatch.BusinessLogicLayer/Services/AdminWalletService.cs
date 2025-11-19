@@ -1,10 +1,8 @@
-﻿using EduMatch.BusinessLogicLayer.DTOs;
+using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace EduMatch.BusinessLogicLayer.Services
@@ -22,7 +20,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task<SystemWalletDashboardDto> GetSystemWalletDashboardAsync()
         {
-            var systemWallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(SYSTEM_WALLET_EMAIL);
+            var systemWallet = await EnsureSystemWalletAsync();
 
             var totalTutorLocked = await _unitOfWork.Wallets.GetTotalLockedBalanceForRoleAsync(TUTOR_ROLE_NAME);
 
@@ -30,10 +28,31 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             return new SystemWalletDashboardDto
             {
+                PendingTutorPayoutBalance = systemWallet.LockedBalance,
                 PlatformRevenueBalance = systemWallet.Balance,
-                TotalTutorLockedBalance = totalTutorLocked,
                 TotalUserAvailableBalance = totalUserAvailable
             };
+        }
+
+        private async Task<Wallet> EnsureSystemWalletAsync()
+        {
+            var systemWallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(SYSTEM_WALLET_EMAIL);
+            if (systemWallet != null)
+            {
+                return systemWallet;
+            }
+
+            var newWallet = new Wallet
+            {
+                UserEmail = SYSTEM_WALLET_EMAIL,
+                Balance = 0,
+                LockedBalance = 0,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _unitOfWork.Wallets.AddAsync(newWallet);
+            await _unitOfWork.CompleteAsync();
+            return newWallet;
         }
     }
 }
