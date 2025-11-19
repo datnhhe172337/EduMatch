@@ -7,6 +7,7 @@ using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 
@@ -45,7 +46,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                 if (wallet.Balance < request.Amount)
                 {
-                    throw new Exception("Insufficient funds. (Kh?ng d? s? du)");
+                    throw new Exception("Insufficient funds. (Không d? s? du)");
                 }
 
                 var balanceBefore = wallet.Balance;
@@ -99,24 +100,13 @@ namespace EduMatch.BusinessLogicLayer.Services
         public async Task<IEnumerable<WithdrawalDto>> GetWithdrawalHistoryAsync(string userEmail)
         {
             var withdrawals = await _unitOfWork.Withdrawals.GetWithdrawalsByUserEmailAsync(userEmail);
-
             return _mapper.Map<IEnumerable<WithdrawalDto>>(withdrawals);
         }
-
-
-
 
         public async Task<IEnumerable<AdminWithdrawalDto>> GetPendingWithdrawalsAsync()
         {
             var withdrawals = await _unitOfWork.Withdrawals.GetPendingWithdrawalsAsync();
             return _mapper.Map<IEnumerable<AdminWithdrawalDto>>(withdrawals);
         }
-
-        public Task ApproveWithdrawalAsync(int withdrawalId, string adminEmail)
-            => throw new NotSupportedException("Manual approvals are no longer required.");
-
-        public Task RejectWithdrawalAsync(int withdrawalId, string adminEmail, string reason)
-            => throw new NotSupportedException("Manual approvals are no longer required.");
     }
 }
-
