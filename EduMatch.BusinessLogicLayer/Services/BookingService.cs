@@ -25,6 +25,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IGoogleCalendarService _googleCalendarService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly INotificationService _notificationService;
+        private const string SystemWalletEmail = "system@edumatch.com";
 
         public BookingService(
             IBookingRepository bookingRepository,
@@ -290,69 +291,248 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
-        /// Hoàn tiền booking về ví của học viên và cập nhật trạng thái đơn.
+        /// Thanh toán booking: trừ số dư ví học viên, khóa tiền và ghi nhận vào hệ thống.
         /// </summary>
-        public async Task<BookingDto> RefundBookingAsync(int bookingId)
+        public async Task<BookingDto> PayForBookingAsync(int bookingId, string learnerEmail)
         {
-            if (bookingId <= 0)
-                throw new ArgumentException("BookingId must be greater than 0.");
+            if (string.IsNullOrWhiteSpace(learnerEmail))
+                throw new ArgumentException("Learner email is required.", nameof(learnerEmail));
 
             var booking = await _bookingRepository.GetByIdAsync(bookingId)
                 ?? throw new Exception("Booking không tồn tại");
 
+            if (!booking.LearnerEmail.Equals(learnerEmail, StringComparison.OrdinalIgnoreCase))
+                throw new UnauthorizedAccessException("Bạn không thể thanh toán booking này.");
+
+            if (booking.Status == (int)BookingStatus.Cancelled)
+                throw new InvalidOperationException("Booking đã bị hủy.");
+
+            if (booking.PaymentStatus == (int)PaymentStatus.Paid)
+                throw new InvalidOperationException("Booking đã được thanh toán.");
+
+            var amountToPay = booking.TotalAmount - booking.RefundedAmount;
+            if (amountToPay <= 0)
+                throw new InvalidOperationException("Không có số tiền cần thanh toán.");
+
+            var learnerWallet = await GetOrCreateWalletAsync(booking.LearnerEmail);
+
+            if (learnerWallet.Balance < amountToPay)
+                throw new InvalidOperationException("Số dư ví không đủ để thanh toán booking.");
+
+            var now = DateTime.UtcNow;
+            var learnerBalanceBefore = learnerWallet.Balance;
+
+            learnerWallet.Balance -= amountToPay;
+            learnerWallet.LockedBalance += amountToPay;
+            learnerWallet.UpdatedAt = now;
+            _unitOfWork.Wallets.Update(learnerWallet);
+
+            var referenceCode = $"BOOKING_PAYMENT_{booking.Id}";
+
+            var learnerTransaction = new WalletTransaction
+            {
+                WalletId = learnerWallet.Id,
+                Amount = amountToPay,
+                TransactionType = WalletTransactionType.Debit,
+                Reason = WalletTransactionReason.BookingPayment,
+                Status = TransactionStatus.Pending,
+                BalanceBefore = learnerBalanceBefore,
+                BalanceAfter = learnerWallet.Balance,
+                CreatedAt = now,
+                ReferenceCode = referenceCode,
+                BookingId = booking.Id
+            };
+            await _unitOfWork.WalletTransactions.AddAsync(learnerTransaction);
+
+            var systemWallet = await GetOrCreateWalletAsync(SystemWalletEmail);
+
+            var systemBalanceBefore = systemWallet.Balance;
+            systemWallet.LockedBalance += amountToPay;
+            systemWallet.UpdatedAt = now;
+            _unitOfWork.Wallets.Update(systemWallet);
+
+            var systemTransaction = new WalletTransaction
+            {
+                WalletId = systemWallet.Id,
+                Amount = amountToPay,
+                TransactionType = WalletTransactionType.Credit,
+                Reason = WalletTransactionReason.BookingPayment,
+                Status = TransactionStatus.Pending,
+                BalanceBefore = systemBalanceBefore,
+                BalanceAfter = systemWallet.Balance,
+                CreatedAt = now,
+                ReferenceCode = referenceCode,
+                BookingId = booking.Id
+            };
+            await _unitOfWork.WalletTransactions.AddAsync(systemTransaction);
+
+            await _unitOfWork.CompleteAsync();
+
+            booking.PaymentStatus = (int)PaymentStatus.Paid;
+            booking.UpdatedAt = now;
+            await _bookingRepository.UpdateAsync(booking);
+
+            await _notificationService.CreateNotificationAsync(
+                booking.LearnerEmail,
+                $"Bạn đã thanh toán booking #{booking.Id}. Số tiền {amountToPay:N0} VND đã được khóa và chờ hoàn tất buổi học.",
+                "/wallet/my-wallet");
+
+            return _mapper.Map<BookingDto>(booking);
+        }
+
+        /// <summary>
+        /// Hoàn tiền booking theo tỷ lệ và chuyển phần còn lại cho gia sư sau khi trừ phí hệ thống.
+        /// </summary>
+        public async Task<BookingDto> RefundBookingAsync(int bookingId, decimal learnerPercentage)
+        {
+            if (bookingId <= 0)
+                throw new ArgumentException("BookingId must be greater than 0.");
+            if (learnerPercentage < 0 || learnerPercentage > 100)
+                throw new ArgumentOutOfRangeException(nameof(learnerPercentage), "Learner percentage must be between 0 and 100.");
+
+            var booking = await _bookingRepository.GetByIdAsync(bookingId)
+                ?? throw new Exception("Booking không tồn tại");
+            var tutorEmail = booking.TutorSubject?.Tutor?.UserEmail;
+
             if (booking.PaymentStatus != (int)PaymentStatus.Paid)
                 throw new InvalidOperationException("Chỉ có thể hoàn tiền cho booking đã thanh toán.");
 
-            var amountToRefund = booking.TotalAmount - booking.RefundedAmount;
-            if (amountToRefund <= 0)
-                throw new InvalidOperationException("Booking đã được hoàn tiền trước đó.");
+            var amountToProcess = booking.TotalAmount - booking.RefundedAmount;
+            if (amountToProcess <= 0)
+                throw new InvalidOperationException("Booking đã được xử lý hoàn tiền trước đó.");
 
-            var wallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(booking.LearnerEmail);
-            if (wallet == null)
+            var now = DateTime.UtcNow;
+            var learnerWallet = await GetOrCreateWalletAsync(booking.LearnerEmail);
+            if (learnerWallet.LockedBalance < amountToProcess)
+                throw new InvalidOperationException("Số dư bị khóa của học viên không đủ để hoàn tiền.");
+
+            learnerWallet.LockedBalance -= amountToProcess;
+
+            var systemWallet = await GetOrCreateWalletAsync(SystemWalletEmail);
+            if (systemWallet.LockedBalance < amountToProcess)
+                throw new InvalidOperationException("Số dư khóa của hệ thống không hợp lệ.");
+            systemWallet.LockedBalance -= amountToProcess;
+
+            decimal learnerAmount;
+            decimal tutorAmount = 0;
+            decimal platformFeePortion = 0;
+
+            if (learnerPercentage >= 100m)
             {
-                wallet = new Wallet
+                learnerAmount = amountToProcess;
+            }
+            else
+            {
+                platformFeePortion = Math.Min(booking.SystemFeeAmount, amountToProcess);
+                var distributable = Math.Max(amountToProcess - platformFeePortion, 0);
+                var learnerRatio = learnerPercentage / 100m;
+
+                learnerAmount = decimal.Round(distributable * learnerRatio, 2, MidpointRounding.AwayFromZero);
+                tutorAmount = distributable - learnerAmount;
+                if (tutorAmount < 0)
                 {
-                    UserEmail = booking.LearnerEmail,
-                    Balance = 0,
-                    LockedBalance = 0,
-                    CreatedAt = DateTime.UtcNow
-                };
-                await _unitOfWork.Wallets.AddAsync(wallet);
-                await _unitOfWork.CompleteAsync();
+                    tutorAmount = 0;
+                }
             }
 
-            var balanceBefore = wallet.Balance;
-            wallet.Balance += amountToRefund;
-            wallet.UpdatedAt = DateTime.UtcNow;
-            _unitOfWork.Wallets.Update(wallet);
-
-            var refundTransaction = new WalletTransaction
+            var learnerBalanceBefore = learnerWallet.Balance;
+            if (learnerAmount > 0)
             {
-                WalletId = wallet.Id,
-                Amount = amountToRefund,
-                TransactionType = WalletTransactionType.Credit,
-                Reason = WalletTransactionReason.BookingRefund,
-                Status = TransactionStatus.Completed,
-                BalanceBefore = balanceBefore,
-                BalanceAfter = wallet.Balance,
-                CreatedAt = DateTime.UtcNow,
-                ReferenceCode = $"BOOKING_REFUND_{booking.Id}"
-            };
-            await _unitOfWork.WalletTransactions.AddAsync(refundTransaction);
+                learnerWallet.Balance += learnerAmount;
+            }
+            learnerWallet.UpdatedAt = now;
+            _unitOfWork.Wallets.Update(learnerWallet);
+
+            if (learnerAmount > 0)
+            {
+                await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
+                {
+                    WalletId = learnerWallet.Id,
+                    Amount = learnerAmount,
+                    TransactionType = WalletTransactionType.Credit,
+                    Reason = WalletTransactionReason.BookingRefund,
+                    Status = TransactionStatus.Completed,
+                    BalanceBefore = learnerBalanceBefore,
+                    BalanceAfter = learnerWallet.Balance,
+                    CreatedAt = now,
+                    ReferenceCode = $"BOOKING_REFUND_{booking.Id}"
+                });
+            }
+
+            if (platformFeePortion > 0)
+            {
+                var systemBalanceBefore = systemWallet.Balance;
+                systemWallet.Balance += platformFeePortion;
+                systemWallet.UpdatedAt = now;
+
+                await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
+                {
+                    WalletId = systemWallet.Id,
+                    Amount = platformFeePortion,
+                    TransactionType = WalletTransactionType.Credit,
+                    Reason = WalletTransactionReason.PlatformFee,
+                    Status = TransactionStatus.Completed,
+                    BalanceBefore = systemBalanceBefore,
+                    BalanceAfter = systemWallet.Balance,
+                    CreatedAt = now,
+                    ReferenceCode = $"BOOKING_PLATFORM_FEE_{booking.Id}"
+                });
+            }
+            else
+            {
+                systemWallet.UpdatedAt = now;
+            }
+            _unitOfWork.Wallets.Update(systemWallet);
+
+            if (tutorAmount > 0)
+            {
+                if (string.IsNullOrWhiteSpace(tutorEmail))
+                    throw new InvalidOperationException("Không tìm thấy email gia sư để chi trả.");
+
+                var tutorWallet = await GetOrCreateWalletAsync(tutorEmail);
+                var tutorBalanceBefore = tutorWallet.Balance;
+                tutorWallet.Balance += tutorAmount;
+                tutorWallet.UpdatedAt = now;
+                _unitOfWork.Wallets.Update(tutorWallet);
+
+                await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
+                {
+                    WalletId = tutorWallet.Id,
+                    Amount = tutorAmount,
+                    TransactionType = WalletTransactionType.Credit,
+                    Reason = WalletTransactionReason.BookingPayout,
+                    Status = TransactionStatus.Completed,
+                    BalanceBefore = tutorBalanceBefore,
+                    BalanceAfter = tutorWallet.Balance,
+                    CreatedAt = now,
+                    ReferenceCode = $"BOOKING_PAYOUT_{booking.Id}"
+                });
+            }
 
             await _unitOfWork.CompleteAsync();
 
             booking.PaymentStatus = (int)PaymentStatus.Refunded;
             booking.Status = (int)BookingStatus.Cancelled;
-            booking.RefundedAmount += amountToRefund;
-            booking.UpdatedAt = DateTime.UtcNow;
+            booking.RefundedAmount += learnerAmount;
+            booking.UpdatedAt = now;
 
             await _bookingRepository.UpdateAsync(booking);
 
-            await _notificationService.CreateNotificationAsync(
-                booking.LearnerEmail,
-                $"Booking #{booking.Id} đã được hoàn tiền {amountToRefund:N0} VND vào ví của bạn.",
-                "/wallet/my-wallet");
+            if (learnerAmount > 0)
+            {
+                await _notificationService.CreateNotificationAsync(
+                    booking.LearnerEmail,
+                    $"Booking #{booking.Id} đã được hoàn {learnerAmount:N0} VND về ví của bạn.",
+                    "/wallet/my-wallet");
+            }
+
+            if (tutorAmount > 0 && !string.IsNullOrWhiteSpace(tutorEmail))
+            {
+                await _notificationService.CreateNotificationAsync(
+                    tutorEmail,
+                    $"Bạn đã nhận {tutorAmount:N0} VND từ booking #{booking.Id} sau khi xử lý hoàn tiền.",
+                    "/wallet/my-wallet");
+            }
 
             return _mapper.Map<BookingDto>(booking);
         }
@@ -446,6 +626,27 @@ namespace EduMatch.BusinessLogicLayer.Services
                     await _tutorAvailabilityRepository.UpdateAsync(availability);
                 }
             }
+        }
+
+        private async Task<Wallet> GetOrCreateWalletAsync(string userEmail)
+        {
+            var wallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(userEmail);
+            if (wallet != null)
+            {
+                return wallet;
+            }
+
+            var newWallet = new Wallet
+            {
+                UserEmail = userEmail,
+                Balance = 0,
+                LockedBalance = 0,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _unitOfWork.Wallets.AddAsync(newWallet);
+            await _unitOfWork.CompleteAsync();
+            return newWallet;
         }
     }
 }
