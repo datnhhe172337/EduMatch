@@ -516,6 +516,17 @@ namespace EduMatch.BusinessLogicLayer.Mappings
                         } : null
                     } : null));
 
+            // Report mappings
+            CreateMap<Report, ReportListItemDto>()
+                .ForMember(dest => dest.ReporterEmail, opt => opt.MapFrom(src => src.ReporterUserEmail))
+                .ForMember(dest => dest.ReporterName, opt => opt.MapFrom(src => src.ReporterUserEmailNavigation != null ? src.ReporterUserEmailNavigation.UserName : null))
+                .ForMember(dest => dest.ReporterAvatarUrl, opt => opt.MapFrom(src => src.ReporterUserEmailNavigation != null && src.ReporterUserEmailNavigation.UserProfile != null ? src.ReporterUserEmailNavigation.UserProfile.AvatarUrl : null))
+                .ForMember(dest => dest.ReportedUserName, opt => opt.MapFrom(src => src.ReportedUserEmailNavigation != null ? src.ReportedUserEmailNavigation.UserName : null))
+                .ForMember(dest => dest.ReportedAvatarUrl, opt => opt.MapFrom(src => src.ReportedUserEmailNavigation != null && src.ReportedUserEmailNavigation.UserProfile != null ? src.ReportedUserEmailNavigation.UserProfile.AvatarUrl : null))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (ReportStatus)src.Status));
+
+            CreateMap<Report, ReportDetailDto>()
+                .IncludeBase<Report, ReportListItemDto>();
 
         }
     }

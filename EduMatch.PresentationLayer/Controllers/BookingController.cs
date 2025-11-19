@@ -11,6 +11,7 @@ using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Authorization;
 using System.ComponentModel.DataAnnotations;
 using EduMatch.BusinessLogicLayer.Constants;
+using EduMatch.BusinessLogicLayer.Services;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -21,15 +22,17 @@ namespace EduMatch.PresentationLayer.Controllers
 		private readonly IBookingService _bookingService;
 		private readonly IScheduleService _scheduleService;
 		private readonly EduMatchContext _context;
+		private readonly CurrentUserService _currentUserService;
 
 		/// <summary>
 		/// API Booking: lấy danh sách theo LearnerEmail/TutorId (có/không phân trang), lấy theo Id, tạo, cập nhật, cập nhật Status/PaymentStatus
 		/// </summary>
-		public BookingController(IBookingService bookingService, IScheduleService scheduleService, EduMatchContext context)
+		public BookingController(IBookingService bookingService, IScheduleService scheduleService, EduMatchContext context, CurrentUserService currentUserService)
 		{
 			_bookingService = bookingService;
 			_scheduleService = scheduleService;
 			_context = context;
+			_currentUserService = currentUserService;
 		}
 
 		/// <summary>
@@ -52,6 +55,34 @@ namespace EduMatch.PresentationLayer.Controllers
 			catch (Exception ex)
 			{
 				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Thanh toán booking: khóa tiền từ ví học viên.
+		/// </summary>
+		[Authorize(Roles = Roles.Learner)]
+		[HttpPost("{id:int}/pay")]
+		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		public async Task<IActionResult> PayForBooking(int id)
+		{
+			try
+			{
+				var learnerEmail = _currentUserService.Email;
+				if (string.IsNullOrWhiteSpace(learnerEmail))
+					return Unauthorized(ApiResponse<string>.Fail("User email not found in token."));
+
+				var booking = await _bookingService.PayForBookingAsync(id, learnerEmail);
+				return Ok(ApiResponse<BookingDto>.Ok(booking, "Booking payment processed successfully."));
+			}
+			catch (UnauthorizedAccessException)
+			{
+				return Forbid();
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail(ex.Message));
 			}
 		}
 

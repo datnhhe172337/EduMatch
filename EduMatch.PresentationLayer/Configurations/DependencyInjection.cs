@@ -57,6 +57,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IScheduleRepository, ScheduleRepository>();
             services.AddScoped<IScheduleChangeRequestRepository, ScheduleChangeRequestRepository>();
             services.AddScoped<IMeetingSessionRepository, MeetingSessionRepository>();
+            services.AddScoped<IReportRepository, ReportRepository>();
 
             services.AddScoped<ITutorFeedbackRepository, TutorFeedbackRepository>();
 			
@@ -93,6 +94,8 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IScheduleService, ScheduleService>();
             services.AddScoped<IScheduleChangeRequestService, ScheduleChangeRequestService>();
             services.AddScoped<IMeetingSessionService, MeetingSessionService>();
+            services.AddScoped<IReportService, ReportService>();
+            services.AddScoped<IReportContentValidator, ReportContentValidator>();
 
             services.AddScoped<IUserProfileService, UserProfileService>();
             services.AddScoped<IManageTutorProfileService, ManageTutorProfileService>();
