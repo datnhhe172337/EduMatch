@@ -13,7 +13,8 @@ namespace EduMatch.BusinessLogicLayer.Mappings
     {
         public WalletTransactionProfile()
         {
-            CreateMap<WalletTransaction, WalletTransactionDto>();
+            CreateMap<WalletTransaction, WalletTransactionDto>()
+                .ForMember(dest => dest.Booking, opt => opt.MapFrom(src => src.Booking));
         }
     }
 }

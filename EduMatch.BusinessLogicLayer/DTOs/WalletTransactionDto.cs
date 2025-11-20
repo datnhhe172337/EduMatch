@@ -18,5 +18,6 @@ namespace EduMatch.BusinessLogicLayer.DTOs
         public decimal BalanceAfter { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? ReferenceCode { get; set; }
+        public BookingDto? Booking { get; set; }
     }
 }

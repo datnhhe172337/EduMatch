@@ -1,4 +1,5 @@
-﻿using EduMatch.BusinessLogicLayer.DTOs;
+﻿using EduMatch.BusinessLogicLayer.Constants;
+using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.PresentationLayer.Common;
@@ -9,7 +10,10 @@ namespace EduMatch.PresentationLayer.Controllers
 {
     [Route("api/admin/wallet")]
     [ApiController]
-    [Authorize(Roles = "3")] 
+    [Authorize(Roles = Roles.BusinessAdmin + "," + Roles.SystemAdmin)]
+    /// <summary>
+    /// Enables administrators to inspect system wallet balances and history.
+    /// </summary>
     public class AdminWalletController : ControllerBase
     {
         private readonly IWalletService _walletService;
@@ -22,6 +26,9 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
         // GET: api/admin/wallet/system
+        /// <summary>
+        /// Retrieves the platform's system wallet, creating it if needed.
+        /// </summary>
         [HttpGet("system")]
         [ProducesResponseType(typeof(ApiResponse<WalletDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
@@ -32,6 +39,9 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
         // GET: api/admin/wallet/system-transactions
+        /// <summary>
+        /// Retrieves the transaction history for the system wallet.
+        /// </summary>
         [HttpGet("system-transactions")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<WalletTransactionDto>>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
@@ -41,6 +51,9 @@ namespace EduMatch.PresentationLayer.Controllers
             return Ok(ApiResponse<IEnumerable<WalletTransactionDto>>.Ok(history));
         }
 
+        /// <summary>
+        /// Provides aggregated balances for the system wallet dashboard.
+        /// </summary>
         [HttpGet("dashboard")]
         [ProducesResponseType(typeof(ApiResponse<SystemWalletDashboardDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]

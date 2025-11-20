@@ -8,9 +8,9 @@ namespace EduMatch.BusinessLogicLayer.DTOs
 {
     public class SystemWalletDashboardDto
     {
-        public decimal PlatformRevenueBalance { get; set; }
+        public decimal PendingTutorPayoutBalance { get; set; }
 
-        public decimal TotalTutorLockedBalance { get; set; }
+        public decimal PlatformRevenueBalance { get; set; }
 
         public decimal TotalUserAvailableBalance { get; set; }
     }

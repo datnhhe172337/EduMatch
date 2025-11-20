@@ -1,4 +1,4 @@
-﻿using CloudinaryDotNet;
+using CloudinaryDotNet;
 using DotNetEnv;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Services;
@@ -57,9 +57,13 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IScheduleRepository, ScheduleRepository>();
             services.AddScoped<IScheduleChangeRequestRepository, ScheduleChangeRequestRepository>();
             services.AddScoped<IMeetingSessionRepository, MeetingSessionRepository>();
+
             services.AddScoped<IBookingRefundRequestRepository, BookingRefundRequestRepository>();
             services.AddScoped<IRefundRequestEvidenceRepository, RefundRequestEvidenceRepository>();
             services.AddScoped<ITutorVerificationRequestRepository, TutorVerificationRequestRepository>();
+
+            services.AddScoped<IReportRepository, ReportRepository>();
+
 
             services.AddScoped<ITutorFeedbackRepository, TutorFeedbackRepository>();
 			
@@ -99,9 +103,14 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IScheduleService, ScheduleService>();
             services.AddScoped<IScheduleChangeRequestService, ScheduleChangeRequestService>();
             services.AddScoped<IMeetingSessionService, MeetingSessionService>();
+
             services.AddScoped<IBookingRefundRequestService, BookingRefundRequestService>();
             services.AddScoped<IRefundRequestEvidenceService, RefundRequestEvidenceService>();
             services.AddScoped<ITutorVerificationRequestService, TutorVerificationRequestService>();
+
+            services.AddScoped<IReportService, ReportService>();
+            services.AddScoped<IReportContentValidator, ReportContentValidator>();
+
 
             services.AddScoped<IUserProfileService, UserProfileService>();
             services.AddScoped<IManageTutorProfileService, ManageTutorProfileService>();
