@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using EduMatch.DataAccessLayer.Enum;
 
 namespace EduMatch.DataAccessLayer.Entities;
 

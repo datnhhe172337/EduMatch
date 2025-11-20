@@ -59,6 +59,8 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<Report> Reports { get; set; }
 
+    public virtual DbSet<ReportEvidence> ReportEvidences { get; set; }
+
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<Schedule> Schedules { get; set; }
@@ -760,6 +762,40 @@ public partial class EduMatchContext : DbContext
                 .HasForeignKey(d => d.ReporterUserEmail)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_reports_reporter_users");
+        });
+
+        modelBuilder.Entity<ReportEvidence>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__report_e__3213E83F9AC6F218");
+
+            entity.ToTable("report_evidences");
+
+            entity.HasIndex(e => e.ReportId, "IX_report_evidences_reportId");
+
+            entity.HasIndex(e => e.SubmittedByEmail, "IX_report_evidences_submittedByEmail");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Caption)
+                .HasMaxLength(255)
+                .HasColumnName("caption");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.FilePublicId)
+                .HasMaxLength(255)
+                .HasColumnName("filePublicId");
+            entity.Property(e => e.FileUrl)
+                .HasMaxLength(500)
+                .HasColumnName("fileUrl");
+            entity.Property(e => e.MediaType).HasColumnName("mediaType");
+            entity.Property(e => e.ReportId).HasColumnName("reportId");
+            entity.Property(e => e.SubmittedByEmail)
+                .HasMaxLength(100)
+                .HasColumnName("submittedByEmail");
+
+            entity.HasOne(d => d.Report).WithMany(p => p.ReportEvidences)
+                .HasForeignKey(d => d.ReportId)
+                .HasConstraintName("FK_report_evidences_reports");
         });
 
         modelBuilder.Entity<Role>(entity =>
