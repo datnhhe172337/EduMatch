@@ -12,6 +12,8 @@ namespace EduMatch.BusinessLogicLayer.Requests.RefundPolicy
 		[MaxLength(1000, ErrorMessage = "Description không được vượt quá 1000 ký tự")]
 		public string? Description { get; set; }
 
+		
+
 		[Required(ErrorMessage = "RefundPercentage là bắt buộc")]
 		[Range(0, 100, ErrorMessage = "RefundPercentage phải từ 0 đến 100")]
 		public decimal RefundPercentage { get; set; }

@@ -23,7 +23,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 		private readonly IUserService _userService;
 		private readonly IUserProfileService _userProfileService;
 		private readonly ITutorVerificationRequestService _tutorVerificationRequestService;
-		private readonly ITutorVerificationRequestRepository _tutorVerificationRequestRepository;
 		private readonly EduMatchContext _context;
 
 		public TutorProfileService(

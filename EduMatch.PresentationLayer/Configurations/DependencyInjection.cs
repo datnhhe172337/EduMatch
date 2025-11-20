@@ -59,6 +59,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IMeetingSessionRepository, MeetingSessionRepository>();
             services.AddScoped<IBookingRefundRequestRepository, BookingRefundRequestRepository>();
             services.AddScoped<IRefundRequestEvidenceRepository, RefundRequestEvidenceRepository>();
+            services.AddScoped<ITutorVerificationRequestRepository, TutorVerificationRequestRepository>();
 
             services.AddScoped<ITutorFeedbackRepository, TutorFeedbackRepository>();
 			
@@ -72,9 +73,12 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IWalletTransactionRepository, WalletTransactionRepository>();
             services.AddScoped<IWithdrawalRepository, WithdrawalRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<IRefundPolicyRepository, RefundPolicyRepository>();
+            
 
             // Services
-            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IRefundPolicyService, RefundPolicyService>();
+			services.AddScoped<IUserService, UserService>();
             services.AddScoped<CurrentUserService>();
 			services.AddTransient<EmailService>();
 			services.AddScoped<IGoogleTokenRepository, GoogleTokenRepository>();
@@ -97,6 +101,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IMeetingSessionService, MeetingSessionService>();
             services.AddScoped<IBookingRefundRequestService, BookingRefundRequestService>();
             services.AddScoped<IRefundRequestEvidenceService, RefundRequestEvidenceService>();
+            services.AddScoped<ITutorVerificationRequestService, TutorVerificationRequestService>();
 
             services.AddScoped<IUserProfileService, UserProfileService>();
             services.AddScoped<IManageTutorProfileService, ManageTutorProfileService>();
