@@ -20,6 +20,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IBookingRepository _bookingRepository;
         private readonly IRefundPolicyRepository _refundPolicyRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IRefundRequestEvidenceRepository _refundRequestEvidenceRepository;
         private readonly IMapper _mapper;
         private readonly CurrentUserService _currentUserService;
         private readonly EduMatchContext _context;
@@ -29,6 +30,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             IBookingRepository bookingRepository,
             IRefundPolicyRepository refundPolicyRepository,
             IUserRepository userRepository,
+            IRefundRequestEvidenceRepository refundRequestEvidenceRepository,
             IMapper mapper,
             CurrentUserService currentUserService,
             EduMatchContext context)
@@ -37,6 +39,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             _bookingRepository = bookingRepository;
             _refundPolicyRepository = refundPolicyRepository;
             _userRepository = userRepository;
+            _refundRequestEvidenceRepository = refundRequestEvidenceRepository;
             _mapper = mapper;
             _currentUserService = currentUserService;
             _context = context;
@@ -103,6 +106,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<BookingRefundRequestDto> CreateAsync(BookingRefundRequestCreateRequest request)
         {
+            // Sử dụng transaction cho toàn bộ hàm
+            using var dbTransaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 if (request == null)
@@ -177,11 +182,33 @@ namespace EduMatch.BusinessLogicLayer.Services
                     ProcessedBy = null
                 };
 
+                // Tạo BookingRefundRequest bằng repository
                 await _bookingRefundRequestRepository.CreateAsync(entity);
+
+                // Nếu có FileUrls, tạo các RefundRequestEvidence bằng repository
+                if (request.FileUrls != null && request.FileUrls.Any())
+                {
+                    foreach (var fileUrl in request.FileUrls)
+                    {
+                        var evidence = new RefundRequestEvidence
+                        {
+                            BookingRefundRequestId = entity.Id,
+                            FileUrl = fileUrl,
+                            CreatedAt = now
+                        };
+                        await _refundRequestEvidenceRepository.CreateAsync(evidence);
+                    }
+                }
+
+                // Commit transaction
+                await dbTransaction.CommitAsync();
+
                 return _mapper.Map<BookingRefundRequestDto>(entity);
             }
             catch (Exception ex)
             {
+                // Rollback nếu có lỗi
+                await dbTransaction.RollbackAsync();
                 throw new Exception($"Lỗi khi tạo yêu cầu hoàn tiền: {ex.Message}", ex);
             }
         }

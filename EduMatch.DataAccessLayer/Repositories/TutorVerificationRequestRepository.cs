@@ -23,7 +23,6 @@ namespace EduMatch.DataAccessLayer.Repositories
         {
             var query = _context.TutorVerificationRequests
                 .Include(tvr => tvr.Tutor)
-                .Include(tvr => tvr.UserEmailNavigation)
                 .AsQueryable();
 
             if (status.HasValue)
@@ -43,7 +42,6 @@ namespace EduMatch.DataAccessLayer.Repositories
         {
             var query = _context.TutorVerificationRequests
                 .Include(tvr => tvr.Tutor)
-                .Include(tvr => tvr.UserEmailNavigation)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(email))
@@ -73,7 +71,6 @@ namespace EduMatch.DataAccessLayer.Repositories
         {
             return await _context.TutorVerificationRequests
                 .Include(tvr => tvr.Tutor)
-                .Include(tvr => tvr.UserEmailNavigation)
                 .FirstOrDefaultAsync(tvr => tvr.Id == id);
         }
 

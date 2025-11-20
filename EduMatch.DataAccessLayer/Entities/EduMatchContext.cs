@@ -55,6 +55,8 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<RefundPolicy> RefundPolicies { get; set; }
 
+    public virtual DbSet<RefundRequestEvidence> RefundRequestEvidences { get; set; }
+
     public virtual DbSet<Report> Reports { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
@@ -698,6 +700,27 @@ public partial class EduMatchContext : DbContext
                 .HasColumnName("updatedBy");
         });
 
+        modelBuilder.Entity<RefundRequestEvidence>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__refund_r__3213E83F784C9E17");
+
+            entity.ToTable("refund_request_evidences");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.BookingRefundRequestId).HasColumnName("bookingRefundRequestId");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.FileUrl)
+                .HasMaxLength(500)
+                .HasColumnName("fileUrl");
+
+            entity.HasOne(d => d.BookingRefundRequest).WithMany(p => p.RefundRequestEvidences)
+                .HasForeignKey(d => d.BookingRefundRequestId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_RRE_BookingRefundRequest");
+        });
+
         modelBuilder.Entity<Report>(entity =>
         {
             entity.ToTable("reports");
@@ -1147,11 +1170,6 @@ public partial class EduMatchContext : DbContext
             entity.HasOne(d => d.Tutor).WithMany(p => p.TutorVerificationRequests)
                 .HasForeignKey(d => d.TutorId)
                 .HasConstraintName("FK_TVR_Tutor");
-
-            entity.HasOne(d => d.UserEmailNavigation).WithMany(p => p.TutorVerificationRequests)
-                .HasForeignKey(d => d.UserEmail)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_TVR_User");
         });
 
         modelBuilder.Entity<User>(entity =>

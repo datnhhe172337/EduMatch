@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using EduMatch.BusinessLogicLayer.Utils;
 
 namespace EduMatch.BusinessLogicLayer.Requests.BookingRefundRequest
 {
@@ -19,6 +21,10 @@ namespace EduMatch.BusinessLogicLayer.Requests.BookingRefundRequest
 
 		[MaxLength(1000, ErrorMessage = "Reason không được vượt quá 1000 ký tự")]
 		public string? Reason { get; set; }
+
+
+		[ValidUrlList(ErrorMessage = "FileUrls phải chứa các URL hợp lệ và mỗi URL không được vượt quá 500 ký tự")]
+		public List<string>? FileUrls { get; set; }
 	}
 }
 

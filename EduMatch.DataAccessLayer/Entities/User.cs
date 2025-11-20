@@ -51,8 +51,6 @@ public partial class User
 
     public virtual TutorProfile? TutorProfile { get; set; }
 
-    public virtual ICollection<TutorVerificationRequest> TutorVerificationRequests { get; set; } = new List<TutorVerificationRequest>();
-
     public virtual ICollection<UserBankAccount> UserBankAccounts { get; set; } = new List<UserBankAccount>();
 
     public virtual UserProfile? UserProfile { get; set; }

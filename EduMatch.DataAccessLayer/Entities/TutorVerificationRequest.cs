@@ -24,6 +24,4 @@ public partial class TutorVerificationRequest
     public DateTime CreatedAt { get; set; }
 
     public virtual TutorProfile? Tutor { get; set; }
-
-    public virtual User UserEmailNavigation { get; set; } = null!;
 }

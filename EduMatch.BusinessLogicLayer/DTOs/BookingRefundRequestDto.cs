@@ -1,5 +1,6 @@
 using EduMatch.DataAccessLayer.Enum;
 using System;
+using System.Collections.Generic;
 
 namespace EduMatch.BusinessLogicLayer.DTOs
 {
@@ -21,6 +22,7 @@ namespace EduMatch.BusinessLogicLayer.DTOs
 		public BookingDto? Booking { get; set; }
 		public RefundPolicyDto? RefundPolicy { get; set; }
 		public UserDto? Learner { get; set; }
+		public List<RefundRequestEvidenceDto>? RefundRequestEvidences { get; set; }
 	}
 }
 

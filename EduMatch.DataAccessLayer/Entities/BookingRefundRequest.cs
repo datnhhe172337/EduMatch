@@ -32,4 +32,6 @@ public partial class BookingRefundRequest
     public virtual User LearnerEmailNavigation { get; set; } = null!;
 
     public virtual RefundPolicy RefundPolicy { get; set; } = null!;
+
+    public virtual ICollection<RefundRequestEvidence> RefundRequestEvidences { get; set; } = new List<RefundRequestEvidence>();
 }
