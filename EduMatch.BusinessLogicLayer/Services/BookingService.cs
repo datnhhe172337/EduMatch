@@ -429,8 +429,9 @@ namespace EduMatch.BusinessLogicLayer.Services
                 ?? throw new Exception("Booking không tồn tại");
             var tutorEmail = booking.TutorSubject?.Tutor?.UserEmail;
 
-            if (booking.PaymentStatus != (int)PaymentStatus.Paid)
-                throw new InvalidOperationException("Chỉ có thể hoàn tiền cho booking đã thanh toán.");
+            if (booking.PaymentStatus != (int)PaymentStatus.Paid &&
+                booking.PaymentStatus != (int)PaymentStatus.RefundPending)
+                throw new InvalidOperationException("Chỉ có thể hoàn tiền cho booking đã thanh toán hoặc đang chờ hoàn.");
 
             var amountToProcess = booking.TotalAmount - booking.RefundedAmount;
             if (amountToProcess <= 0)
@@ -546,9 +547,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             await _unitOfWork.CompleteAsync();
 
-            booking.PaymentStatus = (int)PaymentStatus.Refunded;
-            booking.Status = (int)BookingStatus.Cancelled;
             booking.RefundedAmount += learnerAmount;
+            booking.TutorReceiveAmount = tutorAmount;
+            booking.PaymentStatus = booking.RefundedAmount >= booking.TotalAmount
+                ? (int)PaymentStatus.Refunded
+                : (int)PaymentStatus.RefundPending;
+            booking.Status = (int)BookingStatus.Cancelled;
             booking.UpdatedAt = now;
 
             await _bookingRepository.UpdateAsync(booking);
