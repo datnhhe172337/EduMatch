@@ -8,6 +8,7 @@ public partial class EduMatchContext
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ReportEvidence>(ConfigureReportEvidence);
+        modelBuilder.Entity<ReportDefense>(ConfigureReportDefense);
     }
 
     private void ConfigureReportEvidence(EntityTypeBuilder<ReportEvidence> entity)
@@ -20,6 +21,8 @@ public partial class EduMatchContext
             .HasMaxLength(100)
             .HasColumnName("submittedByEmail");
         entity.Property(e => e.MediaType).HasColumnName("mediaType");
+        entity.Property(e => e.EvidenceType).HasColumnName("evidenceType");
+        entity.Property(e => e.DefenseId).HasColumnName("defenseId");
         entity.Property(e => e.FileUrl)
             .HasMaxLength(500)
             .HasColumnName("fileUrl");
@@ -38,5 +41,11 @@ public partial class EduMatchContext
             .HasForeignKey(d => d.ReportId)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("FK_report_evidences_reports");
+
+        entity.HasOne(d => d.Defense)
+            .WithMany(p => p.ReportEvidences)
+            .HasForeignKey(d => d.DefenseId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .HasConstraintName("FK_report_evidences_report_defenses");
     }
 }
