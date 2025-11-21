@@ -59,6 +59,8 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<Report> Reports { get; set; }
 
+    public virtual DbSet<ReportDefense> ReportDefenses { get; set; }
+
     public virtual DbSet<ReportEvidence> ReportEvidences { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
@@ -764,6 +766,33 @@ public partial class EduMatchContext : DbContext
                 .HasConstraintName("FK_reports_reporter_users");
         });
 
+        modelBuilder.Entity<ReportDefense>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__report_d__3213E83F1FB59267");
+
+            entity.ToTable("report_defenses");
+
+            entity.HasIndex(e => e.ReportId, "IX_report_defenses_reportId");
+
+            entity.HasIndex(e => e.TutorEmail, "IX_report_defenses_tutorEmail");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("createdAt");
+            entity.Property(e => e.Note)
+                .HasMaxLength(2000)
+                .HasColumnName("note");
+            entity.Property(e => e.ReportId).HasColumnName("reportId");
+            entity.Property(e => e.TutorEmail)
+                .HasMaxLength(100)
+                .HasColumnName("tutorEmail");
+
+            entity.HasOne(d => d.Report).WithMany(p => p.ReportDefenses)
+                .HasForeignKey(d => d.ReportId)
+                .HasConstraintName("FK_report_defenses_reports");
+        });
+
         modelBuilder.Entity<ReportEvidence>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__report_e__3213E83F9AC6F218");
@@ -781,6 +810,8 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(sysutcdatetime())")
                 .HasColumnName("createdAt");
+            entity.Property(e => e.DefenseId).HasColumnName("defenseId");
+            entity.Property(e => e.EvidenceType).HasColumnName("evidenceType");
             entity.Property(e => e.FilePublicId)
                 .HasMaxLength(255)
                 .HasColumnName("filePublicId");
@@ -793,8 +824,14 @@ public partial class EduMatchContext : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("submittedByEmail");
 
+            entity.HasOne(d => d.Defense).WithMany(p => p.ReportEvidences)
+                .HasForeignKey(d => d.DefenseId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_report_evidences_report_defenses");
+
             entity.HasOne(d => d.Report).WithMany(p => p.ReportEvidences)
                 .HasForeignKey(d => d.ReportId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_report_evidences_reports");
         });
 
