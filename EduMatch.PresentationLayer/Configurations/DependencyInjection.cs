@@ -63,6 +63,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ITutorVerificationRequestRepository, TutorVerificationRequestRepository>();
 
             services.AddScoped<IReportRepository, ReportRepository>();
+            services.AddScoped<IReportEvidenceRepository, ReportEvidenceRepository>();
 
 
             services.AddScoped<ITutorFeedbackRepository, TutorFeedbackRepository>();
