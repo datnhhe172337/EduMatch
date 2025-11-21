@@ -568,6 +568,9 @@ namespace EduMatch.BusinessLogicLayer.Mappings
             CreateMap<Report, ReportDetailDto>()
                 .IncludeBase<Report, ReportListItemDto>();
 
+            CreateMap<ReportEvidence, ReportEvidenceDto>()
+                .ForMember(dest => dest.MediaType, opt => opt.MapFrom(src => (MediaType)src.MediaType));
+
         }
     }
 }
