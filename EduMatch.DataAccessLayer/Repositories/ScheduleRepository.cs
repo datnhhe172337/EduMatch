@@ -21,7 +21,8 @@ namespace EduMatch.DataAccessLayer.Repositories
             var query = _context.Schedules
             .AsSplitQuery()
             .Include(s => s.Availabiliti)
-            .Include(s => s.Booking)
+				.ThenInclude(s => s.Slot)
+			.Include(s => s.Booking)
             .Include(s => s.MeetingSession)
             .Where(s => s.BookingId == bookingId);
             if (status.HasValue)
@@ -41,6 +42,7 @@ namespace EduMatch.DataAccessLayer.Repositories
             var query = _context.Schedules
             .AsSplitQuery()
             .Include(s => s.Availabiliti)
+                .ThenInclude(s =>s .Slot)
             .Include(s => s.Booking)
             .Include(s => s.MeetingSession)
             .Where(s => s.BookingId == bookingId);

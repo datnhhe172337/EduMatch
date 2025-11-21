@@ -24,6 +24,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IMapper _mapper;
         private readonly CurrentUserService _currentUserService;
         private readonly EduMatchContext _context;
+        private readonly IBookingService _bookingService;
+        private readonly INotificationService _notificationService;
 
         public BookingRefundRequestService(
             IBookingRefundRequestRepository bookingRefundRequestRepository,
@@ -33,7 +35,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             IRefundRequestEvidenceRepository refundRequestEvidenceRepository,
             IMapper mapper,
             CurrentUserService currentUserService,
-            EduMatchContext context)
+            EduMatchContext context,
+            IBookingService bookingService,
+            INotificationService notificationService)
         {
             _bookingRefundRequestRepository = bookingRefundRequestRepository;
             _bookingRepository = bookingRepository;
@@ -43,6 +47,8 @@ namespace EduMatch.BusinessLogicLayer.Services
             _mapper = mapper;
             _currentUserService = currentUserService;
             _context = context;
+            _bookingService = bookingService;
+            _notificationService = notificationService;
         }
 
         /// <summary>
@@ -322,20 +328,26 @@ namespace EduMatch.BusinessLogicLayer.Services
                     if (booking == null)
                         throw new Exception("Booking không tồn tại");
 
-                    // Update Booking: Status = Cancelled, PaymentStatus = RefundPending
-                    booking.Status = (int)BookingStatus.Cancelled;
-                    booking.PaymentStatus = (int)PaymentStatus.RefundPending;
-                    
-                    // Update RefundedAmount = ApprovedAmount
-                    booking.RefundedAmount = entity.ApprovedAmount.Value;
+                    // Kiểm tra PaymentStatus phải là Paid (RefundBookingAsync yêu cầu)
+                    if (booking.PaymentStatus != (int)PaymentStatus.Paid)
+                        throw new Exception("Chỉ có thể hoàn tiền cho booking đã thanh toán");
 
-                    // Tính lại TutorReceiveAmount = TotalAmount - SystemFeeAmount - RefundedAmount
-                    booking.TutorReceiveAmount = booking.TotalAmount - booking.SystemFeeAmount - booking.RefundedAmount;
-                    
-                    booking.UpdatedAt = DateTime.UtcNow;
+                    // Lấy RefundPolicy để lấy phần trăm hoàn tiền
+                    var refundPolicy = await _refundPolicyRepository.GetByIdAsync(entity.RefundPolicyId);
+                    if (refundPolicy == null)
+                        throw new Exception("Chính sách hoàn tiền không tồn tại");
 
-                    // Update Booking
-                    await _bookingRepository.UpdateAsync(booking);
+                    // Sử dụng RefundPercentage từ RefundPolicy
+                    var learnerPercentage = refundPolicy.RefundPercentage;
+
+                    // Gọi hàm refund từ BookingService
+                    await _bookingService.RefundBookingAsync(booking.Id, learnerPercentage);
+
+                    // Gửi thông báo cho học viên
+                    await _notificationService.CreateNotificationAsync(
+                        entity.LearnerEmail,
+                        $"Đơn hoàn tiền của bạn đã được duyệt. Số tiền {entity.ApprovedAmount.Value:N0} VND sẽ được hoàn về ví của bạn.",
+                        "/wallet/my-wallet");
                 }
 
                 await _bookingRefundRequestRepository.UpdateAsync(entity);
