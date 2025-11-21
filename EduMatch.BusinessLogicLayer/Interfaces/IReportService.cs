@@ -16,5 +16,9 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task<ReportDetailDto> CancelReportByLearnerAsync(int reportId, string learnerEmail);
         Task<ReportDetailDto> SubmitTutorComplaintAsync(int reportId, TutorComplaintRequest request, string tutorEmail);
         Task DeleteReportAsync(int reportId);
+        Task<ReportEvidenceDto> AddEvidenceAsync(int reportId, ReportEvidenceCreateRequest request, string currentUserEmail, bool currentUserIsAdmin);
+        Task<IReadOnlyList<ReportEvidenceDto>> GetEvidenceByReportIdAsync(int reportId, string currentUserEmail, bool currentUserIsAdmin);
+        Task<ReportEvidenceDto> UpdateEvidenceAsync(int reportId, int evidenceId, ReportEvidenceUpdateRequest request, string currentUserEmail, bool currentUserIsAdmin);
+        Task DeleteEvidenceAsync(int reportId, int evidenceId, string currentUserEmail, bool currentUserIsAdmin);
     }
 }
