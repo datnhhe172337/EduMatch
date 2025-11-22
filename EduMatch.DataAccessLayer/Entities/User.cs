@@ -23,6 +23,8 @@ public partial class User
 
     public int RoleId { get; set; }
 
+    public virtual ICollection<BookingRefundRequest> BookingRefundRequests { get; set; } = new List<BookingRefundRequest>();
+
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
     public virtual ICollection<ChatRoom> ChatRooms { get; set; } = new List<ChatRoom>();

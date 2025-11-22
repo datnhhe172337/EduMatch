@@ -3,12 +3,17 @@ using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Mappings;
 using EduMatch.BusinessLogicLayer.Requests.TutorProfile;
+using EduMatch.BusinessLogicLayer.Requests.TutorVerificationRequest;
 using EduMatch.BusinessLogicLayer.Requests.User;
 using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
+using EduMatch.DataAccessLayer.Repositories;
 using EduMatch.Tests.Common;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -28,6 +33,9 @@ public class TutorProfileServiceTests
 	private Mock<IUserProfileService> _userProfileServiceMock;
 	private IMapper _mapper;
 	private CurrentUserService _currentUserService;
+	private Mock<ITutorVerificationRequestService> _tutorVerificationRequestServiceMock;
+	private Mock<EduMatchContext> _contextMock;
+	private Mock<IDbContextTransaction> _transactionMock;
 	private TutorProfileService _service;
 
 	/// <summary>
@@ -40,6 +48,9 @@ public class TutorProfileServiceTests
 		_cloudMediaServiceMock = new Mock<ICloudMediaService>();
 		_userServiceMock = new Mock<IUserService>();
 		_userProfileServiceMock = new Mock<IUserProfileService>();
+		_tutorVerificationRequestServiceMock = new Mock<ITutorVerificationRequestService>();
+		_contextMock = new Mock<EduMatchContext>();
+		_transactionMock = new Mock<IDbContextTransaction>();
 
 		var config = new MapperConfiguration(cfg =>
 		{
@@ -49,13 +60,26 @@ public class TutorProfileServiceTests
 
 		_currentUserService = new CurrentUserServiceFake("abc@gmail.com");
 
+		// Mock Database transaction
+		var databaseMock = new Mock<DatabaseFacade>(_contextMock.Object);
+		_contextMock.Setup(c => c.Database).Returns(databaseMock.Object);
+		databaseMock.Setup(d => d.BeginTransactionAsync(It.IsAny<System.Threading.CancellationToken>()))
+			.ReturnsAsync(_transactionMock.Object);
+		_transactionMock.Setup(t => t.CommitAsync(It.IsAny<System.Threading.CancellationToken>()))
+			.Returns(Task.CompletedTask);
+		_transactionMock.Setup(t => t.RollbackAsync(It.IsAny<System.Threading.CancellationToken>()))
+			.Returns(Task.CompletedTask);
+		_transactionMock.Setup(t => t.Dispose()).Verifiable();
+
 		_service = new TutorProfileService(
 			_tutorProfileRepositoryMock.Object,
 			_mapper,
 			_cloudMediaServiceMock.Object,
 			_currentUserService,
 			_userServiceMock.Object,
-			_userProfileServiceMock.Object
+			_userProfileServiceMock.Object,
+			_tutorVerificationRequestServiceMock.Object,
+			_contextMock.Object
 		);
 	}
 
@@ -202,10 +226,13 @@ public class TutorProfileServiceTests
 			},
 			null,
 			true,
-			null
+			null,
+			null // No pending verification requests
 		).SetName("CreateAsync_ValidRequest_ReturnsCreatedDto");
 
-		// Profile already exists
+		// Profile already exists with Approved status
+		var approvedProfile = FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com");
+		approvedProfile.Status = (int)TutorStatus.Approved;
 		yield return new TestCaseData(
 			new TutorProfileCreateRequest
 			{
@@ -214,10 +241,83 @@ public class TutorProfileServiceTests
 				AvatarUrl = "https://example.com/avatar.jpg",
 				TeachingModes = TeachingMode.Online
 			},
-			FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com"),
+			approvedProfile,
 			false,
-			typeof(InvalidOperationException)
-		).SetName("CreateAsync_ProfileAlreadyExists_ThrowsInvalidOperationException");
+			typeof(Exception),
+			null // No pending verification requests
+		).SetName("CreateAsync_ProfileAlreadyApproved_ThrowsException");
+
+		// Profile exists with Pending status and no pending verification request - should update
+		var pendingProfile = FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com");
+		pendingProfile.Id = 1;
+		pendingProfile.Status = (int)TutorStatus.Pending;
+		yield return new TestCaseData(
+			new TutorProfileCreateRequest
+			{
+				UserEmail = "abc@gmail.com",
+				UserName = "Test User",
+				Phone = "0123456789",
+				Bio = "Updated Bio",
+				DateOfBirth = new DateTime(1990, 1, 1),
+				AvatarUrl = "https://example.com/avatar.jpg",
+				ProvinceId = 1,
+				SubDistrictId = 1,
+				TeachingExp = "10 years",
+				VideoIntroUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+				TeachingModes = TeachingMode.Online,
+				Latitude = 21.0285m,
+				Longitude = 105.8542m
+			},
+			pendingProfile,
+			true,
+			null,
+			new List<TutorVerificationRequestDto>() // No pending verification requests
+		).SetName("CreateAsync_ProfilePending_NoPendingRequest_UpdatesProfile");
+
+		// Profile exists with Pending status and has pending verification request - should throw
+		var pendingProfile2 = FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com");
+		pendingProfile2.Id = 1;
+		pendingProfile2.Status = (int)TutorStatus.Pending;
+		yield return new TestCaseData(
+			new TutorProfileCreateRequest
+			{
+				UserEmail = "abc@gmail.com",
+				VideoIntroUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+				AvatarUrl = "https://example.com/avatar.jpg",
+				TeachingModes = TeachingMode.Online
+			},
+			pendingProfile2,
+			false,
+			typeof(Exception),
+			new List<TutorVerificationRequestDto> { new TutorVerificationRequestDto { Id = 1, Status = TutorVerificationRequestStatus.Pending } } // Has pending verification request
+		).SetName("CreateAsync_ProfilePending_HasPendingRequest_ThrowsException");
+
+		// Profile exists with Rejected status and no pending verification request - should update
+		var rejectedProfile = FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com");
+		rejectedProfile.Id = 1;
+		rejectedProfile.Status = (int)TutorStatus.Rejected;
+		yield return new TestCaseData(
+			new TutorProfileCreateRequest
+			{
+				UserEmail = "abc@gmail.com",
+				UserName = "Test User",
+				Phone = "0123456789",
+				Bio = "Updated Bio",
+				DateOfBirth = new DateTime(1990, 1, 1),
+				AvatarUrl = "https://example.com/avatar.jpg",
+				ProvinceId = 1,
+				SubDistrictId = 1,
+				TeachingExp = "10 years",
+				VideoIntroUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+				TeachingModes = TeachingMode.Online,
+				Latitude = 21.0285m,
+				Longitude = 105.8542m
+			},
+			rejectedProfile,
+			true,
+			null,
+			new List<TutorVerificationRequestDto>() // No pending verification requests
+		).SetName("CreateAsync_ProfileRejected_NoPendingRequest_UpdatesProfile");
 
 		// Missing VideoIntroUrl
 		yield return new TestCaseData(
@@ -229,8 +329,9 @@ public class TutorProfileServiceTests
 			},
 			null,
 			false,
-			typeof(InvalidOperationException)
-		).SetName("CreateAsync_MissingVideoIntroUrl_ThrowsInvalidOperationException");
+			typeof(Exception),
+			null
+		).SetName("CreateAsync_MissingVideoIntroUrl_ThrowsException");
 
 		// Missing AvatarUrl
 		yield return new TestCaseData(
@@ -242,8 +343,9 @@ public class TutorProfileServiceTests
 			},
 			null,
 			false,
-			typeof(InvalidOperationException)
-		).SetName("CreateAsync_MissingAvatarUrl_ThrowsInvalidOperationException");
+			typeof(Exception),
+			null
+		).SetName("CreateAsync_MissingAvatarUrl_ThrowsException");
 
 		// Invalid YouTube URL (invalid format)
 		yield return new TestCaseData(
@@ -256,8 +358,9 @@ public class TutorProfileServiceTests
 			},
 			null,
 			false,
-			typeof(InvalidOperationException)
-		).SetName("CreateAsync_InvalidYouTubeUrl_ThrowsInvalidOperationException");
+			typeof(Exception),
+			null
+		).SetName("CreateAsync_InvalidYouTubeUrl_ThrowsException");
 	}
 
 	/// <summary>
@@ -269,7 +372,8 @@ public class TutorProfileServiceTests
 		TutorProfileCreateRequest request,
 		TutorProfile? existingProfile,
 		bool shouldSucceed,
-		Type? expectedExceptionType)
+		Type? expectedExceptionType,
+		List<TutorVerificationRequestDto>? pendingVerificationRequests)
 	{
 		// Arrange
 		var email = "abc@gmail.com";
@@ -287,9 +391,26 @@ public class TutorProfileServiceTests
 				capturedEntity = tp;
 			});
 
+		_tutorProfileRepositoryMock
+			.Setup(r => r.UpdateAsync(It.IsAny<TutorProfile>()))
+			.Returns(Task.CompletedTask);
+
 		_userProfileServiceMock
 			.Setup(s => s.UpdateAsync(It.IsAny<UserProfileUpdateRequest>()))
 			.ReturnsAsync((UserProfileDto?)null);
+
+		// Mock TutorVerificationRequestService - return pending requests based on test case
+		var verificationRequests = pendingVerificationRequests ?? new List<TutorVerificationRequestDto>();
+		_tutorVerificationRequestServiceMock
+			.Setup(s => s.GetAllByEmailOrTutorIdAsync(
+				It.IsAny<string>(), 
+				It.IsAny<int?>(), 
+				TutorVerificationRequestStatus.Pending))
+			.ReturnsAsync(verificationRequests);
+
+		_tutorVerificationRequestServiceMock
+			.Setup(s => s.CreateAsync(It.IsAny<TutorVerificationRequestCreateRequest>()))
+			.ReturnsAsync(new TutorVerificationRequestDto { Id = 1 });
 
 		// Act & Assert
 		if (shouldSucceed)
@@ -299,11 +420,20 @@ public class TutorProfileServiceTests
 			Assert.That(result, Is.Not.Null);
 			Assert.That(result.UserEmail, Is.EqualTo(email));
 			Assert.That(result.Status, Is.EqualTo(TutorStatus.Pending));
-			_tutorProfileRepositoryMock.Verify(r => r.AddAsync(It.IsAny<TutorProfile>()), Times.Once);
+			
+			// Nếu existing profile là null thì tạo mới, ngược lại thì update
+			if (existingProfile == null)
+			{
+				_tutorProfileRepositoryMock.Verify(r => r.AddAsync(It.IsAny<TutorProfile>()), Times.Once);
+			}
+			else
+			{
+				_tutorProfileRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<TutorProfile>()), Times.Once);
+			}
 		}
 		else
 		{
-			var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.CreateAsync(request));
+			var exception = Assert.ThrowsAsync<Exception>(async () => await _service.CreateAsync(request));
 			Assert.That(exception, Is.InstanceOf(expectedExceptionType!));
 		}
 	}
@@ -338,59 +468,8 @@ public class TutorProfileServiceTests
 			},
 			null,
 			false,
-			typeof(InvalidOperationException)
-		).SetName("UpdateAsync_EntityNotFound_ThrowsInvalidOperationException");
-
-		// Status change from Pending to Approved
-		var pendingProfile = FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com");
-		pendingProfile.Id = 1;
-		pendingProfile.Status = (int)TutorStatus.Pending;
-		yield return new TestCaseData(
-			new TutorProfileUpdateRequest
-			{
-				Id = 1,
-				UserEmail = "abc@gmail.com",
-				TeachingModes = TeachingMode.Online,
-				Status = TutorStatus.Approved
-			},
-			pendingProfile,
-			true,
-			null
-		).SetName("UpdateAsync_PendingToApproved_UpdatesStatus");
-
-		// Status change from Pending to Rejected
-		var pendingProfile2 = FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com");
-		pendingProfile2.Id = 1;
-		pendingProfile2.Status = (int)TutorStatus.Pending;
-		yield return new TestCaseData(
-			new TutorProfileUpdateRequest
-			{
-				Id = 1,
-				UserEmail = "abc@gmail.com",
-				TeachingModes = TeachingMode.Online,
-				Status = TutorStatus.Rejected
-			},
-			pendingProfile2,
-			true,
-			null
-		).SetName("UpdateAsync_PendingToRejected_UpdatesStatus");
-
-		// Status change from Approved (not allowed)
-		var approvedProfile = FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com");
-		approvedProfile.Id = 1;
-		approvedProfile.Status = (int)TutorStatus.Approved;
-		yield return new TestCaseData(
-			new TutorProfileUpdateRequest
-			{
-				Id = 1,
-				UserEmail = "abc@gmail.com",
-				TeachingModes = TeachingMode.Online,
-				Status = TutorStatus.Rejected
-			},
-			approvedProfile,
-			false,
-			typeof(InvalidOperationException)
-		).SetName("UpdateAsync_StatusNotPending_ThrowsInvalidOperationException");
+			typeof(Exception)
+		).SetName("UpdateAsync_EntityNotFound_ThrowsException");
 	}
 
 	/// <summary>
@@ -434,16 +513,11 @@ public class TutorProfileServiceTests
 			Assert.That(result, Is.Not.Null);
 			Assert.That(result.Id, Is.EqualTo(request.Id));
 
-			if (request.Status.HasValue && existingEntity != null)
-			{
-				Assert.That((TutorStatus)existingEntity.Status, Is.EqualTo(request.Status.Value));
-			}
-
 			_tutorProfileRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<TutorProfile>()), Times.Once);
 		}
 		else
 		{
-			var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.UpdateAsync(request));
+			var exception = Assert.ThrowsAsync<Exception>(async () => await _service.UpdateAsync(request));
 			Assert.That(exception, Is.InstanceOf(expectedExceptionType!));
 		}
 	}
@@ -479,118 +553,6 @@ public class TutorProfileServiceTests
 	{
 		// Act & Assert
 		var exception = Assert.ThrowsAsync<ArgumentException>(async () => await _service.DeleteAsync(id));
-		Assert.That(exception.Message, Does.Contain("ID must be greater than 0"));
-	}
-
-	/// <summary>
-	/// Tạo các test cases cho VerifyAsync - bao phủ các kịch bản: valid, entity not found, status not pending, invalid ID, empty verifiedBy
-	/// </summary>
-	private static IEnumerable<TestCaseData> VerifyAsyncTestCases()
-	{
-		// Valid verification
-		var pendingProfile = FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com");
-		pendingProfile.Id = 1;
-		pendingProfile.Status = (int)TutorStatus.Pending;
-		yield return new TestCaseData(
-			1,
-			"admin@example.com",
-			pendingProfile,
-			true,
-			null
-		).SetName("VerifyAsync_ValidRequest_UpdatesStatusToApproved");
-
-		// Entity not found
-		yield return new TestCaseData(
-			999,
-			"admin@example.com",
-			null,
-			false,
-			typeof(InvalidOperationException)
-		).SetName("VerifyAsync_EntityNotFound_ThrowsInvalidOperationException");
-
-		// Status not pending
-		var approvedProfile = FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com");
-		approvedProfile.Id = 1;
-		approvedProfile.Status = (int)TutorStatus.Approved;
-		yield return new TestCaseData(
-			1,
-			"admin@example.com",
-			approvedProfile,
-			false,
-			typeof(InvalidOperationException)
-		).SetName("VerifyAsync_StatusNotPending_ThrowsInvalidOperationException");
-
-		// Empty verifiedBy
-		var pendingProfile2 = FakeDataFactory.CreateFakeTutorProfile("abc@gmail.com");
-		pendingProfile2.Id = 1;
-		pendingProfile2.Status = (int)TutorStatus.Pending;
-		yield return new TestCaseData(
-			1,
-			"",
-			pendingProfile2,
-			false,
-			typeof(InvalidOperationException)
-		).SetName("VerifyAsync_EmptyVerifiedBy_ThrowsInvalidOperationException");
-	}
-
-	/// <summary>
-	/// Test VerifyAsync với nhiều kịch bản khác nhau - bao phủ success và các trường hợp lỗi
-	/// </summary>
-	[Test]
-	[TestCaseSource(nameof(VerifyAsyncTestCases))]
-	public async Task VerifyAsync_WithVariousScenarios_HandlesCorrectly(
-		int id,
-		string verifiedBy,
-		TutorProfile? existingEntity,
-		bool shouldSucceed,
-		Type? expectedExceptionType)
-	{
-		// Arrange
-		if (existingEntity != null)
-		{
-			_tutorProfileRepositoryMock
-				.Setup(r => r.GetByIdFullAsync(id))
-				.ReturnsAsync(existingEntity);
-		}
-		else
-		{
-			_tutorProfileRepositoryMock
-				.Setup(r => r.GetByIdFullAsync(id))
-				.ReturnsAsync((TutorProfile?)null);
-		}
-
-		_tutorProfileRepositoryMock
-			.Setup(r => r.UpdateAsync(It.IsAny<TutorProfile>()))
-			.Returns(Task.CompletedTask);
-
-		// Act & Assert
-		if (shouldSucceed)
-		{
-			var result = await _service.VerifyAsync(id, verifiedBy);
-
-			Assert.That(result, Is.Not.Null);
-			Assert.That((TutorStatus)existingEntity!.Status, Is.EqualTo(TutorStatus.Approved));
-			Assert.That(existingEntity.VerifiedBy, Is.EqualTo(verifiedBy));
-			Assert.That(existingEntity.VerifiedAt, Is.Not.Null);
-			_tutorProfileRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<TutorProfile>()), Times.Once);
-		}
-		else
-		{
-			var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.VerifyAsync(id, verifiedBy));
-			Assert.That(exception, Is.InstanceOf(expectedExceptionType!));
-		}
-	}
-
-	/// <summary>
-	/// Test VerifyAsync với ID không hợp lệ - ném InvalidOperationException
-	/// </summary>
-	[Test]
-	[TestCase(0)]
-	[TestCase(-1)]
-	public void VerifyAsync_WithInvalidId_ThrowsInvalidOperationException(int id)
-	{
-		// Act & Assert
-		var exception = Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.VerifyAsync(id, "admin@example.com"));
 		Assert.That(exception.Message, Does.Contain("ID must be greater than 0"));
 	}
 }

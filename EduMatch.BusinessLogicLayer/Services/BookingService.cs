@@ -184,6 +184,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             // TotalAmount giữ nguyên giá gốc
             var totalAmount = baseAmount;
 
+            // Calculate TutorReceiveAmount (số tiền tutor nhận được sau khi trừ phí hệ thống)
+            var tutorReceiveAmount = totalAmount - systemFeeAmount;
+
             // Create Booking entity
             var entity = new Booking
             {
@@ -198,6 +201,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 Status = (int)BookingStatus.Pending,
                 SystemFeeId = activeSystemFee.Id,
                 SystemFeeAmount = systemFeeAmount,
+                TutorReceiveAmount = tutorReceiveAmount,
                 CreatedAt = now,
                 UpdatedAt = null
             };
@@ -222,6 +226,8 @@ namespace EduMatch.BusinessLogicLayer.Services
                 entity.LearnerEmail = request.LearnerEmail;
             }
 
+            bool needRecalculate = false;
+
             if (request.TutorSubjectId.HasValue)
             {
                 var tutorSubject = await _tutorSubjectRepository.GetByIdFullAsync(request.TutorSubjectId.Value)
@@ -231,6 +237,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (tutorSubject.HourlyRate.HasValue && tutorSubject.HourlyRate.Value > 0)
                 {
                     entity.UnitPrice = tutorSubject.HourlyRate.Value;
+                    needRecalculate = true;
                 }
             }
 
@@ -238,7 +245,12 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (request.TotalSessions.HasValue && request.TotalSessions.Value > 0)
             {
                 entity.TotalSessions = request.TotalSessions.Value;
-                
+                needRecalculate = true;
+            }
+
+            // Recalculate amounts if needed
+            if (needRecalculate)
+            {
                 // Recalculate baseAmount and SystemFeeAmount
                 var baseAmount = entity.UnitPrice * entity.TotalSessions;
                 
@@ -260,6 +272,8 @@ namespace EduMatch.BusinessLogicLayer.Services
                 entity.SystemFeeAmount = systemFeeAmount;
                 // TotalAmount giữ nguyên giá gốc, không cộng phí
                 entity.TotalAmount = baseAmount;
+                // Recalculate TutorReceiveAmount
+                entity.TutorReceiveAmount = baseAmount - systemFeeAmount;
             }
             
             entity.UpdatedAt = DateTime.UtcNow;
@@ -277,12 +291,33 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
-        /// Cập nhật PaymentStatus của Booking
+        /// Cập nhật PaymentStatus của Booking (chỉ cho phép cập nhật theo thứ tự tăng dần)
         /// </summary>
         public async Task<BookingDto> UpdatePaymentStatusAsync(int id, PaymentStatus paymentStatus)
         {
             var entity = await _bookingRepository.GetByIdAsync(id)
                 ?? throw new Exception("Booking không tồn tại");
+
+            var currentStatus = (PaymentStatus)entity.PaymentStatus;
+            var newStatus = paymentStatus;
+
+            // Validate: Chỉ cho phép cập nhật theo thứ tự tăng dần
+            // Pending (0) -> Paid (1) -> RefundPending (2) -> Refunded (3)
+            if (newStatus <= currentStatus)
+                throw new Exception($"Không thể cập nhật PaymentStatus từ {currentStatus} về {newStatus}. Chỉ được phép cập nhật theo thứ tự tăng dần.");
+
+            // Validate: Không cho phép nhảy bước (ví dụ: Pending -> RefundPending)
+            if (currentStatus == PaymentStatus.Pending && newStatus != PaymentStatus.Paid)
+                throw new Exception("Từ trạng thái Pending chỉ có thể chuyển sang Paid");
+
+            if (currentStatus == PaymentStatus.Paid && newStatus != PaymentStatus.RefundPending)
+                throw new Exception("Từ trạng thái Paid chỉ có thể chuyển sang RefundPending");
+
+            if (currentStatus == PaymentStatus.RefundPending && newStatus != PaymentStatus.Refunded)
+                throw new Exception("Từ trạng thái RefundPending chỉ có thể chuyển sang Refunded");
+
+            if (currentStatus == PaymentStatus.Refunded)
+                throw new Exception("Không thể cập nhật PaymentStatus khi đã ở trạng thái Refunded");
 
             entity.PaymentStatus = (int)paymentStatus;
             entity.UpdatedAt = DateTime.UtcNow;
@@ -394,8 +429,9 @@ namespace EduMatch.BusinessLogicLayer.Services
                 ?? throw new Exception("Booking không tồn tại");
             var tutorEmail = booking.TutorSubject?.Tutor?.UserEmail;
 
-            if (booking.PaymentStatus != (int)PaymentStatus.Paid)
-                throw new InvalidOperationException("Chỉ có thể hoàn tiền cho booking đã thanh toán.");
+            if (booking.PaymentStatus != (int)PaymentStatus.Paid &&
+                booking.PaymentStatus != (int)PaymentStatus.RefundPending)
+                throw new InvalidOperationException("Chỉ có thể hoàn tiền cho booking đã thanh toán hoặc đang chờ hoàn.");
 
             var amountToProcess = booking.TotalAmount - booking.RefundedAmount;
             if (amountToProcess <= 0)
@@ -511,9 +547,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             await _unitOfWork.CompleteAsync();
 
-            booking.PaymentStatus = (int)PaymentStatus.Refunded;
-            booking.Status = (int)BookingStatus.Cancelled;
             booking.RefundedAmount += learnerAmount;
+            booking.TutorReceiveAmount = tutorAmount;
+            booking.PaymentStatus = booking.RefundedAmount >= booking.TotalAmount
+                ? (int)PaymentStatus.Refunded
+                : (int)PaymentStatus.RefundPending;
+            booking.Status = (int)BookingStatus.Cancelled;
             booking.UpdatedAt = now;
 
             await _bookingRepository.UpdateAsync(booking);
@@ -544,6 +583,24 @@ namespace EduMatch.BusinessLogicLayer.Services
         {
             var entity = await _bookingRepository.GetByIdAsync(id)
                 ?? throw new Exception("Booking không tồn tại");
+
+            var currentStatus = (BookingStatus)entity.Status;
+            var newStatus = status;
+
+            // Validate: Không cho phép cập nhật khi đã ở trạng thái Completed hoặc Cancelled
+            if (currentStatus == BookingStatus.Completed)
+                throw new Exception("Không thể cập nhật Status khi đã ở trạng thái Completed");
+
+            if (currentStatus == BookingStatus.Cancelled)
+                throw new Exception("Không thể cập nhật Status khi đã ở trạng thái Cancelled");
+
+            // Validate: Không cho phép nhảy bước từ Pending sang Completed
+            if (currentStatus == BookingStatus.Pending && newStatus == BookingStatus.Completed)
+                throw new Exception("Không thể cập nhật Status từ Pending sang Completed. Phải chuyển sang Confirmed trước.");
+
+            // Validate: Trạng thái mới phải lớn hơn trạng thái hiện tại
+            if (newStatus <= currentStatus)
+                throw new Exception($"Không thể cập nhật Status từ {currentStatus} về {newStatus}. Trạng thái mới phải lớn hơn trạng thái hiện tại.");
 
             entity.Status = (int)status;
             entity.UpdatedAt = DateTime.UtcNow;

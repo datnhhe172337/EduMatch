@@ -11,6 +11,7 @@ using EduMatch.BusinessLogicLayer.Requests.Level;
 using EduMatch.BusinessLogicLayer.Requests.Subject;
 using EduMatch.BusinessLogicLayer.Requests.TimeSlot;
 using EduMatch.BusinessLogicLayer.Requests.ScheduleChangeRequest;
+using EduMatch.BusinessLogicLayer.Requests.RefundRequestEvidence;
 
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
@@ -416,6 +417,45 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 
             // SystemFee -> SystemFeeDto
             CreateMap<SystemFee, SystemFeeDto>();
+
+            // RefundPolicy -> RefundPolicyDto
+            CreateMap<RefundPolicy, RefundPolicyDto>();
+
+            // BookingRefundRequest -> BookingRefundRequestDto
+            CreateMap<BookingRefundRequest, BookingRefundRequestDto>()
+                .ForMember(dest => dest.Status,
+                    opt => opt.MapFrom(src => (BookingRefundRequestStatus)src.Status))
+                .ForMember(dest => dest.Booking,
+                    opt => opt.MapFrom(src => src.Booking != null ? src.Booking : null))
+                .ForMember(dest => dest.RefundPolicy,
+                    opt => opt.MapFrom(src => src.RefundPolicy != null ? src.RefundPolicy : null))
+                .ForMember(dest => dest.Learner,
+                    opt => opt.MapFrom(src => src.LearnerEmailNavigation != null ? src.LearnerEmailNavigation : null))
+                .ForMember(dest => dest.RefundRequestEvidences,
+                    opt => opt.MapFrom(src => src.RefundRequestEvidences != null 
+                        ? src.RefundRequestEvidences.Select(e => new RefundRequestEvidenceDto
+                        {
+                            Id = e.Id,
+                            BookingRefundRequestId = e.BookingRefundRequestId,
+                            FileUrl = e.FileUrl,
+                            CreatedAt = e.CreatedAt,
+                            BookingRefundRequest = null
+                        }).ToList()
+                        : null));
+
+            // RefundRequestEvidence -> RefundRequestEvidenceDto
+            CreateMap<RefundRequestEvidence, RefundRequestEvidenceDto>()
+                .ForMember(dest => dest.BookingRefundRequest,
+                    opt => opt.MapFrom(src => src.BookingRefundRequest != null ? src.BookingRefundRequest : null));
+
+          
+
+            // TutorVerificationRequest -> TutorVerificationRequestDto
+            CreateMap<TutorVerificationRequest, TutorVerificationRequestDto>()
+                .ForMember(dest => dest.Status,
+                    opt => opt.MapFrom(src => (TutorVerificationRequestStatus)src.Status))
+                .ForMember(dest => dest.Tutor,
+                    opt => opt.MapFrom(src => src.Tutor != null ? src.Tutor : null));
 
 
 

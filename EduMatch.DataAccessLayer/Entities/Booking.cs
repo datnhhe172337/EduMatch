@@ -33,6 +33,10 @@ public partial class Booking
 
     public decimal SystemFeeAmount { get; set; }
 
+    public decimal TutorReceiveAmount { get; set; }
+
+    public virtual ICollection<BookingRefundRequest> BookingRefundRequests { get; set; } = new List<BookingRefundRequest>();
+
     public virtual User LearnerEmailNavigation { get; set; } = null!;
 
     public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();

@@ -229,6 +229,18 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                 var oldStatus = (ScheduleChangeRequestStatus)entity.Status;
 
+                // Không cho phép từ Approved sang Rejected
+                if (oldStatus == ScheduleChangeRequestStatus.Approved && status == ScheduleChangeRequestStatus.Rejected)
+                {
+                    throw new Exception("Không thể chuyển trạng thái từ Đã chấp nhận sang Đã từ chối");
+                }
+
+                // Không cho phép từ Rejected sang Approved
+                if (oldStatus == ScheduleChangeRequestStatus.Rejected && status == ScheduleChangeRequestStatus.Approved)
+                {
+                    throw new Exception("Không thể chuyển trạng thái từ Đã từ chối sang Đã chấp nhận");
+                }
+
                 // Không cho phép update ngược lại: status mới phải >= status cũ (theo giá trị enum)
                 if ((int)status < (int)oldStatus)
                 {

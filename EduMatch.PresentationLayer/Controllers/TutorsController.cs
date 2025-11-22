@@ -6,6 +6,7 @@ using EduMatch.BusinessLogicLayer.Requests.TutorEducation;
 using EduMatch.BusinessLogicLayer.Requests.TutorSubject;
 using EduMatch.BusinessLogicLayer.Requests.TutorAvailability;
 using EduMatch.BusinessLogicLayer.Requests.User;
+using EduMatch.BusinessLogicLayer.Requests.TutorVerificationRequest;
 using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Entities;
@@ -19,7 +20,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using System.ComponentModel.DataAnnotations;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -38,6 +38,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		private readonly ITutorEducationService _tutorEducationService;
 		private readonly EmailService _emailService;
 		private readonly IUserService _userService;
+		private readonly ITutorVerificationRequestService _tutorVerificationRequestService;
 
 		public TutorsController(
 			ITutorSubjectService tutorSubjectService,
@@ -50,7 +51,8 @@ namespace EduMatch.PresentationLayer.Controllers
 			EduMatchContext eduMatch,
 			ITutorEducationService tutorEducationService,
 			EmailService emailService,
-			IUserService userService 
+			IUserService userService,
+			ITutorVerificationRequestService tutorVerificationRequestService
 
 			)
 		{
@@ -65,6 +67,7 @@ namespace EduMatch.PresentationLayer.Controllers
 			_tutorEducationService = tutorEducationService;
 			_emailService = emailService;
 			_userService = userService;
+			_tutorVerificationRequestService = tutorVerificationRequestService;
 
 		}
 
@@ -395,13 +398,33 @@ namespace EduMatch.PresentationLayer.Controllers
 			if (existingProfile == null)
 				return NotFound(ApiResponse<string>.Fail($"Tutor with ID {tutorId} not found."));
 
+			// Sử dụng transaction cho toàn bộ hàm
+			using var dbTransaction = await _eduMatch.Database.BeginTransactionAsync();
 			try
 			{
-				// Get current user email from CurrentUserService
 				var currentUserEmail = _currentUserService.Email ?? "System";
+
+				// Đầu tiên: Update TutorVerificationRequest status thành Approved
+				var verificationRequests = await _tutorVerificationRequestService.GetAllByEmailOrTutorIdAsync(
+					email: null, 
+					tutorId: tutorId, 
+					status: null);
 				
-				// Use VerifyAsync to update status and track verification info
-				await _tutorProfileService.VerifyAsync(tutorId, currentUserEmail);
+				if (verificationRequests != null && verificationRequests.Any())
+				{
+					// Lấy request mới nhất (Pending) để approve
+					var pendingRequest = verificationRequests
+						.Where(r => r.Status == TutorVerificationRequestStatus.Pending)
+						.OrderByDescending(r => r.CreatedAt)
+						.FirstOrDefault();
+					
+					if (pendingRequest != null)
+					{
+						await _tutorVerificationRequestService.UpdateStatusAsync(
+							pendingRequest.Id, 
+							TutorVerificationRequestStatus.Approved);
+					}
+				}
 
 				// Verify all certificates using service layer
 				var certs = await _tutorCertificateService.GetByTutorIdAsync(tutorId);
@@ -437,17 +460,122 @@ namespace EduMatch.PresentationLayer.Controllers
 				// Update user role to tutor since status is Approved
 				await _userService.UpdateRoleUserAsync(existingProfile.UserEmail, 2); // Role 2 = Tutor
 
+				// Commit transaction
+				await dbTransaction.CommitAsync();
+
 				var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
 				return Ok(ApiResponse<TutorProfileDto>.Ok(fullProfile!, $"Tutor approved and all certificates/educations verified by {currentUserEmail}."));
 			}
 			catch (Exception ex)
 			{
+				// Rollback transaction nếu có lỗi
+				await dbTransaction.RollbackAsync();
 				return BadRequest(ApiResponse<string>.Fail("Failed to approve and verify all.", ex.Message));
 			}
 		}
 
 		/// <summary>
-		/// Cập nhật trạng thái của gia sư (Pending, Approved, Rejected)
+		/// Từ chối gia sư và reject tất cả chứng chỉ, bằng cấp của gia sư
+		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin)]
+		[HttpPut("reject-all/{tutorId}")]
+		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		public async Task<IActionResult> RejectAll([FromRoute] int tutorId, [FromBody] RejectTutorRequest request)
+		{
+			if (tutorId <= 0)
+				return BadRequest(ApiResponse<string>.Fail("Invalid tutor ID."));
+
+			if (request == null || string.IsNullOrWhiteSpace(request.Reason))
+				return BadRequest(ApiResponse<string>.Fail("Reason is required."));
+
+			// Check if tutor exists using service layer
+			var existingProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
+			if (existingProfile == null)
+				return NotFound(ApiResponse<string>.Fail($"Tutor with ID {tutorId} not found."));
+
+			// Sử dụng transaction cho toàn bộ hàm
+			using var dbTransaction = await _eduMatch.Database.BeginTransactionAsync();
+			try
+			{
+				var currentUserEmail = _currentUserService.Email ?? "System";
+
+				// Đầu tiên: Update TutorVerificationRequest status thành Rejected với reason
+				var verificationRequests = await _tutorVerificationRequestService.GetAllByEmailOrTutorIdAsync(
+					email: null,
+					tutorId: tutorId,
+					status: null);
+
+				if (verificationRequests != null && verificationRequests.Any())
+				{
+					// Lấy request mới nhất (Pending) để reject
+					var pendingRequest = verificationRequests
+						.Where(r => r.Status == TutorVerificationRequestStatus.Pending)
+						.OrderByDescending(r => r.CreatedAt)
+						.FirstOrDefault();
+
+					if (pendingRequest != null)
+					{
+						// Update status và admin note (reason)
+						await _tutorVerificationRequestService.UpdateAsync(new TutorVerificationRequestUpdateRequest
+						{
+							Id = pendingRequest.Id,
+							AdminNote = request.Reason
+						});
+						await _tutorVerificationRequestService.UpdateStatusAsync(
+							pendingRequest.Id,
+							TutorVerificationRequestStatus.Rejected);
+					}
+				}
+
+				// Reject all certificates using service layer
+				var certs = await _tutorCertificateService.GetByTutorIdAsync(tutorId);
+				foreach (var c in certs)
+				{
+					await _tutorCertificateService.UpdateAsync(new TutorCertificateUpdateRequest
+					{
+						Id = c.Id,
+						TutorId = c.TutorId,
+						CertificateTypeId = c.CertificateTypeId,
+						IssueDate = c.IssueDate,
+						ExpiryDate = c.ExpiryDate,
+						Verified = VerifyStatus.Rejected,
+						RejectReason = request.Reason
+					});
+				}
+
+				// Reject all educations using service layer
+				var edus = await _tutorEducationService.GetByTutorIdAsync(tutorId);
+				foreach (var e in edus)
+				{
+					await _tutorEducationService.UpdateAsync(new TutorEducationUpdateRequest
+					{
+						Id = e.Id,
+						TutorId = e.TutorId,
+						InstitutionId = e.InstitutionId,
+						IssueDate = e.IssueDate,
+						Verified = VerifyStatus.Rejected,
+						RejectReason = request.Reason
+					});
+				}
+
+				// Commit transaction
+				await dbTransaction.CommitAsync();
+
+				var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
+				return Ok(ApiResponse<TutorProfileDto>.Ok(fullProfile!, $"Tutor rejected and all certificates/educations rejected by {currentUserEmail}. Reason: {request.Reason}"));
+			}
+			catch (Exception ex)
+			{
+				// Rollback transaction nếu có lỗi
+				await dbTransaction.RollbackAsync();
+				return BadRequest(ApiResponse<string>.Fail("Failed to reject tutor.", ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Cập nhật trạng thái của gia sư (chỉ cho phép từ Approved sang Suspended hoặc Deactivated)
 		/// </summary>
 		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
 		[HttpPut("update-tutor-status/{tutorId}")]
@@ -466,42 +594,14 @@ namespace EduMatch.PresentationLayer.Controllers
 
 			try
 			{
-				// Check if changing from Pending to Approved - use VerifyAsync to track who verified
-				if (existingProfile.Status == (int)TutorStatus.Pending && request.Status == TutorStatus.Approved)
-				{
-					// Get current user email from CurrentUserService
-					var currentUserEmail = _currentUserService.Email ?? "System";
-					
-					// Use VerifyAsync to update status and track verification info
-					var verifiedProfile = await _tutorProfileService.VerifyAsync(tutorId, currentUserEmail);
-					
-					// Update user role to tutor since status is Approved
-					await _userService.UpdateRoleUserAsync(existingProfile.UserEmail, 2); // Role 2 = Tutor
-					
-					return Ok(ApiResponse<TutorProfileDto>.Ok(verifiedProfile, $"Tutor verified and approved by {currentUserEmail}."));
-				}
-				else
-				{
-					// For other status changes, use regular UpdateAsync
-					await _tutorProfileService.UpdateAsync(new TutorProfileUpdateRequest
-					{
-						Id = tutorId,
-						Status = request.Status
-					});
-
-					// If status is Approved, update user role to tutor
-					if (request.Status == TutorStatus.Approved)
-					{
-						await _userService.UpdateRoleUserAsync(existingProfile.UserEmail, 2); // Role 2 = Tutor
-					}
-
-					var updatedProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
-					return Ok(ApiResponse<TutorProfileDto>.Ok(updatedProfile!, $"Tutor status updated to {request.Status}."));
-				}
+				// Chỉ cho phép update từ Approved sang Suspended hoặc Deactivated
+				// Approved và Rejected chỉ được thay đổi khi được xác nhận thành gia sư hoặc từ chối (qua TutorVerificationRequest)
+				var updatedProfile = await _tutorProfileService.UpdateStatusAsync(tutorId, request.Status);
+				return Ok(ApiResponse<TutorProfileDto>.Ok(updatedProfile, $"Trạng thái gia sư đã được cập nhật sang {request.Status}."));
 			}
 			catch (Exception ex)
 			{
-				return BadRequest(ApiResponse<string>.Fail("Failed to update tutor status.", ex.Message));
+				return BadRequest(ApiResponse<string>.Fail("Không thể cập nhật trạng thái gia sư.", ex.Message));
 			}
 		}
 
