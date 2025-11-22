@@ -21,12 +21,14 @@ namespace EduMatch.DataAccessLayer.Repositories
             var query = _context.Schedules
             .AsSplitQuery()
             .Include(s => s.Availabiliti)
-            .Include(s => s.Booking)
+				.ThenInclude(s => s.Slot)
+			.Include(s => s.Booking)
+            .Include(s => s.MeetingSession)
             .Where(s => s.BookingId == bookingId);
             if (status.HasValue)
                 query = query.Where(s => s.Status == status.Value);
             return await query
-                .OrderBy(s => s.CreatedAt)
+                .OrderBy(s => s.Availabiliti.StartDate)
                 .ThenBy(s => s.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -40,12 +42,14 @@ namespace EduMatch.DataAccessLayer.Repositories
             var query = _context.Schedules
             .AsSplitQuery()
             .Include(s => s.Availabiliti)
+                .ThenInclude(s =>s .Slot)
             .Include(s => s.Booking)
+            .Include(s => s.MeetingSession)
             .Where(s => s.BookingId == bookingId);
             if (status.HasValue)
                 query = query.Where(s => s.Status == status.Value);
             return await query
-                .OrderBy(s => s.CreatedAt)
+                .OrderBy(s => s.Availabiliti.StartDate)
                 .ThenBy(s => s.Id)
                 .ToListAsync();
         }
@@ -67,7 +71,9 @@ namespace EduMatch.DataAccessLayer.Repositories
         /// </summary>
         public async Task<Schedule?> GetByAvailabilityIdAsync(int availabilitiId)
         {
-            return await _context.Schedules.FirstOrDefaultAsync(s => s.AvailabilitiId == availabilitiId);
+            return await _context.Schedules
+                .Include(s => s.MeetingSession)
+                .FirstOrDefaultAsync(s => s.AvailabilitiId == availabilitiId);
         }
         /// <summary>
         /// Lấy Schedule theo ID
@@ -86,6 +92,7 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .Include(s => s.Booking)
                     .ThenInclude(b => b.TutorSubject)
                         .ThenInclude(ts => ts.Level)
+                .Include(s => s.MeetingSession)
                 .FirstOrDefaultAsync(s => s.Id == id);
         }
         /// <summary>
@@ -95,7 +102,8 @@ namespace EduMatch.DataAccessLayer.Repositories
         {
             return await _context.Schedules
                 .Where(s => s.BookingId == bookingId)
-                .OrderBy(s => s.CreatedAt)
+                .Include(s => s.MeetingSession)
+                .OrderBy(s => s.Availabiliti.StartDate)
                 .ThenBy(s => s.Id)
                 .ToListAsync();
         }
@@ -117,6 +125,7 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .Include(s => s.Booking)
                     .ThenInclude(b => b.TutorSubject)
                         .ThenInclude(ts => ts.Level)
+                .Include(s => s.MeetingSession)
                 .Where(s => s.Booking.LearnerEmail == learnerEmail);
 
             if (startDate.HasValue)
@@ -138,7 +147,6 @@ namespace EduMatch.DataAccessLayer.Repositories
 
             return await query
                 .OrderBy(s => s.Availabiliti.StartDate)
-                .ThenBy(s => s.CreatedAt)
                 .ThenBy(s => s.Id)
                 .ToListAsync();
         }
@@ -160,6 +168,7 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .Include(s => s.Booking)
                     .ThenInclude(b => b.TutorSubject)
                         .ThenInclude(ts => ts.Level)
+                .Include(s => s.MeetingSession)
                 .Where(s => s.Booking.TutorSubject.Tutor.UserEmail == tutorEmail);
 
             if (startDate.HasValue)
@@ -181,7 +190,6 @@ namespace EduMatch.DataAccessLayer.Repositories
 
             return await query
                 .OrderBy(s => s.Availabiliti.StartDate)
-                .ThenBy(s => s.CreatedAt)
                 .ThenBy(s => s.Id)
                 .ToListAsync();
         }

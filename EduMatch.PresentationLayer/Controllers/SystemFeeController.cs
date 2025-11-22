@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using EduMatch.BusinessLogicLayer.Interfaces;
+﻿using EduMatch.BusinessLogicLayer.Constants;
 using EduMatch.BusinessLogicLayer.DTOs;
+using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests.SystemFee;
 using EduMatch.PresentationLayer.Common;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -56,7 +57,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Tạo mới SystemFee
 		/// </summary>
 		[HttpPost("create-systemfee")]
-		[Authorize(Roles = "BusseAdmin")]
+		[Authorize(Roles = Roles.BusinessAdmin)]
 		[ProducesResponseType(typeof(ApiResponse<SystemFeeDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
 		public async Task<ActionResult<ApiResponse<SystemFeeDto>>> Create([FromBody] SystemFeeCreateRequest request)
@@ -73,7 +74,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Cập nhật SystemFee
 		/// </summary>
 		[HttpPut("update-systemfee")]
-		[Authorize(Roles = "BusseAdmin")]
+		[Authorize(Roles = Roles.BusinessAdmin)]
 		[ProducesResponseType(typeof(ApiResponse<SystemFeeDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
 		public async Task<ActionResult<ApiResponse<SystemFeeDto>>> Update([FromBody] SystemFeeUpdateRequest request)

@@ -1,6 +1,7 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Requests.TutorProfile;
 using EduMatch.DataAccessLayer.Entities;
+using EduMatch.DataAccessLayer.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,8 +37,9 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		/// </summary>
 		Task DeleteAsync(int id);
 		/// <summary>
-		/// Xác thực TutorProfile
+		/// Cập nhật Status của TutorProfile (chỉ cho phép từ Approved sang Suspended hoặc Deactivated)
 		/// </summary>
+
 		Task<TutorProfileDto> VerifyAsync(int id, string verifiedBy);
 
 
@@ -45,6 +47,10 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task<IReadOnlyList<TutorProfileDto>> GetTutorsUpdatedAfterAsync(DateTime lastSync);
 
 		Task<int> SyncAllTutorsAsync();
+        Task<TutorProfileDto> UpdateStatusAsync(int id, TutorStatus status);
 
     }
+
+		
 }
+

@@ -94,8 +94,8 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (classRequest == null)
                 throw new KeyNotFoundException("Class request not found.");
 
-            if (!classRequest.LearnerEmail.Equals(learnerEmail, StringComparison.OrdinalIgnoreCase))
-                throw new UnauthorizedAccessException("You are not allowed to view applications for this class request.");
+            //if (!classRequest.LearnerEmail.Equals(learnerEmail, StringComparison.OrdinalIgnoreCase))
+            //    throw new UnauthorizedAccessException("You are not allowed to view applications for this class request.");
 
             var applications = await _repo.GetApplicationsByClassRequestAsync(classRequestId);
 

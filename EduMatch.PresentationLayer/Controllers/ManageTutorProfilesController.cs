@@ -71,7 +71,7 @@ namespace EduMatch.PresentationLayer.Controllers
             try
             {
                 // --- Fixed variable name ---
-                var profile = await _tutorProfileService.GetByEmailFullAsync(email);
+                var profile = await _manageTutorProfileService.GetByEmailAsync(email);
                 if (profile == null)
                     return NotFound(ApiResponse<TutorProfileDto>.Fail($"Tutor profile with email '{email}' not found."));
 

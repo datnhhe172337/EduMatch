@@ -1,6 +1,7 @@
 ﻿using DotNetEnv;
 using EduMatch.BusinessLogicLayer.BackgroundServices;
 using EduMatch.BusinessLogicLayer.Settings;
+using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.PresentationLayer.Configurations;
 using EduMatch.PresentationLayer.Hubs;
@@ -32,7 +33,11 @@ builder.Services.Configure<QdrantSettings>(
 
 // Background Service
 builder.Services.AddHostedService<ClassRequestExpireBackgroundService>();
+
 //builder.Services.AddHostedService<TutorSyncBackgroundService>();
+
+builder.Services.AddHostedService<BookingAutoCancelBackgroundService>();
+builder.Services.AddHostedService<ScheduleChangeRequestAutoCancelBackgroundService>();
 
 // Add services to the container.
 builder.Services.AddControllers()
@@ -59,7 +64,7 @@ builder.Services.AddSignalR();
 var app = builder.Build();
 
 app.MapHub<ChatHub>("/chatHub");
-
+app.MapHub<NotificationHub>("/notificationHub");
 // NHẬN header từ reverse proxy 
 app.UseForwardedHeaders(new ForwardedHeadersOptions {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto

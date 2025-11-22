@@ -45,6 +45,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<MeetingSessionDto?> GetByIdAsync(int id)
         {
+            if (id <= 0) throw new ArgumentException("ID must be greater than 0");
             var entity = await _meetingSessionRepository.GetByIdAsync(id);
             return entity == null ? null : _mapper.Map<MeetingSessionDto>(entity);
         }
@@ -54,6 +55,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<MeetingSessionDto?> GetByScheduleIdAsync(int scheduleId)
         {
+            if (scheduleId <= 0) throw new ArgumentException("ScheduleId must be greater than 0");
             var entity = await _meetingSessionRepository.GetByScheduleIdAsync(scheduleId);
             return entity == null ? null : _mapper.Map<MeetingSessionDto>(entity);
         }
@@ -303,6 +305,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task DeleteAsync(int id)
         {
+            if (id <= 0) throw new ArgumentException("ID must be greater than 0");
             var entity = await _meetingSessionRepository.GetByIdAsync(id);
             if (entity == null)
                 return;

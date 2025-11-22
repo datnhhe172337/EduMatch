@@ -53,8 +53,20 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// </summary>
         Task<BookingDto> UpdatePaymentStatusAsync(int id, PaymentStatus paymentStatus);
         /// <summary>
+        /// Thanh toán booking: khóa tiền từ ví học viên.
+        /// </summary>
+        Task<BookingDto> PayForBookingAsync(int bookingId, string learnerEmail);
+        /// <summary>
         /// Cập nhật Status của Booking
         /// </summary>
         Task<BookingDto> UpdateStatusAsync(int id, BookingStatus status);
+        /// <summary>
+        /// Hoàn tiền booking với tỷ lệ phần trăm dành cho học viên.
+        /// </summary>
+        Task<BookingDto> RefundBookingAsync(int bookingId, decimal learnerPercentage);
+        /// <summary>
+        /// Tự động hủy các booking Pending quá hạn xác nhận
+        /// </summary>
+        Task<int> AutoCancelUnconfirmedBookingsAsync();
     }
 }

@@ -28,6 +28,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly ITutorCertificateService _tutorCertificateService;
         private readonly ITutorSubjectService _tutorSubjectService;
         private readonly ITutorAvailabilityService _tutorAvailabilityService;
+		private readonly IManageTutorProfileRepository _manageTutorProfileRepo;
 
         public ManageTutorProfileService(
             // --- ADD ALL THESE TO YOUR CONSTRUCTOR ---
@@ -40,7 +41,8 @@ namespace EduMatch.BusinessLogicLayer.Services
             ITutorEducationService tutorEducationService,
             ITutorCertificateService tutorCertificateService,
             ITutorSubjectService tutorSubjectService,
-            ITutorAvailabilityService tutorAvailabilityService)
+            ITutorAvailabilityService tutorAvailabilityService,
+            IManageTutorProfileRepository manageTutorProfileRepo)
         {
             _tutorProfileRepo = tutorProfileRepo;
             _userRepo = userRepo;
@@ -52,6 +54,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             _tutorCertificateService = tutorCertificateService;
             _tutorSubjectService = tutorSubjectService;
             _tutorAvailabilityService = tutorAvailabilityService;
+            _manageTutorProfileRepo = manageTutorProfileRepo;
         }
 
         // --- HELPER METHODS ---
@@ -63,7 +66,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task<TutorProfileDto?> GetByEmailAsync(string email)
         {
-            var profile = await _tutorProfileRepo.GetByEmailFullAsync(email);
+            var profile = await _manageTutorProfileRepo.GetByEmailAsync(email);
             return _mapper.Map<TutorProfileDto>(profile);
         }
 

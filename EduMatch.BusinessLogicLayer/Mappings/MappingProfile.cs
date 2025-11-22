@@ -10,6 +10,8 @@ using EduMatch.BusinessLogicLayer.Requests.CertificateType;
 using EduMatch.BusinessLogicLayer.Requests.Level;
 using EduMatch.BusinessLogicLayer.Requests.Subject;
 using EduMatch.BusinessLogicLayer.Requests.TimeSlot;
+using EduMatch.BusinessLogicLayer.Requests.ScheduleChangeRequest;
+using EduMatch.BusinessLogicLayer.Requests.RefundRequestEvidence;
 
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
@@ -331,6 +333,24 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 				.ForMember(dest => dest.Status,
 					opt => opt.MapFrom(src => (BookingStatus)src.Status))
 				.ForMember(dest => dest.SystemFee, opt => opt.MapFrom(src => src.SystemFee != null ? src.SystemFee : null))
+				.ForMember(dest => dest.TutorSubject,
+					opt => opt.MapFrom(src => src.TutorSubject != null ? new TutorSubjectDto
+					{
+						Id = src.TutorSubject.Id,
+						TutorId = src.TutorSubject.TutorId,
+						TutorEmail = src.TutorSubject.Tutor.UserEmail ,
+						HourlyRate = src.TutorSubject.HourlyRate,
+						Subject = src.TutorSubject.Subject != null ? new SubjectDto
+						{
+							Id = src.TutorSubject.Subject.Id,
+							SubjectName = src.TutorSubject.Subject.SubjectName
+						} : null,
+						Level = src.TutorSubject.Level != null ? new LevelDto
+						{
+							Id = src.TutorSubject.Level.Id,
+							Name = src.TutorSubject.Level.Name
+						} : null
+					} : null))
 				.ForMember(dest => dest.Schedules,
 					opt => opt.MapFrom(src => src.Schedules != null ? src.Schedules.Select(s => new ScheduleDto
 					{
@@ -343,17 +363,9 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 						RefundedAt = s.RefundedAt,
 						CreatedAt = s.CreatedAt,
 						UpdatedAt = s.UpdatedAt,
-						MeetingSession = s.MeetingSession != null ? new MeetingSessionDto
-						{
-							Id = s.MeetingSession.Id,
-							MeetingType = (MeetingType)s.MeetingSession.MeetingType,
-							StartTime = s.MeetingSession.StartTime,
-							EndTime = s.MeetingSession.EndTime,
-							MeetCode = s.MeetingSession.MeetCode,
-							MeetLink = s.MeetingSession.MeetLink,
-							CreatedAt = s.MeetingSession.CreatedAt,
-							UpdatedAt = s.MeetingSession.UpdatedAt,
-						} : null
+						Availability = null,
+						HasMeetingSession = s.MeetingSession != null,
+						MeetingSession = null
 					}) : null));
 				
 
@@ -361,6 +373,28 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 			CreateMap<Schedule, ScheduleDto>()
 				.ForMember(dest => dest.Status,
 					opt => opt.MapFrom(src => (ScheduleStatus)src.Status))
+				.ForMember(dest => dest.Availability,
+					opt => opt.MapFrom(src => src.Availabiliti != null ? new TutorAvailabilityDto
+					{
+						Id = src.Availabiliti.Id,
+						TutorId = src.Availabiliti.TutorId,
+						SlotId = src.Availabiliti.SlotId,
+						StartDate = src.Availabiliti.StartDate,
+						EndDate = src.Availabiliti.EndDate ?? (src.Availabiliti.Slot != null 
+							? src.Availabiliti.StartDate.Date.Add(src.Availabiliti.Slot.EndTime.ToTimeSpan())
+							: src.Availabiliti.StartDate),
+						Status = (TutorAvailabilityStatus)src.Availabiliti.Status,
+						CreatedAt = src.Availabiliti.CreatedAt,
+						UpdatedAt = src.Availabiliti.UpdatedAt,
+						Slot = src.Availabiliti.Slot != null ? new TimeSlotDto
+						{
+							Id = src.Availabiliti.Slot.Id,
+							StartTime = src.Availabiliti.Slot.StartTime,
+							EndTime = src.Availabiliti.Slot.EndTime
+						} : null
+					} : null))
+				.ForMember(dest => dest.HasMeetingSession,
+					opt => opt.MapFrom(src => src.MeetingSession != null))
 				.ForMember(dest => dest.MeetingSession,
 					opt => opt.MapFrom(src => src.MeetingSession != null ? new MeetingSessionDto
 					{
@@ -384,18 +418,56 @@ namespace EduMatch.BusinessLogicLayer.Mappings
             // SystemFee -> SystemFeeDto
             CreateMap<SystemFee, SystemFeeDto>();
 
+            // RefundPolicy -> RefundPolicyDto
+            CreateMap<RefundPolicy, RefundPolicyDto>();
+
+            // BookingRefundRequest -> BookingRefundRequestDto
+            CreateMap<BookingRefundRequest, BookingRefundRequestDto>()
+                .ForMember(dest => dest.Status,
+                    opt => opt.MapFrom(src => (BookingRefundRequestStatus)src.Status))
+                .ForMember(dest => dest.Booking,
+                    opt => opt.MapFrom(src => src.Booking != null ? src.Booking : null))
+                .ForMember(dest => dest.RefundPolicy,
+                    opt => opt.MapFrom(src => src.RefundPolicy != null ? src.RefundPolicy : null))
+                .ForMember(dest => dest.Learner,
+                    opt => opt.MapFrom(src => src.LearnerEmailNavigation != null ? src.LearnerEmailNavigation : null))
+                .ForMember(dest => dest.RefundRequestEvidences,
+                    opt => opt.MapFrom(src => src.RefundRequestEvidences != null 
+                        ? src.RefundRequestEvidences.Select(e => new RefundRequestEvidenceDto
+                        {
+                            Id = e.Id,
+                            BookingRefundRequestId = e.BookingRefundRequestId,
+                            FileUrl = e.FileUrl,
+                            CreatedAt = e.CreatedAt,
+                            BookingRefundRequest = null
+                        }).ToList()
+                        : null));
+
+            // RefundRequestEvidence -> RefundRequestEvidenceDto
+            CreateMap<RefundRequestEvidence, RefundRequestEvidenceDto>()
+                .ForMember(dest => dest.BookingRefundRequest,
+                    opt => opt.MapFrom(src => src.BookingRefundRequest != null ? src.BookingRefundRequest : null));
+
+          
+
+            // TutorVerificationRequest -> TutorVerificationRequestDto
+            CreateMap<TutorVerificationRequest, TutorVerificationRequestDto>()
+                .ForMember(dest => dest.Status,
+                    opt => opt.MapFrom(src => (TutorVerificationRequestStatus)src.Status))
+                .ForMember(dest => dest.Tutor,
+                    opt => opt.MapFrom(src => src.Tutor != null ? src.Tutor : null));
 
 
 
 
 
 
-			// TutorSubject mappings
-			CreateMap<TutorSubject, TutorSubjectDto>().ReverseMap();
-			CreateMap<TutorSubjectCreateRequest, TutorSubject>();
-			CreateMap<TutorSubjectUpdateRequest, TutorSubject>();
 
-			
+            // TutorSubject mappings
+            CreateMap<TutorSubject, TutorSubjectDto>()
+                .ForMember(dest => dest.TutorEmail, opt => opt.MapFrom(src => src.Tutor.UserEmail));
+
+
 
 
 
@@ -425,10 +497,82 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 
 			// SubDistrict mappings
 			CreateMap<SubDistrict, SubDistrictDto>();
-		
 
 
-        
+            CreateMap<Notification, NotificationDto>();
+
+            // ScheduleChangeRequest mappings
+            CreateMap<ScheduleChangeRequest, ScheduleChangeRequestDto>()
+                .ForMember(dest => dest.Status,
+                    opt => opt.MapFrom(src => (ScheduleChangeRequestStatus)src.Status))
+                .ForMember(dest => dest.Schedule,
+                    opt => opt.MapFrom(src => src.Schedule != null ? new ScheduleDto
+                    {
+                        Id = src.Schedule.Id,
+                        AvailabilitiId = src.Schedule.AvailabilitiId,
+                        BookingId = src.Schedule.BookingId,
+                        Status = (ScheduleStatus)src.Schedule.Status,
+                        AttendanceNote = src.Schedule.AttendanceNote,
+                        IsRefunded = src.Schedule.IsRefunded,
+                        RefundedAt = src.Schedule.RefundedAt,
+                        CreatedAt = src.Schedule.CreatedAt,
+                        UpdatedAt = src.Schedule.UpdatedAt
+                    } : null))
+                .ForMember(dest => dest.OldAvailability,
+                    opt => opt.MapFrom(src => src.OldAvailabiliti != null ? new TutorAvailabilityDto
+                    {
+                        Id = src.OldAvailabiliti.Id,
+                        TutorId = src.OldAvailabiliti.TutorId,
+                        SlotId = src.OldAvailabiliti.SlotId,
+                        StartDate = src.OldAvailabiliti.StartDate,
+                        EndDate = src.OldAvailabiliti.EndDate,
+                        Status = (TutorAvailabilityStatus)src.OldAvailabiliti.Status,
+                        CreatedAt = src.OldAvailabiliti.CreatedAt,
+                        UpdatedAt = src.OldAvailabiliti.UpdatedAt,
+                        Slot = src.OldAvailabiliti.Slot != null ? new TimeSlotDto
+                        {
+                            Id = src.OldAvailabiliti.Slot.Id,
+                            StartTime = src.OldAvailabiliti.Slot.StartTime,
+                            EndTime = src.OldAvailabiliti.Slot.EndTime
+                        } : null
+                    } : null))
+                .ForMember(dest => dest.NewAvailability,
+                    opt => opt.MapFrom(src => src.NewAvailabiliti != null ? new TutorAvailabilityDto
+                    {
+                        Id = src.NewAvailabiliti.Id,
+                        TutorId = src.NewAvailabiliti.TutorId,
+                        SlotId = src.NewAvailabiliti.SlotId,
+                        StartDate = src.NewAvailabiliti.StartDate,
+                        EndDate = src.NewAvailabiliti.EndDate,
+                        Status = (TutorAvailabilityStatus)src.NewAvailabiliti.Status,
+                        CreatedAt = src.NewAvailabiliti.CreatedAt,
+                        UpdatedAt = src.NewAvailabiliti.UpdatedAt,
+                        Slot = src.NewAvailabiliti.Slot != null ? new TimeSlotDto
+                        {
+                            Id = src.NewAvailabiliti.Slot.Id,
+                            StartTime = src.NewAvailabiliti.Slot.StartTime,
+                            EndTime = src.NewAvailabiliti.Slot.EndTime
+                        } : null
+                    } : null));
+
+            // Report mappings
+            CreateMap<Report, ReportListItemDto>()
+                .ForMember(dest => dest.ReporterEmail, opt => opt.MapFrom(src => src.ReporterUserEmail))
+                .ForMember(dest => dest.ReporterName, opt => opt.MapFrom(src => src.ReporterUserEmailNavigation != null ? src.ReporterUserEmailNavigation.UserName : null))
+                .ForMember(dest => dest.ReporterAvatarUrl, opt => opt.MapFrom(src => src.ReporterUserEmailNavigation != null && src.ReporterUserEmailNavigation.UserProfile != null ? src.ReporterUserEmailNavigation.UserProfile.AvatarUrl : null))
+                .ForMember(dest => dest.ReportedUserName, opt => opt.MapFrom(src => src.ReportedUserEmailNavigation != null ? src.ReportedUserEmailNavigation.UserName : null))
+                .ForMember(dest => dest.ReportedAvatarUrl, opt => opt.MapFrom(src => src.ReportedUserEmailNavigation != null && src.ReportedUserEmailNavigation.UserProfile != null ? src.ReportedUserEmailNavigation.UserProfile.AvatarUrl : null))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (ReportStatus)src.Status));
+
+            CreateMap<Report, ReportDetailDto>()
+                .IncludeBase<Report, ReportListItemDto>();
+
+            CreateMap<ReportEvidence, ReportEvidenceDto>()
+                .ForMember(dest => dest.MediaType, opt => opt.MapFrom(src => (MediaType)src.MediaType))
+                .ForMember(dest => dest.EvidenceType, opt => opt.MapFrom(src => (ReportEvidenceType)src.EvidenceType));
+
+            CreateMap<ReportDefense, ReportDefenseDto>();
+
         }
     }
 }

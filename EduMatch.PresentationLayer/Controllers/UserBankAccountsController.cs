@@ -14,6 +14,9 @@ namespace EduMatch.PresentationLayer.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
+    /// <summary>
+    /// Handles CRUD operations for the authenticated user's saved bank accounts.
+    /// </summary>
     public class UserBankAccountsController : ControllerBase
     {
         private readonly IUserBankAccountService _accountService;
@@ -25,7 +28,9 @@ namespace EduMatch.PresentationLayer.Controllers
             _currentUserService = currentUserService;
         }
 
-        // GET: api/UserBankAccounts/my-accounts
+        /// <summary>
+        /// Returns all bank accounts linked to the current user.
+        /// </summary>
         [HttpGet("my-accounts")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<UserBankAccountDto>>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
@@ -47,7 +52,9 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
-        // POST: api/UserBankAccounts
+        /// <summary>
+        /// Adds a new bank account for the current user.
+        /// </summary>
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<UserBankAccountDto>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
@@ -70,7 +77,9 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
-        // DELETE: api/UserBankAccounts/5
+        /// <summary>
+        /// Removes the specified bank account if it belongs to the current user.
+        /// </summary>
         [HttpDelete("{id}")]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]

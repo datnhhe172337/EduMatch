@@ -11,6 +11,7 @@ using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Authorization;
 using System.ComponentModel.DataAnnotations;
 using EduMatch.BusinessLogicLayer.Constants;
+using EduMatch.BusinessLogicLayer.Services;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -21,15 +22,17 @@ namespace EduMatch.PresentationLayer.Controllers
 		private readonly IBookingService _bookingService;
 		private readonly IScheduleService _scheduleService;
 		private readonly EduMatchContext _context;
+		private readonly CurrentUserService _currentUserService;
 
 		/// <summary>
 		/// API Booking: lấy danh sách theo LearnerEmail/TutorId (có/không phân trang), lấy theo Id, tạo, cập nhật, cập nhật Status/PaymentStatus
 		/// </summary>
-		public BookingController(IBookingService bookingService, IScheduleService scheduleService, EduMatchContext context)
+		public BookingController(IBookingService bookingService, IScheduleService scheduleService, EduMatchContext context, CurrentUserService currentUserService)
 		{
 			_bookingService = bookingService;
 			_scheduleService = scheduleService;
 			_context = context;
+			_currentUserService = currentUserService;
 		}
 
 		/// <summary>
@@ -56,9 +59,37 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 		/// <summary>
+		/// Thanh toán booking: khóa tiền từ ví học viên.
+		/// </summary>
+		[Authorize(Roles = Roles.Learner)]
+		[HttpPost("{id:int}/pay")]
+		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		public async Task<IActionResult> PayForBooking(int id)
+		{
+			try
+			{
+				var learnerEmail = _currentUserService.Email;
+				if (string.IsNullOrWhiteSpace(learnerEmail))
+					return Unauthorized(ApiResponse<string>.Fail("User email not found in token."));
+
+				var booking = await _bookingService.PayForBookingAsync(id, learnerEmail);
+				return Ok(ApiResponse<BookingDto>.Ok(booking, "Booking payment processed successfully."));
+			}
+			catch (UnauthorizedAccessException)
+			{
+				return Forbid();
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail(ex.Message));
+			}
+		}
+
+		/// <summary>
 		/// Lấy danh sách Booking theo LearnerEmail có phân trang và lọc theo Status, TutorSubjectId
 		/// </summary>
-		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Learner)]
 		[HttpGet("get-all-by-learner-email-paging")]
 		[ProducesResponseType(typeof(ApiResponse<PagedResult<BookingDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -103,7 +134,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Lấy danh sách Booking theo LearnerEmail (không phân trang) và lọc theo Status, TutorSubjectId
 		/// </summary>
-		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
+		[Authorize (Roles = Roles.BusinessAdmin + "," +  Roles.Learner)]
 		[HttpGet("get-all-by-learner-email-no-paging")]
 		[ProducesResponseType(typeof(ApiResponse<IEnumerable<BookingDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -211,7 +242,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Tạo Booking mới và tính phí hệ thống theo SystemFee đang hoạt động. Tự động lấy SystemFee có Id nhỏ nhất đang hoạt động.
 		/// Sau khi tạo Booking thành công, lấy ID của Booking để tạo Schedule. BookingId trong request Schedule có thể truyền bất kỳ số nào > 0, sẽ được ghi đè bằng ID của Booking vừa tạo.
 		/// </summary>
-		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
+		[Authorize (Roles = Roles.BusinessAdmin + ","  + Roles.Learner)]
 		[HttpPost("create-booking")]
 		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -257,7 +288,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Cập nhật Booking và tính lại các giá trị liên quan khi thay đổi (TotalSessions, TutorSubjectId). Nếu thay đổi TotalSessions sẽ tính lại SystemFeeAmount
 		/// </summary>
-		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
+		[Authorize (Roles = Roles.BusinessAdmin +  "," + Roles.Learner)]
 		[HttpPut("update-booking")]
 		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -311,7 +342,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Cập nhật Status của Booking theo Id
 		/// </summary>
-		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner )]
 		[HttpPut("update-status/{id:int}")]
 		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]

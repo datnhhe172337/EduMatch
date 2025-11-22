@@ -7,8 +7,8 @@ namespace EduMatch.BusinessLogicLayer.DTOs
 	{
 		public int Id { get; set; }
 
-		[JsonIgnore]
 		public int TutorId { get; set; }
+		public string TutorEmail { get; set; }
 		[JsonIgnore]
 		public int SubjectId { get; set; }
 		public decimal? HourlyRate { get; set; }

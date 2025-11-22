@@ -23,6 +23,9 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IMeetingSessionRepository _meetingSessionRepository;
         private readonly ITutorAvailabilityRepository _tutorAvailabilityRepository;
         private readonly IGoogleCalendarService _googleCalendarService;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly INotificationService _notificationService;
+        private const string SystemWalletEmail = "system@edumatch.com";
 
         public BookingService(
             IBookingRepository bookingRepository,
@@ -33,7 +36,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             IScheduleRepository scheduleRepository,
             IMeetingSessionRepository meetingSessionRepository,
             ITutorAvailabilityRepository tutorAvailabilityRepository,
-            IGoogleCalendarService googleCalendarService)
+            IGoogleCalendarService googleCalendarService,
+            IUnitOfWork unitOfWork,
+            INotificationService notificationService)
         {
             _bookingRepository = bookingRepository;
             _tutorSubjectRepository = tutorSubjectRepository;
@@ -44,6 +49,8 @@ namespace EduMatch.BusinessLogicLayer.Services
             _meetingSessionRepository = meetingSessionRepository;
             _tutorAvailabilityRepository = tutorAvailabilityRepository;
             _googleCalendarService = googleCalendarService;
+            _unitOfWork = unitOfWork;
+            _notificationService = notificationService;
         }
 
         /// <summary>
@@ -177,6 +184,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             // TotalAmount giữ nguyên giá gốc
             var totalAmount = baseAmount;
 
+            // Calculate TutorReceiveAmount (số tiền tutor nhận được sau khi trừ phí hệ thống)
+            var tutorReceiveAmount = totalAmount - systemFeeAmount;
+
             // Create Booking entity
             var entity = new Booking
             {
@@ -191,6 +201,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 Status = (int)BookingStatus.Pending,
                 SystemFeeId = activeSystemFee.Id,
                 SystemFeeAmount = systemFeeAmount,
+                TutorReceiveAmount = tutorReceiveAmount,
                 CreatedAt = now,
                 UpdatedAt = null
             };
@@ -215,6 +226,8 @@ namespace EduMatch.BusinessLogicLayer.Services
                 entity.LearnerEmail = request.LearnerEmail;
             }
 
+            bool needRecalculate = false;
+
             if (request.TutorSubjectId.HasValue)
             {
                 var tutorSubject = await _tutorSubjectRepository.GetByIdFullAsync(request.TutorSubjectId.Value)
@@ -224,6 +237,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (tutorSubject.HourlyRate.HasValue && tutorSubject.HourlyRate.Value > 0)
                 {
                     entity.UnitPrice = tutorSubject.HourlyRate.Value;
+                    needRecalculate = true;
                 }
             }
 
@@ -231,7 +245,12 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (request.TotalSessions.HasValue && request.TotalSessions.Value > 0)
             {
                 entity.TotalSessions = request.TotalSessions.Value;
-                
+                needRecalculate = true;
+            }
+
+            // Recalculate amounts if needed
+            if (needRecalculate)
+            {
                 // Recalculate baseAmount and SystemFeeAmount
                 var baseAmount = entity.UnitPrice * entity.TotalSessions;
                 
@@ -253,6 +272,8 @@ namespace EduMatch.BusinessLogicLayer.Services
                 entity.SystemFeeAmount = systemFeeAmount;
                 // TotalAmount giữ nguyên giá gốc, không cộng phí
                 entity.TotalAmount = baseAmount;
+                // Recalculate TutorReceiveAmount
+                entity.TutorReceiveAmount = baseAmount - systemFeeAmount;
             }
             
             entity.UpdatedAt = DateTime.UtcNow;
@@ -270,17 +291,289 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
-        /// Cập nhật PaymentStatus của Booking
+        /// Cập nhật PaymentStatus của Booking (chỉ cho phép cập nhật theo thứ tự tăng dần)
         /// </summary>
         public async Task<BookingDto> UpdatePaymentStatusAsync(int id, PaymentStatus paymentStatus)
         {
             var entity = await _bookingRepository.GetByIdAsync(id)
                 ?? throw new Exception("Booking không tồn tại");
 
+            var currentStatus = (PaymentStatus)entity.PaymentStatus;
+            var newStatus = paymentStatus;
+
+            // Validate: Chỉ cho phép cập nhật theo thứ tự tăng dần
+            // Pending (0) -> Paid (1) -> RefundPending (2) -> Refunded (3)
+            if (newStatus <= currentStatus)
+                throw new Exception($"Không thể cập nhật PaymentStatus từ {currentStatus} về {newStatus}. Chỉ được phép cập nhật theo thứ tự tăng dần.");
+
+            // Validate: Không cho phép nhảy bước (ví dụ: Pending -> RefundPending)
+            if (currentStatus == PaymentStatus.Pending && newStatus != PaymentStatus.Paid)
+                throw new Exception("Từ trạng thái Pending chỉ có thể chuyển sang Paid");
+
+            if (currentStatus == PaymentStatus.Paid && newStatus != PaymentStatus.RefundPending)
+                throw new Exception("Từ trạng thái Paid chỉ có thể chuyển sang RefundPending");
+
+            if (currentStatus == PaymentStatus.RefundPending && newStatus != PaymentStatus.Refunded)
+                throw new Exception("Từ trạng thái RefundPending chỉ có thể chuyển sang Refunded");
+
+            if (currentStatus == PaymentStatus.Refunded)
+                throw new Exception("Không thể cập nhật PaymentStatus khi đã ở trạng thái Refunded");
+
             entity.PaymentStatus = (int)paymentStatus;
             entity.UpdatedAt = DateTime.UtcNow;
             await _bookingRepository.UpdateAsync(entity);
             return _mapper.Map<BookingDto>(entity);
+        }
+
+        /// <summary>
+        /// Thanh toán booking: trừ số dư ví học viên, khóa tiền và ghi nhận vào hệ thống.
+        /// </summary>
+        public async Task<BookingDto> PayForBookingAsync(int bookingId, string learnerEmail)
+        {
+            if (string.IsNullOrWhiteSpace(learnerEmail))
+                throw new ArgumentException("Learner email is required.", nameof(learnerEmail));
+
+            var booking = await _bookingRepository.GetByIdAsync(bookingId)
+                ?? throw new Exception("Booking không tồn tại");
+
+            if (!booking.LearnerEmail.Equals(learnerEmail, StringComparison.OrdinalIgnoreCase))
+                throw new UnauthorizedAccessException("Bạn không thể thanh toán booking này.");
+
+            if (booking.Status == (int)BookingStatus.Cancelled)
+                throw new InvalidOperationException("Booking đã bị hủy.");
+
+            if (booking.PaymentStatus == (int)PaymentStatus.Paid)
+                throw new InvalidOperationException("Booking đã được thanh toán.");
+
+            var amountToPay = booking.TotalAmount - booking.RefundedAmount;
+            if (amountToPay <= 0)
+                throw new InvalidOperationException("Không có số tiền cần thanh toán.");
+
+            var learnerWallet = await GetOrCreateWalletAsync(booking.LearnerEmail);
+
+            if (learnerWallet.Balance < amountToPay)
+                throw new InvalidOperationException("Số dư ví không đủ để thanh toán booking.");
+
+            var now = DateTime.UtcNow;
+            var learnerBalanceBefore = learnerWallet.Balance;
+
+            learnerWallet.Balance -= amountToPay;
+            learnerWallet.LockedBalance += amountToPay;
+            learnerWallet.UpdatedAt = now;
+            _unitOfWork.Wallets.Update(learnerWallet);
+
+            var referenceCode = $"BOOKING_PAYMENT_{booking.Id}";
+
+            var learnerTransaction = new WalletTransaction
+            {
+                WalletId = learnerWallet.Id,
+                Amount = amountToPay,
+                TransactionType = WalletTransactionType.Debit,
+                Reason = WalletTransactionReason.BookingPayment,
+                Status = TransactionStatus.Pending,
+                BalanceBefore = learnerBalanceBefore,
+                BalanceAfter = learnerWallet.Balance,
+                CreatedAt = now,
+                ReferenceCode = referenceCode,
+                BookingId = booking.Id
+            };
+            await _unitOfWork.WalletTransactions.AddAsync(learnerTransaction);
+
+            var systemWallet = await GetOrCreateWalletAsync(SystemWalletEmail);
+
+            var systemBalanceBefore = systemWallet.Balance;
+            systemWallet.LockedBalance += amountToPay;
+            systemWallet.UpdatedAt = now;
+            _unitOfWork.Wallets.Update(systemWallet);
+
+            var systemTransaction = new WalletTransaction
+            {
+                WalletId = systemWallet.Id,
+                Amount = amountToPay,
+                TransactionType = WalletTransactionType.Credit,
+                Reason = WalletTransactionReason.BookingPayment,
+                Status = TransactionStatus.Pending,
+                BalanceBefore = systemBalanceBefore,
+                BalanceAfter = systemWallet.Balance,
+                CreatedAt = now,
+                ReferenceCode = referenceCode,
+                BookingId = booking.Id
+            };
+            await _unitOfWork.WalletTransactions.AddAsync(systemTransaction);
+
+            await _unitOfWork.CompleteAsync();
+
+            booking.PaymentStatus = (int)PaymentStatus.Paid;
+            booking.UpdatedAt = now;
+            await _bookingRepository.UpdateAsync(booking);
+
+            await _notificationService.CreateNotificationAsync(
+                booking.LearnerEmail,
+                $"Bạn đã thanh toán booking #{booking.Id}. Số tiền {amountToPay:N0} VND đã được khóa và chờ hoàn tất buổi học.",
+                "/wallet/my-wallet");
+
+            return _mapper.Map<BookingDto>(booking);
+        }
+
+        /// <summary>
+        /// Hoàn tiền booking theo tỷ lệ và chuyển phần còn lại cho gia sư sau khi trừ phí hệ thống.
+        /// </summary>
+        public async Task<BookingDto> RefundBookingAsync(int bookingId, decimal learnerPercentage)
+        {
+            if (bookingId <= 0)
+                throw new ArgumentException("BookingId must be greater than 0.");
+            if (learnerPercentage < 0 || learnerPercentage > 100)
+                throw new ArgumentOutOfRangeException(nameof(learnerPercentage), "Learner percentage must be between 0 and 100.");
+
+            var booking = await _bookingRepository.GetByIdAsync(bookingId)
+                ?? throw new Exception("Booking không tồn tại");
+            var tutorEmail = booking.TutorSubject?.Tutor?.UserEmail;
+
+            if (booking.PaymentStatus != (int)PaymentStatus.Paid &&
+                booking.PaymentStatus != (int)PaymentStatus.RefundPending)
+                throw new InvalidOperationException("Chỉ có thể hoàn tiền cho booking đã thanh toán hoặc đang chờ hoàn.");
+
+            var amountToProcess = booking.TotalAmount - booking.RefundedAmount;
+            if (amountToProcess <= 0)
+                throw new InvalidOperationException("Booking đã được xử lý hoàn tiền trước đó.");
+
+            var now = DateTime.UtcNow;
+            var learnerWallet = await GetOrCreateWalletAsync(booking.LearnerEmail);
+            if (learnerWallet.LockedBalance < amountToProcess)
+                throw new InvalidOperationException("Số dư bị khóa của học viên không đủ để hoàn tiền.");
+
+            learnerWallet.LockedBalance -= amountToProcess;
+
+            var systemWallet = await GetOrCreateWalletAsync(SystemWalletEmail);
+            if (systemWallet.LockedBalance < amountToProcess)
+                throw new InvalidOperationException("Số dư khóa của hệ thống không hợp lệ.");
+            systemWallet.LockedBalance -= amountToProcess;
+
+            decimal learnerAmount;
+            decimal tutorAmount = 0;
+            decimal platformFeePortion = 0;
+
+            if (learnerPercentage >= 100m)
+            {
+                learnerAmount = amountToProcess;
+            }
+            else
+            {
+                platformFeePortion = Math.Min(booking.SystemFeeAmount, amountToProcess);
+                var distributable = Math.Max(amountToProcess - platformFeePortion, 0);
+                var learnerRatio = learnerPercentage / 100m;
+
+                learnerAmount = decimal.Round(distributable * learnerRatio, 2, MidpointRounding.AwayFromZero);
+                tutorAmount = distributable - learnerAmount;
+                if (tutorAmount < 0)
+                {
+                    tutorAmount = 0;
+                }
+            }
+
+            var learnerBalanceBefore = learnerWallet.Balance;
+            if (learnerAmount > 0)
+            {
+                learnerWallet.Balance += learnerAmount;
+            }
+            learnerWallet.UpdatedAt = now;
+            _unitOfWork.Wallets.Update(learnerWallet);
+
+            if (learnerAmount > 0)
+            {
+                await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
+                {
+                    WalletId = learnerWallet.Id,
+                    Amount = learnerAmount,
+                    TransactionType = WalletTransactionType.Credit,
+                    Reason = WalletTransactionReason.BookingRefund,
+                    Status = TransactionStatus.Completed,
+                    BalanceBefore = learnerBalanceBefore,
+                    BalanceAfter = learnerWallet.Balance,
+                    CreatedAt = now,
+                    ReferenceCode = $"BOOKING_REFUND_{booking.Id}"
+                });
+            }
+
+            if (platformFeePortion > 0)
+            {
+                var systemBalanceBefore = systemWallet.Balance;
+                systemWallet.Balance += platformFeePortion;
+                systemWallet.UpdatedAt = now;
+
+                await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
+                {
+                    WalletId = systemWallet.Id,
+                    Amount = platformFeePortion,
+                    TransactionType = WalletTransactionType.Credit,
+                    Reason = WalletTransactionReason.PlatformFee,
+                    Status = TransactionStatus.Completed,
+                    BalanceBefore = systemBalanceBefore,
+                    BalanceAfter = systemWallet.Balance,
+                    CreatedAt = now,
+                    ReferenceCode = $"BOOKING_PLATFORM_FEE_{booking.Id}"
+                });
+            }
+            else
+            {
+                systemWallet.UpdatedAt = now;
+            }
+            _unitOfWork.Wallets.Update(systemWallet);
+
+            if (tutorAmount > 0)
+            {
+                if (string.IsNullOrWhiteSpace(tutorEmail))
+                    throw new InvalidOperationException("Không tìm thấy email gia sư để chi trả.");
+
+                var tutorWallet = await GetOrCreateWalletAsync(tutorEmail);
+                var tutorBalanceBefore = tutorWallet.Balance;
+                tutorWallet.Balance += tutorAmount;
+                tutorWallet.UpdatedAt = now;
+                _unitOfWork.Wallets.Update(tutorWallet);
+
+                await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
+                {
+                    WalletId = tutorWallet.Id,
+                    Amount = tutorAmount,
+                    TransactionType = WalletTransactionType.Credit,
+                    Reason = WalletTransactionReason.BookingPayout,
+                    Status = TransactionStatus.Completed,
+                    BalanceBefore = tutorBalanceBefore,
+                    BalanceAfter = tutorWallet.Balance,
+                    CreatedAt = now,
+                    ReferenceCode = $"BOOKING_PAYOUT_{booking.Id}"
+                });
+            }
+
+            await _unitOfWork.CompleteAsync();
+
+            booking.RefundedAmount += learnerAmount;
+            booking.TutorReceiveAmount = tutorAmount;
+            booking.PaymentStatus = booking.RefundedAmount >= booking.TotalAmount
+                ? (int)PaymentStatus.Refunded
+                : (int)PaymentStatus.RefundPending;
+            booking.Status = (int)BookingStatus.Cancelled;
+            booking.UpdatedAt = now;
+
+            await _bookingRepository.UpdateAsync(booking);
+
+            if (learnerAmount > 0)
+            {
+                await _notificationService.CreateNotificationAsync(
+                    booking.LearnerEmail,
+                    $"Booking #{booking.Id} đã được hoàn {learnerAmount:N0} VND về ví của bạn.",
+                    "/wallet/my-wallet");
+            }
+
+            if (tutorAmount > 0 && !string.IsNullOrWhiteSpace(tutorEmail))
+            {
+                await _notificationService.CreateNotificationAsync(
+                    tutorEmail,
+                    $"Bạn đã nhận {tutorAmount:N0} VND từ booking #{booking.Id} sau khi xử lý hoàn tiền.",
+                    "/wallet/my-wallet");
+            }
+
+            return _mapper.Map<BookingDto>(booking);
         }
 
         /// <summary>
@@ -291,6 +584,24 @@ namespace EduMatch.BusinessLogicLayer.Services
             var entity = await _bookingRepository.GetByIdAsync(id)
                 ?? throw new Exception("Booking không tồn tại");
 
+            var currentStatus = (BookingStatus)entity.Status;
+            var newStatus = status;
+
+            // Validate: Không cho phép cập nhật khi đã ở trạng thái Completed hoặc Cancelled
+            if (currentStatus == BookingStatus.Completed)
+                throw new Exception("Không thể cập nhật Status khi đã ở trạng thái Completed");
+
+            if (currentStatus == BookingStatus.Cancelled)
+                throw new Exception("Không thể cập nhật Status khi đã ở trạng thái Cancelled");
+
+            // Validate: Không cho phép nhảy bước từ Pending sang Completed
+            if (currentStatus == BookingStatus.Pending && newStatus == BookingStatus.Completed)
+                throw new Exception("Không thể cập nhật Status từ Pending sang Completed. Phải chuyển sang Confirmed trước.");
+
+            // Validate: Trạng thái mới phải lớn hơn trạng thái hiện tại
+            if (newStatus <= currentStatus)
+                throw new Exception($"Không thể cập nhật Status từ {currentStatus} về {newStatus}. Trạng thái mới phải lớn hơn trạng thái hiện tại.");
+
             entity.Status = (int)status;
             entity.UpdatedAt = DateTime.UtcNow;
             await _bookingRepository.UpdateAsync(entity);
@@ -299,10 +610,59 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (status == BookingStatus.Cancelled)
             {
                 await CancelAllSchedulesByBookingAsync(id);
+
+                // Gửi notification báo đơn hàng đã hủy cho learner TRƯỚC
+                await _notificationService.CreateNotificationAsync(
+                    entity.LearnerEmail,
+                    $"Đơn hàng booking #{entity.Id} đã được hủy.",
+                    "/bookings");
+
+                // Gửi notification báo đơn hàng đã hủy cho tutor TRƯỚC
+                var tutorSubject = await _tutorSubjectRepository.GetByIdFullAsync(entity.TutorSubjectId);
+                if (tutorSubject?.Tutor?.UserEmail != null)
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        tutorSubject.Tutor.UserEmail,
+                        $"Đơn hàng booking #{entity.Id} đã được hủy.",
+                        "/bookings");
+                }
+                
+                // Sau đó mới thực hiện hoàn tiền nếu chuyển từ Pending sang Cancelled và PaymentStatus là Paid
+                if (currentStatus == BookingStatus.Pending && entity.PaymentStatus == (int)PaymentStatus.Paid)
+                {
+                    await RefundBookingAsync(id, 100);
+                }
             }
 
             return _mapper.Map<BookingDto>(entity);
         }
+
+		/// <summary>
+		/// Tự động hủy các booking Pending nếu quá 3 ngày chưa xác nhận hoặc lịch học sắp diễn ra
+		/// </summary>
+		public async Task<int> AutoCancelUnconfirmedBookingsAsync()
+		{
+			var serverNow = DateTime.Now;
+			var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+			var vietnamNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTimeZone);
+
+			var createdThreshold = serverNow.AddDays(-3);
+			var scheduleThreshold = vietnamNow.AddHours(1);
+
+			var pendingBookings = await _bookingRepository.GetPendingBookingsNeedingAutoCancelAsync(createdThreshold, scheduleThreshold);
+			int cancelledCount = 0;
+
+			foreach (var booking in pendingBookings)
+			{
+				if (booking.Status != (int)BookingStatus.Pending)
+					continue;
+
+				await UpdateStatusAsync(booking.Id, BookingStatus.Cancelled);
+				cancelledCount++;
+			}
+
+			return cancelledCount;
+		}
 
         /// <summary>
         /// Hủy toàn bộ Schedule theo bookingId: set Status=Cancelled, xóa MeetingSession (bao gồm Google Calendar event), trả Availability về Available
@@ -345,6 +705,27 @@ namespace EduMatch.BusinessLogicLayer.Services
                     await _tutorAvailabilityRepository.UpdateAsync(availability);
                 }
             }
+        }
+
+        private async Task<Wallet> GetOrCreateWalletAsync(string userEmail)
+        {
+            var wallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(userEmail);
+            if (wallet != null)
+            {
+                return wallet;
+            }
+
+            var newWallet = new Wallet
+            {
+                UserEmail = userEmail,
+                Balance = 0,
+                LockedBalance = 0,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _unitOfWork.Wallets.AddAsync(newWallet);
+            await _unitOfWork.CompleteAsync();
+            return newWallet;
         }
     }
 }
