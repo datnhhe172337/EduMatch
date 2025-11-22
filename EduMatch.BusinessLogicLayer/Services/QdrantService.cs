@@ -27,7 +27,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public QdrantService(IEmbeddingService embeddingService, IOptions<QdrantSettings> options)
         {
-            _client = new QdrantClient("localhost", 6334);
+            _client = new QdrantClient(
+                host: options.Value.Host,
+                https: true,
+                apiKey: options.Value.ApiKey      
+            );
             _embeddingService = embeddingService;
         }
 
