@@ -375,6 +375,94 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
+        /// <summary>
+        /// Tutor or admin adds a defense with optional evidences.
+        /// </summary>
+        [Authorize(Roles = Roles.Tutor + "," + Roles.BusinessAdmin + "," + Roles.SystemAdmin)]
+        [HttpPost("{id:int}/defenses")]
+        public async Task<IActionResult> AddDefenseAsync(int id, [FromBody] ReportDefenseCreateRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ApiResponse<string>.Fail("Invalid request payload.", ModelState));
+
+            var userEmail = _currentUserService.Email;
+            if (string.IsNullOrWhiteSpace(userEmail))
+                return Unauthorized(ApiResponse<string>.Fail("User email not found in token."));
+
+            var isAdmin = User.IsInRole(Roles.BusinessAdmin) || User.IsInRole(Roles.SystemAdmin);
+
+            try
+            {
+                var result = await _reportService.AddDefenseAsync(id, request, userEmail, isAdmin);
+                return Ok(ApiResponse<ReportDefenseDto>.Ok(result, "Defense added successfully."));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Lists defenses for a report (admin or involved users).
+        /// </summary>
+        [Authorize(Roles = Roles.Learner + "," + Roles.Tutor + "," + Roles.BusinessAdmin + "," + Roles.SystemAdmin)]
+        [HttpGet("{id:int}/defenses")]
+        public async Task<IActionResult> GetDefensesAsync(int id)
+        {
+            var userEmail = _currentUserService.Email;
+            var isAdmin = User.IsInRole(Roles.BusinessAdmin) || User.IsInRole(Roles.SystemAdmin);
+
+            try
+            {
+                var result = await _reportService.GetDefensesAsync(id, userEmail, isAdmin);
+                return Ok(ApiResponse<IReadOnlyList<ReportDefenseDto>>.Ok(result, "Defenses retrieved successfully."));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Gets full report detail including defenses and evidences.
+        /// </summary>
+        [Authorize]
+        [HttpGet("{id:int}/full")]
+        public async Task<IActionResult> GetFullReportAsync(int id)
+        {
+            var requesterEmail = _currentUserService.Email;
+            var isAdmin = User.IsInRole(Roles.BusinessAdmin) || User.IsInRole(Roles.SystemAdmin);
+
+            try
+            {
+                var report = await _reportService.GetFullReportDetailAsync(id, requesterEmail, isAdmin);
+                if (report == null)
+                    return NotFound(ApiResponse<string>.Fail("Report not found."));
+
+                return Ok(ApiResponse<ReportFullDetailDto>.Ok(report));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+        }
+
         ///// <summary>
         ///// Permanently deletes a report (admin only).
         ///// </summary>
