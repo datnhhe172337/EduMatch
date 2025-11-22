@@ -79,6 +79,21 @@ namespace EduMatch.BusinessLogicLayer.Services
             var tutorMessage = $"Bạn vừa nhận được một báo cáo mới từ {reporterName}. Lý do: {report.Reason}. Bạn có 2 ngày để gửi giải trình trước khi quản trị viên xem xét.";
             await _notificationService.CreateNotificationAsync(reported.Email, tutorMessage);
 
+            if (request.Evidences != null && request.Evidences.Count > 0)
+            {
+                foreach (var ev in request.Evidences)
+                {
+                    await AddEvidenceAsync(created.Id, new ReportEvidenceCreateRequest
+                    {
+                        MediaType = ev.MediaType,
+                        FileUrl = ev.FileUrl,
+                        FilePublicId = ev.FilePublicId,
+                        Caption = ev.Caption,
+                        EvidenceType = ReportEvidenceType.ReporterEvidence
+                    }, reporterEmail, true);
+                }
+            }
+
             return _mapper.Map<ReportDetailDto>(created);
         }
 
@@ -131,35 +146,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             var reports = await _reportRepository.GetByReporterAsync(reporterEmail.Trim());
             return _mapper.Map<IReadOnlyList<ReportListItemDto>>(reports);
-        }
-
-        public async Task<ReportDetailDto> SubmitTutorComplaintAsync(int reportId, TutorComplaintRequest request, string tutorEmail)
-        {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
-            if (string.IsNullOrWhiteSpace(tutorEmail))
-                throw new ArgumentException("Email gia sư là bắt buộc.", nameof(tutorEmail));
-
-            var report = await _reportRepository.GetByIdAsync(reportId)
-                ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
-
-            if (!tutorEmail.Trim().Equals(report.ReportedUserEmail, StringComparison.OrdinalIgnoreCase))
-                throw new UnauthorizedAccessException("Bạn không thể phản hồi báo cáo này.");
-
-            if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
-                throw new InvalidOperationException("Báo cáo đã được xử lý, không thể gửi giải trình.");
-
-            if (DateTime.UtcNow > report.CreatedAt.AddDays(2))
-                throw new InvalidOperationException("Đã quá hạn 2 ngày để gửi giải trình.");
-
-            report.TutorDefenseNote = request.DefenseNote.Trim();
-            report.UpdatedAt = DateTime.UtcNow;
-
-            var updated = await _reportRepository.UpdateAsync(report);
-
-            await NotifyReporterStatusChangeAsync(report);
-
-            return _mapper.Map<ReportDetailDto>(updated);
         }
 
         public async Task<ReportDetailDto> UpdateReportAsync(int reportId, ReportUpdateRequest request, string adminEmail)
