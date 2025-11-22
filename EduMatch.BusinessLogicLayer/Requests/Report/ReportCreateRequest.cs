@@ -11,5 +11,7 @@ namespace EduMatch.BusinessLogicLayer.Requests.Report
         [Required]
         [StringLength(1000, MinimumLength = 10)]
         public string Reason { get; set; } = string.Empty;
+
+        public List<BasicEvidenceRequest>? Evidences { get; set; }
     }
 }

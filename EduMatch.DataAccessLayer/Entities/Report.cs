@@ -27,6 +27,10 @@ public partial class Report
 
     public virtual User? HandledByAdminEmailNavigation { get; set; }
 
+    public virtual ICollection<ReportDefense> ReportDefenses { get; set; } = new List<ReportDefense>();
+
+    public virtual ICollection<ReportEvidence> ReportEvidences { get; set; } = new List<ReportEvidence>();
+
     public virtual User ReportedUserEmailNavigation { get; set; } = null!;
 
     public virtual User ReporterUserEmailNavigation { get; set; } = null!;
