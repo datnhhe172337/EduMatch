@@ -32,7 +32,7 @@ builder.Services.Configure<QdrantSettings>(
 
 // Background Service
 builder.Services.AddHostedService<ClassRequestExpireBackgroundService>();
-builder.Services.AddHostedService<TutorSyncBackgroundService>();
+//builder.Services.AddHostedService<TutorSyncBackgroundService>();
 
 // Add services to the container.
 builder.Services.AddControllers()

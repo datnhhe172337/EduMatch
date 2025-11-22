@@ -23,9 +23,13 @@ public partial class User
 
     public int RoleId { get; set; }
 
+    public virtual ICollection<BookingRefundRequest> BookingRefundRequests { get; set; } = new List<BookingRefundRequest>();
+
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
     public virtual ICollection<ChatRoom> ChatRooms { get; set; } = new List<ChatRoom>();
+
+    public virtual ICollection<ChatSession> ChatSessions { get; set; } = new List<ChatSession>();
 
     public virtual ICollection<ClassRequest> ClassRequests { get; set; } = new List<ClassRequest>();
 
@@ -42,6 +46,10 @@ public partial class User
     public virtual ICollection<Report> ReportReporterUserEmailNavigations { get; set; } = new List<Report>();
 
     public virtual Role Role { get; set; } = null!;
+
+    public virtual ICollection<ScheduleChangeRequest> ScheduleChangeRequestRequestedToEmailNavigations { get; set; } = new List<ScheduleChangeRequest>();
+
+    public virtual ICollection<ScheduleChangeRequest> ScheduleChangeRequestRequesterEmailNavigations { get; set; } = new List<ScheduleChangeRequest>();
 
     public virtual TutorProfile? TutorProfile { get; set; }
 

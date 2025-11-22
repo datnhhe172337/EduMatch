@@ -26,6 +26,7 @@ public class TutorProfileServiceTests
 	private Mock<ICloudMediaService> _cloudMediaServiceMock;
 	private Mock<IUserService> _userServiceMock;
 	private Mock<IUserProfileService> _userProfileServiceMock;
+	private Mock<IQdrantService> _iqdrantServiceMock;
 	private IMapper _mapper;
 	private CurrentUserService _currentUserService;
 	private TutorProfileService _service;
@@ -40,6 +41,7 @@ public class TutorProfileServiceTests
 		_cloudMediaServiceMock = new Mock<ICloudMediaService>();
 		_userServiceMock = new Mock<IUserService>();
 		_userProfileServiceMock = new Mock<IUserProfileService>();
+		_iqdrantServiceMock = new Mock<IQdrantService>();
 
 		var config = new MapperConfiguration(cfg =>
 		{
@@ -55,7 +57,9 @@ public class TutorProfileServiceTests
 			_cloudMediaServiceMock.Object,
 			_currentUserService,
 			_userServiceMock.Object,
-			_userProfileServiceMock.Object
+			_userProfileServiceMock.Object,
+			_iqdrantServiceMock.Object
+			
 		);
 	}
 

@@ -38,8 +38,8 @@ namespace EduMatch.PresentationLayer.Controllers
                 // Step 1: Embedding
                 var embeddingVector = await _embedding.GenerateEmbeddingAsync(req.Message);
 
-                if (embeddingVector == null || embeddingVector.Length != 768)
-                    throw new InvalidOperationException("Embedding vector is null or has invalid length.");
+                //if (embeddingVector == null || embeddingVector.Length != 768)
+                //    throw new InvalidOperationException("Embedding vector is null or has invalid length.");
 
                 // Step 2: Vector search (Semantic search) - Qdrant
                 var topTutors = await _qdrantService.SearchTutorsAsync(embeddingVector, topK: 5);
@@ -68,6 +68,24 @@ namespace EduMatch.PresentationLayer.Controllers
             } 
             catch(InvalidOperationException ex) { throw new Exception(ex.Message); }
             
+        }
+
+        [HttpPost("testCallLLM")]
+        public async Task<IActionResult> TestCallLLMAsync([FromBody] ChatRequestDto req)
+        {
+            if (string.IsNullOrWhiteSpace(req.Message))
+                return BadRequest("Message is required");
+
+            try
+            {
+                // Step 5: Call LLM - Gemini
+                var response = await _gemini.GenerateTextAsync(req.Message);
+
+                var resp = new ChatResponseDto { Reply = response };
+                return Ok(resp);
+            }
+            catch (InvalidOperationException ex) { throw new Exception(ex.Message); }
+
         }
 
 

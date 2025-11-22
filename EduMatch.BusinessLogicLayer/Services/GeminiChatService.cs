@@ -11,6 +11,7 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static GenerativeAI.VertexAIModels;
 using GenerativeAI;
 using GenerativeAI.Exceptions;
+using GenerativeAI.Types;
 
 namespace EduMatch.BusinessLogicLayer.Services
 {
