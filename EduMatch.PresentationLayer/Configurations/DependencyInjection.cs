@@ -69,6 +69,8 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IWalletTransactionRepository, WalletTransactionRepository>();
             services.AddScoped<IWithdrawalRepository, WithdrawalRepository>();
 
+            services.AddScoped<IChatbotRepository, ChatbotRepository>();
+
             // Services
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<CurrentUserService>();
@@ -119,9 +121,10 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IAdminWalletService, AdminWalletService>();
 
                             // Services for Chatbot AI
-            services.AddSingleton<IGeminiChatService, GeminiChatService>();
+            services.AddScoped<IGeminiChatService, GeminiChatService>();
             services.AddSingleton<IEmbeddingService, EmbeddingService>();
             services.AddSingleton<IQdrantService, QdrantService>();
+            services.AddScoped<IChatbotService, ChatbotService>();
 
 
             // Bind "CloudinarySettings" 

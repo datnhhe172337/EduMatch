@@ -8,6 +8,7 @@ namespace EduMatch.BusinessLogicLayer.DTOs
 {
     public class ChatResponseDto
     {
+        public int? SessionId { get; set; }
         public string Reply {  get; set; }
     }
 }

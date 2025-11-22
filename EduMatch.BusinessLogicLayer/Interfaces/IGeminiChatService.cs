@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EduMatch.DataAccessLayer.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +9,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 {
     public interface IGeminiChatService
     {
-        Task<string> GenerateTextAsync(string prompt);
+        Task<string> GenerateTextAsync(int sessionId, string prompt, string userMessage);
     }
 }
