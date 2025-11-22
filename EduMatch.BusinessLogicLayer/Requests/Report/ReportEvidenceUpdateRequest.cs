@@ -7,6 +7,8 @@ namespace EduMatch.BusinessLogicLayer.Requests.Report
     {
         public MediaType? MediaType { get; set; }
 
+        public ReportEvidenceType? EvidenceType { get; set; }
+
         [Url]
         [StringLength(500)]
         public string? FileUrl { get; set; }
