@@ -19,19 +19,25 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IMapper _mapper;
         private readonly IReportContentValidator _contentValidator;
         private readonly INotificationService _notificationService;
+        private readonly IReportEvidenceRepository _reportEvidenceRepository;
+        private readonly IReportDefenseRepository _reportDefenseRepository;
 
         public ReportService(
             IReportRepository reportRepository,
             IUserRepository userRepository,
             IMapper mapper,
             IReportContentValidator contentValidator,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IReportEvidenceRepository reportEvidenceRepository,
+            IReportDefenseRepository reportDefenseRepository)
         {
             _reportRepository = reportRepository;
             _userRepository = userRepository;
             _mapper = mapper;
             _contentValidator = contentValidator;
             _notificationService = notificationService;
+            _reportEvidenceRepository = reportEvidenceRepository;
+            _reportDefenseRepository = reportDefenseRepository;
         }
 
         public async Task<ReportDetailDto> CreateReportAsync(ReportCreateRequest request, string reporterEmail)
@@ -72,6 +78,21 @@ namespace EduMatch.BusinessLogicLayer.Services
             var reporterName = string.IsNullOrWhiteSpace(reporter.UserName) ? reporter.Email : reporter.UserName;
             var tutorMessage = $"Bạn vừa nhận được một báo cáo mới từ {reporterName}. Lý do: {report.Reason}. Bạn có 2 ngày để gửi giải trình trước khi quản trị viên xem xét.";
             await _notificationService.CreateNotificationAsync(reported.Email, tutorMessage);
+
+            if (request.Evidences != null && request.Evidences.Count > 0)
+            {
+                foreach (var ev in request.Evidences)
+                {
+                    await AddEvidenceAsync(created.Id, new ReportEvidenceCreateRequest
+                    {
+                        MediaType = ev.MediaType,
+                        FileUrl = ev.FileUrl,
+                        FilePublicId = ev.FilePublicId,
+                        Caption = ev.Caption,
+                        EvidenceType = ReportEvidenceType.ReporterEvidence
+                    }, reporterEmail, true);
+                }
+            }
 
             return _mapper.Map<ReportDetailDto>(created);
         }
@@ -125,35 +146,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             var reports = await _reportRepository.GetByReporterAsync(reporterEmail.Trim());
             return _mapper.Map<IReadOnlyList<ReportListItemDto>>(reports);
-        }
-
-        public async Task<ReportDetailDto> SubmitTutorComplaintAsync(int reportId, TutorComplaintRequest request, string tutorEmail)
-        {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
-            if (string.IsNullOrWhiteSpace(tutorEmail))
-                throw new ArgumentException("Email gia sư là bắt buộc.", nameof(tutorEmail));
-
-            var report = await _reportRepository.GetByIdAsync(reportId)
-                ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
-
-            if (!tutorEmail.Trim().Equals(report.ReportedUserEmail, StringComparison.OrdinalIgnoreCase))
-                throw new UnauthorizedAccessException("Bạn không thể phản hồi báo cáo này.");
-
-            if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
-                throw new InvalidOperationException("Báo cáo đã được xử lý, không thể gửi giải trình.");
-
-            if (DateTime.UtcNow > report.CreatedAt.AddDays(2))
-                throw new InvalidOperationException("Đã quá hạn 2 ngày để gửi giải trình.");
-
-            report.TutorDefenseNote = request.DefenseNote.Trim();
-            report.UpdatedAt = DateTime.UtcNow;
-
-            var updated = await _reportRepository.UpdateAsync(report);
-
-            await NotifyReporterStatusChangeAsync(report);
-
-            return _mapper.Map<ReportDetailDto>(updated);
         }
 
         public async Task<ReportDetailDto> UpdateReportAsync(int reportId, ReportUpdateRequest request, string adminEmail)
@@ -223,6 +215,291 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             var updated = await _reportRepository.UpdateAsync(report);
             return _mapper.Map<ReportDetailDto>(updated);
+        }
+
+        public async Task<ReportEvidenceDto> AddEvidenceAsync(int reportId, ReportEvidenceCreateRequest request, string currentUserEmail, bool currentUserIsAdmin)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(currentUserEmail))
+                throw new ArgumentException("Email người dùng là bắt buộc.", nameof(currentUserEmail));
+
+            var report = await _reportRepository.GetByIdAsync(reportId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
+
+            var normalizedEmail = currentUserEmail.Trim();
+            var isReporter = normalizedEmail.Equals(report.ReporterUserEmail, StringComparison.OrdinalIgnoreCase);
+            var isReported = normalizedEmail.Equals(report.ReportedUserEmail, StringComparison.OrdinalIgnoreCase);
+
+            if (!currentUserIsAdmin && !isReporter && !isReported)
+                throw new UnauthorizedAccessException("Bạn không thể đính kèm bằng chứng cho báo cáo này.");
+
+            if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
+                throw new InvalidOperationException("Báo cáo đã được xử lý, không thể đính kèm thêm bằng chứng.");
+
+            if (!Enum.IsDefined(typeof(MediaType), request.MediaType))
+                throw new ArgumentException("Loại media không hợp lệ.");
+            if (string.IsNullOrWhiteSpace(request.FileUrl))
+                throw new ArgumentException("FileUrl là bắt buộc.");
+
+            var evidenceType = request.EvidenceType ??
+                (isReporter ? ReportEvidenceType.ReporterEvidence :
+                 isReported ? ReportEvidenceType.TutorDefense :
+                 ReportEvidenceType.AdminAttachment);
+
+            var evidence = new ReportEvidence
+            {
+                ReportId = reportId,
+                SubmittedByEmail = normalizedEmail,
+                MediaType = (int)request.MediaType,
+                EvidenceType = (int)evidenceType,
+                FileUrl = request.FileUrl.Trim(),
+                FilePublicId = string.IsNullOrWhiteSpace(request.FilePublicId) ? null : request.FilePublicId.Trim(),
+                Caption = string.IsNullOrWhiteSpace(request.Caption) ? null : request.Caption.Trim(),
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var saved = await _reportEvidenceRepository.AddAsync(evidence);
+            return _mapper.Map<ReportEvidenceDto>(saved);
+        }
+
+        public async Task<IReadOnlyList<ReportEvidenceDto>> GetEvidenceByReportIdAsync(int reportId, string currentUserEmail, bool currentUserIsAdmin)
+        {
+            var report = await _reportRepository.GetByIdAsync(reportId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
+
+            if (!currentUserIsAdmin)
+            {
+                if (string.IsNullOrWhiteSpace(currentUserEmail))
+                    throw new UnauthorizedAccessException("Bạn không có quyền xem bằng chứng của báo cáo này.");
+
+                var normalizedEmail = currentUserEmail.Trim();
+                var isReporter = normalizedEmail.Equals(report.ReporterUserEmail, StringComparison.OrdinalIgnoreCase);
+                var isReported = normalizedEmail.Equals(report.ReportedUserEmail, StringComparison.OrdinalIgnoreCase);
+
+                if (!isReporter && !isReported)
+                    throw new UnauthorizedAccessException("Bạn không có quyền xem bằng chứng của báo cáo này.");
+            }
+
+            var evidences = await _reportEvidenceRepository.GetByReportIdAsync(reportId);
+            return _mapper.Map<IReadOnlyList<ReportEvidenceDto>>(evidences);
+        }
+
+        public async Task<ReportEvidenceDto> UpdateEvidenceAsync(int reportId, int evidenceId, ReportEvidenceUpdateRequest request, string currentUserEmail, bool currentUserIsAdmin)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(currentUserEmail))
+                throw new ArgumentException("Email người dùng là bắt buộc.", nameof(currentUserEmail));
+
+            var report = await _reportRepository.GetByIdAsync(reportId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
+
+            var evidence = await _reportEvidenceRepository.GetByIdAsync(evidenceId)
+                ?? throw new KeyNotFoundException("Không tìm thấy bằng chứng.");
+
+            if (evidence.ReportId != report.Id)
+                throw new InvalidOperationException("Bằng chứng không thuộc báo cáo này.");
+
+            var normalizedEmail = currentUserEmail.Trim();
+            var isOwner = !string.IsNullOrWhiteSpace(evidence.SubmittedByEmail) &&
+                          normalizedEmail.Equals(evidence.SubmittedByEmail, StringComparison.OrdinalIgnoreCase);
+            var isReporter = normalizedEmail.Equals(report.ReporterUserEmail, StringComparison.OrdinalIgnoreCase);
+            var isReported = normalizedEmail.Equals(report.ReportedUserEmail, StringComparison.OrdinalIgnoreCase);
+
+            if (!currentUserIsAdmin && !isOwner && !isReporter && !isReported)
+                throw new UnauthorizedAccessException("Bạn không thể chỉnh sửa bằng chứng này.");
+
+            if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
+                throw new InvalidOperationException("Báo cáo đã được xử lý, không thể chỉnh sửa bằng chứng.");
+
+            if (request.MediaType.HasValue)
+            {
+                if (!Enum.IsDefined(typeof(MediaType), request.MediaType.Value))
+                    throw new ArgumentException("Loại media không hợp lệ.");
+                evidence.MediaType = (int)request.MediaType.Value;
+            }
+
+            if (request.EvidenceType.HasValue)
+            {
+                if (!Enum.IsDefined(typeof(ReportEvidenceType), request.EvidenceType.Value))
+                    throw new ArgumentException("Loại bằng chứng không hợp lệ.");
+                if (!currentUserIsAdmin && !isReporter && !isReported)
+                    throw new UnauthorizedAccessException("Bạn không thể thay đổi loại bằng chứng này.");
+                evidence.EvidenceType = (int)request.EvidenceType.Value;
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.FileUrl))
+                evidence.FileUrl = request.FileUrl.Trim();
+            if (request.FilePublicId != null)
+                evidence.FilePublicId = string.IsNullOrWhiteSpace(request.FilePublicId) ? null : request.FilePublicId.Trim();
+            if (request.Caption != null)
+                evidence.Caption = string.IsNullOrWhiteSpace(request.Caption) ? null : request.Caption.Trim();
+
+            var updated = await _reportEvidenceRepository.UpdateAsync(evidence);
+            return _mapper.Map<ReportEvidenceDto>(updated);
+        }
+
+        public async Task DeleteEvidenceAsync(int reportId, int evidenceId, string currentUserEmail, bool currentUserIsAdmin)
+        {
+            if (string.IsNullOrWhiteSpace(currentUserEmail))
+                throw new ArgumentException("Email người dùng là bắt buộc.", nameof(currentUserEmail));
+
+            var report = await _reportRepository.GetByIdAsync(reportId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
+
+            var evidence = await _reportEvidenceRepository.GetByIdAsync(evidenceId)
+                ?? throw new KeyNotFoundException("Không tìm thấy bằng chứng.");
+
+            if (evidence.ReportId != report.Id)
+                throw new InvalidOperationException("Bằng chứng không thuộc báo cáo này.");
+
+            var normalizedEmail = currentUserEmail.Trim();
+            var isOwner = !string.IsNullOrWhiteSpace(evidence.SubmittedByEmail) &&
+                          normalizedEmail.Equals(evidence.SubmittedByEmail, StringComparison.OrdinalIgnoreCase);
+            var isReporter = normalizedEmail.Equals(report.ReporterUserEmail, StringComparison.OrdinalIgnoreCase);
+            var isReported = normalizedEmail.Equals(report.ReportedUserEmail, StringComparison.OrdinalIgnoreCase);
+
+            if (!currentUserIsAdmin && !isOwner && !isReporter && !isReported)
+                throw new UnauthorizedAccessException("Bạn không thể xóa bằng chứng này.");
+
+            if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
+                throw new InvalidOperationException("Báo cáo đã được xử lý, không thể xóa bằng chứng.");
+
+            await _reportEvidenceRepository.DeleteAsync(evidence);
+        }
+
+        public async Task<ReportDefenseDto> AddDefenseAsync(int reportId, ReportDefenseCreateRequest request, string tutorEmail, bool currentUserIsAdmin)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(tutorEmail))
+                throw new ArgumentException("Email gia sư là bắt buộc.", nameof(tutorEmail));
+
+            var report = await _reportRepository.GetByIdAsync(reportId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
+
+            if (!currentUserIsAdmin && !tutorEmail.Trim().Equals(report.ReportedUserEmail, StringComparison.OrdinalIgnoreCase))
+                throw new UnauthorizedAccessException("Bạn không thể gửi báo vệ cho báo cáo này.");
+
+            if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
+                throw new InvalidOperationException("Báo cáo đã được xử lý, không thể gửi thêm báo vệ.");
+
+            if (DateTime.UtcNow > report.CreatedAt.AddDays(2) && !currentUserIsAdmin)
+                throw new InvalidOperationException("Đã quá hạn 2 ngày để gửi báo vệ.");
+
+            var defense = new ReportDefense
+            {
+                ReportId = reportId,
+                TutorEmail = tutorEmail.Trim(),
+                Note = request.Note.Trim(),
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var savedDefense = await _reportDefenseRepository.AddAsync(defense);
+
+            if (request.Evidences != null && request.Evidences.Count > 0)
+            {
+                foreach (var ev in request.Evidences)
+                {
+                    await AddEvidenceAsync(reportId, new ReportEvidenceCreateRequest
+                    {
+                        MediaType = ev.MediaType,
+                        FileUrl = ev.FileUrl,
+                        FilePublicId = ev.FilePublicId,
+                        Caption = ev.Caption,
+                        EvidenceType = ReportEvidenceType.TutorDefense,
+                        DefenseId = savedDefense.Id
+                    }, tutorEmail, true);
+                }
+            }
+
+            return _mapper.Map<ReportDefenseDto>(savedDefense);
+        }
+
+        public async Task<IReadOnlyList<ReportDefenseDto>> GetDefensesAsync(int reportId, string currentUserEmail, bool currentUserIsAdmin)
+        {
+            var report = await _reportRepository.GetByIdAsync(reportId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
+
+            if (!currentUserIsAdmin)
+            {
+                if (string.IsNullOrWhiteSpace(currentUserEmail))
+                    throw new UnauthorizedAccessException("Bạn không có quyền xem báo vệ này.");
+
+                var normalizedEmail = currentUserEmail.Trim();
+                var isReporter = normalizedEmail.Equals(report.ReporterUserEmail, StringComparison.OrdinalIgnoreCase);
+                var isReported = normalizedEmail.Equals(report.ReportedUserEmail, StringComparison.OrdinalIgnoreCase);
+
+                if (!isReporter && !isReported)
+                    throw new UnauthorizedAccessException("Bạn không có quyền xem báo vệ này.");
+            }
+
+            var defenses = await _reportDefenseRepository.GetByReportIdAsync(reportId);
+            var defenseDtos = _mapper.Map<List<ReportDefenseDto>>(defenses);
+
+            var evidences = await _reportEvidenceRepository.GetByReportIdAsync(reportId);
+            var evidenceByDefense = evidences.Where(e => e.DefenseId.HasValue)
+                .GroupBy(e => e.DefenseId!.Value)
+                .ToDictionary(g => g.Key, g => _mapper.Map<IReadOnlyList<ReportEvidenceDto>>(g.ToList()));
+
+            foreach (var dto in defenseDtos)
+            {
+                if (evidenceByDefense.TryGetValue(dto.Id, out var evs))
+                    dto.Evidences = evs;
+            }
+
+            return defenseDtos;
+        }
+
+        public async Task<ReportFullDetailDto?> GetFullReportDetailAsync(int reportId, string requesterEmail, bool requesterIsAdmin)
+        {
+            var reportDetail = await GetReportDetailAsync(reportId, requesterEmail, requesterIsAdmin);
+            if (reportDetail == null)
+                return null;
+
+            var evidences = await _reportEvidenceRepository.GetByReportIdAsync(reportId);
+            var defenses = await _reportDefenseRepository.GetByReportIdAsync(reportId);
+
+            var reporterEvidences = evidences
+                .Where(e => !e.DefenseId.HasValue && e.EvidenceType == (int)ReportEvidenceType.ReporterEvidence);
+            var tutorEvidences = evidences
+                .Where(e => !e.DefenseId.HasValue && e.EvidenceType == (int)ReportEvidenceType.TutorDefense);
+            var adminEvidences = evidences
+                .Where(e => !e.DefenseId.HasValue && e.EvidenceType == (int)ReportEvidenceType.AdminAttachment);
+
+            var defenseDtos = _mapper.Map<List<ReportDefenseDto>>(defenses);
+            var defenseEvidenceLookup = evidences.Where(e => e.DefenseId.HasValue)
+                .GroupBy(e => e.DefenseId!.Value)
+                .ToDictionary(g => g.Key, g => _mapper.Map<IReadOnlyList<ReportEvidenceDto>>(g.ToList()));
+
+            foreach (var dto in defenseDtos)
+            {
+                if (defenseEvidenceLookup.TryGetValue(dto.Id, out var evs))
+                    dto.Evidences = evs;
+            }
+
+            return new ReportFullDetailDto
+            {
+                Id = reportDetail.Id,
+                ReporterEmail = reportDetail.ReporterEmail,
+                ReporterName = reportDetail.ReporterName,
+                ReporterAvatarUrl = reportDetail.ReporterAvatarUrl,
+                ReportedUserEmail = reportDetail.ReportedUserEmail,
+                ReportedUserName = reportDetail.ReportedUserName,
+                ReportedAvatarUrl = reportDetail.ReportedAvatarUrl,
+                Reason = reportDetail.Reason,
+                Status = reportDetail.Status,
+                TutorDefenseNote = reportDetail.TutorDefenseNote,
+                AdminNotes = reportDetail.AdminNotes,
+                HandledByAdminEmail = reportDetail.HandledByAdminEmail,
+                CreatedAt = reportDetail.CreatedAt,
+                UpdatedAt = reportDetail.UpdatedAt,
+                Defenses = defenseDtos,
+                ReporterEvidences = _mapper.Map<IReadOnlyList<ReportEvidenceDto>>(reporterEvidences.ToList()),
+                TutorEvidences = _mapper.Map<IReadOnlyList<ReportEvidenceDto>>(tutorEvidences.ToList()),
+                AdminEvidences = _mapper.Map<IReadOnlyList<ReportEvidenceDto>>(adminEvidences.ToList())
+            };
         }
 
         private async Task NotifyReporterStatusChangeAsync(Report report)
