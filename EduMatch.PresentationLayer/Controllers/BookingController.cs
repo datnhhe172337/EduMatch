@@ -342,7 +342,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Cập nhật Status của Booking theo Id
 		/// </summary>
-		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner )]
 		[HttpPut("update-status/{id:int}")]
 		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
