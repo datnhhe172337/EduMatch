@@ -463,12 +463,11 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 
 
 
-			// TutorSubject mappings
-			CreateMap<TutorSubject, TutorSubjectDto>().ReverseMap();
-			CreateMap<TutorSubjectCreateRequest, TutorSubject>();
-			CreateMap<TutorSubjectUpdateRequest, TutorSubject>();
+            // TutorSubject mappings
+            CreateMap<TutorSubject, TutorSubjectDto>()
+                .ForMember(dest => dest.TutorEmail, opt => opt.MapFrom(src => src.Tutor.UserEmail));
 
-			
+
 
 
 

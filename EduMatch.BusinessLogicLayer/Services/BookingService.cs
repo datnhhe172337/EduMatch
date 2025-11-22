@@ -610,6 +610,28 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (status == BookingStatus.Cancelled)
             {
                 await CancelAllSchedulesByBookingAsync(id);
+                
+                // Nếu chuyển từ Pending sang Cancelled và PaymentStatus là Paid thì hoàn tiền 100%
+                if (currentStatus == BookingStatus.Pending && entity.PaymentStatus == (int)PaymentStatus.Paid)
+                {
+                    await RefundBookingAsync(id, 100);
+                }
+
+                // Gửi notification báo đơn hàng đã hủy cho learner
+                await _notificationService.CreateNotificationAsync(
+                    entity.LearnerEmail,
+                    $"Đơn hàng booking #{entity.Id} đã được hủy.",
+                    "/bookings");
+
+                // Gửi notification báo đơn hàng đã hủy cho tutor
+                var tutorSubject = await _tutorSubjectRepository.GetByIdFullAsync(entity.TutorSubjectId);
+                if (tutorSubject?.Tutor?.UserEmail != null)
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        tutorSubject.Tutor.UserEmail,
+                        $"Đơn hàng booking #{entity.Id} đã được hủy.",
+                        "/bookings");
+                }
             }
 
             return _mapper.Map<BookingDto>(entity);
