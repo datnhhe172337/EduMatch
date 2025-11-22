@@ -9,6 +9,6 @@ namespace EduMatch.BusinessLogicLayer.Requests.Report
         [StringLength(2000, MinimumLength = 3)]
         public string Note { get; set; } = string.Empty;
 
-        public List<ReportEvidenceCreateRequest>? Evidences { get; set; }
+        public List<BasicEvidenceRequest>? Evidences { get; set; }
     }
 }
