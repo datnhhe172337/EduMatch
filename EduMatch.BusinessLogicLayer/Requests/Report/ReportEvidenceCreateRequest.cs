@@ -8,6 +8,10 @@ namespace EduMatch.BusinessLogicLayer.Requests.Report
         [Required]
         public MediaType MediaType { get; set; }
 
+        public ReportEvidenceType? EvidenceType { get; set; }
+
+        public int? DefenseId { get; set; }
+
         [Required]
         [Url]
         [StringLength(500)]
