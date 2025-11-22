@@ -343,39 +343,6 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
         /// <summary>
-        /// Tutor submits defense/complaint for a report.
-        /// </summary>
-        [Authorize(Roles = Roles.Tutor)]
-        [HttpPut("{id:int}/complaint")]
-        public async Task<IActionResult> SubmitTutorComplaintAsync(int id, [FromBody] TutorComplaintRequest request)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ApiResponse<string>.Fail("Invalid request payload.", ModelState));
-
-            var tutorEmail = _currentUserService.Email;
-            if (string.IsNullOrWhiteSpace(tutorEmail))
-                return Unauthorized(ApiResponse<string>.Fail("User email not found in token."));
-
-            try
-            {
-                var result = await _reportService.SubmitTutorComplaintAsync(id, request, tutorEmail);
-                return Ok(ApiResponse<ReportDetailDto>.Ok(result, "Defense submitted successfully."));
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ApiResponse<string>.Fail(ex.Message));
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ApiResponse<string>.Fail(ex.Message));
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-        }
-
-        /// <summary>
         /// Tutor or admin adds a defense with optional evidences.
         /// </summary>
         [Authorize(Roles = Roles.Tutor + "," + Roles.BusinessAdmin + "," + Roles.SystemAdmin)]
