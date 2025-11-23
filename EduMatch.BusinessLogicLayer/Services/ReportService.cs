@@ -380,6 +380,18 @@ namespace EduMatch.BusinessLogicLayer.Services
             await _reportEvidenceRepository.DeleteAsync(evidence);
         }
 
+        public async Task<bool> CanSubmitDefenseAsync(int reportId, string tutorEmail, bool currentUserIsAdmin)
+        {
+            var report = await _reportRepository.GetByIdAsync(reportId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
+
+            if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
+                return false;
+
+            // Non-admins: allow while within 2 days from creation; no role matching required for this check
+            return DateTime.UtcNow <= report.CreatedAt.AddDays(2);
+        }
+
         public async Task<ReportDefenseDto> AddDefenseAsync(int reportId, ReportDefenseCreateRequest request, string tutorEmail, bool currentUserIsAdmin)
         {
             if (request == null)
