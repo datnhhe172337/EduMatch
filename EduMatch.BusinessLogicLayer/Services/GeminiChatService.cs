@@ -34,7 +34,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task<string> GenerateTextAsync(int sessionId, string prompt, string userMessage)
         { 
-            var fiveLastMessages = await _chatbotService.GetLastMessagesAsync(sessionId, 5);
+            var fiveLastMessages = await _chatbotService.GetLastMessagesAsync(sessionId, 10);
 
             var history = BuildGeminiHistory(fiveLastMessages);
 
