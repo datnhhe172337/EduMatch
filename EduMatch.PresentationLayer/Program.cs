@@ -1,5 +1,6 @@
 ﻿using DotNetEnv;
 using EduMatch.BusinessLogicLayer.BackgroundServices;
+using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.PresentationLayer.Configurations;
@@ -22,9 +23,19 @@ builder.Configuration
 
 builder.Services.ConfigureApplication(builder.Configuration);
 
+// Gemini
+builder.Services.Configure<GeminiSettings>(
+    builder.Configuration.GetSection("Gemini"));
+
+builder.Services.Configure<QdrantSettings>(
+    builder.Configuration.GetSection("Qdrant"));
+
 
 // Background Service
 builder.Services.AddHostedService<ClassRequestExpireBackgroundService>();
+
+//builder.Services.AddHostedService<TutorSyncBackgroundService>();
+
 builder.Services.AddHostedService<BookingAutoCancelBackgroundService>();
 builder.Services.AddHostedService<ScheduleChangeRequestAutoCancelBackgroundService>();
 

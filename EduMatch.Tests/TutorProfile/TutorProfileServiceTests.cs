@@ -31,6 +31,7 @@ public class TutorProfileServiceTests
 	private Mock<ICloudMediaService> _cloudMediaServiceMock;
 	private Mock<IUserService> _userServiceMock;
 	private Mock<IUserProfileService> _userProfileServiceMock;
+	private Mock<IQdrantService> _iqdrantServiceMock;
 	private IMapper _mapper;
 	private CurrentUserService _currentUserService;
 	private Mock<ITutorVerificationRequestService> _tutorVerificationRequestServiceMock;
@@ -48,6 +49,7 @@ public class TutorProfileServiceTests
 		_cloudMediaServiceMock = new Mock<ICloudMediaService>();
 		_userServiceMock = new Mock<IUserService>();
 		_userProfileServiceMock = new Mock<IUserProfileService>();
+		_iqdrantServiceMock = new Mock<IQdrantService>();
 		_tutorVerificationRequestServiceMock = new Mock<ITutorVerificationRequestService>();
 		_contextMock = new Mock<EduMatchContext>();
 		_transactionMock = new Mock<IDbContextTransaction>();
@@ -78,6 +80,8 @@ public class TutorProfileServiceTests
 			_currentUserService,
 			_userServiceMock.Object,
 			_userProfileServiceMock.Object,
+			_iqdrantServiceMock.Object,
+			
 			_tutorVerificationRequestServiceMock.Object,
 			_contextMock.Object
 		);

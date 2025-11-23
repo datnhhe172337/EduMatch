@@ -150,20 +150,10 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 
-
-
-
-
-
-
-		
-
-		
-
-		/// <summary>
-		/// Xác thực hàng loạt các bằng cấp học vấn của gia sư
-		/// </summary>
-		[Authorize(Roles = Roles.BusinessAdmin)]
+        /// <summary>
+        /// Xác thực hàng loạt các bằng cấp học vấn của gia sư
+        /// </summary>
+        [Authorize(Roles = Roles.BusinessAdmin)]
 		[HttpPut("verify-list-education/{tutorId}")]
 		[ProducesResponseType(typeof(ApiResponse<List<TutorEducationDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]

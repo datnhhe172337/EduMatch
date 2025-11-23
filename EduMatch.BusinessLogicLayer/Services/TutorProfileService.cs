@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 
+
 namespace EduMatch.BusinessLogicLayer.Services
 {
 	public sealed class TutorProfileService : ITutorProfileService
@@ -22,6 +23,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 		private readonly CurrentUserService _currentUserService;
 		private readonly IUserService _userService;
 		private readonly IUserProfileService _userProfileService;
+
+		private readonly IQdrantService _qdrantService;
+
 		private readonly ITutorVerificationRequestService _tutorVerificationRequestService;
 		private readonly EduMatchContext _context;
 
@@ -31,10 +35,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 			 ICloudMediaService cloudMedia,
 			 CurrentUserService currentUserService,
 			 IUserService userService,
-			 IUserProfileService userProfileService,
+			 IUserProfileService userProfileService, 
+			 IQdrantService qdrantService,
 			 ITutorVerificationRequestService tutorVerificationRequestService,
 			 EduMatchContext context
-			 ) 
+		) 
 		{
 			_tutorProfileRepository = repository;
 			_mapper = mapper;
@@ -42,6 +47,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 			_currentUserService = currentUserService ;
 			_userService = userService;
 			_userProfileService = userProfileService;
+			_qdrantService = qdrantService;
 			_tutorVerificationRequestService = tutorVerificationRequestService;
 			_context = context;
 		}
@@ -416,5 +422,38 @@ namespace EduMatch.BusinessLogicLayer.Services
 			}
 		}
 
-	}
+        public async Task<IReadOnlyList<TutorProfileDto>> GetTutorsUpdatedAfterAsync(DateTime lastSync)
+        {
+            var entities = await _tutorProfileRepository.GetTutorsUpdatedAfterAsync(lastSync);
+            return _mapper.Map<IReadOnlyList<TutorProfileDto>>(entities);
+        }
+
+		public async Task<int> SyncAllTutorsAsync()
+		{
+			var tutors = await _tutorProfileRepository.GetAllFullAsync();
+            if (!tutors.Any())
+                return 0;
+
+			var tutorsDto = _mapper.Map<IReadOnlyList<TutorProfileDto>>(tutors);
+
+            await _qdrantService.UpsertTutorsAsync(tutorsDto);
+
+            // 4. Cập nhật LastSync
+            var now = DateTime.UtcNow;
+
+            foreach (var tutor in tutors)
+            {
+                tutor.LastSync = now;
+            }
+
+            await _tutorProfileRepository.SaveChangesAsync();
+
+            return tutors.Count;
+        }
+
+        public Task<TutorProfileDto> VerifyAsync(int id, string verifiedBy)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }
