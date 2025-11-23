@@ -10,5 +10,7 @@ namespace EduMatch.BusinessLogicLayer.DTOs
     {
         public int? SessionId { get; set; }
         public string Reply {  get; set; }
+
+        public object Suggestions { get; set; }
     }
 }
