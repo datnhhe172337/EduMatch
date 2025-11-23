@@ -167,7 +167,12 @@ namespace EduMatch.BusinessLogicLayer.Services
             report.HandledByAdminEmail = adminEmail.Trim();
             report.UpdatedAt = DateTime.UtcNow;
 
+            if (request.Status != ReportStatus.Resolved && request.Status != ReportStatus.Dismissed)
+                throw new InvalidOperationException("Quản trị viên chỉ cập nhật trạng thái sang Resolved hoặc Dismissed.");
+
             var updated = await _reportRepository.UpdateAsync(report);
+
+            await NotifyStatusChangeAsync(report);
             return _mapper.Map<ReportDetailDto>(updated);
         }
 
@@ -375,6 +380,18 @@ namespace EduMatch.BusinessLogicLayer.Services
             await _reportEvidenceRepository.DeleteAsync(evidence);
         }
 
+        public async Task<bool> CanSubmitDefenseAsync(int reportId, string tutorEmail, bool currentUserIsAdmin)
+        {
+            var report = await _reportRepository.GetByIdAsync(reportId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
+
+            if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
+                return false;
+
+            // Non-admins: allow while within 2 days from creation; no role matching required for this check
+            return DateTime.UtcNow <= report.CreatedAt.AddDays(2);
+        }
+
         public async Task<ReportDefenseDto> AddDefenseAsync(int reportId, ReportDefenseCreateRequest request, string tutorEmail, bool currentUserIsAdmin)
         {
             if (request == null)
@@ -403,6 +420,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             };
 
             var savedDefense = await _reportDefenseRepository.AddAsync(defense);
+
+            if (report.StatusEnum == ReportStatus.Pending)
+            {
+                report.StatusEnum = ReportStatus.UnderReview;
+                report.UpdatedAt = DateTime.UtcNow;
+                await _reportRepository.UpdateAsync(report);
+                await NotifyStatusChangeAsync(report);
+            }
 
             if (request.Evidences != null && request.Evidences.Count > 0)
             {
@@ -571,7 +596,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             };
         }
 
-        private async Task NotifyReporterStatusChangeAsync(Report report)
+        private async Task NotifyStatusChangeAsync(Report report)
         {
             var statusMessage = report.StatusEnum switch
             {
@@ -582,8 +607,11 @@ namespace EduMatch.BusinessLogicLayer.Services
                 _ => report.StatusEnum.ToString()
             };
 
-            var message = $"Báo cáo của bạn đối với {report.ReportedUserEmail} hiện {statusMessage}.";
-            await _notificationService.CreateNotificationAsync(report.ReporterUserEmail, message);
+            var reporterMessage = $"Báo cáo của bạn đối với {report.ReportedUserEmail} hiện {statusMessage}.";
+            await _notificationService.CreateNotificationAsync(report.ReporterUserEmail, reporterMessage);
+
+            var tutorMessage = $"Báo cáo liên quan tới bạn từ {report.ReporterUserEmail} hiện {statusMessage}.";
+            await _notificationService.CreateNotificationAsync(report.ReportedUserEmail, tutorMessage);
         }
     }
 }

@@ -170,6 +170,26 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
         /// <summary>
+        /// Checks if the reported tutor (or admin) can still submit a defense for this report.
+        /// </summary>
+        [AllowAnonymous]
+        [HttpGet("{id:int}/can-defense")]
+        public async Task<IActionResult> CanSubmitDefenseAsync(int id)
+        {
+            var isAdmin = User?.IsInRole(Roles.BusinessAdmin) == true || User?.IsInRole(Roles.SystemAdmin) == true;
+
+            try
+            {
+                var can = await _reportService.CanSubmitDefenseAsync(id, string.Empty, isAdmin);
+                return Ok(ApiResponse<bool>.Ok(can));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<string>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>
         /// Gets detailed report information. Restricted to admins or involved users.
         /// </summary>
         [Authorize]
