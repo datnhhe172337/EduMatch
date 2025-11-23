@@ -388,6 +388,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
                 return false;
 
+            if (currentUserIsAdmin)
+                return true;
+
             // Non-admins: allow while within 2 days from creation; no role matching required for this check
             return DateTime.UtcNow <= report.CreatedAt.AddDays(2);
         }
