@@ -110,13 +110,37 @@ namespace EduMatch.PresentationLayer.Controllers
                 if (embeddingVector == null || embeddingVector.Length != 768)
                     throw new InvalidOperationException("Embedding vector is null or has invalid length.");
 
+                if (IsTutorQuery(req.Message) == false)
+                {
+                    var contextText = BuildContextJson(null);
+                    var contextJsonStringIsNull = JsonSerializer.Serialize(contextText);
+                    var promptQuery = PromptV1();
+
+                    var promptWithQueryIsNull = $@"
+                    Người dùng hỏi: ""{req.Message}""
+                 
+                    Dưới đây là danh sách tutor phù hợp (JSON context):
+                    {contextJsonStringIsNull}
+
+                    Hãy trả lời người dùng theo hướng dẫn như sau: 
+                    {promptQuery}
+                    ";
+
+                    var resp = await _gemini.GenerateTextAsync(sessionId, promptWithQueryIsNull, req.Message);
+                    return Ok(new ChatResponseDto
+                    {
+                        SessionId = sessionId,   // trả về để client lưu lại
+                        Reply = resp
+                    });
+
+                }
+
                 // Step 2: Vector search (Semantic search) - Qdrant
                 var topTutors = await _qdrantService.SearchTutorsAsync(embeddingVector, topK: 3);
 
                 // Step 3: Buld Context + Prompt
-                //var contextText = BuildContextText(topTutors);
-                var contextText = BuildContextJson(topTutors);
-                var contextJsonString = JsonSerializer.Serialize(contextText);
+                var contextJson = BuildContextJson(topTutors);
+                var contextJsonString = JsonSerializer.Serialize(contextJson);
 
                 var systemPrompt = PromptV1();
                 var prompt = $@"
@@ -135,9 +159,9 @@ namespace EduMatch.PresentationLayer.Controllers
 
                 return Ok(new ChatResponseDto
                 {
-                    SessionId = sessionId,   // trả về để client lưu lại
+                    SessionId = sessionId,
                     Reply = response,
-                    Suggestions = contextText
+                    Suggestions = contextJson
                 });
             }
             catch (Exception ex)
@@ -146,6 +170,17 @@ namespace EduMatch.PresentationLayer.Controllers
             }
 
         }
+
+        private bool IsTutorQuery(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message)) return false;
+
+            string lower = message.ToLower();
+            string[] keywords = { "gia sư", "dạy", "môn", "lớp", "học sinh", "học phí", "khu vực", "học online", "offline", "trực tiếp", "trực tuyến" };
+
+            return keywords.Any(k => lower.Contains(k));
+        }
+
 
         private object BuildContextJson(List<(TutorProfileDto Tutor, float Score)> topTutors)
         {
