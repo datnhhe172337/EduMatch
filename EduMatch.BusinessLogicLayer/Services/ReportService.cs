@@ -285,6 +285,12 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<IReadOnlyList<ReportEvidenceDto>>(evidences);
         }
 
+        public async Task<IReadOnlyList<ReportListItemDto>> GetAllReportsAsync()
+        {
+            var reports = await _reportRepository.GetAllAsync();
+            return _mapper.Map<IReadOnlyList<ReportListItemDto>>(reports);
+        }
+
         public async Task<ReportEvidenceDto> UpdateEvidenceAsync(int reportId, int evidenceId, ReportEvidenceUpdateRequest request, string currentUserEmail, bool currentUserIsAdmin)
         {
             if (request == null)
@@ -450,6 +456,69 @@ namespace EduMatch.BusinessLogicLayer.Services
             }
 
             return defenseDtos;
+        }
+
+        public async Task<ReportDefenseDto> UpdateDefenseAsync(int reportId, int defenseId, ReportDefenseUpdateRequest request, string currentUserEmail, bool currentUserIsAdmin)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(currentUserEmail))
+                throw new ArgumentException("Email người dùng là bắt buộc.", nameof(currentUserEmail));
+
+            var report = await _reportRepository.GetByIdAsync(reportId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
+
+            var defense = await _reportDefenseRepository.GetByIdAsync(defenseId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo vệ.");
+
+            if (defense.ReportId != report.Id)
+                throw new InvalidOperationException("Báo vệ không thuộc báo cáo này.");
+
+            var normalizedEmail = currentUserEmail.Trim();
+            var isOwner = normalizedEmail.Equals(defense.TutorEmail, StringComparison.OrdinalIgnoreCase);
+            var isReported = normalizedEmail.Equals(report.ReportedUserEmail, StringComparison.OrdinalIgnoreCase);
+
+            if (!currentUserIsAdmin && !isOwner && !isReported)
+                throw new UnauthorizedAccessException("Bạn không thể chỉnh sửa báo vệ này.");
+
+            if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
+                throw new InvalidOperationException("Báo cáo đã được xử lý, không thể chỉnh sửa báo vệ.");
+
+            if (DateTime.UtcNow > report.CreatedAt.AddDays(2) && !currentUserIsAdmin)
+                throw new InvalidOperationException("Đã quá hạn 2 ngày để chỉnh sửa báo vệ.");
+
+            defense.Note = request.Note.Trim();
+            defense.CreatedAt = defense.CreatedAt; // preserve
+
+            var updated = await _reportDefenseRepository.UpdateAsync(defense);
+            return _mapper.Map<ReportDefenseDto>(updated);
+        }
+
+        public async Task DeleteDefenseAsync(int reportId, int defenseId, string currentUserEmail, bool currentUserIsAdmin)
+        {
+            if (string.IsNullOrWhiteSpace(currentUserEmail))
+                throw new ArgumentException("Email người dùng là bắt buộc.", nameof(currentUserEmail));
+
+            var report = await _reportRepository.GetByIdAsync(reportId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
+
+            var defense = await _reportDefenseRepository.GetByIdAsync(defenseId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo vệ.");
+
+            if (defense.ReportId != report.Id)
+                throw new InvalidOperationException("Báo vệ không thuộc báo cáo này.");
+
+            var normalizedEmail = currentUserEmail.Trim();
+            var isOwner = normalizedEmail.Equals(defense.TutorEmail, StringComparison.OrdinalIgnoreCase);
+            var isReported = normalizedEmail.Equals(report.ReportedUserEmail, StringComparison.OrdinalIgnoreCase);
+
+            if (!currentUserIsAdmin && !isOwner && !isReported)
+                throw new UnauthorizedAccessException("Bạn không thể xóa báo vệ này.");
+
+            if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
+                throw new InvalidOperationException("Báo cáo đã được xử lý, không thể xóa báo vệ.");
+
+            await _reportDefenseRepository.DeleteAsync(defense);
         }
 
         public async Task<ReportFullDetailDto?> GetFullReportDetailAsync(int reportId, string requesterEmail, bool requesterIsAdmin)
