@@ -258,11 +258,25 @@ namespace EduMatch.BusinessLogicLayer.Services
                         await _tutorAvailabilityRepository.UpdateAsync(oldAvailability);
                     }
 
+                    // Đặt NewAvailabiliti về Available trước khi gọi ScheduleService.UpdateAsync
+                    // (vì ScheduleService.UpdateAsync yêu cầu availability mới phải ở trạng thái Available)
+                    var newAvailability = await _tutorAvailabilityRepository.GetByIdFullAsync(entity.NewAvailabilitiId);
+                    if (newAvailability != null && newAvailability.Status != (int)TutorAvailabilityStatus.Available)
+                    {
+                        newAvailability.Status = (int)TutorAvailabilityStatus.Available;
+                        await _tutorAvailabilityRepository.UpdateAsync(newAvailability);
+                    }
+
                     // Update Schedule: chuyển AvailabilitiId từ Old sang New (dùng service để đồng bộ MeetingSession)
+                    // ScheduleService.UpdateAsync sẽ tự động set NewAvailabiliti về Booked
+                    // Không truyền IsOnline để ScheduleService tự xử lý:
+                    // - Nếu có MeetingSession: sẽ cập nhật nó
+                    // - Nếu không có MeetingSession: không tạo mới (tránh yêu cầu SystemAccountEmail)
                     var scheduleUpdateRequest = new ScheduleUpdateRequest
                     {
                         Id = entity.ScheduleId,
                         AvailabilitiId = entity.NewAvailabilitiId
+                        // Không truyền IsOnline: ScheduleService sẽ chỉ cập nhật MeetingSession nếu đã tồn tại
                     };
                     await _scheduleService.UpdateAsync(scheduleUpdateRequest);
                 }

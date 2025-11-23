@@ -285,28 +285,28 @@ namespace EduMatch.BusinessLogicLayer.Services
             // Nếu AvailabilitiId thay đổi: (online) cập nhật MeetingSession qua service (đẩy Google) và cập nhật trạng thái Availability
             if (availabilityIdChanged && request.AvailabilitiId.HasValue)
             {
-                // Chỉ xử lý MeetingSession nếu online (IsOnline true hoặc không truyền -> coi như online)
-                if (!request.IsOnline.HasValue || request.IsOnline.Value)
+                // Kiểm tra xem Schedule có MeetingSession hay không
+                var meetingSession = await _meetingSessionService.GetByScheduleIdAsync(entity.Id);
+                
+                if (meetingSession != null)
                 {
-                    // Update MeetingSession theo Schedule hiện tại (MeetingSessionService sẽ gửi update lên Google và đồng bộ Start/End từ response)
-                    var meetingSession = await _meetingSessionService.GetByScheduleIdAsync(entity.Id);
-                    if (meetingSession != null)
+                    // Nếu đã có MeetingSession, luôn cập nhật nó (dù IsOnline = false)
+                    await _meetingSessionService.UpdateAsync(new MeetingSessionUpdateRequest
                     {
-                        await _meetingSessionService.UpdateAsync(new MeetingSessionUpdateRequest
-                        {
-                            Id = meetingSession.Id,
-                            ScheduleId = entity.Id
-                        });
-                    }
-                    else
-                    {
-                        // Offline -> Online và chưa có MeetingSession thì tạo mới
-                        await _meetingSessionService.CreateAsync(new MeetingSessionCreateRequest
-                        {
-                            ScheduleId = entity.Id
-                        });
-                    }
+                        Id = meetingSession.Id,
+                        ScheduleId = entity.Id
+                    });
                 }
+                else if (request.IsOnline == true)
+                {
+                    // Chỉ tạo mới MeetingSession khi IsOnline = true rõ ràng (không mặc định)
+                    // Offline -> Online và chưa có MeetingSession thì tạo mới
+                    await _meetingSessionService.CreateAsync(new MeetingSessionCreateRequest
+                    {
+                        ScheduleId = entity.Id
+                    });
+                }
+                // Nếu không có MeetingSession và IsOnline = false hoặc null: không làm gì (giữ nguyên offline)
 
                 // Cập nhật trạng thái Availability: old -> Available, new -> Booked
                 await _tutorAvailabilityService.UpdateStatusAsync(oldAvailabilityId, TutorAvailabilityStatus.Available);

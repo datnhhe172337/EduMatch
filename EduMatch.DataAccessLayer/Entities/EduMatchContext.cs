@@ -29,6 +29,10 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<ChatRoom> ChatRooms { get; set; }
 
+    public virtual DbSet<ChatSession> ChatSessions { get; set; }
+
+    public virtual DbSet<ChatbotMessage> ChatbotMessages { get; set; }
+
     public virtual DbSet<ClassRequest> ClassRequests { get; set; }
 
     public virtual DbSet<ClassRequestSlotsAvailability> ClassRequestSlotsAvailabilities { get; set; }
@@ -325,6 +329,36 @@ public partial class EduMatchContext : DbContext
             entity.HasOne(d => d.Tutor).WithMany(p => p.ChatRooms).HasForeignKey(d => d.TutorId);
 
             entity.HasOne(d => d.UserEmailNavigation).WithMany(p => p.ChatRooms).HasForeignKey(d => d.UserEmail);
+        });
+
+        modelBuilder.Entity<ChatSession>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__ChatSess__3214EC072E80C547");
+
+            entity.ToTable("ChatSession");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.UserEmail).HasMaxLength(100);
+
+            entity.HasOne(d => d.UserEmailNavigation).WithMany(p => p.ChatSessions)
+                .HasForeignKey(d => d.UserEmail)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_ChatSession_User");
+        });
+
+        modelBuilder.Entity<ChatbotMessage>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__ChatbotM__3214EC07A61059F9");
+
+            entity.ToTable("ChatbotMessage");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.Role).HasMaxLength(20);
+
+            entity.HasOne(d => d.Session).WithMany(p => p.ChatbotMessages)
+                .HasForeignKey(d => d.SessionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ChatMessage_ChatSession");
         });
 
         modelBuilder.Entity<ClassRequest>(entity =>
