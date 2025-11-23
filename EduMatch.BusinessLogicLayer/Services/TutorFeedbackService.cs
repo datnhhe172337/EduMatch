@@ -14,10 +14,12 @@ namespace EduMatch.BusinessLogicLayer.Services
     public class TutorFeedbackService : ITutorFeedbackService
     {
         private readonly ITutorFeedbackRepository _repo;
+        private readonly ITutorRatingSummaryService _summaryService;
 
-        public TutorFeedbackService(ITutorFeedbackRepository repo)
+        public TutorFeedbackService(ITutorFeedbackRepository repo, ITutorRatingSummaryService summaryService)
         {
             _repo = repo;
+            _summaryService = summaryService;
         }
 
         public async Task<TutorFeedbackDto> CreateFeedbackAsync(CreateTutorFeedbackRequest request, string learnerEmail)
@@ -57,7 +59,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             await _repo.AddFeedbackDetailRangeAsync(details);
             await _repo.SaveAsync();
-
+            await _summaryService.EnsureAndUpdateSummaryAsync(request.TutorId);
             var savedFeedback = await _repo.GetByIdIncludeDetailsAsync(feedback.Id);
 
             return new TutorFeedbackDto
@@ -197,7 +199,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             }).ToList();
 
             await _repo.UpdateFeedbackAsync(feedback);
-
+            await _summaryService.EnsureAndUpdateSummaryAsync(request.TutorId);
             return new TutorFeedbackDto
             {
                 Id = feedback.Id,

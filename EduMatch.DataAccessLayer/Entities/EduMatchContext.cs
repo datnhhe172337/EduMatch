@@ -95,6 +95,8 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<TutorProfile> TutorProfiles { get; set; }
 
+    public virtual DbSet<TutorRatingSummary> TutorRatingSummaries { get; set; }
+
     public virtual DbSet<TutorSubject> TutorSubjects { get; set; }
 
     public virtual DbSet<TutorVerificationRequest> TutorVerificationRequests { get; set; }
@@ -111,9 +113,9 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<Withdrawal> Withdrawals { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
+//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+//        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -1217,6 +1219,18 @@ public partial class EduMatchContext : DbContext
                 .HasForeignKey<TutorProfile>(d => d.UserEmail)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__tutor_pro__userE__6383C8BA");
+        });
+
+        modelBuilder.Entity<TutorRatingSummary>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TutorRat__3214EC079B284417");
+
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Tutor).WithMany(p => p.TutorRatingSummaries)
+                .HasForeignKey(d => d.TutorId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TutorRatingSummary_Tutor");
         });
 
         modelBuilder.Entity<TutorSubject>(entity =>
