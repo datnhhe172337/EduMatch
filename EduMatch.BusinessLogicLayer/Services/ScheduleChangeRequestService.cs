@@ -269,10 +269,14 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                     // Update Schedule: chuyển AvailabilitiId từ Old sang New (dùng service để đồng bộ MeetingSession)
                     // ScheduleService.UpdateAsync sẽ tự động set NewAvailabiliti về Booked
+                    // Không truyền IsOnline để ScheduleService tự xử lý:
+                    // - Nếu có MeetingSession: sẽ cập nhật nó
+                    // - Nếu không có MeetingSession: không tạo mới (tránh yêu cầu SystemAccountEmail)
                     var scheduleUpdateRequest = new ScheduleUpdateRequest
                     {
                         Id = entity.ScheduleId,
                         AvailabilitiId = entity.NewAvailabilitiId
+                        // Không truyền IsOnline: ScheduleService sẽ chỉ cập nhật MeetingSession nếu đã tồn tại
                     };
                     await _scheduleService.UpdateAsync(scheduleUpdateRequest);
                 }
