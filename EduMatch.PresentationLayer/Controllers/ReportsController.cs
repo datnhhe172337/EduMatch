@@ -187,6 +187,10 @@ namespace EduMatch.PresentationLayer.Controllers
             {
                 return NotFound(ApiResponse<string>.Fail(ex.Message));
             }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
+            }
         }
 
         /// <summary>
