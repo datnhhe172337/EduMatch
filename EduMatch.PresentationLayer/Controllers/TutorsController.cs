@@ -39,7 +39,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		private readonly EmailService _emailService;
 		private readonly IUserService _userService;
 		private readonly ITutorVerificationRequestService _tutorVerificationRequestService;
-
+		private readonly ITutorRatingSummaryService _summaryService;
 		public TutorsController(
 			ITutorSubjectService tutorSubjectService,
 			ISubjectService subjectService,
@@ -52,8 +52,8 @@ namespace EduMatch.PresentationLayer.Controllers
 			ITutorEducationService tutorEducationService,
 			EmailService emailService,
 			IUserService userService,
-			ITutorVerificationRequestService tutorVerificationRequestService
-
+			ITutorVerificationRequestService tutorVerificationRequestService,
+			ITutorRatingSummaryService summaryService
 			)
 		{
 			_tutorSubjectService = tutorSubjectService;
@@ -68,7 +68,7 @@ namespace EduMatch.PresentationLayer.Controllers
 			_emailService = emailService;
 			_userService = userService;
 			_tutorVerificationRequestService = tutorVerificationRequestService;
-
+			_summaryService = summaryService;
 		}
 
 
@@ -98,10 +98,11 @@ namespace EduMatch.PresentationLayer.Controllers
 			await using var tx = await _eduMatch.Database.BeginTransactionAsync();
 			try
 			{
-				// Tạo profile
+				// Tạo profile (sử dụng transaction từ controller)
 				var profileDto = await _tutorProfileService.CreateAsync(request.TutorProfile);
 				var tutorId = profileDto.Id;
 
+				await _summaryService.EnsureAndUpdateSummaryAsync(tutorId);
 				if (request.Educations.Any())
 				{
 					foreach (var e in request.Educations) e.TutorId = tutorId;

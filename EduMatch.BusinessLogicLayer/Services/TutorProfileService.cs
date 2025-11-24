@@ -91,7 +91,16 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<TutorProfileDto> CreateAsync(TutorProfileCreateRequest request)
 		{
-			using var dbTransaction = await _context.Database.BeginTransactionAsync();
+			// Kiểm tra xem đã có transaction từ bên ngoài chưa
+			var existingTransaction = _context.Database.CurrentTransaction;
+			var shouldManageTransaction = existingTransaction == null;
+			
+			Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? dbTransaction = null;
+			if (shouldManageTransaction)
+			{
+				dbTransaction = await _context.Database.BeginTransactionAsync();
+			}
+			
 			try
 			{
 				// CHECK IF TUTOR PROFILE EXISTS
@@ -177,12 +186,15 @@ namespace EduMatch.BusinessLogicLayer.Services
 							Description = "Yêu cầu xác minh gia sư tự động tạo khi đăng ký hồ sơ"
 						};
 
-						await _tutorVerificationRequestService.CreateAsync(verificationRequest);
+					await _tutorVerificationRequestService.CreateAsync(verificationRequest);
 
-						// Commit transaction
+					// Commit transaction chỉ khi service tự quản lý transaction
+					if (shouldManageTransaction && dbTransaction != null)
+					{
 						await dbTransaction.CommitAsync();
+					}
 
-						return _mapper.Map<TutorProfileDto>(existing);
+					return _mapper.Map<TutorProfileDto>(existing);
 					}
 					
 					// Nếu status là Approved, không cho tạo mới
@@ -221,16 +233,30 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 				await _tutorVerificationRequestService.CreateAsync(newVerificationRequest);
 
-				// Commit transaction
-				await dbTransaction.CommitAsync();
+				// Commit transaction chỉ khi service tự quản lý transaction
+				if (shouldManageTransaction && dbTransaction != null)
+				{
+					await dbTransaction.CommitAsync();
+				}
 
 				return _mapper.Map<TutorProfileDto>(entity);
 			}
 			catch (Exception ex)
 			{
-				// Rollback transaction nếu có lỗi
-				await dbTransaction.RollbackAsync();
+				// Rollback transaction chỉ khi service tự quản lý transaction
+				if (shouldManageTransaction && dbTransaction != null)
+				{
+					await dbTransaction.RollbackAsync();
+				}
 				throw new Exception($"Lỗi khi tạo hồ sơ gia sư: {ex.Message}", ex);
+			}
+			finally
+			{
+				// Dispose transaction chỉ khi service tự tạo
+				if (shouldManageTransaction && dbTransaction != null)
+				{
+					await dbTransaction.DisposeAsync();
+				}
 			}
 		}
 

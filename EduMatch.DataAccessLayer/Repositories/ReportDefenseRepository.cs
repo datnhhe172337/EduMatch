@@ -36,6 +36,13 @@ namespace EduMatch.DataAccessLayer.Repositories
             return await _context.ReportDefenses.FindAsync(id);
         }
 
+        public async Task<ReportDefense> UpdateAsync(ReportDefense defense)
+        {
+            _context.ReportDefenses.Update(defense);
+            await _context.SaveChangesAsync();
+            return defense;
+        }
+
         public async Task DeleteAsync(ReportDefense defense)
         {
             _context.ReportDefenses.Remove(defense);

@@ -114,5 +114,20 @@ namespace EduMatch.DataAccessLayer.Repositories
             _context.TutorFeedbackDetails.RemoveRange(details);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<double> GetTutorAvgRatingAsync(int tutorId)
+        {
+            return await _context.TutorFeedbacks
+           .Where(f => f.TutorId == tutorId)
+           .AverageAsync(f => (double?)f.OverallRating)
+           ?? 0;
+        }
+
+        public async Task<int> GetTutorFeedbackCountAsync(int tutorId)
+        {
+            return await _context.TutorFeedbacks
+            .Where(f => f.TutorId == tutorId)
+            .CountAsync();
+        }
     }
 }

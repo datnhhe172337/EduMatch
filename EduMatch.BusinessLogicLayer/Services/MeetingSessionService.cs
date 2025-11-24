@@ -264,7 +264,13 @@ namespace EduMatch.BusinessLogicLayer.Services
                                  $"Gia sư: {tutorEmail}\n" +
                                  $"Schedule ID: {schedule.Id}";
 
+                // Kiểm tra SystemAccountEmail trước khi cập nhật Google Event
                 var organizerEmail = _googleCalendarSettings.SystemAccountEmail;
+                if (string.IsNullOrWhiteSpace(organizerEmail))
+                {
+                    throw new Exception("SystemAccountEmail không được cấu hình");
+                }
+
                 var meetingRequest = new CreateMeetingRequest
                 {
                     Summary = summary,

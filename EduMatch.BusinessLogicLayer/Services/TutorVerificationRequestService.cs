@@ -176,7 +176,16 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task<TutorVerificationRequestDto> UpdateStatusAsync(int id, TutorVerificationRequestStatus status)
         {
-            using var dbTransaction = await _context.Database.BeginTransactionAsync();
+            // Kiểm tra xem đã có transaction từ bên ngoài chưa
+            var existingTransaction = _context.Database.CurrentTransaction;
+            var shouldManageTransaction = existingTransaction == null;
+            
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? dbTransaction = null;
+            if (shouldManageTransaction)
+            {
+                dbTransaction = await _context.Database.BeginTransactionAsync();
+            }
+            
             try
             {
                 if (id <= 0)
@@ -260,16 +269,30 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                 await _tutorVerificationRequestRepository.UpdateAsync(entity);
 
-                // Commit transaction
-                await dbTransaction.CommitAsync();
+                // Commit transaction chỉ khi service tự quản lý transaction
+                if (shouldManageTransaction && dbTransaction != null)
+                {
+                    await dbTransaction.CommitAsync();
+                }
 
                 return _mapper.Map<TutorVerificationRequestDto>(entity);
             }
             catch (Exception ex)
             {
-                // Rollback transaction nếu có lỗi
-                await dbTransaction.RollbackAsync();
+                // Rollback transaction chỉ khi service tự quản lý transaction
+                if (shouldManageTransaction && dbTransaction != null)
+                {
+                    await dbTransaction.RollbackAsync();
+                }
                 throw new Exception($"Lỗi khi cập nhật trạng thái yêu cầu xác minh gia sư: {ex.Message}", ex);
+            }
+            finally
+            {
+                // Dispose transaction chỉ khi service tự tạo
+                if (shouldManageTransaction && dbTransaction != null)
+                {
+                    await dbTransaction.DisposeAsync();
+                }
             }
         }
     }

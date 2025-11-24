@@ -159,6 +159,37 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
         /// <summary>
+        /// Lists all reports (admin only).
+        /// </summary>
+        [Authorize(Roles = Roles.BusinessAdmin + "," + Roles.SystemAdmin)]
+        [HttpGet]
+        public async Task<IActionResult> GetAllReportsAsync()
+        {
+            var reports = await _reportService.GetAllReportsAsync();
+            return Ok(ApiResponse<IReadOnlyList<ReportListItemDto>>.Ok(reports, "Reports retrieved successfully."));
+        }
+
+        /// <summary>
+        /// Checks if the reported tutor (or admin) can still submit a defense for this report.
+        /// </summary>
+        [AllowAnonymous]
+        [HttpGet("{id:int}/can-defense")]
+        public async Task<IActionResult> CanSubmitDefenseAsync(int id)
+        {
+            var isAdmin = User?.IsInRole(Roles.BusinessAdmin) == true || User?.IsInRole(Roles.SystemAdmin) == true;
+
+            try
+            {
+                var can = await _reportService.CanSubmitDefenseAsync(id, string.Empty, isAdmin);
+                return Ok(ApiResponse<bool>.Ok(can));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<string>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>
         /// Gets detailed report information. Restricted to admins or involved users.
         /// </summary>
         [Authorize]
@@ -403,6 +434,77 @@ namespace EduMatch.PresentationLayer.Controllers
             catch (UnauthorizedAccessException ex)
             {
                 return Forbid(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Updates a defense (owner tutor or admin).
+        /// </summary>
+        [Authorize(Roles = Roles.Tutor + "," + Roles.BusinessAdmin + "," + Roles.SystemAdmin)]
+        [HttpPut("{id:int}/defenses/{defenseId:int}")]
+        public async Task<IActionResult> UpdateDefenseAsync(int id, int defenseId, [FromBody] ReportDefenseUpdateRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ApiResponse<string>.Fail("Invalid request payload.", ModelState));
+
+            var userEmail = _currentUserService.Email;
+            if (string.IsNullOrWhiteSpace(userEmail))
+                return Unauthorized(ApiResponse<string>.Fail("User email not found in token."));
+
+            var isAdmin = User.IsInRole(Roles.BusinessAdmin) || User.IsInRole(Roles.SystemAdmin);
+
+            try
+            {
+                var result = await _reportService.UpdateDefenseAsync(id, defenseId, request, userEmail, isAdmin);
+                return Ok(ApiResponse<ReportDefenseDto>.Ok(result, "Defense updated successfully."));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Deletes a defense (owner tutor or admin).
+        /// </summary>
+        [Authorize(Roles = Roles.Tutor + "," + Roles.BusinessAdmin + "," + Roles.SystemAdmin)]
+        [HttpDelete("{id:int}/defenses/{defenseId:int}")]
+        public async Task<IActionResult> DeleteDefenseAsync(int id, int defenseId)
+        {
+            var userEmail = _currentUserService.Email;
+            if (string.IsNullOrWhiteSpace(userEmail))
+                return Unauthorized(ApiResponse<string>.Fail("User email not found in token."));
+
+            var isAdmin = User.IsInRole(Roles.BusinessAdmin) || User.IsInRole(Roles.SystemAdmin);
+
+            try
+            {
+                await _reportService.DeleteDefenseAsync(id, defenseId, userEmail, isAdmin);
+                return Ok(ApiResponse<string>.Ok(null, "Defense deleted successfully."));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
             }
         }
 

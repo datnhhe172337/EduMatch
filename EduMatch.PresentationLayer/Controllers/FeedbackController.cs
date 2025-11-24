@@ -1,6 +1,7 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.DataAccessLayer.Entities;
+using EduMatch.DataAccessLayer.Interfaces;
 using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -14,10 +15,12 @@ namespace EduMatch.PresentationLayer.Controllers
     public class FeedbackController : ControllerBase
     {
         private readonly ITutorFeedbackService _feedbackService;
+        private readonly ITutorRatingSummaryService _summaryService;
 
-        public FeedbackController(ITutorFeedbackService feedbackService)
+        public FeedbackController(ITutorFeedbackService feedbackService, ITutorRatingSummaryService summaryService)
         {
             _feedbackService = feedbackService;
+            _summaryService = summaryService;
         }
 
         [Authorize(Roles = "Learner")]
@@ -128,6 +131,14 @@ namespace EduMatch.PresentationLayer.Controllers
             {
                 return StatusCode(500, ApiResponse<string>.Fail("Đã xảy ra lỗi hệ thống: " + ex.Message));
             }
+        }
+
+        [HttpGet("summary/{tutorId}")]
+        public async Task<IActionResult> GetTutorRatingSummary(int tutorId)
+        {
+            var summary = await _summaryService.GetByTutorIdAsync(tutorId);
+            if (summary == null) return NotFound("Tutor rating summary not found");
+            return Ok(summary);
         }
     }
 }
