@@ -46,7 +46,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                 if (wallet.Balance < request.Amount)
                 {
-                    throw new Exception("Insufficient funds. (Không d? s? du)");
+                    throw new Exception("Insufficient funds. (Khï¿½ng d? s? du)");
                 }
 
                 var balanceBefore = wallet.Balance;
@@ -87,7 +87,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                 await _notificationService.CreateNotificationAsync(
                     wallet.UserEmail,
-                    $"Yêu c?u rút ti?n #{newWithdrawal.Id} s? ti?n {request.Amount:N0} VND dã du?c x? lý.",
+                    $"Yï¿½u c?u rï¿½t ti?n #{newWithdrawal.Id} s? ti?n {request.Amount:N0} VND dï¿½ du?c x? lï¿½.",
                     "/wallet/withdrawals");
             }
             catch (Exception)

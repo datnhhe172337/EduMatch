@@ -144,7 +144,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 await _notificationService.CreateNotificationAsync(
                     notifiedUserEmail,
-                    $"B?n dã n?p thành công {creditedAmount:N0} VND vào ví.",
+                    $"B?n dï¿½ n?p thï¿½nh cï¿½ng {creditedAmount:N0} VND vï¿½o vï¿½.",
                     "/wallet/my-wallet");
             }
 

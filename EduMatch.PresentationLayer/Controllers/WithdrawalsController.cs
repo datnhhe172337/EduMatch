@@ -37,7 +37,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
                 await _withdrawalService.CreateWithdrawalRequestAsync(request, userEmail);
 
-                return StatusCode(StatusCodes.Status201Created, ApiResponse<string>.Ok("Yêu c?u rút ti?n dã du?c x? lý thành công."));
+                return StatusCode(StatusCodes.Status201Created, ApiResponse<string>.Ok("Yï¿½u c?u rï¿½t ti?n dï¿½ du?c x? lï¿½ thï¿½nh cï¿½ng."));
             }
             catch (Exception ex)
             {
