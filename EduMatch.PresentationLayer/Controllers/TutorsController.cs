@@ -98,7 +98,7 @@ namespace EduMatch.PresentationLayer.Controllers
 			await using var tx = await _eduMatch.Database.BeginTransactionAsync();
 			try
 			{
-				// Tạo profile
+				// Tạo profile (sử dụng transaction từ controller)
 				var profileDto = await _tutorProfileService.CreateAsync(request.TutorProfile);
 				var tutorId = profileDto.Id;
 
