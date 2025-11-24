@@ -91,7 +91,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 		/// </summary>
 		public async Task<TutorProfileDto> CreateAsync(TutorProfileCreateRequest request)
 		{
-			using var dbTransaction = await _context.Database.BeginTransactionAsync();
 			try
 			{
 				// CHECK IF TUTOR PROFILE EXISTS
@@ -179,9 +178,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 						await _tutorVerificationRequestService.CreateAsync(verificationRequest);
 
-						// Commit transaction
-						await dbTransaction.CommitAsync();
-
 						return _mapper.Map<TutorProfileDto>(existing);
 					}
 					
@@ -221,15 +217,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 				await _tutorVerificationRequestService.CreateAsync(newVerificationRequest);
 
-				// Commit transaction
-				await dbTransaction.CommitAsync();
-
 				return _mapper.Map<TutorProfileDto>(entity);
 			}
 			catch (Exception ex)
 			{
-				// Rollback transaction nếu có lỗi
-				await dbTransaction.RollbackAsync();
 				throw new Exception($"Lỗi khi tạo hồ sơ gia sư: {ex.Message}", ex);
 			}
 		}
