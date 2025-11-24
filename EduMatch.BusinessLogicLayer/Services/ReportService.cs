@@ -167,7 +167,12 @@ namespace EduMatch.BusinessLogicLayer.Services
             report.HandledByAdminEmail = adminEmail.Trim();
             report.UpdatedAt = DateTime.UtcNow;
 
+            if (request.Status != ReportStatus.Resolved && request.Status != ReportStatus.Dismissed)
+                throw new InvalidOperationException("Quản trị viên chỉ cập nhật trạng thái sang Resolved hoặc Dismissed.");
+
             var updated = await _reportRepository.UpdateAsync(report);
+
+            await NotifyStatusChangeAsync(report);
             return _mapper.Map<ReportDetailDto>(updated);
         }
 
@@ -285,6 +290,12 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<IReadOnlyList<ReportEvidenceDto>>(evidences);
         }
 
+        public async Task<IReadOnlyList<ReportListItemDto>> GetAllReportsAsync()
+        {
+            var reports = await _reportRepository.GetAllAsync();
+            return _mapper.Map<IReadOnlyList<ReportListItemDto>>(reports);
+        }
+
         public async Task<ReportEvidenceDto> UpdateEvidenceAsync(int reportId, int evidenceId, ReportEvidenceUpdateRequest request, string currentUserEmail, bool currentUserIsAdmin)
         {
             if (request == null)
@@ -369,6 +380,21 @@ namespace EduMatch.BusinessLogicLayer.Services
             await _reportEvidenceRepository.DeleteAsync(evidence);
         }
 
+        public async Task<bool> CanSubmitDefenseAsync(int reportId, string tutorEmail, bool currentUserIsAdmin)
+        {
+            var report = await _reportRepository.GetByIdAsync(reportId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
+
+            if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
+                return false;
+
+            if (currentUserIsAdmin)
+                return true;
+
+            // Non-admins: allow while within 2 days from creation; no role matching required for this check
+            return DateTime.UtcNow <= report.CreatedAt.AddDays(2);
+        }
+
         public async Task<ReportDefenseDto> AddDefenseAsync(int reportId, ReportDefenseCreateRequest request, string tutorEmail, bool currentUserIsAdmin)
         {
             if (request == null)
@@ -397,6 +423,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             };
 
             var savedDefense = await _reportDefenseRepository.AddAsync(defense);
+
+            if (report.StatusEnum == ReportStatus.Pending)
+            {
+                report.StatusEnum = ReportStatus.UnderReview;
+                report.UpdatedAt = DateTime.UtcNow;
+                await _reportRepository.UpdateAsync(report);
+                await NotifyStatusChangeAsync(report);
+            }
 
             if (request.Evidences != null && request.Evidences.Count > 0)
             {
@@ -452,6 +486,69 @@ namespace EduMatch.BusinessLogicLayer.Services
             return defenseDtos;
         }
 
+        public async Task<ReportDefenseDto> UpdateDefenseAsync(int reportId, int defenseId, ReportDefenseUpdateRequest request, string currentUserEmail, bool currentUserIsAdmin)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(currentUserEmail))
+                throw new ArgumentException("Email người dùng là bắt buộc.", nameof(currentUserEmail));
+
+            var report = await _reportRepository.GetByIdAsync(reportId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
+
+            var defense = await _reportDefenseRepository.GetByIdAsync(defenseId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo vệ.");
+
+            if (defense.ReportId != report.Id)
+                throw new InvalidOperationException("Báo vệ không thuộc báo cáo này.");
+
+            var normalizedEmail = currentUserEmail.Trim();
+            var isOwner = normalizedEmail.Equals(defense.TutorEmail, StringComparison.OrdinalIgnoreCase);
+            var isReported = normalizedEmail.Equals(report.ReportedUserEmail, StringComparison.OrdinalIgnoreCase);
+
+            if (!currentUserIsAdmin && !isOwner && !isReported)
+                throw new UnauthorizedAccessException("Bạn không thể chỉnh sửa báo vệ này.");
+
+            if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
+                throw new InvalidOperationException("Báo cáo đã được xử lý, không thể chỉnh sửa báo vệ.");
+
+            if (DateTime.UtcNow > report.CreatedAt.AddDays(2) && !currentUserIsAdmin)
+                throw new InvalidOperationException("Đã quá hạn 2 ngày để chỉnh sửa báo vệ.");
+
+            defense.Note = request.Note.Trim();
+            defense.CreatedAt = defense.CreatedAt; // preserve
+
+            var updated = await _reportDefenseRepository.UpdateAsync(defense);
+            return _mapper.Map<ReportDefenseDto>(updated);
+        }
+
+        public async Task DeleteDefenseAsync(int reportId, int defenseId, string currentUserEmail, bool currentUserIsAdmin)
+        {
+            if (string.IsNullOrWhiteSpace(currentUserEmail))
+                throw new ArgumentException("Email người dùng là bắt buộc.", nameof(currentUserEmail));
+
+            var report = await _reportRepository.GetByIdAsync(reportId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
+
+            var defense = await _reportDefenseRepository.GetByIdAsync(defenseId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo vệ.");
+
+            if (defense.ReportId != report.Id)
+                throw new InvalidOperationException("Báo vệ không thuộc báo cáo này.");
+
+            var normalizedEmail = currentUserEmail.Trim();
+            var isOwner = normalizedEmail.Equals(defense.TutorEmail, StringComparison.OrdinalIgnoreCase);
+            var isReported = normalizedEmail.Equals(report.ReportedUserEmail, StringComparison.OrdinalIgnoreCase);
+
+            if (!currentUserIsAdmin && !isOwner && !isReported)
+                throw new UnauthorizedAccessException("Bạn không thể xóa báo vệ này.");
+
+            if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
+                throw new InvalidOperationException("Báo cáo đã được xử lý, không thể xóa báo vệ.");
+
+            await _reportDefenseRepository.DeleteAsync(defense);
+        }
+
         public async Task<ReportFullDetailDto?> GetFullReportDetailAsync(int reportId, string requesterEmail, bool requesterIsAdmin)
         {
             var reportDetail = await GetReportDetailAsync(reportId, requesterEmail, requesterIsAdmin);
@@ -502,7 +599,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             };
         }
 
-        private async Task NotifyReporterStatusChangeAsync(Report report)
+        private async Task NotifyStatusChangeAsync(Report report)
         {
             var statusMessage = report.StatusEnum switch
             {
@@ -513,8 +610,11 @@ namespace EduMatch.BusinessLogicLayer.Services
                 _ => report.StatusEnum.ToString()
             };
 
-            var message = $"Báo cáo của bạn đối với {report.ReportedUserEmail} hiện {statusMessage}.";
-            await _notificationService.CreateNotificationAsync(report.ReporterUserEmail, message);
+            var reporterMessage = $"Báo cáo của bạn đối với {report.ReportedUserEmail} hiện {statusMessage}.";
+            await _notificationService.CreateNotificationAsync(report.ReporterUserEmail, reporterMessage);
+
+            var tutorMessage = $"Báo cáo liên quan tới bạn từ {report.ReporterUserEmail} hiện {statusMessage}.";
+            await _notificationService.CreateNotificationAsync(report.ReportedUserEmail, tutorMessage);
         }
     }
 }
