@@ -5,6 +5,8 @@ using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace EduMatch.PresentationLayer.Controllers
@@ -27,6 +29,22 @@ namespace EduMatch.PresentationLayer.Controllers
         {
             var data = await _adminStatsService.GetSummaryAsync();
             return Ok(ApiResponse<AdminSummaryStatsDto>.Ok(data, "Admin summary stats retrieved successfully."));
+        }
+
+        [HttpGet("signups/trend")]
+        [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<SignupTrendPointDto>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetSignupTrendAsync([FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] string groupBy = "day")
+        {
+            var data = await _adminStatsService.GetSignupTrendAsync(from, to, groupBy);
+            return Ok(ApiResponse<IReadOnlyList<SignupTrendPointDto>>.Ok(data, "Signup trend retrieved successfully."));
+        }
+
+        [HttpGet("bookings/trend")]
+        [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<BookingTrendPointDto>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetBookingTrendAsync([FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] string groupBy = "day")
+        {
+            var data = await _adminStatsService.GetBookingTrendAsync(from, to, groupBy);
+            return Ok(ApiResponse<IReadOnlyList<BookingTrendPointDto>>.Ok(data, "Booking trend retrieved successfully."));
         }
     }
 }
