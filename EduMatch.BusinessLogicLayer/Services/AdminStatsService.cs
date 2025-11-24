@@ -5,6 +5,7 @@ using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -119,6 +120,84 @@ namespace EduMatch.BusinessLogicLayer.Services
                     OverduePending = reportOverdueTask.Result
                 }
             };
+        }
+
+        public async Task<IReadOnlyList<SignupTrendPointDto>> GetSignupTrendAsync(DateTime? fromUtc = null, DateTime? toUtc = null, string groupBy = "day")
+        {
+            var (start, end, grouping) = NormalizeWindow(fromUtc, toUtc, groupBy);
+
+            var users = await _context.Users
+                .AsNoTracking()
+                .Include(u => u.Role)
+                .Where(u => u.CreatedAt >= start && u.CreatedAt <= end)
+                .ToListAsync();
+
+            var buckets = users
+                .GroupBy(u => GetBucketStart(u.CreatedAt, grouping))
+                .OrderBy(g => g.Key)
+                .Select(g => new SignupTrendPointDto
+                {
+                    BucketDate = DateOnly.FromDateTime(g.Key),
+                    Total = g.Count(),
+                    Learners = g.Count(x => x.Role.RoleName == Roles.Learner),
+                    Tutors = g.Count(x => x.Role.RoleName == Roles.Tutor)
+                })
+                .ToList();
+
+            return buckets;
+        }
+
+        public async Task<IReadOnlyList<BookingTrendPointDto>> GetBookingTrendAsync(DateTime? fromUtc = null, DateTime? toUtc = null, string groupBy = "day")
+        {
+            var (start, end, grouping) = NormalizeWindow(fromUtc, toUtc, groupBy);
+
+            var bookings = await _context.Bookings
+                .AsNoTracking()
+                .Where(b => b.CreatedAt >= start && b.CreatedAt <= end)
+                .ToListAsync();
+
+            var buckets = bookings
+                .GroupBy(b => GetBucketStart(b.CreatedAt, grouping))
+                .OrderBy(g => g.Key)
+                .Select(g => new BookingTrendPointDto
+                {
+                    BucketDate = DateOnly.FromDateTime(g.Key),
+                    Total = g.Count(),
+                    Pending = g.Count(x => x.Status == (int)BookingStatus.Pending),
+                    Confirmed = g.Count(x => x.Status == (int)BookingStatus.Confirmed),
+                    Completed = g.Count(x => x.Status == (int)BookingStatus.Completed),
+                    Cancelled = g.Count(x => x.Status == (int)BookingStatus.Cancelled)
+                })
+                .ToList();
+
+            return buckets;
+        }
+
+        private static (DateTime Start, DateTime End, string Grouping) NormalizeWindow(DateTime? fromUtc, DateTime? toUtc, string groupBy)
+        {
+            var end = toUtc ?? DateTime.UtcNow;
+            var start = fromUtc ?? end.AddDays(-30);
+            if (end < start)
+                (start, end) = (end, start);
+
+            var grouping = string.IsNullOrWhiteSpace(groupBy) ? "day" : groupBy.Trim().ToLowerInvariant();
+            if (grouping != "day" && grouping != "week")
+                grouping = "day";
+
+            return (start, end, grouping);
+        }
+
+        private static DateTime GetBucketStart(DateTime date, string grouping)
+        {
+            var day = date.Date;
+            if (grouping == "week")
+            {
+                // ISO-ish week starting Monday
+                var diff = (int)day.DayOfWeek == 0 ? 6 : (int)day.DayOfWeek - 1;
+                return day.AddDays(-diff);
+            }
+
+            return day;
         }
     }
 }
