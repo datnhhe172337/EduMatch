@@ -154,6 +154,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddSingleton<IEmbeddingService, EmbeddingService>();
             services.AddSingleton<IQdrantService, QdrantService>();
             services.AddScoped<IChatbotService, ChatbotService>();
+            services.AddSingleton<IPromptService, PromptService>();
 
 
             // Bind "CloudinarySettings" 

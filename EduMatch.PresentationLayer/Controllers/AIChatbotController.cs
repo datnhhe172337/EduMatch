@@ -23,14 +23,16 @@ namespace EduMatch.PresentationLayer.Controllers
         private readonly ITutorProfileService _service;
         private readonly IQdrantService _qdrantService;
         private readonly IChatbotService _chatbotService;
+        private readonly IPromptService _promptService;
 
-        public AIChatbotController(IGeminiChatService gemini, IEmbeddingService embedding, ITutorProfileService service, IQdrantService qdrantService, IChatbotService chatbotService)
+        public AIChatbotController(IGeminiChatService gemini, IEmbeddingService embedding, ITutorProfileService service, IQdrantService qdrantService, IChatbotService chatbotService, IPromptService promptService)
         {
             _gemini = gemini;
             _embedding = embedding;
             _service = service;
             _qdrantService = qdrantService;
             _chatbotService = chatbotService;
+            _promptService = promptService;
         }
 
         [HttpPost("session")]
@@ -114,7 +116,7 @@ namespace EduMatch.PresentationLayer.Controllers
                 {
                     var contextText = BuildContextJson(null);
                     var contextJsonStringIsNull = JsonSerializer.Serialize(contextText);
-                    var promptQuery = PromptV1();
+                    var promptQuery = _promptService.PromptV1();
 
                     var promptWithQueryIsNull = $@"
                     Người dùng hỏi: ""{req.Message}""
@@ -142,7 +144,7 @@ namespace EduMatch.PresentationLayer.Controllers
                 var contextJson = BuildContextJson(topTutors);
                 var contextJsonString = JsonSerializer.Serialize(contextJson);
 
-                var systemPrompt = PromptV1();
+                var systemPrompt = _promptService.PromptV1(); ;
                 var prompt = $@"
                     Người dùng hỏi: ""{req.Message}""
                  
@@ -277,149 +279,6 @@ namespace EduMatch.PresentationLayer.Controllers
         //            • <b>Hồ sơ:</b> <a href='http://localhost:3000/tutor/{tutor.Id}' target='_blank'>Xem hồ sơ</a><br>"";
         //        </div>";
         //            }));
-        //}
-
-        private string PromptV1()
-        {
-            string prompt = @"
-                    Bạn là EduMatch AI – trợ lý ảo hỗ trợ người học tìm kiếm gia sư.
-
-                    QUY TẮC TRẢ LỜI:
-                   1. KHÔNG được trả JSON hay chi tiết tutor từ JSON context.  
-                   2. Chỉ trả text thân thiện, dễ hiểu và phải có câu nối để frontend render chat bubble (ví dụ: bạn có thể xem thông tin chi tiết trong danh sách bên dưới: ...)  
-                   3. Có thể nhắc đến tổng số tutor, lý do phù hợp và những thông tin mà người dùng quan tâm (Parse từ câu hỏi người dùng).  
-                   4. Nếu danh sách gia sư trống, hãy hướng dẫn người dùng mô tả rõ nhu cầu hơn.
-                   5. Nếu người dùng hỏi nội dung *không liên quan* đến tìm gia sư (ví dụ: hỏi kiến thức, hỏi đời tư, hỏi triết lý, chém gió.):
-                       - Không từ chối thẳng thừng.
-                       - Hãy trả lời ngắn gọn, lịch sự, và khéo léo hướng họ quay lại chủ đề tìm gia sư.
-                       - Nhắc nhẹ rằng bạn được thiết kế chủ yếu để hỗ trợ tìm gia sư (ví dụ: “Nếu bạn cần tìm gia sư, mình luôn sẵn sàng hỗ trợ”).
-                   6. Luôn trả HTML nhỏ cho text, ví dụ dùng <b>, <p>, <br> nếu cần highlight.
-                    ";
-            return prompt;
-        }
-
-
-        //private string PromptV1()
-        //{
-        //    string prompt = @"
-        //            Bạn là EduMatch AI – trợ lý ảo hỗ trợ người học tìm kiếm gia sư.
-
-        //            Nhiệm vụ của bạn:
-        //            1. Phân tích câu hỏi của người dùng và hiểu nhu cầu thật sự: môn học, lớp, khu vực, giới tính gia sư, ngân sách, yêu cầu đặc biệt.
-        //            2. Dựa trên danh sách tutor đã được sắp xếp theo mức độ phù hợp (đã gửi kèm), hãy:
-        //               - Giới thiệu những gia sư phù hợp nhất.
-        //               - Trình bày thân thiện, dễ hiểu, không quá dài.
-        //               - Đính kèm link hồ sơ của từng gia sư để người dùng xem chi tiết.
-        //            3. Nếu danh sách gia sư trống, hãy hướng dẫn người dùng mô tả rõ nhu cầu hơn.
-        //            4. Nếu người dùng hỏi nội dung *không liên quan* đến tìm gia sư (ví dụ: hỏi kiến thức, hỏi đời tư, hỏi triết lý, chém gió…):
-        //               - Không từ chối thẳng thừng.
-        //               - Hãy trả lời ngắn gọn, lịch sự, và khéo léo hướng họ quay lại chủ đề tìm gia sư.
-        //               - Nhắc nhẹ rằng bạn được thiết kế chủ yếu để hỗ trợ tìm gia sư (ví dụ: “Nếu bạn cần tìm gia sư, mình luôn sẵn sàng hỗ trợ”).
-        //            5. Không trả về JSON,LUÔN trả về HTML thuần, KHÔNG được dùng Markdown.
-        //            ";
-        //    return prompt;
-        //}
-
-        //private string PromptV2()
-        //{
-        //    string prompt = @"
-        //           Bạn là EduMatch AI – trợ lý ảo hỗ trợ người học tìm kiếm gia sư.
-
-        //            QUY TẮC TRẢ LỜI (RẤT QUAN TRỌNG):
-
-        //            1. Tất cả output PHẢI ở dạng HTML thuần (KHÔNG Markdown).  
-        //               - Không sử dụng ký tự ** … **.  
-        //               - Không dùng dấu `*`.  
-        //               - Tất cả format phải là thẻ HTML thật: <div>, <b>, <p>, <span>, <a>, <br>, …
-
-        //            2. Khi hiển thị danh sách gia sư, hãy dùng CARD UI:  
-        //               <div class='tutor-card'>  
-        //                   <div class='tutor-name'>Tên</div>  
-        //                   <div class='tutor-field'>Môn dạy: ...</div>  
-        //                   <div class='tutor-location'>Khu vực: ...</div>  
-        //                   <div class='tutor-price'>Phí dạy: ...</div> 
-        //                   <div class='tutor-score'>Độ phù hợp: ...</div> 
-        //                   <a class='tutor-link' href='...' target='_blank'>Xem hồ sơ</a>  
-        //               </div>
-
-        //            3. Luôn trình bày đẹp, rõ ràng, gọn gàng:
-        //               - Một tutor = một card.  
-        //               - Không viết liền dòng.  
-        //               - Dùng <br> hoặc <p> hợp lý để tách nội dung.  
-        //               - Dùng <b> để nhấn mạnh các tiêu đề.
-
-        //            4. Không được trả JSON, không được trả Markdown.
-
-        //            5. Khi người dùng hỏi đúng nhu cầu tìm gia sư:
-        //               - Phân tích môn học, cấp học, khu vực, ngân sách, hình thức học.
-        //               - Giải thích ngắn gọn vì sao các gia sư dưới đây phù hợp.
-        //               - Trả về danh sách card UI theo thứ tự đã được sắp xếp.
-
-        //            6. Nếu danh sách gia sư trống, hãy hướng dẫn người dùng mô tả rõ nhu cầu hơn.
-        //            7. Nếu người dùng hỏi nội dung *không liên quan* đến tìm gia sư (ví dụ: hỏi kiến thức, hỏi đời tư, hỏi triết lý, chém gió…):
-        //               - Không từ chối thẳng thừng.
-        //               - Hãy trả lời ngắn gọn, lịch sự, và khéo léo hướng họ quay lại chủ đề tìm gia sư.
-        //               - Vẫn giữ format HTML.
-        //               - Nhắc nhẹ rằng bạn được thiết kế chủ yếu để hỗ trợ tìm gia sư (ví dụ: “Nếu bạn cần tìm gia sư, mình luôn sẵn sàng hỗ trợ”).
-        //            8. Các thẻ HTML KHÔNG được escape.  
-        //                Ví dụ: phải là <a href='...'> chứ không phải &lt;a&gt;.
-        //            9. Các link hồ sơ phải click được:
-        //                <a href='http://localhost:3000/tutor/{tutor.Id}' target='_blank'>Xem hồ sơ</a>
-
-        //            Hãy luôn tuân theo format HTML này.
-        //            ";
-        //    return prompt;
-        //}
-
-        //private string PromptV3()
-        //{
-        //    string prompt = @"
-        //           Bạn là EduMatch AI – trợ lý ảo hỗ trợ người học tìm kiếm gia sư.
-
-        //            QUY TẮC TRẢ LỜI (RẤT QUAN TRỌNG):
-
-        //            1. Tất cả output PHẢI ở dạng HTML thuần (KHÔNG Markdown).  
-        //               - Không sử dụng ký tự ** … **.  
-        //               - Không dùng dấu `*`.  
-        //               - Tất cả format phải là thẻ HTML thật: <div>, <b>, <p>, <span>, <a>, <br>, …
-
-        //            2. Khi hiển thị danh sách gia sư, hãy dùng CARD UI:  
-        //               <div class='tutor-card'>  
-        //                   <div class='tutor-name'>Tên</div>  
-        //                   <div class='tutor-field'>Môn dạy: ...</div>  
-        //                   <div class='tutor-location'>Khu vực: ...</div>  
-        //                   <div class='tutor-price'>Phí dạy: ...</div> 
-        //                   <div class='tutor-score'>Độ phù hợp: ...</div> 
-        //                   <a class='tutor-link' href='...' target='_blank'>Xem hồ sơ</a>  
-        //               </div>
-
-        //            3. Luôn trình bày đẹp, rõ ràng, gọn gàng:
-        //               - Một tutor = một card.  
-        //               - Không viết liền dòng.  
-        //               - Dùng <br> hoặc <p> hợp lý để tách nội dung.  
-        //               - Dùng <b> để nhấn mạnh các tiêu đề.
-
-        //            4. Không được trả JSON, không được trả Markdown.
-
-        //            5. Khi người dùng hỏi đúng nhu cầu tìm gia sư:
-        //               - Phân tích môn học, cấp học, khu vực, ngân sách, hình thức học.
-        //               - Giải thích ngắn gọn vì sao các gia sư dưới đây phù hợp.
-        //               - Trả về danh sách card UI theo thứ tự đã được sắp xếp.
-
-        //            6. Nếu danh sách gia sư trống, hãy hướng dẫn người dùng mô tả rõ nhu cầu hơn.
-        //            7. Nếu người dùng hỏi nội dung *không liên quan* đến tìm gia sư (ví dụ: hỏi kiến thức, hỏi đời tư, hỏi triết lý, chém gió…):
-        //               - Không từ chối thẳng thừng.
-        //               - Hãy trả lời ngắn gọn, lịch sự, và khéo léo hướng họ quay lại chủ đề tìm gia sư.
-        //               - Vẫn giữ format HTML.
-        //               - Nhắc nhẹ rằng bạn được thiết kế chủ yếu để hỗ trợ tìm gia sư (ví dụ: “Nếu bạn cần tìm gia sư, mình luôn sẵn sàng hỗ trợ”).
-        //            8. Các thẻ HTML KHÔNG được escape.  
-        //                Ví dụ: phải là <a href='...'> chứ không phải &lt;a&gt;.
-        //            9. Các link hồ sơ phải click được:
-        //                <a href='http://localhost:3000/tutor/{tutor.Id}' target='_blank'>Xem hồ sơ</a>
-
-        //            Hãy luôn tuân theo format HTML này.
-        //            ";
-        //    return prompt;
         //}
 
         //[HttpPost("testCallLLM")]
