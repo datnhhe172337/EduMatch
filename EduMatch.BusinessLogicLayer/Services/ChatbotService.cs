@@ -74,5 +74,15 @@ namespace EduMatch.BusinessLogicLayer.Services
         {
             return await _repo.GetMessagesHistoryAsync(sessionId);
         }
+
+        public bool IsTutorQuery(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message)) return false;
+
+            string lower = message.ToLower();
+            string[] keywords = { "gia sư", "dạy", "môn", "lớp", "học sinh", "học phí", "khu vực", "học online", "offline", "trực tiếp", "trực tuyến", "giá", "phí"};
+
+            return keywords.Any(k => lower.Contains(k));
+        }
     }
 }

@@ -15,7 +15,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 
         Task<List<ChatSession>> GetListSessionsByUserEmail(string userEmail);
         Task<List<ChatbotMessage>> GetMessagesHistoryAsync(int sessionId);
-
         Task<bool> DeleteSessionAsync(int sessionId);
+        bool IsTutorQuery(string message);
     }
 }

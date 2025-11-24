@@ -81,6 +81,28 @@ namespace EduMatch.PresentationLayer.Controllers
            
         }
 
+        /// <summary>
+        /// Lịch sử chat của từng session
+        /// </summary>
+        /// <param name="sessionId"></param>
+        /// <returns></returns>
+
+        [Authorize(Roles = "Learner")]
+        [HttpGet("chatHistory")]
+        public async Task<IActionResult> GetChatHistory(int sessionId)
+        {
+            var session = await _chatbotService.GetMessagesHistoryAsync(sessionId);
+
+            var messages = session.Select(m => new {
+                m.SessionId,
+                m.Role,
+                m.Message,
+                m.CreatedAt
+            });
+
+            return Ok(messages);
+        }
+
         [Authorize(Roles = "Learner")]
         [HttpDelete("session/{sessionId}")]
         public async Task<IActionResult> DeleteSessionAsync(int sessionId)
@@ -112,26 +134,22 @@ namespace EduMatch.PresentationLayer.Controllers
                 if (embeddingVector == null || embeddingVector.Length != 768)
                     throw new InvalidOperationException("Embedding vector is null or has invalid length.");
 
-                if (IsTutorQuery(req.Message) == false)
+                var systemPrompt = _promptService.PromptV1(); ;
+
+                if (_chatbotService.IsTutorQuery(req.Message) == false)
                 {
-                    var contextText = BuildContextJson(null);
-                    var contextJsonStringIsNull = JsonSerializer.Serialize(contextText);
-                    var promptQuery = _promptService.PromptV1();
 
                     var promptWithQueryIsNull = $@"
                     Người dùng hỏi: ""{req.Message}""
-                 
-                    Dưới đây là danh sách tutor phù hợp (JSON context):
-                    {contextJsonStringIsNull}
 
                     Hãy trả lời người dùng theo hướng dẫn như sau: 
-                    {promptQuery}
+                    {systemPrompt}
                     ";
 
                     var resp = await _gemini.GenerateTextAsync(sessionId, promptWithQueryIsNull, req.Message);
                     return Ok(new ChatResponseDto
                     {
-                        SessionId = sessionId,   // trả về để client lưu lại
+                        SessionId = sessionId,
                         Reply = resp
                     });
 
@@ -144,7 +162,6 @@ namespace EduMatch.PresentationLayer.Controllers
                 var contextJson = BuildContextJson(topTutors);
                 var contextJsonString = JsonSerializer.Serialize(contextJson);
 
-                var systemPrompt = _promptService.PromptV1(); ;
                 var prompt = $@"
                     Người dùng hỏi: ""{req.Message}""
                  
@@ -171,16 +188,6 @@ namespace EduMatch.PresentationLayer.Controllers
                 return StatusCode(500, ex.Message);
             }
 
-        }
-
-        private bool IsTutorQuery(string message)
-        {
-            if (string.IsNullOrWhiteSpace(message)) return false;
-
-            string lower = message.ToLower();
-            string[] keywords = { "gia sư", "dạy", "môn", "lớp", "học sinh", "học phí", "khu vực", "học online", "offline", "trực tiếp", "trực tuyến" };
-
-            return keywords.Any(k => lower.Contains(k));
         }
 
 
@@ -218,68 +225,6 @@ namespace EduMatch.PresentationLayer.Controllers
                 tutors = tutorList
             };
         }
-
-
-
-        //private string BuildContextText(List<(TutorProfileDto Tutor, float Score)> topTutors)
-        //{
-        //    return string.Join("\n\n", topTutors.Select((t, idx) =>
-        //    {
-        //        var tutor = t.Tutor;
-        //        var subjects = string.Join(", ",
-        //            tutor.TutorSubjects?.Select(s => s.Subject.SubjectName)
-        //            ?? new List<string>());
-
-        //        var levels = string.Join(", ",
-        //            tutor.TutorSubjects?.Select(s => s.Level.Name)
-        //            ?? new List<string>());
-
-        //        var hourlyRates = string.Join(", ",
-        //            tutor.TutorSubjects?.Select(s => s.HourlyRate + "k/h")
-        //            ?? new List<string>());
-
-        //        return $@"{idx + 1}. <b>{tutor.UserName}</b><br>
-        //        • <b>Môn dạy:</b> {subjects}<br>
-        //        • <b>Lớp:</b> {levels}<br>
-        //        • <b>Kinh nghiệm:</b> {tutor.TeachingExp}<br>
-        //        • <b>Khu vực:</b> {tutor.Province?.Name} - {tutor.SubDistrict?.Name}<br>
-        //        • <b>Độ phù hợp:</b> {t.Score:F2}<br>
-        //        • <b>Hồ sơ gia sư:</b> <a href='http://localhost:3000/tutor/{tutor.Id}' target='_blank'>Xem hồ sơ</a><br>";
-
-        //    }));
-        //}
-
-        //private string BuildContextText(List<(TutorProfileDto Tutor, float Score)> topTutors)
-        //{
-        //    return string.Join("", topTutors.Select((t, idx) =>
-        //    {
-        //        var tutor = t.Tutor;
-
-        //        var subjects = string.Join(", ",
-        //            tutor.TutorSubjects?.Select(s => s.Subject.SubjectName)
-        //            ?? new List<string>());
-
-        //        var levels = string.Join(", ",
-        //            tutor.TutorSubjects?.Select(s => s.Level.Name)
-        //            ?? new List<string>());
-
-        //        var hourlyRates = string.Join(", ",
-        //            tutor.TutorSubjects?.Select(s => s.HourlyRate + "k/h")
-        //            ?? new List<string>());
-
-        //        return $@"
-        //        <div class='tutor'>
-        //            <b>{idx + 1}. {tutor.UserName}</b><br>
-        //            • <b>Môn dạy:</b> {subjects}<br>
-        //            • <b>Lớp:</b> {levels}<br>
-        //            • <b>Kinh nghiệm:</b> {tutor.TeachingExp}<br>
-        //            • <b>Khu vực:</b> {tutor.Province?.Name} - {tutor.SubDistrict?.Name}<br>
-        //            • <b>Phí dạy:</b> {hourlyRates}<br>
-        //            • <b>Độ phù hợp:</b> {t.Score:F2}<br>
-        //            • <b>Hồ sơ:</b> <a href='http://localhost:3000/tutor/{tutor.Id}' target='_blank'>Xem hồ sơ</a><br>"";
-        //        </div>";
-        //            }));
-        //}
 
         //[HttpPost("testCallLLM")]
         //public async Task<IActionResult> TestCallLLMAsync([FromBody] ChatRequestDto req)
@@ -321,30 +266,6 @@ namespace EduMatch.PresentationLayer.Controllers
                 timestamp = DateTime.UtcNow
             });
         }
-
-        /// <summary>
-        /// Lịch sử chat của từng session
-        /// </summary>
-        /// <param name="sessionId"></param>
-        /// <returns></returns>
-
-        [Authorize(Roles = "Learner")]
-        [HttpGet("chatHistory")]
-        public async Task<IActionResult> GetChatHistory(int sessionId)
-        {
-            var session = await _chatbotService.GetMessagesHistoryAsync(sessionId);
-
-            var messages = session.Select(m => new {
-                    m.SessionId,
-                    m.Role,
-                    m.Message,
-                    m.CreatedAt
-                });
-
-            return Ok(messages);
-        }
-
-
 
 
 
