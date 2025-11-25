@@ -73,22 +73,24 @@ namespace EduMatch.PresentationLayer.Controllers
 
 
 		
-		/// <summary>
-		/// Đăng ký trở thành gia sư với đầy đủ thông tin profile, education, certificate, subject và availability
-		/// </summary>
-		[Authorize(Roles = Roles.BusinessAdmin + ","  + Roles.Learner)]
-		[HttpPost("become-tutor")]
-		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
-		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
-		public async Task<IActionResult> BecomeTutor([FromBody] BecomeTutorRequest request)
-		{
-			if (!ModelState.IsValid)
-				return BadRequest(ApiResponse<string>.Fail("Invalid request."));
+	/// <summary>
+	/// Đăng ký trở thành gia sư với đầy đủ thông tin profile, education, certificate, subject và availability
+	/// </summary>
+	[HttpPost("become-tutor")]
+	[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
+	public async Task<IActionResult> BecomeTutor([FromBody] BecomeTutorRequest request)
+	{
+		if (!ModelState.IsValid)
+			return BadRequest(ApiResponse<string>.Fail("Invalid request."));
 
-			var userEmail = _currentUserService.Email;
-			if (string.IsNullOrWhiteSpace(userEmail))
-				return Unauthorized(ApiResponse<string>.Fail("User email not found."));
+		if (request.TutorProfile == null)
+			return BadRequest(ApiResponse<string>.Fail("Tutor profile is required."));
+
+		var userEmail = request.TutorProfile.UserEmail;
+		if (string.IsNullOrWhiteSpace(userEmail))
+			return BadRequest(ApiResponse<string>.Fail("User email is required in request."));
 
 			request.Educations ??= new List<TutorEducationCreateRequest>();
 			request.Certificates ??= new List<TutorCertificateCreateRequest>();
@@ -149,6 +151,7 @@ namespace EduMatch.PresentationLayer.Controllers
 				));
 			}
 		}
+	}
 
 
         /// <summary>
