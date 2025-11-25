@@ -337,7 +337,7 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 			catch (Exception ex)
 			{
-				return BadRequest(ApiResponse<string>.Fail("Failed to get tutor profile.", ex.Message				));
+				return BadRequest(ApiResponse<string>.Fail("Failed to get tutor profile.", ex.Message));
 			}
 		}
 
