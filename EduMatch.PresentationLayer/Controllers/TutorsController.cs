@@ -73,85 +73,85 @@ namespace EduMatch.PresentationLayer.Controllers
 
 
 		
-	/// <summary>
-	/// Đăng ký trở thành gia sư với đầy đủ thông tin profile, education, certificate, subject và availability
-	/// </summary>
-	[HttpPost("become-tutor")]
-	[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
-	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
-	[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
-	public async Task<IActionResult> BecomeTutor([FromBody] BecomeTutorRequest request)
-	{
-		if (!ModelState.IsValid)
-			return BadRequest(ApiResponse<string>.Fail("Invalid request."));
+		/// <summary>
+		/// Đăng ký trở thành gia sư với đầy đủ thông tin profile, education, certificate, subject và availability
+		/// </summary>
+		[HttpPost("become-tutor")]
+		[ProducesResponseType(typeof(ApiResponse<TutorProfileDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
+		public async Task<IActionResult> BecomeTutor([FromBody] BecomeTutorRequest request)
+		{
+			if (!ModelState.IsValid)
+				return BadRequest(ApiResponse<string>.Fail("Invalid request."));
 
-		if (request.TutorProfile == null)
-			return BadRequest(ApiResponse<string>.Fail("Tutor profile is required."));
+			if (request.TutorProfile == null)
+				return BadRequest(ApiResponse<string>.Fail("Tutor profile is required."));
 
-		var userEmail = request.TutorProfile.UserEmail;
-		if (string.IsNullOrWhiteSpace(userEmail))
-			return BadRequest(ApiResponse<string>.Fail("User email is required in request."));
+			var userEmail = request.TutorProfile.UserEmail;
+			if (string.IsNullOrWhiteSpace(userEmail))
+				return BadRequest(ApiResponse<string>.Fail("User email is required in request."));
 
-			request.Educations ??= new List<TutorEducationCreateRequest>();
-			request.Certificates ??= new List<TutorCertificateCreateRequest>();
-			request.Subjects ??= new List<TutorSubjectCreateRequest>();
-			request.Availabilities ??= new List<TutorAvailabilityCreateRequest>();
+				request.Educations ??= new List<TutorEducationCreateRequest>();
+				request.Certificates ??= new List<TutorCertificateCreateRequest>();
+				request.Subjects ??= new List<TutorSubjectCreateRequest>();
+				request.Availabilities ??= new List<TutorAvailabilityCreateRequest>();
 
-			await using var tx = await _eduMatch.Database.BeginTransactionAsync();
-			try
-			{
-				// Tạo profile (sử dụng transaction từ controller)
-				var profileDto = await _tutorProfileService.CreateAsync(request.TutorProfile);
-				var tutorId = profileDto.Id;
-
-				await _summaryService.EnsureAndUpdateSummaryAsync(tutorId);
-				if (request.Educations.Any())
+				await using var tx = await _eduMatch.Database.BeginTransactionAsync();
+				try
 				{
-					foreach (var e in request.Educations) e.TutorId = tutorId;
-					await _tutorEducationService.CreateBulkAsync(request.Educations);
+					// Tạo profile (sử dụng transaction từ controller)
+					var profileDto = await _tutorProfileService.CreateAsync(request.TutorProfile);
+					var tutorId = profileDto.Id;
+
+					await _summaryService.EnsureAndUpdateSummaryAsync(tutorId);
+					if (request.Educations.Any())
+					{
+						foreach (var e in request.Educations) e.TutorId = tutorId;
+						await _tutorEducationService.CreateBulkAsync(request.Educations);
+					}
+
+					if (request.Certificates.Any())
+					{
+						foreach (var c in request.Certificates) c.TutorId = tutorId;
+						await _tutorCertificateService.CreateBulkAsync(request.Certificates);
+					}
+
+					if (request.Subjects.Any())
+					{
+						foreach (var s in request.Subjects) s.TutorId = tutorId;
+						await _tutorSubjectService.CreateBulkAsync(request.Subjects);
+					}
+
+					if (request.Availabilities.Any())
+					{
+						foreach (var s in request.Availabilities) s.TutorId = tutorId;
+						await _tutorAvailabilityService.CreateBulkAsync(request.Availabilities);
+					}
+
+					await _emailService.SendBecomeTutorWelcomeAsync(userEmail);
+
+					// await _userService.UpdateRoleUserAsync(userEmail, 2);
+
+					await tx.CommitAsync();
+
+					var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
+
+					return Ok(ApiResponse<object>.Ok(new
+					{
+						profile = fullProfile
+					}, "Tutor profile created successfully and pending approval."));
 				}
-
-				if (request.Certificates.Any())
+				catch (Exception ex)
 				{
-					foreach (var c in request.Certificates) c.TutorId = tutorId;
-					await _tutorCertificateService.CreateBulkAsync(request.Certificates);
+					await tx.RollbackAsync();
+					return BadRequest(ApiResponse<string>.Fail(
+						"Failed to create tutor profile.",
+						new { exception = ex.Message }
+					));
 				}
-
-				if (request.Subjects.Any())
-				{
-					foreach (var s in request.Subjects) s.TutorId = tutorId;
-					await _tutorSubjectService.CreateBulkAsync(request.Subjects);
-				}
-
-				if (request.Availabilities.Any())
-				{
-					foreach (var s in request.Availabilities) s.TutorId = tutorId;
-					await _tutorAvailabilityService.CreateBulkAsync(request.Availabilities);
-				}
-
-				await _emailService.SendBecomeTutorWelcomeAsync(userEmail);
-
-				// await _userService.UpdateRoleUserAsync(userEmail, 2);
-
-				await tx.CommitAsync();
-
-				var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
-
-				return Ok(ApiResponse<object>.Ok(new
-				{
-					profile = fullProfile
-				}, "Tutor profile created successfully and pending approval."));
-			}
-			catch (Exception ex)
-			{
-				await tx.RollbackAsync();
-				return BadRequest(ApiResponse<string>.Fail(
-					"Failed to create tutor profile.",
-					new { exception = ex.Message }
-				));
-			}
 		}
-	}
+	
 
 
         /// <summary>
@@ -337,12 +337,12 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 			catch (Exception ex)
 			{
-				return BadRequest(ApiResponse<string>.Fail("Failed to get tutor profile.", ex.Message));
+				return BadRequest(ApiResponse<string>.Fail("Failed to get tutor profile.", ex.Message				));
 			}
 		}
 
 
-		/// <summary>
+        /// <summary>
 		/// Cập nhật thông cơ bản (không có chứng chỉ, bằng cấp học vấn, status) tin gia sư
 		/// </summary>
 		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
