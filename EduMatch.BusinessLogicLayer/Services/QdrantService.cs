@@ -233,7 +233,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             return final;
         }
 
-        public async Task<List<(TutorProfileDto Tutor, float Score)>> MergeAndRankAsync(List<(TutorProfileDto Tutor, float Score)> vectorResults, List<(TutorProfileDto Tutor, float Score)> keywordResults, int topK = 3)
+        public async Task<List<(TutorProfileDto Tutor, float Score)>> MergeAndRankAsync(List<(TutorProfileDto Tutor, float Score)> vectorResults, List<(TutorProfileDto Tutor, float Score)> keywordResults, int topK = 5)
         {
             var merged = new Dictionary<int, (TutorProfileDto Tutor, float VectorScore, float KeywordScore)>();
 

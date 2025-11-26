@@ -193,7 +193,7 @@ namespace EduMatch.PresentationLayer.Controllers
                 var final = await _qdrantService.MergeAndRankAsync(vectorResults, keywordResults);
 
                 // Step 5: Rerank
-                float threshold = 0.65f;
+                float threshold = 0.76f;
                 var filteredTutors = final
                     .Where(t => t.Score >= threshold)
                     .OrderByDescending(t => t.Score)
@@ -202,7 +202,9 @@ namespace EduMatch.PresentationLayer.Controllers
 
                 // Step 3: Buld Context + Prompt
                 var contextJson = BuildContextJson(filteredTutors);
-                var contextJsonString = JsonSerializer.Serialize(contextJson);
+                var contextJsonString = JsonSerializer.Serialize(contextJson, new JsonSerializerOptions { WriteIndented = false });
+
+                 Console.WriteLine(contextJsonString);
 
                 var prompt = $@"
                     Người dùng hỏi: ""{req.Message}""
@@ -210,7 +212,7 @@ namespace EduMatch.PresentationLayer.Controllers
                     Dưới đây là danh sách tutor phù hợp (JSON context):
                     {contextJsonString}
 
-                    Hãy trả lời người dùng theo hướng dẫn như sau: 
+                    Hãy trả lời người dùng theo đúng hướng dẫn như sau: 
                     {systemPrompt}
                     ";
 
