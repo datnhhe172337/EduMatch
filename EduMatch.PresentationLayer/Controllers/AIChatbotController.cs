@@ -8,9 +8,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 using Org.BouncyCastle.Asn1.Crmf;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -192,7 +194,7 @@ namespace EduMatch.PresentationLayer.Controllers
                 //Step 4: Merge & Rank
                 var final = await _qdrantService.MergeAndRankAsync(vectorResults, keywordResults);
 
-                // Step 5: Rerank
+                //Step 5: Rerank
                 float threshold = 0.76f;
                 var filteredTutors = final
                     .Where(t => t.Score >= threshold)
@@ -200,31 +202,80 @@ namespace EduMatch.PresentationLayer.Controllers
                     .Take(3)
                     .ToList();
 
+
                 // Step 3: Buld Context + Prompt
                 var contextJson = BuildContextJson(filteredTutors);
                 var contextJsonString = JsonSerializer.Serialize(contextJson, new JsonSerializerOptions { WriteIndented = false });
 
                  Console.WriteLine(contextJsonString);
 
+                //var prompt = $@"
+                //    Người dùng hỏi: ""{req.Message}""
+
+                //    Dưới đây là danh sách tutor phù hợp (JSON context):
+                //    {contextJsonString}
+
+                //    Hãy trả lời người dùng theo đúng hướng dẫn như sau: 
+                //    {systemPrompt}
+                //    ";
+
                 var prompt = $@"
-                    Người dùng hỏi: ""{req.Message}""
-                 
-                    Dưới đây là danh sách tutor phù hợp (JSON context):
+                    Bạn là một chatbot gia sư. Người dùng hỏi: ""{req.Message}""
+                    
+                     Dưới đây là danh sách tutor phù hợp (JSON context):
                     {contextJsonString}
 
-                    Hãy trả lời người dùng theo đúng hướng dẫn như sau: 
-                    {systemPrompt}
-                    ";
+                    Hãy trả lời **chỉ duy nhất JSON** theo schema sau:
+
+                    {{
+                      ""message"": ""string"",
+                      ""tutors"": [
+                        {{
+                          ""rank"": integer,
+                          ""tutorId"": integer,
+                          ""name"": ""string"",
+                          ""subjects"": [""string""],
+                          ""levels"": [""string""],
+                          ""province"": ""string"",
+                          ""subDistrict"": ""string"",
+                          ""hourlyRates"": [number],
+                          ""teachingExp"": ""string"",
+                          ""profileUrl"": ""string"",
+                          ""matchScore"": number
+                        }}
+                      ]
+                    }}
+
+                    - Nếu không tìm thấy tutor, tutors là mảng rỗng, message ghi ""Không tìm thấy tutor phù hợp"".
+                    - **Không thêm text nào khác ngoài JSON.**
+
+
+                ";
 
 
                 // Step 4: Call LLM - Gemini
                 var response = await _gemini.GenerateTextAsync(sessionId, prompt, req.Message);
 
+                //response = CleanLLMJson(response);
+
+                var cleanJson = CleanLLMJson(response);
+                SuggestionsDto llmResult;
+                try
+                {
+                    llmResult = JsonSerializer.Deserialize<SuggestionsDto>(cleanJson)
+                                ?? new SuggestionsDto { Message = "Không tìm thấy tutor phù hợp" };
+                }
+                catch
+                {
+                    llmResult = new SuggestionsDto { Message = "Không tìm thấy tutor phù hợp" };
+                }
+
+
                 return Ok(new ChatResponseDto
                 {
                     SessionId = sessionId,
-                    Reply = response,
-                    Suggestions = contextJson
+                    Reply = llmResult.Message,
+                    Suggestions = llmResult
                 });
             }
             catch (Exception ex)
@@ -233,6 +284,30 @@ namespace EduMatch.PresentationLayer.Controllers
             }
 
         }
+
+        public class LlmJsonResult
+        {
+            public string Reply { get; set; }
+            public SuggestionsDto Suggestions { get; set; }
+        }
+
+
+        private string CleanLLMJson(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return "{}";
+
+            int start = input.IndexOf('{');
+            int end = input.LastIndexOf('}');
+
+            if (start < 0 || end < 0 || end <= start) return "{}";
+
+            string json = input[start..(end + 1)];
+            return json;
+        }
+
+
+
+
 
 
         private object BuildContextJson(List<(TutorProfileDto Tutor, float Score)> topTutors)
