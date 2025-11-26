@@ -108,10 +108,11 @@ namespace EduMatch.BusinessLogicLayer.Services
                         $"Giá: {string.Join(", ", tutor.TutorSubjects?.Select(s => s.HourlyRate?.ToString() ?? "0") ?? Enumerable.Empty<string>())}",
                         $"Hình thức dạy: {tutor.TeachingModes.ToString() ?? ""}",
                         $"Tỉnh/Thành: {tutor.Province?.Name ?? ""}",
-                        $"Xã: {tutor.SubDistrict?.Name ?? ""}"
+                        $"Xã/Phường/Khu vực: {tutor.SubDistrict?.Name ?? ""}"
                  }.Where(s => !string.IsNullOrWhiteSpace(s))
              );
 
+            //Console.WriteLine(textToEmbed);
             var vector = await _embeddingService.GenerateEmbeddingAsync(textToEmbed);
             if (vector == null || vector.Length == 0)
                 throw new InvalidOperationException($"Embedding generation failed for tutor {tutor?.Id}");
@@ -197,6 +198,8 @@ namespace EduMatch.BusinessLogicLayer.Services
                     SubDistrict = new SubDistrictDto { Name = GetString(p, "subdistrict") },
                     TutorSubjects = new List<TutorSubjectDto>()
                 };
+
+                Console.WriteLine(tutor);
 
                 // Parse subjects safely
                 if (p.TryGetValue("subjects", out var subjectsVal) && subjectsVal.ListValue != null)

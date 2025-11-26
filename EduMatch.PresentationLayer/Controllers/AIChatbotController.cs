@@ -159,7 +159,7 @@ namespace EduMatch.PresentationLayer.Controllers
                 var topTutors = await _qdrantService.SearchTutorsAsync(embeddingVector, topK: 5);
 
                 // Filter theo score threshold
-                float threshold = 0.7f;
+                float threshold = 0.67f;
                 var filteredTutors = topTutors
                     .Where(t => t.Score >= threshold)
                     .OrderByDescending(t => t.Score)
