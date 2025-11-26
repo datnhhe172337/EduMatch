@@ -265,7 +265,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                     float vectorScore = x.Value.VectorScore; // [0..1]
                     float keywordScore = Math.Min(1f, x.Value.KeywordScore / 10f); // normalize to [0..1]
 
-                    float finalScore = 0.3f * vectorScore + 0.7f * keywordScore;
+                    float finalScore = 0.7f * vectorScore + 0.3f * keywordScore;
                     return (x.Value.Tutor, finalScore);
                 })
                 .OrderByDescending(x => x.finalScore)
