@@ -233,5 +233,46 @@ namespace EduMatch.BusinessLogicLayer.Services
             return final;
         }
 
+        public async Task<List<(TutorProfileDto Tutor, float Score)>> MergeAndRankAsync(List<(TutorProfileDto Tutor, float Score)> vectorResults, List<(TutorProfileDto Tutor, float Score)> keywordResults, int topK = 3)
+        {
+            var merged = new Dictionary<int, (TutorProfileDto Tutor, float VectorScore, float KeywordScore)>();
+
+            // --- Step 1: Add Vector Results ---
+            foreach (var vr in vectorResults)
+            {
+                merged[vr.Tutor.Id] = (vr.Tutor, vr.Score, 0f);
+            }
+
+            // --- Step 2: Add Keyword Results ---
+            foreach (var kr in keywordResults)
+            {
+                if (merged.ContainsKey(kr.Tutor.Id))
+                {
+                    var e = merged[kr.Tutor.Id];
+                    merged[kr.Tutor.Id] = (e.Tutor, e.VectorScore, kr.Score);
+                }
+                else
+                {
+                    // tutor found in keyword only
+                    merged[kr.Tutor.Id] = (kr.Tutor, 0.05f, kr.Score); // small vector weight
+                }
+            }
+
+            // --- Step 3: Final Score ---
+            var final = merged
+                .Select(x =>
+                {
+                    float vectorScore = x.Value.VectorScore; // [0..1]
+                    float keywordScore = Math.Min(1f, x.Value.KeywordScore / 10f); // normalize to [0..1]
+
+                    float finalScore = 0.3f * vectorScore + 0.7f * keywordScore;
+                    return (x.Value.Tutor, finalScore);
+                })
+                .OrderByDescending(x => x.finalScore)
+                .Take(topK)
+                .ToList();
+
+            return final;
+        }
     }
 }

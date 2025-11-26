@@ -551,7 +551,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                     if (subjects.Any(s => s.Contains(token))) score += 5;
                     if (levels.Any(l => l.Contains(token))) score += 3;
                     if (!string.IsNullOrEmpty(province) && province.Contains(token)) score += 3;
-                    if (!string.IsNullOrEmpty(subDistrict) && subDistrict.Contains(token)) score += 2;
+                    if (!string.IsNullOrEmpty(subDistrict) && subDistrict.Contains(token)) score += 5;
 
                     if (!string.IsNullOrEmpty(bio) && bio.Contains(token)) score += 1;
                     if (!string.IsNullOrEmpty(teaching) && teaching.Contains(token)) score += 1;

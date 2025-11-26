@@ -156,35 +156,49 @@ namespace EduMatch.PresentationLayer.Controllers
                 }
 
                 // Step 2: Vector search (Semantic search) - Qdrant
-                var topTutors = await _qdrantService.SearchTutorsAsync(embeddingVector, topK: 5);
+                var vectorResults = await _qdrantService.SearchTutorsAsync(embeddingVector, topK: 5);
 
                 // Filter theo score threshold
+                //float threshold = 0.65f;
+                //var filteredTutors = vectorResults
+                //    .Where(t => t.Score >= threshold)
+                //    .OrderByDescending(t => t.Score)
+                //    .Take(3)
+                //    .ToList();
+
+                //if (!filteredTutors.Any())
+                //{
+                //    var promptWithQueryIsNull = $@"
+                //    Người dùng hỏi: ""{req.Message}""
+                    
+                //    Không có tutor nào phù hợp từ yêu cầu của người dùng.
+
+                //    Hãy trả lời người dùng theo hướng dẫn như sau: 
+                //    {systemPrompt}
+                //    ";
+
+                //    var resp = await _gemini.GenerateTextAsync(sessionId, promptWithQueryIsNull, req.Message);
+
+                //    return Ok(new ChatResponseDto
+                //    {
+                //        SessionId = sessionId,
+                //        Reply = resp
+                //    });
+                //}
+
+                // Step 3: Keyword search
+                var keywordResults = await _service.SearchByKeywordAsync(req.Message);
+
+                //Step 4: Merge & Rank
+                var final = await _qdrantService.MergeAndRankAsync(vectorResults, keywordResults);
+
+                // Step 5: Rerank
                 float threshold = 0.65f;
-                var filteredTutors = topTutors
+                var filteredTutors = final
                     .Where(t => t.Score >= threshold)
                     .OrderByDescending(t => t.Score)
                     .Take(3)
                     .ToList();
-
-                if (!filteredTutors.Any())
-                {
-                    var promptWithQueryIsNull = $@"
-                    Người dùng hỏi: ""{req.Message}""
-                    
-                    Không có tutor nào phù hợp từ yêu cầu của người dùng.
-
-                    Hãy trả lời người dùng theo hướng dẫn như sau: 
-                    {systemPrompt}
-                    ";
-
-                    var resp = await _gemini.GenerateTextAsync(sessionId, promptWithQueryIsNull, req.Message);
-
-                    return Ok(new ChatResponseDto
-                    {
-                        SessionId = sessionId,
-                        Reply = resp
-                    });
-                }
 
                 // Step 3: Buld Context + Prompt
                 var contextJson = BuildContextJson(filteredTutors);

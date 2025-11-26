@@ -17,6 +17,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task<List<(TutorProfileDto Tutor, float Score)>> MergeAndRankAsync(
                 List<(TutorProfileDto Tutor, float Score)> vectorResults,
                 List<(TutorProfileDto Tutor, float Score)> keywordResults,
-                int topK = 5);
+                int topK = 3);
     }
 }
