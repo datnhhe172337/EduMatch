@@ -49,6 +49,8 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 		Task<int> SyncAllTutorsAsync();
         Task<TutorProfileDto> UpdateStatusAsync(int id, TutorStatus status);
 
+		Task<List<(TutorProfileDto Tutor, float Score)>> SearchByKeywordAsync(string keyword);
+
     }
 
 		
