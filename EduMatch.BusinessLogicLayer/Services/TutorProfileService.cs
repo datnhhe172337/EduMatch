@@ -11,6 +11,8 @@ using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
+using System.Globalization;
+using System.Text;
 
 
 namespace EduMatch.BusinessLogicLayer.Services
@@ -481,5 +483,105 @@ namespace EduMatch.BusinessLogicLayer.Services
         {
             throw new NotImplementedException();
         }
+
+        //     public async Task<List<(TutorProfileDto Tutor, float Score)>> SearchByKeywordAsync(string keyword)
+        //     {
+        //if (string.IsNullOrWhiteSpace(keyword))
+        //	return new List<(TutorProfileDto Tutor, float Score)>();
+
+        //         string q = keyword.Trim().ToLower();
+
+        //         var tutors = await _tutorProfileRepository.GetAllFullAsync();
+        //         var tutorsDto = _mapper.Map<IReadOnlyList<TutorProfileDto>>(tutors);
+
+        //         var results = new List<(TutorProfileDto, float)>();
+
+        //         var result = tutorsDto
+        //             .Where(t =>
+        //                 // Search in subjects
+        //                 t.TutorSubjects != null && t.TutorSubjects.Any(s =>
+        //                     !string.IsNullOrEmpty(s.Subject?.SubjectName) &&
+        //                     s.Subject.SubjectName.ToLower().Contains(q)
+        //                 )
+        //		//  Search in levels
+        //		|| t.TutorSubjects != null && t.TutorSubjects.Any(s =>
+        //                     !string.IsNullOrEmpty(s.Level?.Name) &&
+        //                     s.Level.Name.ToLower().Contains(q)
+        //                 )
+        //                 // Or search in Province
+        //                 || (!string.IsNullOrEmpty(t.Province?.Name) && t.Province.Name.ToLower().Contains(q))
+        //                 // Or search in SubDistrict
+        //                 || (!string.IsNullOrEmpty(t.SubDistrict?.Name) && t.SubDistrict.Name.ToLower().Contains(q))
+        //             )
+        //             .Take(top)
+        //             .ToList();
+
+        //         return result;
+        //     }
+
+        public async Task<List<(TutorProfileDto Tutor, float Score)>> SearchByKeywordAsync(string keyword)
+        {
+            if (string.IsNullOrWhiteSpace(keyword))
+                return new List<(TutorProfileDto Tutor, float Score)>();
+
+            // --- Normalize & tokenize ---
+            string q = NormalizeText(keyword);
+            var tokens = q.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            // Load all tutors (full)
+            var tutors = await _tutorProfileRepository.GetAllFullAsync();
+            var tutorsDto = _mapper.Map<IReadOnlyList<TutorProfileDto>>(tutors);
+
+            var results = new List<(TutorProfileDto, float)>();
+
+            foreach (var t in tutorsDto)
+            {
+                float score = 0f;
+
+                // Normalize data fields
+                string province = NormalizeText(t.Province?.Name);
+                string subDistrict = NormalizeText(t.SubDistrict?.Name);
+                string bio = NormalizeText(t.Bio);
+                string teaching = NormalizeText(t.TeachingExp);
+                var subjects = t.TutorSubjects?.Select(s => NormalizeText(s.Subject?.SubjectName)).ToList() ?? new();
+                var levels = t.TutorSubjects?.Select(s => NormalizeText(s.Level?.Name)).ToList() ?? new();
+
+                foreach (string token in tokens)
+                {
+                    if (subjects.Any(s => s.Contains(token))) score += 5;
+                    if (levels.Any(l => l.Contains(token))) score += 2;
+                    if (!string.IsNullOrEmpty(province) && province.Contains(token)) score += 1;
+                    if (!string.IsNullOrEmpty(subDistrict) && subDistrict.Contains(token)) score += 1;
+                }
+
+                if (score >= 5)
+                    results.Add((t, score));
+            }
+
+            return results;
+        }
+
+
+        public static string NormalizeText(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return string.Empty;
+
+            input = input.Trim().ToLower();
+
+            var normalized = input.Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder();
+
+            foreach (var ch in normalized)
+            {
+                var cat = CharUnicodeInfo.GetUnicodeCategory(ch);
+                if (cat != UnicodeCategory.NonSpacingMark)
+                    sb.Append(ch);
+            }
+
+            return sb.ToString().Normalize(NormalizationForm.FormC);
+        }
+
+
     }
 }

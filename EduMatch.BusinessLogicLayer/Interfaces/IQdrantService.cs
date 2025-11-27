@@ -13,5 +13,10 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task UpsertTutorsAsync(IEnumerable<TutorProfileDto> tutors);
         Task<List<(TutorProfileDto Tutor, float Score)>> SearchTutorsAsync(float[] queryVector, int topK = 5);
         Task CreateCollectionAsync(string collectionName, int vectorSize);
+
+        Task<List<(TutorProfileDto Tutor, float Score)>> MergeAndRankAsync(
+                List<(TutorProfileDto Tutor, float Score)> vectorResults,
+                List<(TutorProfileDto Tutor, float Score)> keywordResults,
+                int topK = 5);
     }
 }
