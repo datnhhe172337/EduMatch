@@ -195,7 +195,7 @@ namespace EduMatch.PresentationLayer.Controllers
                 var final = await _qdrantService.MergeAndRankAsync(vectorResults, keywordResults);
 
                 //Step 5: Rerank
-                float threshold = 0.76f;
+                float threshold = 0.75f;
                 var filteredTutors = final
                     .Where(t => t.Score >= threshold)
                     .OrderByDescending(t => t.Score)
@@ -220,9 +220,11 @@ namespace EduMatch.PresentationLayer.Controllers
                 //    ";
 
                 var prompt = $@"
-                    Bạn là một chatbot gia sư. Người dùng hỏi: ""{req.Message}""
+                    Bạn là EduMatch AI – trợ lý ảo hỗ trợ người học tìm kiếm gia sư. 
+
+                    Người dùng hỏi: ""{req.Message}""
                     
-                     Dưới đây là danh sách tutor phù hợp (JSON context):
+                    Dưới đây là danh sách tutor phù hợp (JSON context):
                     {contextJsonString}
 
                     Hãy trả lời **chỉ duy nhất JSON** theo schema sau:
@@ -247,7 +249,7 @@ namespace EduMatch.PresentationLayer.Controllers
                     }}
 
                     - Hãy trả lời thân thiện, tự nhiên
-                    - Nếu danh sách gia sư trống, hãy hướng dẫn người dùng mô tả rõ nhu cầu hơn.
+                    - Nếu danh sách gia sư trống (không tìm thấy gia sư phù hợp), hãy hướng dẫn người dùng mô tả rõ nhu cầu hơn.
                     - Nếu người dùng hỏi nội dung *không liên quan* đến tìm gia sư (ví dụ: hỏi kiến thức, hỏi đời tư, hỏi triết lý, chém gió.):
                        + Không từ chối thẳng thừng.
                        + Hãy trả lời ngắn gọn, lịch sự, và khéo léo hướng họ quay lại chủ đề tìm gia sư.
@@ -264,23 +266,22 @@ namespace EduMatch.PresentationLayer.Controllers
                 //response = CleanLLMJson(response);
 
                 var cleanJson = CleanLLMJson(response);
-                SuggestionsDto llmResult;
-                try
-                {
-                    llmResult = JsonSerializer.Deserialize<SuggestionsDto>(cleanJson)
-                                ?? new SuggestionsDto { Message = "Không tìm thấy tutor phù hợp" };
-                }
-                catch
-                {
-                    llmResult = new SuggestionsDto { Message = "Không tìm thấy tutor phù hợp" };
-                }
-
+                var llmResult = JsonSerializer.Deserialize<SuggestionsDto>(cleanJson);
+                //try
+                //{
+                //    llmResult = JsonSerializer.Deserialize<SuggestionsDto>(cleanJson)
+                //                ?? new SuggestionsDto { Message = "Không tìm thấy tutor phù hợp" };
+                //}
+                //catch
+                //{
+                //    llmResult = new SuggestionsDto { Message = "Không tìm thấy tutor phù hợp" };
+                //}
 
                 return Ok(new ChatResponseDto
                 {
                     SessionId = sessionId,
                     Reply = llmResult.Message,
-                    Suggestions = llmResult
+                    Suggestions = llmResult.Tutors,
                 });
             }
             catch (Exception ex)
@@ -289,13 +290,6 @@ namespace EduMatch.PresentationLayer.Controllers
             }
 
         }
-
-        public class LlmJsonResult
-        {
-            public string Reply { get; set; }
-            public SuggestionsDto Suggestions { get; set; }
-        }
-
 
         private string CleanLLMJson(string input)
         {
@@ -309,10 +303,6 @@ namespace EduMatch.PresentationLayer.Controllers
             string json = input[start..(end + 1)];
             return json;
         }
-
-
-
-
 
 
         private object BuildContextJson(List<(TutorProfileDto Tutor, float Score)> topTutors)
