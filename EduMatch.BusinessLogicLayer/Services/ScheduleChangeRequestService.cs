@@ -22,6 +22,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly ITutorAvailabilityRepository _tutorAvailabilityRepository;
         private readonly EduMatchContext _context;
         private readonly IMapper _mapper;
+        private readonly INotificationService _notificationService;
 
         public ScheduleChangeRequestService(
             IScheduleChangeRequestRepository scheduleChangeRequestRepository,
@@ -29,7 +30,8 @@ namespace EduMatch.BusinessLogicLayer.Services
             IUserRepository userRepository,
             ITutorAvailabilityRepository tutorAvailabilityRepository,
             EduMatchContext context,
-            IMapper mapper)
+            IMapper mapper,
+            INotificationService notificationService)
         {
             _scheduleChangeRequestRepository = scheduleChangeRequestRepository;
             _scheduleService = scheduleService;
@@ -37,6 +39,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             _tutorAvailabilityRepository = tutorAvailabilityRepository;
             _context = context;
             _mapper = mapper;
+            _notificationService = notificationService;
         }
 
         /// <summary>
@@ -303,6 +306,47 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                 // Commit transaction
                 await dbTransaction.CommitAsync();
+
+                // Gửi thông báo cho các bên liên quan
+                if (status == ScheduleChangeRequestStatus.Approved)
+                {
+                    // Thông báo cho người yêu cầu (RequesterEmail)
+                    await _notificationService.CreateNotificationAsync(
+                        entity.RequesterEmail,
+                        "Yêu cầu thay đổi lịch học của bạn đã được chấp nhận. Lịch học đã được cập nhật.",
+                        $"/schedule/{entity.ScheduleId}");
+
+                    // Thông báo cho người được yêu cầu (RequestedToEmail)
+                    await _notificationService.CreateNotificationAsync(
+                        entity.RequestedToEmail,
+                        "Yêu cầu thay đổi lịch học đã được chấp nhận. Lịch học đã được cập nhật.",
+                        $"/schedule/{entity.ScheduleId}");
+                }
+                else if (status == ScheduleChangeRequestStatus.Rejected)
+                {
+                    // Thông báo cho người yêu cầu (RequesterEmail)
+                    var rejectMessage = !string.IsNullOrWhiteSpace(entity.Reason)
+                        ? $"Yêu cầu thay đổi lịch học của bạn đã bị từ chối. Lý do: {entity.Reason}."
+                        : "Yêu cầu thay đổi lịch học của bạn đã bị từ chối.";
+
+                    await _notificationService.CreateNotificationAsync(
+                        entity.RequesterEmail,
+                        rejectMessage,
+                        $"/schedule/{entity.ScheduleId}");
+                }
+                else if (status == ScheduleChangeRequestStatus.Cancelled)
+                {
+                    // Thông báo cho cả hai bên khi hủy
+                    await _notificationService.CreateNotificationAsync(
+                        entity.RequesterEmail,
+                        "Yêu cầu thay đổi lịch học của bạn đã bị hủy.",
+                        $"/schedule/{entity.ScheduleId}");
+
+                    await _notificationService.CreateNotificationAsync(
+                        entity.RequestedToEmail,
+                        "Yêu cầu thay đổi lịch học đã bị hủy.",
+                        $"/schedule/{entity.ScheduleId}");
+                }
 
                 // Map entity sang DTO
                 return _mapper.Map<ScheduleChangeRequestDto>(entity);
