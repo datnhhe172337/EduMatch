@@ -40,6 +40,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		private readonly IUserService _userService;
 		private readonly ITutorVerificationRequestService _tutorVerificationRequestService;
 		private readonly ITutorRatingSummaryService _summaryService;
+		private readonly INotificationService _notificationService;
 		public TutorsController(
 			ITutorSubjectService tutorSubjectService,
 			ISubjectService subjectService,
@@ -53,7 +54,8 @@ namespace EduMatch.PresentationLayer.Controllers
 			EmailService emailService,
 			IUserService userService,
 			ITutorVerificationRequestService tutorVerificationRequestService,
-			ITutorRatingSummaryService summaryService
+			ITutorRatingSummaryService summaryService,
+			INotificationService notificationService
 			)
 		{
 			_tutorSubjectService = tutorSubjectService;
@@ -69,6 +71,7 @@ namespace EduMatch.PresentationLayer.Controllers
 			_userService = userService;
 			_tutorVerificationRequestService = tutorVerificationRequestService;
 			_summaryService = summaryService;
+			_notificationService = notificationService;
 		}
 
 
@@ -134,6 +137,13 @@ namespace EduMatch.PresentationLayer.Controllers
 					// await _userService.UpdateRoleUserAsync(userEmail, 2);
 
 					await tx.CommitAsync();
+
+					// Gửi thông báo đăng ký trở thành gia sư thành công
+					await _notificationService.CreateNotificationAsync(
+						userEmail,
+						"Đăng ký trở thành gia sư thành công! Hồ sơ của bạn đang chờ được phê duyệt.",
+						$"/tutor/profile/{tutorId}"
+					);
 
 					var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
 
@@ -457,6 +467,13 @@ namespace EduMatch.PresentationLayer.Controllers
 				// Commit transaction
 				await dbTransaction.CommitAsync();
 
+				// Gửi thông báo phê duyệt gia sư thành công
+				await _notificationService.CreateNotificationAsync(
+					existingProfile.UserEmail,
+					"Chúc mừng! Hồ sơ gia sư của bạn đã được phê duyệt thành công. Tất cả chứng chỉ và bằng cấp đã được xác thực.",
+					$"/tutor/profile/{tutorId}"
+				);
+
 				var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
 				return Ok(ApiResponse<TutorProfileDto>.Ok(fullProfile!, $"Tutor approved and all certificates/educations verified by {currentUserEmail}."));
 			}
@@ -562,6 +579,13 @@ namespace EduMatch.PresentationLayer.Controllers
 
 				// Commit transaction
 				await dbTransaction.CommitAsync();
+
+				// Gửi thông báo từ chối gia sư
+				await _notificationService.CreateNotificationAsync(
+					existingProfile.UserEmail,
+					$"Rất tiếc, hồ sơ gia sư của bạn đã bị từ chối. Lý do: {request.Reason}. Vui lòng kiểm tra và cập nhật hồ sơ để đăng ký lại.",
+					$"/tutor/profile/{tutorId}"
+				);
 
 				var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
 				return Ok(ApiResponse<TutorProfileDto>.Ok(fullProfile!, $"Tutor rejected and all certificates/educations rejected by {currentUserEmail}. Reason: {request.Reason}"));
