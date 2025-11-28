@@ -17,7 +17,7 @@ namespace EduMatch.BusinessLogicLayer.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly EduMatchContext _context; // For transactions
+        private readonly EduMatchContext _context; 
         private readonly INotificationService _notificationService;
 
         public DepositService(
@@ -32,7 +32,6 @@ namespace EduMatch.BusinessLogicLayer.Services
             _notificationService = notificationService;
         }
 
-        // --- THIS IS THE METHOD YOU ASKED ABOUT ---
         public async Task<Deposit> CreateDepositRequestAsync(WalletDepositRequest request, string userEmail)
         {
             var wallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(userEmail);
@@ -54,12 +53,10 @@ namespace EduMatch.BusinessLogicLayer.Services
             await _unitOfWork.Deposits.AddAsync(newDeposit);
             await _unitOfWork.CompleteAsync();
 
-            // Return the full deposit object.
-            // The controller needs 'newDeposit.Id' and 'newDeposit.Amount'
             return newDeposit;
         }
 
-        // --- THIS IS THE WEBHOOK METHOD FOR VNPAY ---
+        //THIS IS THE WEBHOOK METHOD FOR VNPAY
         public async Task<bool> ProcessVnpayPaymentAsync(int depositId, string transactionId, decimal amountPaid)
         {
             bool amountMismatch = false;

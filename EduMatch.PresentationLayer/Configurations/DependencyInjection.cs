@@ -149,6 +149,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IWithdrawalService, WithdrawalService>();
             services.AddScoped<IAdminWalletService, AdminWalletService>();
             services.AddScoped<ITutorRatingSummaryService, TutorRatingSummaryService>();
+            services.AddScoped<IAdminStatsService, AdminStatsService>();
                             // Services for Chatbot AI
             services.AddScoped<IGeminiChatService, GeminiChatService>();
             services.AddSingleton<IEmbeddingService, EmbeddingService>();
