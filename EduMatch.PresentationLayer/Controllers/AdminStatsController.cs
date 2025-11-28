@@ -31,21 +31,21 @@ namespace EduMatch.PresentationLayer.Controllers
             return Ok(ApiResponse<AdminSummaryStatsDto>.Ok(data, "Admin summary stats retrieved successfully."));
         }
 
-        [HttpGet("signups/trend")]
-        [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<SignupTrendPointDto>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetSignupTrendAsync([FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] string groupBy = "day")
-        {
-            var data = await _adminStatsService.GetSignupTrendAsync(from, to, groupBy);
-            return Ok(ApiResponse<IReadOnlyList<SignupTrendPointDto>>.Ok(data, "Signup trend retrieved successfully."));
-        }
+        //[HttpGet("signups/trend")]
+        //[ProducesResponseType(typeof(ApiResponse<IReadOnlyList<SignupTrendPointDto>>), StatusCodes.Status200OK)]
+        //public async Task<IActionResult> GetSignupTrendAsync([FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] string groupBy = "day")
+        //{
+        //    var data = await _adminStatsService.GetSignupTrendAsync(from, to, groupBy);
+        //    return Ok(ApiResponse<IReadOnlyList<SignupTrendPointDto>>.Ok(data, "Signup trend retrieved successfully."));
+        //}
 
-        [HttpGet("bookings/trend")]
-        [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<BookingTrendPointDto>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetBookingTrendAsync([FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] string groupBy = "day")
-        {
-            var data = await _adminStatsService.GetBookingTrendAsync(from, to, groupBy);
-            return Ok(ApiResponse<IReadOnlyList<BookingTrendPointDto>>.Ok(data, "Booking trend retrieved successfully."));
-        }
+        //[HttpGet("bookings/trend")]
+        //[ProducesResponseType(typeof(ApiResponse<IReadOnlyList<BookingTrendPointDto>>), StatusCodes.Status200OK)]
+        //public async Task<IActionResult> GetBookingTrendAsync([FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] string groupBy = "day")
+        //{
+        //    var data = await _adminStatsService.GetBookingTrendAsync(from, to, groupBy);
+        //    return Ok(ApiResponse<IReadOnlyList<BookingTrendPointDto>>.Ok(data, "Booking trend retrieved successfully."));
+        //}
 
         [HttpGet("monthly")]
         [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<MonthlyAdminStatsDto>>), StatusCodes.Status200OK)]
