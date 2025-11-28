@@ -239,10 +239,14 @@ namespace EduMatch.BusinessLogicLayer.Services
                     },
                     Revenue = new MonthlyRevenueStatsDto
                     {
-                        GrossAmount = monthBookings.Sum(b => b.TotalAmount),
-                        PlatformFeeAmount = monthBookings.Sum(b => b.SystemFeeAmount),
                         TutorPayoutAmount = monthBookings.Sum(b => b.TutorReceiveAmount),
-                        RefundedAmount = monthBookings.Sum(b => b.RefundedAmount)
+                        RefundedAmount = monthBookings.Sum(b => b.RefundedAmount),
+                        NetPlatformRevenueAmount = monthBookings.Sum(b =>
+                        {
+                            if (b.TotalAmount == 0) return b.SystemFeeAmount;
+                            var systemPortionRefunded = b.RefundedAmount * (b.SystemFeeAmount / b.TotalAmount);
+                            return b.SystemFeeAmount - systemPortionRefunded;
+                        })
                     }
                 });
             }

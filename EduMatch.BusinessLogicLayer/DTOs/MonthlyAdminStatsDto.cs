@@ -11,9 +11,8 @@ namespace EduMatch.BusinessLogicLayer.DTOs
 
     public class MonthlyRevenueStatsDto
     {
-        public decimal GrossAmount { get; set; }
-        public decimal PlatformFeeAmount { get; set; }
         public decimal TutorPayoutAmount { get; set; }
         public decimal RefundedAmount { get; set; }
+        public decimal NetPlatformRevenueAmount { get; set; }
     }
 }
