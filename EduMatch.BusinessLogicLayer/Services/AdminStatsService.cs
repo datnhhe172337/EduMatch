@@ -199,5 +199,104 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             return day;
         }
+
+        public async Task<IReadOnlyList<MonthlyAdminStatsDto>> GetMonthlyStatsAsync(int year)
+        {
+            var start = new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var end = start.AddYears(1);
+
+            var users = await _context.Users
+                .AsNoTracking()
+                .Include(u => u.Role)
+                .Where(u => u.CreatedAt >= start && u.CreatedAt < end)
+                .ToListAsync();
+
+            var tutorProfiles = await _context.TutorProfiles
+                .AsNoTracking()
+                .Where(t => t.CreatedAt >= start && t.CreatedAt < end)
+                .ToListAsync();
+
+            var bookings = await _context.Bookings
+                .AsNoTracking()
+                .Where(b => b.CreatedAt >= start && b.CreatedAt < end)
+                .ToListAsync();
+
+            var refunds = await _context.BookingRefundRequests
+                .AsNoTracking()
+                .Where(r => r.CreatedAt >= start && r.CreatedAt < end)
+                .ToListAsync();
+
+            var reports = await _context.Reports
+                .AsNoTracking()
+                .Where(r => r.CreatedAt >= start && r.CreatedAt < end)
+                .ToListAsync();
+
+            var results = new List<MonthlyAdminStatsDto>();
+
+            for (var month = 1; month <= 12; month++)
+            {
+                var monthStart = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+                var monthEnd = monthStart.AddMonths(1);
+
+                var monthUsers = users.Where(u => u.CreatedAt >= monthStart && u.CreatedAt < monthEnd);
+                var monthTutors = tutorProfiles.Where(t => t.CreatedAt >= monthStart && t.CreatedAt < monthEnd);
+                var monthBookings = bookings.Where(b => b.CreatedAt >= monthStart && b.CreatedAt < monthEnd);
+                var monthRefunds = refunds.Where(r => r.CreatedAt >= monthStart && r.CreatedAt < monthEnd);
+                var monthReports = reports.Where(r => r.CreatedAt >= monthStart && r.CreatedAt < monthEnd);
+
+                results.Add(new MonthlyAdminStatsDto
+                {
+                    Year = year,
+                    Month = month,
+                    Users = new UserStatsDto
+                    {
+                        Total = monthUsers.Count(),
+                        Active = monthUsers.Count(u => u.IsActive == true),
+                        Learners = monthUsers.Count(u => u.Role.RoleName == Roles.Learner),
+                        Tutors = monthUsers.Count(u => u.Role.RoleName == Roles.Tutor),
+                        NewLast30Days = monthUsers.Count() // per-month new == total for the bucket
+                    },
+                    Tutors = new TutorStatsDto
+                    {
+                        Approved = monthTutors.Count(t => t.Status == (int)TutorStatus.Approved),
+                        Pending = monthTutors.Count(t => t.Status == (int)TutorStatus.Pending),
+                        Rejected = monthTutors.Count(t => t.Status == (int)TutorStatus.Rejected),
+                        Suspended = monthTutors.Count(t => t.Status == (int)TutorStatus.Suspended),
+                        Deactivated = monthTutors.Count(t => t.Status == (int)TutorStatus.Deactivated)
+                    },
+                    Bookings = new BookingStatsDto
+                    {
+                        Total = monthBookings.Count(),
+                        Pending = monthBookings.Count(b => b.Status == (int)BookingStatus.Pending),
+                        Confirmed = monthBookings.Count(b => b.Status == (int)BookingStatus.Confirmed),
+                        Completed = monthBookings.Count(b => b.Status == (int)BookingStatus.Completed),
+                        Cancelled = monthBookings.Count(b => b.Status == (int)BookingStatus.Cancelled)
+                    },
+                    Refunds = new RefundStatsDto
+                    {
+                        Pending = monthRefunds.Count(r => r.Status == (int)BookingRefundRequestStatus.Pending),
+                        Approved = monthRefunds.Count(r => r.Status == (int)BookingRefundRequestStatus.Approved),
+                        Rejected = monthRefunds.Count(r => r.Status == (int)BookingRefundRequestStatus.Rejected)
+                    },
+                    Reports = new ReportStatsDto
+                    {
+                        Pending = monthReports.Count(r => r.Status == (int)ReportStatus.Pending),
+                        UnderReview = monthReports.Count(r => r.Status == (int)ReportStatus.UnderReview),
+                        Resolved = monthReports.Count(r => r.Status == (int)ReportStatus.Resolved),
+                        Dismissed = monthReports.Count(r => r.Status == (int)ReportStatus.Dismissed),
+                        OverduePending = 0
+                    },
+                    Revenue = new MonthlyRevenueStatsDto
+                    {
+                        GrossAmount = monthBookings.Sum(b => b.TotalAmount),
+                        PlatformFeeAmount = monthBookings.Sum(b => b.SystemFeeAmount),
+                        TutorPayoutAmount = monthBookings.Sum(b => b.TutorReceiveAmount),
+                        RefundedAmount = monthBookings.Sum(b => b.RefundedAmount)
+                    }
+                });
+            }
+
+            return results;
+        }
     }
 }
