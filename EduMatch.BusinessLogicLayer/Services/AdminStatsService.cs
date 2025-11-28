@@ -211,24 +211,9 @@ namespace EduMatch.BusinessLogicLayer.Services
                 .Where(u => u.CreatedAt >= start && u.CreatedAt < end)
                 .ToListAsync();
 
-            var tutorProfiles = await _context.TutorProfiles
-                .AsNoTracking()
-                .Where(t => t.CreatedAt >= start && t.CreatedAt < end)
-                .ToListAsync();
-
             var bookings = await _context.Bookings
                 .AsNoTracking()
                 .Where(b => b.CreatedAt >= start && b.CreatedAt < end)
-                .ToListAsync();
-
-            var refunds = await _context.BookingRefundRequests
-                .AsNoTracking()
-                .Where(r => r.CreatedAt >= start && r.CreatedAt < end)
-                .ToListAsync();
-
-            var reports = await _context.Reports
-                .AsNoTracking()
-                .Where(r => r.CreatedAt >= start && r.CreatedAt < end)
                 .ToListAsync();
 
             var results = new List<MonthlyAdminStatsDto>();
@@ -239,10 +224,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 var monthEnd = monthStart.AddMonths(1);
 
                 var monthUsers = users.Where(u => u.CreatedAt >= monthStart && u.CreatedAt < monthEnd);
-                var monthTutors = tutorProfiles.Where(t => t.CreatedAt >= monthStart && t.CreatedAt < monthEnd);
                 var monthBookings = bookings.Where(b => b.CreatedAt >= monthStart && b.CreatedAt < monthEnd);
-                var monthRefunds = refunds.Where(r => r.CreatedAt >= monthStart && r.CreatedAt < monthEnd);
-                var monthReports = reports.Where(r => r.CreatedAt >= monthStart && r.CreatedAt < monthEnd);
 
                 results.Add(new MonthlyAdminStatsDto
                 {
@@ -256,14 +238,6 @@ namespace EduMatch.BusinessLogicLayer.Services
                         Tutors = monthUsers.Count(u => u.Role.RoleName == Roles.Tutor),
                         NewLast30Days = monthUsers.Count() // per-month new == total for the bucket
                     },
-                    Tutors = new TutorStatsDto
-                    {
-                        Approved = monthTutors.Count(t => t.Status == (int)TutorStatus.Approved),
-                        Pending = monthTutors.Count(t => t.Status == (int)TutorStatus.Pending),
-                        Rejected = monthTutors.Count(t => t.Status == (int)TutorStatus.Rejected),
-                        Suspended = monthTutors.Count(t => t.Status == (int)TutorStatus.Suspended),
-                        Deactivated = monthTutors.Count(t => t.Status == (int)TutorStatus.Deactivated)
-                    },
                     Bookings = new BookingStatsDto
                     {
                         Total = monthBookings.Count(),
@@ -271,20 +245,6 @@ namespace EduMatch.BusinessLogicLayer.Services
                         Confirmed = monthBookings.Count(b => b.Status == (int)BookingStatus.Confirmed),
                         Completed = monthBookings.Count(b => b.Status == (int)BookingStatus.Completed),
                         Cancelled = monthBookings.Count(b => b.Status == (int)BookingStatus.Cancelled)
-                    },
-                    Refunds = new RefundStatsDto
-                    {
-                        Pending = monthRefunds.Count(r => r.Status == (int)BookingRefundRequestStatus.Pending),
-                        Approved = monthRefunds.Count(r => r.Status == (int)BookingRefundRequestStatus.Approved),
-                        Rejected = monthRefunds.Count(r => r.Status == (int)BookingRefundRequestStatus.Rejected)
-                    },
-                    Reports = new ReportStatsDto
-                    {
-                        Pending = monthReports.Count(r => r.Status == (int)ReportStatus.Pending),
-                        UnderReview = monthReports.Count(r => r.Status == (int)ReportStatus.UnderReview),
-                        Resolved = monthReports.Count(r => r.Status == (int)ReportStatus.Resolved),
-                        Dismissed = monthReports.Count(r => r.Status == (int)ReportStatus.Dismissed),
-                        OverduePending = 0
                     },
                     Revenue = new MonthlyRevenueStatsDto
                     {
