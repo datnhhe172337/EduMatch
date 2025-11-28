@@ -33,91 +33,82 @@ namespace EduMatch.BusinessLogicLayer.Services
             var refundsQuery = _context.BookingRefundRequests.AsNoTracking();
             var reportsQuery = _context.Reports.AsNoTracking();
 
-            var totalUsersTask = usersQuery.CountAsync();
-            var activeUsersTask = usersQuery.CountAsync(u => u.IsActive == true);
-            var learnersTask = usersQuery.CountAsync(u => u.Role.RoleName == Roles.Learner);
-            var tutorsTask = usersQuery.CountAsync(u => u.Role.RoleName == Roles.Tutor);
-            var newUsers30Task = usersQuery.CountAsync(u => u.CreatedAt >= cutoff30Days);
+            var totalUsers = await usersQuery.CountAsync();
+            var activeUsers = await usersQuery.CountAsync(u => u.IsActive == true);
+            var learners = await usersQuery.CountAsync(u => u.Role.RoleName == Roles.Learner);
+            var tutors = await usersQuery.CountAsync(u => u.Role.RoleName == Roles.Tutor);
+            var newUsers30 = await usersQuery.CountAsync(u => u.CreatedAt >= cutoff30Days);
 
-            var tutorApprovedTask = tutorProfilesQuery.CountAsync(t => t.Status == (int)TutorStatus.Approved);
-            var tutorPendingTask = tutorProfilesQuery.CountAsync(t => t.Status == (int)TutorStatus.Pending);
-            var tutorRejectedTask = tutorProfilesQuery.CountAsync(t => t.Status == (int)TutorStatus.Rejected);
-            var tutorSuspendedTask = tutorProfilesQuery.CountAsync(t => t.Status == (int)TutorStatus.Suspended);
-            var tutorDeactivatedTask = tutorProfilesQuery.CountAsync(t => t.Status == (int)TutorStatus.Deactivated);
+            var tutorApproved = await tutorProfilesQuery.CountAsync(t => t.Status == (int)TutorStatus.Approved);
+            var tutorPending = await tutorProfilesQuery.CountAsync(t => t.Status == (int)TutorStatus.Pending);
+            var tutorRejected = await tutorProfilesQuery.CountAsync(t => t.Status == (int)TutorStatus.Rejected);
+            var tutorSuspended = await tutorProfilesQuery.CountAsync(t => t.Status == (int)TutorStatus.Suspended);
+            var tutorDeactivated = await tutorProfilesQuery.CountAsync(t => t.Status == (int)TutorStatus.Deactivated);
 
-            var bookingTotalTask = bookingsQuery.CountAsync();
-            var bookingPendingTask = bookingsQuery.CountAsync(b => b.Status == (int)BookingStatus.Pending);
-            var bookingConfirmedTask = bookingsQuery.CountAsync(b => b.Status == (int)BookingStatus.Confirmed);
-            var bookingCompletedTask = bookingsQuery.CountAsync(b => b.Status == (int)BookingStatus.Completed);
-            var bookingCancelledTask = bookingsQuery.CountAsync(b => b.Status == (int)BookingStatus.Cancelled);
+            var bookingTotal = await bookingsQuery.CountAsync();
+            var bookingPending = await bookingsQuery.CountAsync(b => b.Status == (int)BookingStatus.Pending);
+            var bookingConfirmed = await bookingsQuery.CountAsync(b => b.Status == (int)BookingStatus.Confirmed);
+            var bookingCompleted = await bookingsQuery.CountAsync(b => b.Status == (int)BookingStatus.Completed);
+            var bookingCancelled = await bookingsQuery.CountAsync(b => b.Status == (int)BookingStatus.Cancelled);
 
-            var refundPendingTask = refundsQuery.CountAsync(r => r.Status == (int)BookingRefundRequestStatus.Pending);
-            var refundApprovedTask = refundsQuery.CountAsync(r => r.Status == (int)BookingRefundRequestStatus.Approved);
-            var refundRejectedTask = refundsQuery.CountAsync(r => r.Status == (int)BookingRefundRequestStatus.Rejected);
+            var refundPending = await refundsQuery.CountAsync(r => r.Status == (int)BookingRefundRequestStatus.Pending);
+            var refundApproved = await refundsQuery.CountAsync(r => r.Status == (int)BookingRefundRequestStatus.Approved);
+            var refundRejected = await refundsQuery.CountAsync(r => r.Status == (int)BookingRefundRequestStatus.Rejected);
 
-            var reportPendingTask = reportsQuery.CountAsync(r => r.Status == (int)ReportStatus.Pending);
-            var reportUnderReviewTask = reportsQuery.CountAsync(r => r.Status == (int)ReportStatus.UnderReview);
-            var reportResolvedTask = reportsQuery.CountAsync(r => r.Status == (int)ReportStatus.Resolved);
-            var reportDismissedTask = reportsQuery.CountAsync(r => r.Status == (int)ReportStatus.Dismissed);
-            var reportOverdueTask = reportsQuery.CountAsync(r =>
+            var reportPending = await reportsQuery.CountAsync(r => r.Status == (int)ReportStatus.Pending);
+            var reportUnderReview = await reportsQuery.CountAsync(r => r.Status == (int)ReportStatus.UnderReview);
+            var reportResolved = await reportsQuery.CountAsync(r => r.Status == (int)ReportStatus.Resolved);
+            var reportDismissed = await reportsQuery.CountAsync(r => r.Status == (int)ReportStatus.Dismissed);
+            var reportOverdue = await reportsQuery.CountAsync(r =>
                 r.Status == (int)ReportStatus.Pending && r.CreatedAt <= now.AddDays(-2));
 
-            var walletTask = _adminWalletService.GetSystemWalletDashboardAsync();
-
-            await Task.WhenAll(
-                totalUsersTask, activeUsersTask, learnersTask, tutorsTask, newUsers30Task,
-                tutorApprovedTask, tutorPendingTask, tutorRejectedTask, tutorSuspendedTask, tutorDeactivatedTask,
-                bookingTotalTask, bookingPendingTask, bookingConfirmedTask, bookingCompletedTask, bookingCancelledTask,
-                refundPendingTask, refundApprovedTask, refundRejectedTask,
-                reportPendingTask, reportUnderReviewTask, reportResolvedTask, reportDismissedTask, reportOverdueTask,
-                walletTask
-            );
+            var wallet = await _adminWalletService.GetSystemWalletDashboardAsync();
 
             return new AdminSummaryStatsDto
             {
                 Users = new UserStatsDto
                 {
-                    Total = totalUsersTask.Result,
-                    Active = activeUsersTask.Result,
-                    Learners = learnersTask.Result,
-                    Tutors = tutorsTask.Result,
-                    NewLast30Days = newUsers30Task.Result
+                    Total = totalUsers,
+                    Active = activeUsers,
+                    Learners = learners,
+                    Tutors = tutors,
+                    NewLast30Days = newUsers30
                 },
                 Tutors = new TutorStatsDto
                 {
-                    Approved = tutorApprovedTask.Result,
-                    Pending = tutorPendingTask.Result,
-                    Rejected = tutorRejectedTask.Result,
-                    Suspended = tutorSuspendedTask.Result,
-                    Deactivated = tutorDeactivatedTask.Result
+                    Approved = tutorApproved,
+                    Pending = tutorPending,
+                    Rejected = tutorRejected,
+                    Suspended = tutorSuspended,
+                    Deactivated = tutorDeactivated
                 },
                 Bookings = new BookingStatsDto
                 {
-                    Total = bookingTotalTask.Result,
-                    Pending = bookingPendingTask.Result,
-                    Confirmed = bookingConfirmedTask.Result,
-                    Completed = bookingCompletedTask.Result,
-                    Cancelled = bookingCancelledTask.Result
+                    Total = bookingTotal,
+                    Pending = bookingPending,
+                    Confirmed = bookingConfirmed,
+                    Completed = bookingCompleted,
+                    Cancelled = bookingCancelled
                 },
                 Revenue = new RevenueStatsDto
                 {
-                    PlatformRevenueBalance = walletTask.Result.PlatformRevenueBalance,
-                    PendingTutorPayoutBalance = walletTask.Result.PendingTutorPayoutBalance,
-                    TotalUserAvailableBalance = walletTask.Result.TotalUserAvailableBalance
+                    PlatformRevenueBalance = wallet.PlatformRevenueBalance,
+                    PendingTutorPayoutBalance = wallet.PendingTutorPayoutBalance,
+                    TotalUserAvailableBalance = wallet.TotalUserAvailableBalance
                 },
                 Refunds = new RefundStatsDto
                 {
-                    Pending = refundPendingTask.Result,
-                    Approved = refundApprovedTask.Result,
-                    Rejected = refundRejectedTask.Result
+                    Pending = refundPending,
+                    Approved = refundApproved,
+                    Rejected = refundRejected
                 },
                 Reports = new ReportStatsDto
                 {
-                    Pending = reportPendingTask.Result,
-                    UnderReview = reportUnderReviewTask.Result,
-                    Resolved = reportResolvedTask.Result,
-                    Dismissed = reportDismissedTask.Result,
-                    OverduePending = reportOverdueTask.Result
+                    Pending = reportPending,
+                    UnderReview = reportUnderReview,
+                    Resolved = reportResolved,
+                    Dismissed = reportDismissed,
+                    OverduePending = reportOverdue
                 }
             };
         }
