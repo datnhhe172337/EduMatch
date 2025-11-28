@@ -46,5 +46,16 @@ namespace EduMatch.PresentationLayer.Controllers
             var data = await _adminStatsService.GetBookingTrendAsync(from, to, groupBy);
             return Ok(ApiResponse<IReadOnlyList<BookingTrendPointDto>>.Ok(data, "Booking trend retrieved successfully."));
         }
+
+        [HttpGet("monthly")]
+        [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<MonthlyAdminStatsDto>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetMonthlyStatsAsync([FromQuery] int year)
+        {
+            if (year <= 0)
+                return BadRequest(ApiResponse<string>.Fail("Year must be a positive integer."));
+
+            var data = await _adminStatsService.GetMonthlyStatsAsync(year);
+            return Ok(ApiResponse<IReadOnlyList<MonthlyAdminStatsDto>>.Ok(data, "Monthly admin stats retrieved successfully."));
+        }
     }
 }
