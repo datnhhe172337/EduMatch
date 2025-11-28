@@ -1,4 +1,5 @@
 
+using EduMatch.BusinessLogicLayer.Constants;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.PresentationLayer.Common;
@@ -10,7 +11,7 @@ namespace EduMatch.PresentationLayer.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "System Admin")]
+    [Authorize(Roles = Roles.BusinessAdmin + "," + Roles.SystemAdmin)]
     public class AdminController : ControllerBase
     {
         private readonly IUserService _userService;

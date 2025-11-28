@@ -1,6 +1,8 @@
-﻿using EduMatch.BusinessLogicLayer.Interfaces;
+﻿using EduMatch.BusinessLogicLayer.DTOs;
+using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -84,5 +86,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             return keywords.Any(k => lower.Contains(k));
         }
+
     }
 }

@@ -98,20 +98,21 @@ namespace EduMatch.BusinessLogicLayer.Services
             string textToEmbed = string.Join(" ",
                  new[]
                  {
-                    $"Tên: {tutor.UserName ?? ""}",
-                        $"Giới tính: {tutor.Gender?.ToString() ?? ""}",
-                        $"Ngày sinh: {tutor.Dob?.ToString("yyyy-MM-dd") ?? ""}",
-                        $"Tiểu sử: {tutor.Bio ?? ""}",
-                        $"Kinh nghiệm: {tutor.TeachingExp ?? ""}",
+                    //$"Tên: {tutor.UserName ?? ""}",
+                        //$"Giới tính: {tutor.Gender?.ToString() ?? ""}",
+                        //$"Ngày sinh: {tutor.Dob?.ToString("yyyy-MM-dd") ?? ""}",
                         $"Môn học: {string.Join(", ", tutor.TutorSubjects?.Select(s => s.Subject?.SubjectName ?? "") ?? Enumerable.Empty<string>())}",
+                        $"Tỉnh/Thành phố: {tutor.Province?.Name ?? ""}",
+                        $"Xã/Phường/Khu vực: {tutor.SubDistrict?.Name ?? ""}",
                         $"Lớp: {string.Join(", ", tutor.TutorSubjects?.Select(s => s.Level?.Name ?? "") ?? Enumerable.Empty<string>())}",
                         $"Giá: {string.Join(", ", tutor.TutorSubjects?.Select(s => s.HourlyRate?.ToString() ?? "0") ?? Enumerable.Empty<string>())}",
                         $"Hình thức dạy: {tutor.TeachingModes.ToString() ?? ""}",
-                        $"Tỉnh/Thành: {tutor.Province?.Name ?? ""}",
-                        $"Xã: {tutor.SubDistrict?.Name ?? ""}"
+                        //$"Tiểu sử: {tutor.Bio ?? ""}",
+                        $"Kinh nghiệm: {tutor.TeachingExp ?? ""}"
                  }.Where(s => !string.IsNullOrWhiteSpace(s))
              );
 
+            //Console.WriteLine(textToEmbed);
             var vector = await _embeddingService.GenerateEmbeddingAsync(textToEmbed);
             if (vector == null || vector.Length == 0)
                 throw new InvalidOperationException($"Embedding generation failed for tutor {tutor?.Id}");
@@ -124,12 +125,12 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             point.Payload.Add("tutorId", new Value { IntegerValue = tutor.Id });
             point.Payload.Add("name", new Value { StringValue = tutor.UserName ?? "" });
+            point.Payload.Add("province", new Value { StringValue = tutor.Province?.Name ?? "" });
+            point.Payload.Add("subdistrict", new Value { StringValue = tutor.SubDistrict?.Name ?? "" });
             point.Payload.Add("gender", new Value { StringValue = tutor.Gender?.ToString() ?? "" });
             point.Payload.Add("bio", new Value { StringValue = tutor.Bio ?? "" });
             point.Payload.Add("teachingModes", new Value { StringValue = tutor.TeachingModes.ToString() ?? "" });
             point.Payload.Add("experience", new Value { StringValue = tutor.TeachingExp ?? "" });
-            point.Payload.Add("province", new Value { StringValue = tutor.Province?.Name ?? "" });
-            point.Payload.Add("subdistrict", new Value { StringValue = tutor.SubDistrict?.Name ?? "" });
 
             // Subjects → ListValue
             if (tutor.TutorSubjects != null)
@@ -174,7 +175,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 vector: queryVector,
                 limit: (uint)topK
             );
-
+             
             var final = new List<(TutorProfileDto, float)>();
 
             string GetString(MapField<string, Value> payload, string key)
@@ -188,15 +189,16 @@ namespace EduMatch.BusinessLogicLayer.Services
                 {
                     Id = (int)r.Id.Num,
                     UserName = GetString(p, "name"),
+                    Province = new ProvinceDto { Name = GetString(p, "province") },
+                    SubDistrict = new SubDistrictDto { Name = GetString(p, "subdistrict") },
+                    TutorSubjects = new List<TutorSubjectDto>(),
                     Bio = GetString(p, "bio"),
                     TeachingExp = GetString(p, "experience"),
                     Gender = Enum.TryParse<Gender>(GetString(p, "gender"), out var g) ? g : null,
                     Dob = DateTime.TryParse(GetString(p, "dob"), out var d) ? d : null,
                     TeachingModes = Enum.TryParse<TeachingMode>(GetString(p, "teachingModes"), out var tm) ? tm : 0,
-                    Province = new ProvinceDto { Name = GetString(p, "province") },
-                    SubDistrict = new SubDistrictDto { Name = GetString(p, "subdistrict") },
-                    TutorSubjects = new List<TutorSubjectDto>()
                 };
+
 
                 // Parse subjects safely
                 if (p.TryGetValue("subjects", out var subjectsVal) && subjectsVal.ListValue != null)
@@ -231,7 +233,46 @@ namespace EduMatch.BusinessLogicLayer.Services
             return final;
         }
 
+        public async Task<List<(TutorProfileDto Tutor, float Score)>> MergeAndRankAsync(List<(TutorProfileDto Tutor, float Score)> vectorResults, List<(TutorProfileDto Tutor, float Score)> keywordResults, int topK = 5)
+        {
+            var merged = new Dictionary<int, (TutorProfileDto Tutor, float VectorScore, float KeywordScore)>();
 
+            // --- Step 1: Add Vector Results ---
+            foreach (var vr in vectorResults)
+            {
+                merged[vr.Tutor.Id] = (vr.Tutor, vr.Score, 0f);
+            }
 
+            // --- Step 2: Add Keyword Results ---
+            foreach (var kr in keywordResults)
+            {
+                if (merged.ContainsKey(kr.Tutor.Id))
+                {
+                    var e = merged[kr.Tutor.Id];
+                    merged[kr.Tutor.Id] = (e.Tutor, e.VectorScore, kr.Score);
+                }
+                else
+                {
+                    // tutor found in keyword only
+                    merged[kr.Tutor.Id] = (kr.Tutor, 0.05f, kr.Score); // small vector weight
+                }
+            }
+
+            // --- Step 3: Final Score ---
+            var final = merged
+                .Select(x =>
+                {
+                    float vectorScore = x.Value.VectorScore; // [0..1]
+                    float keywordScore = Math.Min(1f, x.Value.KeywordScore / 10f); // normalize to [0..1]
+
+                    float finalScore = 0.7f * vectorScore + 0.3f * keywordScore;
+                    return (x.Value.Tutor, finalScore);
+                })
+                .OrderByDescending(x => x.finalScore)
+                .Take(topK)
+                .ToList();
+
+            return final;
+        }
     }
 }

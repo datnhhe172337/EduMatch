@@ -611,7 +611,6 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 await CancelAllSchedulesByBookingAsync(id);
 
-                // Gửi notification báo đơn hàng đã hủy cho learner TRƯỚC
                 await _notificationService.CreateNotificationAsync(
                     entity.LearnerEmail,
                     $"Đơn hàng booking #{entity.Id} đã được hủy.",
