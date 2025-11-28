@@ -243,7 +243,13 @@ namespace EduMatch.BusinessLogicLayer.Services
                         RefundedAmount = monthBookings.Sum(b => b.RefundedAmount),
                         NetPlatformRevenueAmount = monthBookings.Sum(b =>
                         {
-                            if (b.TotalAmount == 0) return b.SystemFeeAmount;
+                            // Only count revenue from bookings that have been paid or refunded; skip unpaid.
+                            if (b.PaymentStatus == (int)PaymentStatus.Pending)
+                                return 0m;
+
+                            if (b.TotalAmount == 0)
+                                return b.SystemFeeAmount;
+
                             var systemPortionRefunded = b.RefundedAmount * (b.SystemFeeAmount / b.TotalAmount);
                             return b.SystemFeeAmount - systemPortionRefunded;
                         })
