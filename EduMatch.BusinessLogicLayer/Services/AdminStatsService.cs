@@ -243,19 +243,27 @@ namespace EduMatch.BusinessLogicLayer.Services
                         RefundedAmount = monthBookings.Sum(b => b.RefundedAmount),
                         NetPlatformRevenueAmount = monthBookings.Sum(b =>
                         {
-                            // Only count revenue from bookings that were actually paid and not fully refunded.
-                            if (b.PaymentStatus != (int)PaymentStatus.Paid)
-                                return 0m;
-
+                            // Platform recognizes revenue only when a booking is completed, or when a refund was <100%.
                             if (b.TotalAmount == 0)
                                 return 0m;
 
-                            // If fully refunded, platform keeps nothing.
-                            if (b.RefundedAmount >= b.TotalAmount)
-                                return 0m;
+                            // Completed and paid: keep fee minus any partial refund.
+                            if (b.Status == (int)BookingStatus.Completed && b.PaymentStatus == (int)PaymentStatus.Paid)
+                            {
+                                var systemPortionRefunded = b.RefundedAmount * (b.SystemFeeAmount / b.TotalAmount);
+                                return Math.Max(0m, b.SystemFeeAmount - systemPortionRefunded);
+                            }
 
-                            var systemPortionRefunded = b.RefundedAmount * (b.SystemFeeAmount / b.TotalAmount);
-                            return b.SystemFeeAmount - systemPortionRefunded;
+                            // Partially refunded bookings (<100%) still keep a portion of the fee.
+                            if ((b.PaymentStatus == (int)PaymentStatus.RefundPending || b.PaymentStatus == (int)PaymentStatus.Refunded) &&
+                                b.RefundedAmount > 0 && b.RefundedAmount < b.TotalAmount)
+                            {
+                                var systemPortionRefunded = b.RefundedAmount * (b.SystemFeeAmount / b.TotalAmount);
+                                return Math.Max(0m, b.SystemFeeAmount - systemPortionRefunded);
+                            }
+
+                            // In all other cases (pending, cancelled, fully refunded), platform keeps nothing.
+                            return 0m;
                         })
                     }
                 });
