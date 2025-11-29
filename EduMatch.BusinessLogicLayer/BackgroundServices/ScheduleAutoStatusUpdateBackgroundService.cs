@@ -57,7 +57,7 @@ namespace EduMatch.BusinessLogicLayer.BackgroundServices
 
 							var startDate = schedule.Availabiliti.StartDate.Date;
 							var startTime = schedule.Availabiliti.Slot.StartTime;
-							var startDateTime = startDate.Add(startTime);
+							var startDateTime = startDate.Add(startTime.ToTimeSpan());
 
 							var currentStatus = (ScheduleStatus)schedule.Status;
 
