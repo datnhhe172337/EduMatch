@@ -244,5 +244,21 @@ namespace EduMatch.DataAccessLayer.Repositories
                 await _context.SaveChangesAsync();
             }
         }
+        /// <summary>
+        /// Lấy tất cả Schedule có status Upcoming hoặc InProgress với đầy đủ thông tin Availability và Slot
+        /// </summary>
+        public async Task<IEnumerable<Schedule>> GetAllUpcomingAndInProgressAsync()
+        {
+            return await _context.Schedules
+                .AsSplitQuery()
+                .Include(s => s.Availabiliti)
+                    .ThenInclude(a => a.Slot)
+                .Include(s => s.Booking)
+                .Include(s => s.MeetingSession)
+                .Where(s => s.Status == (int)ScheduleStatus.Upcoming || s.Status == (int)ScheduleStatus.InProgress)
+                .OrderBy(s => s.Availabiliti.StartDate)
+                .ThenBy(s => s.Id)
+                .ToListAsync();
+        }
     }
 }

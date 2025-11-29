@@ -38,6 +38,7 @@ builder.Services.AddHostedService<ClassRequestExpireBackgroundService>();
 
 builder.Services.AddHostedService<BookingAutoCancelBackgroundService>();
 builder.Services.AddHostedService<ScheduleChangeRequestAutoCancelBackgroundService>();
+builder.Services.AddHostedService<ScheduleAutoStatusUpdateBackgroundService>();
 
 // Add services to the container.
 builder.Services.AddControllers()

@@ -54,5 +54,9 @@ namespace EduMatch.DataAccessLayer.Interfaces
         /// Xóa Schedule theo ID
         /// </summary>
         Task DeleteAsync(int id);
+        /// <summary>
+        /// Lấy tất cả Schedule có status Upcoming hoặc InProgress với đầy đủ thông tin Availability và Slot
+        /// </summary>
+        Task<IEnumerable<Schedule>> GetAllUpcomingAndInProgressAsync();
     }
 }
