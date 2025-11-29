@@ -462,5 +462,77 @@ namespace EduMatch.Tests.Common
 				Schedule = CreateFakeSchedule(scheduleId)
 			};
 		}
+
+		/// <summary>
+		/// Tạo RefundPolicy giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static RefundPolicy CreateFakeRefundPolicy(
+			int id = 1,
+			string? name = null,
+			decimal refundPercentage = 50,
+			bool isActive = true)
+		{
+			return new RefundPolicy
+			{
+				Id = id,
+				Name = name ?? $"Refund Policy {id}",
+				Description = $"Description for policy {id}",
+				RefundPercentage = refundPercentage,
+				IsActive = isActive,
+				CreatedAt = DateTime.UtcNow,
+				CreatedBy = "admin@example.com",
+				UpdatedAt = null,
+				UpdatedBy = null
+			};
+		}
+
+		/// <summary>
+		/// Tạo BookingRefundRequest giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static BookingRefundRequest CreateFakeBookingRefundRequest(
+			int id = 1,
+			int bookingId = 1,
+			string? learnerEmail = null,
+			int refundPolicyId = 1,
+			string? reason = null,
+			int status = 0,
+			decimal? approvedAmount = null)
+		{
+			return new BookingRefundRequest
+			{
+				Id = id,
+				BookingId = bookingId,
+				LearnerEmail = learnerEmail ?? "learner@example.com",
+				RefundPolicyId = refundPolicyId,
+				Reason = reason ?? "Test reason",
+				Status = status,
+				ApprovedAmount = approvedAmount,
+				AdminNote = null,
+				CreatedAt = DateTime.UtcNow,
+				ProcessedAt = null,
+				ProcessedBy = null,
+				Booking = CreateFakeBooking(bookingId),
+				LearnerEmailNavigation = CreateFakeUser(learnerEmail ?? "learner@example.com"),
+				RefundPolicy = CreateFakeRefundPolicy(refundPolicyId)
+			};
+		}
+
+		/// <summary>
+		/// Tạo RefundRequestEvidence giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static RefundRequestEvidence CreateFakeRefundRequestEvidence(
+			int id = 1,
+			int bookingRefundRequestId = 1,
+			string? fileUrl = null)
+		{
+			return new RefundRequestEvidence
+			{
+				Id = id,
+				BookingRefundRequestId = bookingRefundRequestId,
+				FileUrl = fileUrl ?? "https://example.com/evidence.jpg",
+				CreatedAt = DateTime.UtcNow,
+				BookingRefundRequest = CreateFakeBookingRefundRequest(bookingRefundRequestId)
+			};
+		}
 	}
 }
