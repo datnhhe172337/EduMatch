@@ -581,30 +581,23 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task<bool> ChangePasswordAsync(string email, ChangePasswordRequest request)
         {
-            var getUser = await _userRepo.GetUserByEmailAsync(email);
-            if (getUser == null)
+            var user = await _userRepo.GetUserByEmailAsync(email);
+            if (user == null)
                 throw new UnauthorizedAccessException("Invalid email");
-            if (getUser.LoginProvider != "Local")
+            if (user.LoginProvider != "Local")
                 throw new UnauthorizedAccessException("Email is logged in with google, unable to change password");
 
-            var valid = BCrypt.Net.BCrypt.Verify(request.oldPass, getUser.PasswordHash);
+            var valid = BCrypt.Net.BCrypt.Verify(request.oldPass, user.PasswordHash);
             if (!valid) return false;
 
-            try
-            {
-                var user = new User
-                {
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.newPass),
+            if (request.oldPass == request.newPass)
+                throw new Exception("New password must be different from old password.");
 
-                };
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.newPass);
 
-                await _userRepo.UpdateUserAsync(user);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
+            await _userRepo.UpdateUserAsync(user);
+
+            return true;
 
         }
     }
