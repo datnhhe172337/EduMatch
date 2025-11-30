@@ -19,6 +19,8 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<Booking> Bookings { get; set; }
 
+    public virtual DbSet<BookingNote> BookingNotes { get; set; }
+
     public virtual DbSet<BookingRefundRequest> BookingRefundRequests { get; set; }
 
     public virtual DbSet<CertificateType> CertificateTypes { get; set; }
@@ -46,6 +48,8 @@ public partial class EduMatchContext : DbContext
     public virtual DbSet<FeedbackCriterion> FeedbackCriteria { get; set; }
 
     public virtual DbSet<GoogleToken> GoogleTokens { get; set; }
+
+    public virtual DbSet<LearnerTrialLesson> LearnerTrialLessons { get; set; }
 
     public virtual DbSet<Level> Levels { get; set; }
 
@@ -113,9 +117,9 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<Withdrawal> Withdrawals { get; set; }
 
-//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -192,6 +196,34 @@ public partial class EduMatchContext : DbContext
                 .HasForeignKey(d => d.TutorSubjectId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Bookings_TutorSubjects");
+        });
+
+        modelBuilder.Entity<BookingNote>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__booking___3213E83FF7936004");
+
+            entity.ToTable("booking_notes");
+
+            entity.HasIndex(e => e.BookingId, "IX_booking_notes_booking_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.BookingId).HasColumnName("booking_id");
+            entity.Property(e => e.Content)
+                .HasMaxLength(2000)
+                .HasColumnName("content");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("created_at");
+            entity.Property(e => e.ImageUrl)
+                .HasMaxLength(500)
+                .HasColumnName("image_url");
+            entity.Property(e => e.VideoUrl)
+                .HasMaxLength(500)
+                .HasColumnName("video_url");
+
+            entity.HasOne(d => d.Booking).WithMany(p => p.BookingNotes)
+                .HasForeignKey(d => d.BookingId)
+                .HasConstraintName("FK_booking_notes_bookings");
         });
 
         modelBuilder.Entity<BookingRefundRequest>(entity =>
@@ -587,6 +619,40 @@ public partial class EduMatchContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("tokenType");
             entity.Property(e => e.UpdatedAt).HasColumnName("updatedAt");
+        });
+
+        modelBuilder.Entity<LearnerTrialLesson>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__learner___3213E83FFA0F7126");
+
+            entity.ToTable("learner_trial_lessons");
+
+            entity.HasIndex(e => new { e.LearnerEmail, e.TutorId, e.SubjectId }, "UQ_learner_trial_lessons_user_tutor_subject").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("created_at");
+            entity.Property(e => e.LearnerEmail)
+                .HasMaxLength(100)
+                .HasColumnName("learner_email");
+            entity.Property(e => e.SubjectId).HasColumnName("subject_id");
+            entity.Property(e => e.TutorId).HasColumnName("tutor_id");
+
+            entity.HasOne(d => d.LearnerEmailNavigation).WithMany(p => p.LearnerTrialLessons)
+                .HasForeignKey(d => d.LearnerEmail)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_learner_trial_lessons_users");
+
+            entity.HasOne(d => d.Subject).WithMany(p => p.LearnerTrialLessons)
+                .HasForeignKey(d => d.SubjectId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_learner_trial_lessons_subjects");
+
+            entity.HasOne(d => d.Tutor).WithMany(p => p.LearnerTrialLessons)
+                .HasForeignKey(d => d.TutorId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_learner_trial_lessons_tutor_profiles");
         });
 
         modelBuilder.Entity<Level>(entity =>
