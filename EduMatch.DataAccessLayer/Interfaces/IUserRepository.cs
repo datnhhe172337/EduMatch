@@ -21,8 +21,6 @@ namespace EduMatch.DataAccessLayer.Interfaces
 		Task UpdateUserAsync(User user);
 		Task UpdateNameAndPhoneUserAsync(string name,string phone, string email);
         Task<bool> UpdateRoleUserAsync(string email, int roleId);  
-        
-
         Task<Role> GetRoleByIdAsync(int roleId);
 
 	}

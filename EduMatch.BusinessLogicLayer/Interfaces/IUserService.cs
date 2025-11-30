@@ -1,4 +1,5 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
+using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.BusinessLogicLayer.Requests.User;
 using EduMatch.DataAccessLayer.Entities;
 using System;
@@ -29,6 +30,8 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task<UserDto?> GetByEmailAsync(string email);
 
         Task<UserDto?> UpdateUserNameAndPhoneAsync(string email, string phone, string name);
+
+        Task<bool> ChangePasswordAsync(string email, ChangePasswordRequest request);
 
 	}
 }

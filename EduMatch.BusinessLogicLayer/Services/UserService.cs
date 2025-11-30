@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.BusinessLogicLayer.Requests.User;
 using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Entities;
@@ -577,6 +578,35 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<UserDto>(user);
 
 		}
-	}
+
+        public async Task<bool> ChangePasswordAsync(string email, ChangePasswordRequest request)
+        {
+            var getUser = await _userRepo.GetUserByEmailAsync(email);
+            if (getUser == null)
+                throw new UnauthorizedAccessException("Invalid email");
+            if (getUser.LoginProvider != "Local")
+                throw new UnauthorizedAccessException("Email is logged in with google, unable to change password");
+
+            var valid = BCrypt.Net.BCrypt.Verify(request.oldPass, getUser.PasswordHash);
+            if (!valid) return false;
+
+            try
+            {
+                var user = new User
+                {
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.newPass),
+
+                };
+
+                await _userRepo.UpdateUserAsync(user);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+
+        }
+    }
 
 }
