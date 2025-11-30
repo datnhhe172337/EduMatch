@@ -85,6 +85,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<IRefundPolicyRepository, RefundPolicyRepository>();
             services.AddScoped<ITutorRatingSummaryRepository, TutorRatingSummaryRepository>();
+            services.AddScoped<ILearnerTrialLessonRepository, LearnerTrialLessonRepository>();
 
             // Services
             services.AddScoped<IRefundPolicyService, RefundPolicyService>();
@@ -150,6 +151,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IAdminWalletService, AdminWalletService>();
             services.AddScoped<ITutorRatingSummaryService, TutorRatingSummaryService>();
             services.AddScoped<IAdminStatsService, AdminStatsService>();
+            services.AddScoped<ILearnerTrialLessonService, LearnerTrialLessonService>();
                             // Services for Chatbot AI
             services.AddScoped<IGeminiChatService, GeminiChatService>();
             services.AddSingleton<IEmbeddingService, EmbeddingService>();
