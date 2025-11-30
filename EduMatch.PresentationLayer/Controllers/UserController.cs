@@ -5,6 +5,7 @@ using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -247,5 +248,23 @@ namespace EduMatch.PresentationLayer.Controllers
             }
 
         }
+
+        /// <summary>
+        /// Nhập email để thực hiện reset password
+        /// </summary>
+        /// <param name="userEmail"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPasswordAsync([FromBody] string userEmail)
+        {
+            var success = await _userService.ResetPasswordAsync(userEmail);
+
+            if (!success)
+                return BadRequest(new { message = "Email not found." });
+
+            return Ok(new { message = "A new password has been sent to your email." });
+        }
+
     }
 }

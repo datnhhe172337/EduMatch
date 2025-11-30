@@ -32,6 +32,8 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task<UserDto?> UpdateUserNameAndPhoneAsync(string email, string phone, string name);
 
         Task<bool> ChangePasswordAsync(string email, ChangePasswordRequest request);
+        Task<bool> ResetPasswordAsync(string email);
 
-	}
+
+    }
 }

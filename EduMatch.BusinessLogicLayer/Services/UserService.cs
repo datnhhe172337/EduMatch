@@ -12,10 +12,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -599,6 +601,41 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             return true;
 
+        }
+
+        public async Task<bool> ResetPasswordAsync(string email)
+        {
+            var user = await _userRepo.GetUserByEmailAsync(email);
+            if (user == null)
+                return false;
+            if (user.LoginProvider != "Local")
+                throw new InvalidOperationException("This account uses Google Login. Unable to reset password.");
+
+            string tempPassword = GenerateTemporaryPassword(8);
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword);
+
+            await _userRepo.UpdateUserAsync(user);
+
+            await _emailService.SendMailAsync(new MailContent
+            {
+                To = user.Email,
+                Subject = "Mật khẩu của bạn đã được đặt lại",
+                Body = $"Mật khẩu tạm thời của bạn là: <b>{tempPassword}</b><br/><br/>Vui lòng không chia sẻ email này cho bất kì ai. Hãy dùng mật khẩu tạm thời này để đăng nhập và thay đổi mật khẩu mà bạn muốn."
+            });
+
+            return true;
+        }
+
+        private static string GenerateTemporaryPassword(int length)
+        {
+            // tránh ký tự dễ nhầm lẫn như O, 0, I, l.
+            string chars =
+                 "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@$?";
+
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
         }
     }
 
