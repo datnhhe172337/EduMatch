@@ -206,6 +206,7 @@ public partial class EduMatchContext : DbContext
 
             entity.HasIndex(e => e.BookingId, "IX_booking_notes_booking_id");
 
+
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.BookingId).HasColumnName("booking_id");
             entity.Property(e => e.Content)
@@ -214,6 +215,10 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(sysutcdatetime())")
                 .HasColumnName("created_at");
+            entity.Property(e => e.DeletedAt).HasColumnName("deleted_at");
+            entity.Property(e => e.IsDeleted)
+                .HasDefaultValue(false)
+                .HasColumnName("is_deleted");
             entity.Property(e => e.ImageUrl)
                 .HasMaxLength(500)
                 .HasColumnName("image_url");

@@ -11,7 +11,7 @@ public partial class Deposit
 
     public decimal Amount { get; set; }
 
-    public TransactionStatus Status { get; set; }
+    public int Status { get; set; }
 
     public string? PaymentGateway { get; set; }
 
