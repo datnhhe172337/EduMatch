@@ -41,6 +41,8 @@ public partial class Booking
 
     public virtual User LearnerEmailNavigation { get; set; } = null!;
 
+    public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
+
     public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
 
     public virtual SystemFee SystemFee { get; set; } = null!;

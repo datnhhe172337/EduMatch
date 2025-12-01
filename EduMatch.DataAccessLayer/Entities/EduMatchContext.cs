@@ -831,8 +831,11 @@ public partial class EduMatchContext : DbContext
         {
             entity.ToTable("reports");
 
+            entity.HasIndex(e => e.BookingId, "IX_reports_bookingId");
+
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.AdminNotes).HasColumnName("adminNotes");
+            entity.Property(e => e.BookingId).HasColumnName("bookingId");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(sysutcdatetime())")
                 .HasColumnType("datetime")
@@ -852,6 +855,10 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.UpdatedAt)
                 .HasColumnType("datetime")
                 .HasColumnName("updatedAt");
+
+            entity.HasOne(d => d.Booking).WithMany(p => p.Reports)
+                .HasForeignKey(d => d.BookingId)
+                .HasConstraintName("FK_reports_bookings");
 
             entity.HasOne(d => d.HandledByAdminEmailNavigation).WithMany(p => p.ReportHandledByAdminEmailNavigations)
                 .HasForeignKey(d => d.HandledByAdminEmail)

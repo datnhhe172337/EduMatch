@@ -25,6 +25,10 @@ public partial class Report
 
     public DateTime? UpdatedAt { get; set; }
 
+    public int? BookingId { get; set; }
+
+    public virtual Booking? Booking { get; set; }
+
     public virtual User? HandledByAdminEmailNavigation { get; set; }
 
     public virtual ICollection<ReportDefense> ReportDefenses { get; set; } = new List<ReportDefense>();
