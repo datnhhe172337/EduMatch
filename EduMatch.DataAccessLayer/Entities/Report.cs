@@ -21,6 +21,8 @@ public partial class Report
 
     public string? HandledByAdminEmail { get; set; }
 
+    public int? BookingId { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
@@ -34,6 +36,8 @@ public partial class Report
     public virtual ICollection<ReportDefense> ReportDefenses { get; set; } = new List<ReportDefense>();
 
     public virtual ICollection<ReportEvidence> ReportEvidences { get; set; } = new List<ReportEvidence>();
+
+    public virtual Booking? Booking { get; set; }
 
     public virtual User ReportedUserEmailNavigation { get; set; } = null!;
 

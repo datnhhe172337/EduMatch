@@ -407,13 +407,13 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 						CreatedAt = src.MeetingSession.CreatedAt,
 					} : null));
 
-			// MeetingSession 
-			CreateMap<MeetingSession, MeetingSessionDto>()
-				.ForMember(dest => dest.MeetingType,
-					opt => opt.MapFrom(src => (MeetingType)src.MeetingType));
+            // MeetingSession 
+            CreateMap<MeetingSession, MeetingSessionDto>()
+                .ForMember(dest => dest.MeetingType,
+                    opt => opt.MapFrom(src => (MeetingType)src.MeetingType));
 
-			// GoogleToken 
-			CreateMap<GoogleToken, GoogleTokenDto>();
+            // GoogleToken 
+            CreateMap<GoogleToken, GoogleTokenDto>();
 
             // SystemFee -> SystemFeeDto
             CreateMap<SystemFee, SystemFeeDto>();
@@ -565,7 +565,8 @@ namespace EduMatch.BusinessLogicLayer.Mappings
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (ReportStatus)src.Status));
 
             CreateMap<Report, ReportDetailDto>()
-                .IncludeBase<Report, ReportListItemDto>();
+                .IncludeBase<Report, ReportListItemDto>()
+                .ForMember(dest => dest.Booking, opt => opt.MapFrom(src => src.Booking));
 
             CreateMap<ReportEvidence, ReportEvidenceDto>()
                 .ForMember(dest => dest.MediaType, opt => opt.MapFrom(src => (MediaType)src.MediaType))

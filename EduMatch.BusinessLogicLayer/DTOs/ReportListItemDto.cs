@@ -14,6 +14,7 @@ namespace EduMatch.BusinessLogicLayer.DTOs
         public string? ReportedAvatarUrl { get; set; }
         public string Reason { get; set; } = string.Empty;
         public ReportStatus Status { get; set; }
+        public int? BookingId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
