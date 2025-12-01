@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests.Wallet;
@@ -141,7 +141,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 await _notificationService.CreateNotificationAsync(
                     notifiedUserEmail,
-                    $"B?n d� n?p th�nh c�ng {creditedAmount:N0} VND v�o v�.",
+                    $"Ban da nap thanh cong {creditedAmount:N0} VND vao vi.",
                     "/wallet/my-wallet");
             }
 
@@ -204,3 +204,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
     }
 }
+
+
+
+

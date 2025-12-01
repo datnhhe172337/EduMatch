@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests.Wallet;
@@ -46,7 +46,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                 if (wallet.Balance < request.Amount)
                 {
-                    throw new Exception("Insufficient funds. (Kh�ng d? s? du)");
+                    throw new Exception("Không đủ số dư.");
                 }
 
                 var balanceBefore = wallet.Balance;
@@ -87,7 +87,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                 await _notificationService.CreateNotificationAsync(
                     wallet.UserEmail,
-                    $"Y�u c?u r�t ti?n #{newWithdrawal.Id} s? ti?n {request.Amount:N0} VND d� du?c x? l�.",
+                    $"Yêu cầu rút tiền #{newWithdrawal.Id} số tiền {request.Amount:N0} VND đã được xử lý thành công.",
                     "/wallet/withdrawals");
             }
             catch (Exception)
@@ -110,3 +110,4 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
     }
 }
+

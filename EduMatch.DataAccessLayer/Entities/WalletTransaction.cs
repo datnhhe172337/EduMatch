@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EduMatch.DataAccessLayer.Enum;
+using System;
 using System.Collections.Generic;
 
 namespace EduMatch.DataAccessLayer.Entities;
@@ -11,11 +12,11 @@ public partial class WalletTransaction
 
     public decimal Amount { get; set; }
 
-    public int TransactionType { get; set; }
+    public WalletTransactionType TransactionType { get; set; }
 
-    public int Reason { get; set; }
+    public WalletTransactionReason Reason { get; set; }
 
-    public int Status { get; set; }
+    public TransactionStatus Status { get; set; }
 
     public decimal BalanceBefore { get; set; }
 

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -56,6 +56,8 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
         await _context.DisposeAsync();
     }
 
+    #region Query Tests
+
     [Fact]
     public async Task GetWithdrawalHistoryAsync_ReturnsMappedDtos()
     {
@@ -85,7 +87,37 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
         _withdrawalRepository.Verify(r => r.GetWithdrawalsByUserEmailAsync(userEmail), Times.Once);
     }
 
+    [Fact]
+    public async Task GetPendingWithdrawalsAsync_ReturnsAdminDtos()
+    {
+        var withdrawals = new List<Withdrawal>
+        {
+            new()
+            {
+                Id = 4,
+                Amount = 30_000m,
+                Status = WithdrawalStatus.Pending,
+                UserBankAccount = new UserBankAccount
+                {
+                    AccountNumber = "456",
+                    AccountHolderName = "Admin",
+                    Bank = new Bank { Id = 2, Name = "Another" }
+                },
+                Wallet = new Wallet { UserEmail = "admin@test.com" }
+            }
+        };
+        _withdrawalRepository.Setup(r => r.GetPendingWithdrawalsAsync()).ReturnsAsync(withdrawals);
 
+        var result = (await _sut.GetPendingWithdrawalsAsync()).ToList();
+
+        result.Should().HaveCount(1);
+        result[0].Amount.Should().Be(30_000m);
+        _withdrawalRepository.Verify(r => r.GetPendingWithdrawalsAsync(), Times.Once);
+    }
+
+    #endregion
+
+    #region Create Tests
 
     [Fact]
     public async Task CreateWithdrawalRequestAsync_ValidInput_ProcessesImmediatelyAndNotifies()
@@ -112,7 +144,7 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
             w.UserBankAccountId == bankAccount.Id)), Times.Once);
         _notificationService.Verify(n => n.CreateNotificationAsync(
             userEmail,
-            It.Is<string>(msg => msg.Contains("Y�u c?u r�t ti?n")),
+            It.Is<string>(msg => msg.Contains("Yêu cầu rút tiền")),
             "/wallet/withdrawals"), Times.Once);
     }
 
@@ -143,23 +175,11 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
 
         await _sut.Invoking(s => s.CreateWithdrawalRequestAsync(request, userEmail))
             .Should().ThrowAsync<System.Exception>()
-            .WithMessage("Insufficient funds*");
+            .WithMessage("Không đủ số dư.");
 
         _notificationService.Verify(n => n.CreateNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 
-    //[Fact]
-    //public async Task ApproveWithdrawalAsync_IsNotSupported()
-    //{
-    //    await _sut.Invoking(s => s.ApproveWithdrawalAsync(1, "admin@test.com"))
-    //        .Should().ThrowAsync<NotSupportedException>();
-    //}
-
-    //[Fact]
-    //public async Task RejectWithdrawalAsync_IsNotSupported()
-    //{
-    //    await _sut.Invoking(s => s.RejectWithdrawalAsync(1, "admin@test.com", "reason"))
-    //        .Should().ThrowAsync<NotSupportedException>();
-    //}
+    #endregion
 }
 
