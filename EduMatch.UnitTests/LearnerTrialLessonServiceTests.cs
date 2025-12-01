@@ -10,8 +10,9 @@ namespace EduMatch.UnitTests
     public class LearnerTrialLessonServiceTests
     {
         private readonly Mock<ILearnerTrialLessonRepository> _repo = new();
+        private readonly Mock<ITutorSubjectRepository> _tutorSubjectRepo = new();
 
-        private LearnerTrialLessonService CreateService() => new(_repo.Object);
+        private LearnerTrialLessonService CreateService() => new(_repo.Object, _tutorSubjectRepo.Object);
 
         [Fact]
         public async Task HasTrialedAsync_ForwardsToRepository()
@@ -50,6 +51,27 @@ namespace EduMatch.UnitTests
             Assert.True(result);
             _repo.Verify(r => r.ExistsAsync("c@test.com", 4, 5), Times.Once);
             _repo.Verify(r => r.AddAsync("c@test.com", 4, 5), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetSubjectTrialStatusesAsync_ReturnsHasTrialedFlags()
+        {
+            _tutorSubjectRepo.Setup(r => r.GetByTutorIdAsync(10)).ReturnsAsync(new[]
+            {
+                new TutorSubject { SubjectId = 1, Subject = new Subject { SubjectName = "Math" } },
+                new TutorSubject { SubjectId = 2, Subject = new Subject { SubjectName = "Physics" } }
+            });
+            _repo.Setup(r => r.GetByLearnerAndTutorAsync("l@test.com", 10)).ReturnsAsync(new[]
+            {
+                new LearnerTrialLesson { SubjectId = 2 }
+            });
+
+            var service = CreateService();
+            var result = await service.GetSubjectTrialStatusesAsync("l@test.com", 10);
+
+            Assert.Equal(2, result.Count);
+            Assert.Contains(result, r => r.SubjectId == 1 && r.HasTrialed == false);
+            Assert.Contains(result, r => r.SubjectId == 2 && r.HasTrialed == true);
         }
     }
 }
