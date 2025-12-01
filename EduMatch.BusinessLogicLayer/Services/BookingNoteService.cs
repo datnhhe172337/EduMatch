@@ -14,15 +14,18 @@ namespace EduMatch.BusinessLogicLayer.Services
     {
         private readonly IBookingNoteRepository _bookingNoteRepository;
         private readonly IBookingRepository _bookingRepository;
+        private readonly CurrentUserService _currentUserService;
         private readonly IMapper _mapper;
 
         public BookingNoteService(
             IBookingNoteRepository bookingNoteRepository,
             IBookingRepository bookingRepository,
+            CurrentUserService currentUserService,
             IMapper mapper)
         {
             _bookingNoteRepository = bookingNoteRepository;
             _bookingRepository = bookingRepository;
+            _currentUserService = currentUserService;
             _mapper = mapper;
         }
 
@@ -60,13 +63,19 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (booking == null)
                 throw new Exception("Booking không tồn tại");
 
+            EnsureUserIsBookingParticipant(booking);
+            var currentEmail = _currentUserService.Email;
+            if (string.IsNullOrWhiteSpace(currentEmail))
+                throw new UnauthorizedAccessException("User email not found.");
+
             var entity = new BookingNote
             {
                 BookingId = request.BookingId,
                 Content = request.Content.Trim(),
                 ImageUrl = string.IsNullOrWhiteSpace(request.ImageUrl) ? null : request.ImageUrl,
                 VideoUrl = string.IsNullOrWhiteSpace(request.VideoUrl) ? null : request.VideoUrl,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                CreatedByEmail = currentEmail
             };
 
             await _bookingNoteRepository.CreateAsync(entity);
@@ -88,6 +97,10 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (existing == null)
                 return null;
 
+            var booking = await _bookingRepository.GetByIdAsync(existing.BookingId)
+                ?? throw new Exception("Booking không tồn tại");
+            EnsureUserIsBookingParticipant(booking);
+
             existing.Content = request.Content.Trim();
             existing.ImageUrl = string.IsNullOrWhiteSpace(request.ImageUrl) ? null : request.ImageUrl;
             existing.VideoUrl = string.IsNullOrWhiteSpace(request.VideoUrl) ? null : request.VideoUrl;
@@ -101,7 +114,40 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (id <= 0)
                 throw new Exception("Id phải lớn hơn 0");
 
+            var note = await _bookingNoteRepository.GetByIdAsync(id);
+            if (note == null)
+                return false;
+
+            var booking = await _bookingRepository.GetByIdAsync(note.BookingId)
+                ?? throw new Exception("Booking không tồn tại");
+            EnsureUserIsBookingParticipant(booking);
+            EnsureUserIsNoteAuthor(note);
+
             return await _bookingNoteRepository.DeleteAsync(id);
+        }
+
+        private void EnsureUserIsBookingParticipant(Booking booking)
+        {
+            var currentEmail = _currentUserService.Email;
+            if (string.IsNullOrWhiteSpace(currentEmail))
+                throw new UnauthorizedAccessException("User email not found.");
+
+            var tutorEmail = booking.TutorSubject?.Tutor?.UserEmail;
+            var isParticipant = string.Equals(booking.LearnerEmail, currentEmail, StringComparison.OrdinalIgnoreCase)
+                || (tutorEmail != null && string.Equals(tutorEmail, currentEmail, StringComparison.OrdinalIgnoreCase));
+
+            if (!isParticipant)
+                throw new UnauthorizedAccessException("Bạn không có quyền thêm/sửa/xóa ghi chú cho booking này.");
+        }
+
+        private void EnsureUserIsNoteAuthor(BookingNote note)
+        {
+            var currentEmail = _currentUserService.Email;
+            if (string.IsNullOrWhiteSpace(currentEmail))
+                throw new UnauthorizedAccessException("User email not found.");
+
+            if (!string.Equals(note.CreatedByEmail, currentEmail, StringComparison.OrdinalIgnoreCase))
+                throw new UnauthorizedAccessException("Chỉ người tạo ghi chú mới được xóa.");
         }
     }
 }
