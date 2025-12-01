@@ -24,7 +24,18 @@ namespace EduMatch.DataAccessLayer.Repositories
                     .ThenInclude(u => u.UserProfile)
                 .Include(r => r.ReportedUserEmailNavigation)
                     .ThenInclude(u => u.UserProfile)
-                .Include(r => r.HandledByAdminEmailNavigation);
+                .Include(r => r.HandledByAdminEmailNavigation)
+                .Include(r => r.Booking)
+                    .ThenInclude(b => b.SystemFee)
+                .Include(r => r.Booking)
+                    .ThenInclude(b => b.Schedules)
+                        .ThenInclude(s => s.MeetingSession)
+                .Include(r => r.Booking)
+                    .ThenInclude(b => b.TutorSubject)
+                        .ThenInclude(ts => ts.Subject)
+                .Include(r => r.Booking)
+                    .ThenInclude(b => b.TutorSubject)
+                        .ThenInclude(ts => ts.Level);
         }
 
         public async Task<Report> CreateAsync(Report report)

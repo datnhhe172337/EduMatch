@@ -69,6 +69,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 ReporterUserEmail = reporter.Email,
                 ReportedUserEmail = reported.Email,
                 Reason = request.Reason.Trim(),
+                BookingId = request.BookingId,
                 CreatedAt = DateTime.UtcNow,
             };
             report.StatusEnum = ReportStatus.Pending;
@@ -592,6 +593,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 HandledByAdminEmail = reportDetail.HandledByAdminEmail,
                 CreatedAt = reportDetail.CreatedAt,
                 UpdatedAt = reportDetail.UpdatedAt,
+                Booking = reportDetail.Booking,
                 Defenses = defenseDtos,
                 ReporterEvidences = _mapper.Map<IReadOnlyList<ReportEvidenceDto>>(reporterEvidences.ToList()),
                 TutorEvidences = _mapper.Map<IReadOnlyList<ReportEvidenceDto>>(tutorEvidences.ToList()),
