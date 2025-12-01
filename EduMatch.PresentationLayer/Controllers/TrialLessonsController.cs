@@ -1,9 +1,11 @@
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests.TrialLesson;
 using EduMatch.BusinessLogicLayer.Services;
+using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -23,6 +25,9 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
         [HttpPost]
+        /// <summary>
+        /// Ghi nhận rằng học viên hiện tại đã học thử môn này với gia sư chỉ định.
+        /// </summary>
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status409Conflict)]
@@ -44,6 +49,9 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
         [HttpGet("exists")]
+        /// <summary>
+        /// Kiểm tra học viên hiện tại đã học thử môn này với gia sư chỉ định hay chưa.
+        /// </summary>
         [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> HasTrialLesson([FromQuery] int tutorId, [FromQuery] int subjectId)
@@ -56,6 +64,24 @@ namespace EduMatch.PresentationLayer.Controllers
 
             var exists = await _trialLessonService.HasTrialedAsync(learnerEmail, tutorId, subjectId);
             return Ok(ApiResponse<bool>.Ok(exists));
+        }
+
+        [HttpGet("subjects")]
+        /// <summary>
+        /// Liệt kê các môn của gia sư và đánh dấu môn nào học viên hiện tại đã học thử.
+        /// </summary>
+        [ProducesResponseType(typeof(ApiResponse<List<TrialLessonSubjectStatusDto>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetSubjectTrialStatuses([FromQuery] int tutorId)
+        {
+            var learnerEmail = _currentUserService.Email;
+            if (string.IsNullOrWhiteSpace(learnerEmail))
+            {
+                return Unauthorized(ApiResponse<string>.Fail("User email not found in token."));
+            }
+
+            var statuses = await _trialLessonService.GetSubjectTrialStatusesAsync(learnerEmail, tutorId);
+            return Ok(ApiResponse<IReadOnlyList<TrialLessonSubjectStatusDto>>.Ok(statuses));
         }
     }
 }
