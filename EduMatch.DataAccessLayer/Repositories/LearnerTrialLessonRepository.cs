@@ -2,6 +2,8 @@ using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace EduMatch.DataAccessLayer.Repositories
@@ -42,6 +44,13 @@ namespace EduMatch.DataAccessLayer.Repositories
         {
             return await _context.LearnerTrialLessons
                 .AnyAsync(t => t.LearnerEmail == learnerEmail && t.TutorId == tutorId && t.SubjectId == subjectId);
+        }
+
+        public async Task<IReadOnlyList<LearnerTrialLesson>> GetByLearnerAndTutorAsync(string learnerEmail, int tutorId)
+        {
+            return await _context.LearnerTrialLessons
+                .Where(t => t.LearnerEmail == learnerEmail && t.TutorId == tutorId)
+                .ToListAsync();
         }
     }
 }
