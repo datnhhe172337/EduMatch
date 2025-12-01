@@ -573,6 +573,8 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 
             CreateMap<ReportDefense, ReportDefenseDto>();
 
+            CreateMap<BookingNote, BookingNoteDto>();
+
         }
     }
 }
