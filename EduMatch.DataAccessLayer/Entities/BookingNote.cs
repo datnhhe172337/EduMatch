@@ -15,11 +15,9 @@ public partial class BookingNote
 
     public string? VideoUrl { get; set; }
 
-    public bool IsDeleted { get; set; }
-
-    public DateTime? DeletedAt { get; set; }
-
     public DateTime CreatedAt { get; set; }
+
+    public string? CreatedByEmail { get; set; }
 
     public virtual Booking Booking { get; set; } = null!;
 }
