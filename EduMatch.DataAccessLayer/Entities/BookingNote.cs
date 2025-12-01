@@ -17,5 +17,7 @@ public partial class BookingNote
 
     public DateTime CreatedAt { get; set; }
 
+    public string? CreatedByEmail { get; set; }
+
     public virtual Booking Booking { get; set; } = null!;
 }

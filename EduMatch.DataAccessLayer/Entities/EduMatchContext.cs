@@ -205,6 +205,8 @@ public partial class EduMatchContext : DbContext
             entity.ToTable("booking_notes");
 
             entity.HasIndex(e => e.BookingId, "IX_booking_notes_booking_id");
+            entity.HasIndex(e => e.CreatedByEmail, "IX_booking_notes_created_by_email");
+
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.BookingId).HasColumnName("booking_id");
@@ -214,6 +216,9 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(sysutcdatetime())")
                 .HasColumnName("created_at");
+            entity.Property(e => e.CreatedByEmail)
+                .HasMaxLength(100)
+                .HasColumnName("created_by_email");
             entity.Property(e => e.ImageUrl)
                 .HasMaxLength(500)
                 .HasColumnName("image_url");
