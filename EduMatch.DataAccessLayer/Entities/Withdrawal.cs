@@ -1,7 +1,6 @@
-﻿using EduMatch.DataAccessLayer.Enum;
-using System;
+﻿using System;
 using System.Collections.Generic;
-
+using EduMatch.DataAccessLayer.Enum;
 namespace EduMatch.DataAccessLayer.Entities;
 
 public partial class Withdrawal

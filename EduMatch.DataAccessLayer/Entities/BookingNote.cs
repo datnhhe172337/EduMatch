@@ -19,5 +19,9 @@ public partial class BookingNote
 
     public string? CreatedByEmail { get; set; }
 
+    public string? ImagePublicId { get; set; }
+
+    public string? VideoPublicId { get; set; }
+
     public virtual Booking Booking { get; set; } = null!;
 }

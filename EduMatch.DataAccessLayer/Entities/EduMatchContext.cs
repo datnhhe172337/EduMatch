@@ -205,8 +205,8 @@ public partial class EduMatchContext : DbContext
             entity.ToTable("booking_notes");
 
             entity.HasIndex(e => e.BookingId, "IX_booking_notes_booking_id");
-            entity.HasIndex(e => e.CreatedByEmail, "IX_booking_notes_created_by_email");
 
+            entity.HasIndex(e => e.CreatedByEmail, "IX_booking_notes_created_by_email");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.BookingId).HasColumnName("booking_id");
@@ -219,9 +219,17 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.CreatedByEmail)
                 .HasMaxLength(100)
                 .HasColumnName("created_by_email");
+            entity.Property(e => e.ImagePublicId)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("image_public_id");
             entity.Property(e => e.ImageUrl)
                 .HasMaxLength(500)
                 .HasColumnName("image_url");
+            entity.Property(e => e.VideoPublicId)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("video_public_id");
             entity.Property(e => e.VideoUrl)
                 .HasMaxLength(500)
                 .HasColumnName("video_url");
