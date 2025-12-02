@@ -25,6 +25,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IGoogleCalendarService _googleCalendarService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly INotificationService _notificationService;
+        private readonly ILearnerTrialLessonService _learnerTrialLessonService;
         private const string SystemWalletEmail = "system@edumatch.com";
 
         public BookingService(
@@ -38,7 +39,8 @@ namespace EduMatch.BusinessLogicLayer.Services
             ITutorAvailabilityRepository tutorAvailabilityRepository,
             IGoogleCalendarService googleCalendarService,
             IUnitOfWork unitOfWork,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            ILearnerTrialLessonService learnerTrialLessonService)
         {
             _bookingRepository = bookingRepository;
             _tutorSubjectRepository = tutorSubjectRepository;
@@ -51,6 +53,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             _googleCalendarService = googleCalendarService;
             _unitOfWork = unitOfWork;
             _notificationService = notificationService;
+            _learnerTrialLessonService = learnerTrialLessonService;
         }
 
         /// <summary>
@@ -158,6 +161,27 @@ namespace EduMatch.BusinessLogicLayer.Services
             var unitPrice = tutorSubject.HourlyRate.Value;
             var totalSessions = request.TotalSessions ?? 1;
 
+            var isTrial = request.IsTrial;
+
+            // Trial booking: chỉ được phép 1 buổi
+            if (isTrial && totalSessions != 1)
+            {
+                throw new Exception("Booking học thử chỉ được phép 1 buổi học");
+            }
+
+            // Nếu là booking học thử: kiểm tra learner đã dùng buổi học thử với tutor & môn này chưa
+            if (isTrial)
+            {
+                var hasTrialed = await _learnerTrialLessonService.HasTrialedAsync(
+                    request.LearnerEmail,
+                    tutorSubject.TutorId,
+                    tutorSubject.SubjectId);
+                if (hasTrialed)
+                {
+                    throw new Exception("Bạn đã sử dụng buổi học thử miễn phí cho môn này với gia sư này");
+                }
+            }
+
             // Get active SystemFee
             var activeSystemFee = await _systemFeeRepository.GetActiveSystemFeeAsync()
                 ?? throw new Exception("Không tìm thấy SystemFee đang hoạt động");
@@ -167,25 +191,38 @@ namespace EduMatch.BusinessLogicLayer.Services
             // Calculate base amount (tổng đơn hàng)
             var baseAmount = unitPrice * totalSessions;
 
-            // Calculate SystemFeeAmount
-
+            // Tính phí hệ thống và số tiền gia sư nhận được
             decimal systemFeeAmount = 0;
-            if (activeSystemFee.Percentage.HasValue)
-            {
-                // Phí % tính trên tổng đơn hàng
-                systemFeeAmount += baseAmount * (activeSystemFee.Percentage.Value / 100);
-            }
-            if (activeSystemFee.FixedAmount.HasValue)
-            {
-                // Phí cố định tính một lần trên tổng đơn hàng
-                systemFeeAmount += activeSystemFee.FixedAmount.Value;
-            }
+            decimal totalAmount;
+            decimal tutorReceiveAmount;
 
-            // TotalAmount giữ nguyên giá gốc
-            var totalAmount = baseAmount;
+            if (isTrial)
+            {
+                // Học thử: miễn phí hoàn toàn
+                totalAmount = 0;
+                tutorReceiveAmount = 0;
+                systemFeeAmount = 0;
+            }
+            else
+            {
+                // Booking thường: tính phí hệ thống như cũ
+                if (activeSystemFee.Percentage.HasValue)
+                {
+                    // Phí % tính trên tổng đơn hàng
+                    systemFeeAmount += baseAmount * (activeSystemFee.Percentage.Value / 100);
+                }
+                if (activeSystemFee.FixedAmount.HasValue)
+                {
+                    // Phí cố định tính một lần trên tổng đơn hàng
+                    systemFeeAmount += activeSystemFee.FixedAmount.Value;
+                }
 
-            // Calculate TutorReceiveAmount (số tiền tutor nhận được sau khi trừ phí hệ thống)
-            var tutorReceiveAmount = totalAmount - systemFeeAmount;
+                // TotalAmount giữ nguyên giá gốc
+                totalAmount = baseAmount;
+
+                // Calculate TutorReceiveAmount (số tiền tutor nhận được sau khi trừ phí hệ thống)
+                tutorReceiveAmount = totalAmount - systemFeeAmount;
+            }
 
             // Create Booking entity
             var entity = new Booking
@@ -207,6 +244,16 @@ namespace EduMatch.BusinessLogicLayer.Services
             };
 
             await _bookingRepository.CreateAsync(entity);
+
+            // Nếu là booking học thử: ghi lại vào LearnerTrialLesson để lần sau không cho học thử miễn phí nữa
+            if (isTrial)
+            {
+                await _learnerTrialLessonService.RecordTrialAsync(
+                    request.LearnerEmail,
+                    tutorSubject.TutorId,
+                    tutorSubject.SubjectId);
+            }
+
             return _mapper.Map<BookingDto>(entity);
         }
 

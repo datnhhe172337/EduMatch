@@ -6,6 +6,8 @@ using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
+using EduMatch.BusinessLogicLayer.Constants;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -23,11 +25,11 @@ namespace EduMatch.PresentationLayer.Controllers
             _trialLessonService = trialLessonService;
             _currentUserService = currentUserService;
         }
-
-        [HttpPost]
         /// <summary>
         /// Ghi nhận rằng học viên hiện tại đã học thử môn này với gia sư chỉ định.
         /// </summary>
+        [Authorize (Roles = Roles.Learner)]
+		[HttpPost]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status409Conflict)]
@@ -48,10 +50,11 @@ namespace EduMatch.PresentationLayer.Controllers
             return Ok(ApiResponse<string>.Ok("Trial lesson recorded."));
         }
 
-        [HttpGet("exists")]
-        /// <summary>
-        /// Kiểm tra học viên hiện tại đã học thử môn này với gia sư chỉ định hay chưa.
-        /// </summary>
+		/// <summary>
+		/// Kiểm tra học viên hiện tại đã học thử môn này với gia sư chỉ định hay chưa.
+		/// </summary>
+        [Authorize (Roles = Roles.Learner)]
+		[HttpGet("exists")]
         [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> HasTrialLesson([FromQuery] int tutorId, [FromQuery] int subjectId)
@@ -65,11 +68,12 @@ namespace EduMatch.PresentationLayer.Controllers
             var exists = await _trialLessonService.HasTrialedAsync(learnerEmail, tutorId, subjectId);
             return Ok(ApiResponse<bool>.Ok(exists));
         }
-
-        [HttpGet("subjects")]
-        /// <summary>
-        /// Liệt kê các môn của gia sư và đánh dấu môn nào học viên hiện tại đã học thử.
-        /// </summary>
+		/// <summary>
+		/// Liệt kê các môn của gia sư và đánh dấu môn nào học viên hiện tại đã học thử.
+		/// </summary>
+    
+        [Authorize (Roles = Roles.Learner)]
+		[HttpGet("subjects")]
         [ProducesResponseType(typeof(ApiResponse<List<TrialLessonSubjectStatusDto>>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetSubjectTrialStatuses([FromQuery] int tutorId)
