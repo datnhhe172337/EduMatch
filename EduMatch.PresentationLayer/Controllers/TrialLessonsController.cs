@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Authorization;
+using EduMatch.BusinessLogicLayer.Constants;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -27,7 +28,7 @@ namespace EduMatch.PresentationLayer.Controllers
         /// <summary>
         /// Ghi nhận rằng học viên hiện tại đã học thử môn này với gia sư chỉ định.
         /// </summary>
-        [Authorize]
+        [Authorize (Roles = Roles.Learner)]
 		[HttpPost]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
@@ -52,7 +53,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Kiểm tra học viên hiện tại đã học thử môn này với gia sư chỉ định hay chưa.
 		/// </summary>
-        [Authorize]
+        [Authorize (Roles = Roles.Learner)]
 		[HttpGet("exists")]
         [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
@@ -71,7 +72,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Liệt kê các môn của gia sư và đánh dấu môn nào học viên hiện tại đã học thử.
 		/// </summary>
     
-        [Authorize]
+        [Authorize (Roles = Roles.Learner)]
 		[HttpGet("subjects")]
         [ProducesResponseType(typeof(ApiResponse<List<TrialLessonSubjectStatusDto>>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
