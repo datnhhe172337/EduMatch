@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Entities;
@@ -382,6 +383,90 @@ namespace EduMatch.UnitTests
             Assert.True((createdToken.ExpiresAt - expectedExpiry).TotalMinutes < 1,
                 "Refresh token expiration should be within 1 minute of expected value.");
         }
+
+
+        [Fact]
+        public async Task ChangePassword_Throws_WhenUserNotFound_UnitTest()
+        {
+            // Arrange
+            string email = "notfound@example.com";
+            _userRepoMock.Setup(r => r.GetUserByEmailAsync(email)).ReturnsAsync((User)null);
+
+            var request = new ChangePasswordRequest { oldPass = "old", newPass = "new" };
+
+            // Act & Assert
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _userService.ChangePasswordAsync(email, request));
+        }
+
+        [Fact]
+        public async Task ChangePassword_Throws_WhenLoginProviderNotLocal_UnitTest()
+        {
+            // Arrange
+            var user = new User { Email = "user@example.com", LoginProvider = "Google" };
+            _userRepoMock.Setup(r => r.GetUserByEmailAsync(user.Email)).ReturnsAsync(user);
+
+            var request = new ChangePasswordRequest { oldPass = "old", newPass = "new" };
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _userService.ChangePasswordAsync(user.Email, request));
+            Assert.Equal("Email is logged in with google, unable to change password", ex.Message);
+        }
+
+        [Fact]
+        public async Task ChangePassword_ReturnsFalse_WhenOldPasswordInvalid_UnitTest()
+        {
+            // Arrange
+            var user = new User { Email = "user@example.com", LoginProvider = "Local", PasswordHash = BCrypt.Net.BCrypt.HashPassword("correctOld") };
+            _userRepoMock.Setup(r => r.GetUserByEmailAsync(user.Email)).ReturnsAsync(user);
+
+            var request = new ChangePasswordRequest { oldPass = "wrongOld", newPass = "newPass" };
+
+            // Act
+            var result = await _userService.ChangePasswordAsync(user.Email, request);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task ChangePassword_Throws_WhenOldPasswordEqualsNewPassword_UnitTest()
+        {
+            // Arrange
+            var user = new User { Email = "user@example.com", LoginProvider = "Local", PasswordHash = BCrypt.Net.BCrypt.HashPassword("samePass") };
+            _userRepoMock.Setup(r => r.GetUserByEmailAsync(user.Email)).ReturnsAsync(user);
+
+            var request = new ChangePasswordRequest { oldPass = "samePass", newPass = "samePass" };
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<Exception>(() => _userService.ChangePasswordAsync(user.Email, request));
+            Assert.Equal("New password must be different from old password.", ex.Message);
+        }
+
+        [Fact]
+        public async Task ChangePassword_UpdatesPassword_WhenValid_UnitTest()
+        {
+            // Arrange
+            var user = new User { Email = "user@example.com", LoginProvider = "Local", PasswordHash = BCrypt.Net.BCrypt.HashPassword("oldPass") };
+            _userRepoMock.Setup(r => r.GetUserByEmailAsync(user.Email)).ReturnsAsync(user);
+
+            User updatedUser = null;
+            _userRepoMock.Setup(r => r.UpdateUserAsync(It.IsAny<User>()))
+                         .Callback<User>(u => updatedUser = u)
+                         .Returns(Task.CompletedTask);
+
+            var request = new ChangePasswordRequest { oldPass = "oldPass", newPass = "newPass" };
+
+            // Act
+            var result = await _userService.ChangePasswordAsync(user.Email, request);
+
+            // Assert
+            Assert.True(result);
+            Assert.NotNull(updatedUser);
+            Assert.True(BCrypt.Net.BCrypt.Verify("newPass", updatedUser.PasswordHash));
+            _userRepoMock.Verify(r => r.UpdateUserAsync(It.IsAny<User>()), Times.Once);
+        }
+
+
 
     }
 }
