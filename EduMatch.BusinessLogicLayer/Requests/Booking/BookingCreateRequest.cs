@@ -1,4 +1,3 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace EduMatch.BusinessLogicLayer.Requests.Booking
@@ -14,6 +13,5 @@ namespace EduMatch.BusinessLogicLayer.Requests.Booking
 
         [Range(1, int.MaxValue, ErrorMessage = "Tổng số buổi học phải >= 1")]
         public int? TotalSessions { get; set; }
-        
     }
 }
