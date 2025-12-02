@@ -66,7 +66,9 @@ namespace EduMatch.UnitTests
                 BookingId = booking.Id,
                 Content = "New note",
                 ImageUrl = "https://img",
-                VideoUrl = null
+                ImagePublicId = "img-public",
+                VideoUrl = null,
+                VideoPublicId = null
             });
 
             _noteRepo.Verify(r => r.CreateAsync(It.IsAny<BookingNote>()), Times.Once);
@@ -74,6 +76,7 @@ namespace EduMatch.UnitTests
             Assert.Equal(booking.Id, result.BookingId);
             Assert.Equal("New note", result.Content);
             Assert.Equal("https://img", result.ImageUrl);
+            Assert.Equal("img-public", result.ImagePublicId);
         }
 
         [Fact]
@@ -105,12 +108,16 @@ namespace EduMatch.UnitTests
                 BookingId = booking.Id,
                 Content = "  spaced  ",
                 ImageUrl = "  ",
-                VideoUrl = ""
+                ImagePublicId = "  ",
+                VideoUrl = "",
+                VideoPublicId = " "
             });
 
             Assert.Equal("spaced", result.Content);
             Assert.Null(result.ImageUrl);
+            Assert.Null(result.ImagePublicId);
             Assert.Null(result.VideoUrl);
+            Assert.Null(result.VideoPublicId);
         }
         #endregion
 
@@ -189,7 +196,9 @@ namespace EduMatch.UnitTests
                 BookingId = 1,
                 Content = "old",
                 ImageUrl = null,
-                VideoUrl = null
+                ImagePublicId = null,
+                VideoUrl = null,
+                VideoPublicId = null
             };
 
             _noteRepo.Setup(r => r.GetByIdAsync(existing.Id)).ReturnsAsync(existing);
@@ -204,19 +213,25 @@ namespace EduMatch.UnitTests
                 Id = existing.Id,
                 Content = "new content",
                 ImageUrl = "img",
-                VideoUrl = "vid"
+                ImagePublicId = "img-public",
+                VideoUrl = "vid",
+                VideoPublicId = "vid-public"
             });
 
             _noteRepo.Verify(r => r.UpdateAsync(It.Is<BookingNote>(n =>
                 n.Id == existing.Id &&
                 n.Content == "new content" &&
                 n.ImageUrl == "img" &&
-                n.VideoUrl == "vid")), Times.Once);
+                n.ImagePublicId == "img-public" &&
+                n.VideoUrl == "vid" &&
+                n.VideoPublicId == "vid-public")), Times.Once);
 
             Assert.NotNull(result);
             Assert.Equal("new content", result!.Content);
             Assert.Equal("img", result.ImageUrl);
             Assert.Equal("vid", result.VideoUrl);
+            Assert.Equal("img-public", result.ImagePublicId);
+            Assert.Equal("vid-public", result.VideoPublicId);
         }
 
         [Fact]
