@@ -29,5 +29,11 @@ public partial class Schedule
 
     public virtual MeetingSession? MeetingSession { get; set; }
 
+    public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
+
     public virtual ICollection<ScheduleChangeRequest> ScheduleChangeRequests { get; set; } = new List<ScheduleChangeRequest>();
+
+    public virtual ScheduleCompletion? ScheduleCompletion { get; set; }
+
+    public virtual TutorPayout? TutorPayout { get; set; }
 }

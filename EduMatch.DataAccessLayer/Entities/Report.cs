@@ -27,6 +27,8 @@ public partial class Report
 
     public int? BookingId { get; set; }
 
+    public int? ScheduleId { get; set; }
+
     public virtual Booking? Booking { get; set; }
 
     public virtual User? HandledByAdminEmailNavigation { get; set; }
@@ -38,4 +40,8 @@ public partial class Report
     public virtual User ReportedUserEmailNavigation { get; set; } = null!;
 
     public virtual User ReporterUserEmailNavigation { get; set; } = null!;
+
+    public virtual Schedule? Schedule { get; set; }
+
+    public virtual ICollection<ScheduleCompletion> ScheduleCompletions { get; set; } = new List<ScheduleCompletion>();
 }

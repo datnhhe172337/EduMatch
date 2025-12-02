@@ -53,6 +53,8 @@ public partial class User
 
     public virtual ICollection<ScheduleChangeRequest> ScheduleChangeRequestRequesterEmailNavigations { get; set; } = new List<ScheduleChangeRequest>();
 
+    public virtual ICollection<ScheduleCompletion> ScheduleCompletions { get; set; } = new List<ScheduleCompletion>();
+
     public virtual TutorProfile? TutorProfile { get; set; }
 
     public virtual ICollection<UserBankAccount> UserBankAccounts { get; set; } = new List<UserBankAccount>();

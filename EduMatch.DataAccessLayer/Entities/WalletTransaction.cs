@@ -1,6 +1,7 @@
-﻿using System;
+﻿using EduMatch.DataAccessLayer.Enum;
+using System;
 using System.Collections.Generic;
-using EduMatch.DataAccessLayer.Enum;
+
 namespace EduMatch.DataAccessLayer.Entities;
 
 public partial class WalletTransaction
@@ -34,6 +35,8 @@ public partial class WalletTransaction
     public virtual Booking? Booking { get; set; }
 
     public virtual Deposit? Deposit { get; set; }
+
+    public virtual ICollection<TutorPayout> TutorPayouts { get; set; } = new List<TutorPayout>();
 
     public virtual Wallet Wallet { get; set; } = null!;
 
