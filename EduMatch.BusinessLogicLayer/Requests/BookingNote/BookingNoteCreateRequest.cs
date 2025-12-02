@@ -15,7 +15,13 @@ namespace EduMatch.BusinessLogicLayer.Requests.BookingNote
         [MaxLength(500, ErrorMessage = "ImageUrl không được vượt quá 500 ký tự")]
         public string? ImageUrl { get; set; }
 
+        [MaxLength(255, ErrorMessage = "ImagePublicId không được vượt quá 255 ký tự")]
+        public string? ImagePublicId { get; set; }
+
         [MaxLength(500, ErrorMessage = "VideoUrl không được vượt quá 500 ký tự")]
         public string? VideoUrl { get; set; }
+
+        [MaxLength(255, ErrorMessage = "VideoPublicId không được vượt quá 255 ký tự")]
+        public string? VideoPublicId { get; set; }
     }
 }

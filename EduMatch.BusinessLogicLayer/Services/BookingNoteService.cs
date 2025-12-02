@@ -72,8 +72,10 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 BookingId = request.BookingId,
                 Content = request.Content.Trim(),
-                ImageUrl = string.IsNullOrWhiteSpace(request.ImageUrl) ? null : request.ImageUrl,
-                VideoUrl = string.IsNullOrWhiteSpace(request.VideoUrl) ? null : request.VideoUrl,
+                ImageUrl = string.IsNullOrWhiteSpace(request.ImageUrl) ? null : request.ImageUrl.Trim(),
+                ImagePublicId = string.IsNullOrWhiteSpace(request.ImagePublicId) ? null : request.ImagePublicId.Trim(),
+                VideoUrl = string.IsNullOrWhiteSpace(request.VideoUrl) ? null : request.VideoUrl.Trim(),
+                VideoPublicId = string.IsNullOrWhiteSpace(request.VideoPublicId) ? null : request.VideoPublicId.Trim(),
                 CreatedAt = DateTime.UtcNow,
                 CreatedByEmail = currentEmail
             };
@@ -102,8 +104,10 @@ namespace EduMatch.BusinessLogicLayer.Services
             EnsureUserIsBookingParticipant(booking);
 
             existing.Content = request.Content.Trim();
-            existing.ImageUrl = string.IsNullOrWhiteSpace(request.ImageUrl) ? null : request.ImageUrl;
-            existing.VideoUrl = string.IsNullOrWhiteSpace(request.VideoUrl) ? null : request.VideoUrl;
+            existing.ImageUrl = string.IsNullOrWhiteSpace(request.ImageUrl) ? null : request.ImageUrl.Trim();
+            existing.ImagePublicId = string.IsNullOrWhiteSpace(request.ImagePublicId) ? null : request.ImagePublicId.Trim();
+            existing.VideoUrl = string.IsNullOrWhiteSpace(request.VideoUrl) ? null : request.VideoUrl.Trim();
+            existing.VideoPublicId = string.IsNullOrWhiteSpace(request.VideoPublicId) ? null : request.VideoPublicId.Trim();
 
             var updated = await _bookingNoteRepository.UpdateAsync(existing);
             return updated == null ? null : _mapper.Map<BookingNoteDto>(updated);

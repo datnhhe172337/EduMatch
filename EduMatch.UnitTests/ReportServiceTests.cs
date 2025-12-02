@@ -54,6 +54,7 @@ namespace EduMatch.UnitTests
             _userRepo.Setup(r => r.GetUserByEmailAsync(reporter.Email)).ReturnsAsync(reporter);
             _userRepo.Setup(r => r.GetUserByEmailAsync(reported.Email)).ReturnsAsync(reported);
             _reportRepo.Setup(r => r.CreateAsync(It.IsAny<Report>())).ReturnsAsync(createdReport);
+            _reportRepo.Setup(r => r.GetByIdAsync(createdReport.Id)).ReturnsAsync(createdReport);
             _evidenceRepo.Setup(r => r.AddAsync(It.IsAny<ReportEvidence>())).ReturnsAsync(new ReportEvidence { Id = 10 });
             _validator.Setup(v => v.ValidateAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), null)).Returns(Task.CompletedTask);
 
@@ -133,7 +134,7 @@ namespace EduMatch.UnitTests
 
         [Theory]
         [InlineData(ReportStatus.Pending, -1, true)]
-        [InlineData(ReportStatus.Pending, 3, false)]
+        [InlineData(ReportStatus.Pending, -3, false)]
         [InlineData(ReportStatus.Resolved, -1, false)]
         public async Task CanSubmitDefenseAsync_RespectsStatusAndWindow(ReportStatus status, int daysOffset, bool expected)
         {

@@ -1,4 +1,3 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace EduMatch.BusinessLogicLayer.Requests.Booking
