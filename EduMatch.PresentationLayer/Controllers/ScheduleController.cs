@@ -152,7 +152,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Nếu là online thì tạo MeetingSession tự động
 		/// Optional vì booking là tạo luôn booking và schedule và meeting session(nếu là online) cùng lúc
 		/// </summary>
-		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
+		[Authorize (Roles = Roles.BusinessAdmin)]
 		[HttpPost("create-schedule")]
 		[ProducesResponseType(typeof(ApiResponse<ScheduleDto>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -177,7 +177,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Tạo danh sách Schedule cho một Booking. Tổng số Schedule sau khi tạo phải bằng TotalSessions của Booking
 		/// Optional vì booking là tạo luôn booking và schedule và meeting session(nếu là online) cùng lúc
 		/// </summary>
-		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
+		[Authorize (Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
 		[HttpPost("create-schedule-list")]
 		[ProducesResponseType(typeof(ApiResponse<IEnumerable<ScheduleDto>>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -340,6 +340,38 @@ namespace EduMatch.PresentationLayer.Controllers
 
 				var items = await _scheduleService.GetAllByTutorEmailAsync(tutorEmail, startDate, endDate, status);
 				return Ok(ApiResponse<IEnumerable<ScheduleDto>>.Ok(items));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Cập nhật Status của Schedule (chỉ cho phép update tiến dần, ngoại lệ: Completed và Absent có thể update qua lại)
+		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
+		[HttpPut("update-status/{id:int}")]
+		[ProducesResponseType(typeof(ApiResponse<ScheduleDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<ScheduleDto>>> UpdateStatus(
+			int id,
+			[FromQuery] ScheduleStatus status)
+		{
+			try
+			{
+				if (id <= 0)
+				{
+					return BadRequest(ApiResponse<object>.Fail("Id phải lớn hơn 0"));
+				}
+
+				if (!Enum.IsDefined(typeof(ScheduleStatus), status))
+				{
+					return BadRequest(ApiResponse<object>.Fail("Status không hợp lệ"));
+				}
+
+				var updated = await _scheduleService.UpdateStatusAsync(id, status);
+				return Ok(ApiResponse<ScheduleDto>.Ok(updated, "Cập nhật Status thành công"));
 			}
 			catch (Exception ex)
 			{

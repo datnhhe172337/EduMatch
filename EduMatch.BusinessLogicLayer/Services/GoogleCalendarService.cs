@@ -77,7 +77,20 @@ namespace EduMatch.BusinessLogicLayer.Services
 			var json = await response.Content.ReadAsStringAsync();
 
 			if (!response.IsSuccessStatusCode)
+			{
+				// Kiểm tra nếu token bị revoked hoặc expired
+				if (json.Contains("invalid_grant") || json.Contains("Token has been expired or revoked"))
+				{
+					// Xóa refresh token và access token vì đã không còn hợp lệ
+					token.RefreshToken = null;
+					token.AccessToken = null;
+					token.ExpiresAt = null;
+					token.UpdatedAt = DateTime.UtcNow;
+					await _googleTokenRepository.UpdateAsync(token);
+					throw new Exception("Google refresh token đã bị thu hồi hoặc hết hạn. Vui lòng cấp quyền lại Google Calendar cho hệ thống.");
+				}
 				throw new Exception($"Failed to refresh Google access token: {json}");
+			}
 
 			var tokenResp = JsonConvert.DeserializeObject<GoogleTokenResponse>(json)
 				?? throw new Exception("Invalid token response");

@@ -1,9 +1,11 @@
 ﻿using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.Requests;
 using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.DataAccessLayer.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -78,7 +80,7 @@ namespace EduMatch.PresentationLayer.Controllers
                 {
                     HttpOnly = true,
                     Secure = true,
-                    SameSite = SameSiteMode.Strict,
+                    SameSite = SameSiteMode.None,
                     Expires = DateTime.UtcNow.AddDays(_jwt.RefreshTokenDays)
                 });
 
@@ -214,5 +216,55 @@ namespace EduMatch.PresentationLayer.Controllers
                 AvatarUrl = avatarUrl
             });
         }
+
+        [Authorize]
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePasswordAsync(ChangePasswordRequest request)
+        {
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(userEmail))
+                return Unauthorized(new { Message = "User authentication failed." });
+
+            try
+            {
+                var result = await _userService.ChangePasswordAsync(userEmail, request);
+
+                if (!result)
+                    return BadRequest(new { message = "Old password is incorrect." });
+
+                return Ok(new
+                {
+                    message = "Password changed successfully. Please login again.",
+                    requiresLogout = true
+                });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+
+        }
+
+        /// <summary>
+        /// Nhập email để thực hiện reset password
+        /// </summary>
+        /// <param name="userEmail"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPasswordAsync([FromBody] string userEmail)
+        {
+            var success = await _userService.ResetPasswordAsync(userEmail);
+
+            if (!success)
+                return BadRequest(new { message = "Email not found." });
+
+            return Ok(new { message = "A new password has been sent to your email." });
+        }
+
     }
 }

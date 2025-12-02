@@ -101,5 +101,30 @@ namespace EduMatch.DataAccessLayer.Repositories
 			}
 		}
 
-	}
+        //DateTime lastSync
+    //    public async Task<List<TutorProfile>> GetTutorsUpdatedAfterAsync()
+    //    {
+    //        return await _ctx.TutorProfiles
+				//.Include(t => t.TutorSubjects)
+				//	.ThenInclude(s => s.Subject)
+    //            .Include(t => t.TutorSubjects)
+				//	.ThenInclude(ts => ts.Level)
+    //            .Include(t => t.UserEmailNavigation)
+				//   .ThenInclude(u => u.UserProfile)
+				//		.ThenInclude(v => v.City)
+    //                    .ThenInclude(c => c.SubDistricts)
+    //            //.Where(t => t.LastSync > lastSync)
+    //            .ToListAsync();
+    //    }
+
+        public async Task<IReadOnlyList<TutorProfile>> GetTutorsUpdatedAfterAsync(DateTime lastSync) 
+			=> await IncludeAll()
+			.Where(t => t.LastSync > lastSync)
+			.ToListAsync();
+
+        public async Task SaveChangesAsync()
+		{ 
+            await _ctx.SaveChangesAsync();
+        }
+    }
 }

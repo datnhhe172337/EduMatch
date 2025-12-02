@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static EduMatch.DataAccessLayer.Enum.InstitutionType;
 
 namespace EduMatch.Tests.Common
 {
@@ -15,6 +14,7 @@ namespace EduMatch.Tests.Common
 	/// </summary>
 	public static class FakeDataFactory
 	{
+		
 		public static TutorProfile CreateFakeTutorProfile(string email = "abc@gmail.com")
 		{
 			return new TutorProfile
@@ -293,6 +293,245 @@ namespace EduMatch.Tests.Common
 				RejectReason = rejectReason,
 				Tutor = CreateFakeTutorProfile(tutorId),
 				CertificateType = CreateFakeCertificateType(certificateTypeId)
+			};
+		}
+
+		/// <summary>
+		/// Tạo SystemFee giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static SystemFee CreateFakeSystemFee(
+			int id = 1,
+			string? name = null,
+			decimal? percentage = 10,
+			decimal? fixedAmount = 5000,
+			bool? isActive = true)
+		{
+			return new SystemFee
+			{
+				Id = id,
+				Name = name ?? $"System Fee {id}",
+				Percentage = percentage,
+				FixedAmount = fixedAmount,
+				EffectiveFrom = DateTime.UtcNow.AddDays(-30),
+				EffectiveTo = null,
+				IsActive = isActive,
+				CreatedAt = DateTime.UtcNow,
+				UpdatedAt = null
+			};
+		}
+
+		/// <summary>
+		/// Tạo User giả với email cụ thể (dùng cho test)
+		/// </summary>
+		public static User CreateFakeUser(string email = "learner@example.com")
+		{
+			return new User
+			{
+				Email = email,
+				UserName = "Test User",
+				LoginProvider = "Email"
+			};
+		}
+
+		/// <summary>
+		/// Tạo Booking giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static Booking CreateFakeBooking(
+			int id = 1,
+			string? learnerEmail = null,
+			int tutorSubjectId = 1,
+			int totalSessions = 1,
+			decimal unitPrice = 200000,
+			int systemFeeId = 1,
+			decimal systemFeeAmount = 25000,
+			int paymentStatus = 0,
+			int status = 0)
+		{
+			return new Booking
+			{
+				Id = id,
+				LearnerEmail = learnerEmail ?? "learner@example.com",
+				TutorSubjectId = tutorSubjectId,
+				BookingDate = DateTime.UtcNow,
+				TotalSessions = totalSessions,
+				UnitPrice = unitPrice,
+				TotalAmount = unitPrice * totalSessions,
+				PaymentStatus = paymentStatus,
+				RefundedAmount = 0,
+				Status = status,
+				SystemFeeId = systemFeeId,
+				SystemFeeAmount = systemFeeAmount,
+				CreatedAt = DateTime.UtcNow,
+				UpdatedAt = null,
+				LearnerEmailNavigation = CreateFakeUser(learnerEmail ?? "learner@example.com"),
+				TutorSubject = CreateFakeTutorSubject(tutorSubjectId),
+				SystemFee = CreateFakeSystemFee(systemFeeId)
+			};
+		}
+
+		/// <summary>
+		/// Tạo GoogleToken giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static GoogleToken CreateFakeGoogleToken(
+			string accountEmail = "system@edumatch.com",
+			string? accessToken = null,
+			string? refreshToken = null)
+		{
+			return new GoogleToken
+			{
+				Id = 1,
+				AccountEmail = accountEmail,
+				AccessToken = accessToken ?? "fake_access_token",
+				RefreshToken = refreshToken ?? "fake_refresh_token",
+				TokenType = "Bearer",
+				Scope = "https://www.googleapis.com/auth/calendar",
+				ExpiresAt = DateTime.UtcNow.AddHours(1),
+				CreatedAt = DateTime.UtcNow,
+				UpdatedAt = null
+			};
+		}
+
+		/// <summary>
+		/// Tạo Schedule giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static Schedule CreateFakeSchedule(
+			int id = 1,
+			int availabilityId = 1,
+			int bookingId = 1,
+			int status = 0,
+			bool includeBooking = true,
+			bool includeAvailability = true)
+		{
+			var schedule = new Schedule
+			{
+				Id = id,
+				AvailabilitiId = availabilityId,
+				BookingId = bookingId,
+				Status = status,
+				AttendanceNote = null,
+				IsRefunded = false,
+				RefundedAt = null,
+				CreatedAt = DateTime.UtcNow,
+				UpdatedAt = null
+			};
+
+			if (includeAvailability)
+			{
+				var availability = CreateFakeTutorAvailability(availabilityId);
+				schedule.Availabiliti = availability;
+			}
+
+			if (includeBooking)
+			{
+				var booking = CreateFakeBooking(bookingId);
+				schedule.Booking = booking;
+			}
+
+			return schedule;
+		}
+
+		/// <summary>
+		/// Tạo MeetingSession giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static MeetingSession CreateFakeMeetingSession(
+			int id = 1,
+			int scheduleId = 1,
+			string? organizerEmail = null,
+			string? meetLink = null,
+			string? meetCode = null,
+			string? eventId = null,
+			DateTime? startTime = null,
+			DateTime? endTime = null,
+			int meetingType = 0)
+		{
+			var now = DateTime.UtcNow;
+			return new MeetingSession
+			{
+				Id = id,
+				ScheduleId = scheduleId,
+				OrganizerEmail = organizerEmail ?? "system@edumatch.com",
+				MeetLink = meetLink ?? "https://meet.google.com/abc-defg-hij",
+				MeetCode = meetCode ?? "abc-defg-hij",
+				EventId = eventId ?? "event123",
+				StartTime = startTime ?? now.AddDays(1),
+				EndTime = endTime ?? now.AddDays(1).AddHours(2),
+				MeetingType = meetingType,
+				CreatedAt = now,
+				UpdatedAt = null,
+				OrganizerEmailNavigation = CreateFakeGoogleToken(organizerEmail ?? "system@edumatch.com"),
+				Schedule = CreateFakeSchedule(scheduleId)
+			};
+		}
+
+		/// <summary>
+		/// Tạo RefundPolicy giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static RefundPolicy CreateFakeRefundPolicy(
+			int id = 1,
+			string? name = null,
+			decimal refundPercentage = 50,
+			bool isActive = true)
+		{
+			return new RefundPolicy
+			{
+				Id = id,
+				Name = name ?? $"Refund Policy {id}",
+				Description = $"Description for policy {id}",
+				RefundPercentage = refundPercentage,
+				IsActive = isActive,
+				CreatedAt = DateTime.UtcNow,
+				CreatedBy = "admin@example.com",
+				UpdatedAt = null,
+				UpdatedBy = null
+			};
+		}
+
+		/// <summary>
+		/// Tạo BookingRefundRequest giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static BookingRefundRequest CreateFakeBookingRefundRequest(
+			int id = 1,
+			int bookingId = 1,
+			string? learnerEmail = null,
+			int refundPolicyId = 1,
+			string? reason = null,
+			int status = 0,
+			decimal? approvedAmount = null)
+		{
+			return new BookingRefundRequest
+			{
+				Id = id,
+				BookingId = bookingId,
+				LearnerEmail = learnerEmail ?? "learner@example.com",
+				RefundPolicyId = refundPolicyId,
+				Reason = reason ?? "Test reason",
+				Status = status,
+				ApprovedAmount = approvedAmount,
+				AdminNote = null,
+				CreatedAt = DateTime.UtcNow,
+				ProcessedAt = null,
+				ProcessedBy = null,
+				Booking = CreateFakeBooking(bookingId),
+				LearnerEmailNavigation = CreateFakeUser(learnerEmail ?? "learner@example.com"),
+				RefundPolicy = CreateFakeRefundPolicy(refundPolicyId)
+			};
+		}
+
+		/// <summary>
+		/// Tạo RefundRequestEvidence giả với các tham số tùy chỉnh (dùng cho test)
+		/// </summary>
+		public static RefundRequestEvidence CreateFakeRefundRequestEvidence(
+			int id = 1,
+			int bookingRefundRequestId = 1,
+			string? fileUrl = null)
+		{
+			return new RefundRequestEvidence
+			{
+				Id = id,
+				BookingRefundRequestId = bookingRefundRequestId,
+				FileUrl = fileUrl ?? "https://example.com/evidence.jpg",
+				CreatedAt = DateTime.UtcNow,
+				BookingRefundRequest = CreateFakeBookingRefundRequest(bookingRefundRequestId)
 			};
 		}
 	}

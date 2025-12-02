@@ -13,6 +13,11 @@ namespace EduMatch.DataAccessLayer.Repositories
 	public sealed class TutorAvailabilityRepository : ITutorAvailabilityRepository
 	{
 		private readonly EduMatchContext _ctx;
+		private static readonly TimeZoneInfo VietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+
+		private static DateTime GetVietnamNow() =>
+			TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, VietnamTimeZone);
+
 		public TutorAvailabilityRepository(EduMatchContext ctx) => _ctx = ctx;
 
 		private IQueryable<TutorAvailability> IncludeAll() =>
@@ -31,8 +36,8 @@ namespace EduMatch.DataAccessLayer.Repositories
 		/// </summary>
 		public async Task<IReadOnlyList<TutorAvailability>> GetByTutorIdAsync(int tutorId)
 		{
-			var now = DateTime.UtcNow.Date;
-			return await IncludeAll().Where(t => t.TutorId == tutorId && t.StartDate.Date >= now).ToListAsync();
+			var vietnamNow = GetVietnamNow();
+			return await IncludeAll().Where(t => t.TutorId == tutorId && t.StartDate >= vietnamNow).ToListAsync();
 		}
 
 		/// <summary>
@@ -40,8 +45,8 @@ namespace EduMatch.DataAccessLayer.Repositories
 		/// </summary>
 		public async Task<IReadOnlyList<TutorAvailability>> GetByTutorIdFullAsync(int tutorId)
 		{
-			var now = DateTime.UtcNow.Date;
-			return await IncludeAll().Where(t => t.TutorId == tutorId && t.StartDate.Date >= now).ToListAsync();
+			var vietnamNow = GetVietnamNow();
+			return await IncludeAll().Where(t => t.TutorId == tutorId && t.StartDate >= vietnamNow).ToListAsync();
 		}
 
 		/// <summary>
@@ -49,8 +54,8 @@ namespace EduMatch.DataAccessLayer.Repositories
 		/// </summary>
 		public async Task<IReadOnlyList<TutorAvailability>> GetByStatusAsync(TutorAvailabilityStatus status)
 		{
-			var now = DateTime.UtcNow.Date;
-			return await IncludeAll().Where(t => t.Status == (int)status && t.StartDate.Date >= now).ToListAsync();
+			var vietnamNow = GetVietnamNow();
+			return await IncludeAll().Where(t => t.Status == (int)status && t.StartDate >= vietnamNow).ToListAsync();
 		}
 
 		/// <summary>
@@ -58,8 +63,8 @@ namespace EduMatch.DataAccessLayer.Repositories
 		/// </summary>
 		public async Task<IReadOnlyList<TutorAvailability>> GetAllFullAsync()
 		{
-			var now = DateTime.UtcNow.Date;
-			return await IncludeAll().Where(t => t.StartDate.Date >= now).ToListAsync();
+			var vietnamNow = GetVietnamNow();
+			return await IncludeAll().Where(t => t.StartDate >= vietnamNow).ToListAsync();
 		}
 
 		/// <summary>

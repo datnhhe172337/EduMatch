@@ -81,7 +81,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         public async Task<ScheduleDto?> GetByAvailabilityIdAsync(int availabilitiId)
         {
             if (availabilitiId <= 0)
-                throw new Exception("AvailabilitiId phải lớn hơn 0");
+                throw new ArgumentException("AvailabilitiId must be greater than 0");
             var entity = await _scheduleRepository.GetByAvailabilityIdAsync(availabilitiId);
             return entity == null ? null : _mapper.Map<ScheduleDto>(entity);
         }
@@ -92,7 +92,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         public async Task<ScheduleDto?> GetByIdAsync(int id)
         {
             if (id <= 0)
-                throw new Exception("Id phải lớn hơn 0");
+                throw new ArgumentException("ID must be greater than 0");
             var entity = await _scheduleRepository.GetByIdAsync(id);
             return entity == null ? null : _mapper.Map<ScheduleDto>(entity);
         }
@@ -138,9 +138,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (currentCountForBooking + 1 > booking.TotalSessions)
                 throw new Exception("Số lượng Schedule vượt quá TotalSessions của Booking");
 
-            // AvailabilitiId chưa được sử dụng
+            // AvailabilitiId chưa được sử dụng (trừ khi Schedule trước đó đã bị hủy)
             var existingSchedule = await _scheduleRepository.GetByAvailabilityIdAsync(request.AvailabilitiId);
-            if (existingSchedule != null)
+            if (existingSchedule != null && existingSchedule.Status != (int)ScheduleStatus.Cancelled)
                 throw new Exception("TutorAvailability này đã được sử dụng cho một Schedule khác");
 
             var now = DateTime.UtcNow;
@@ -285,28 +285,28 @@ namespace EduMatch.BusinessLogicLayer.Services
             // Nếu AvailabilitiId thay đổi: (online) cập nhật MeetingSession qua service (đẩy Google) và cập nhật trạng thái Availability
             if (availabilityIdChanged && request.AvailabilitiId.HasValue)
             {
-                // Chỉ xử lý MeetingSession nếu online (IsOnline true hoặc không truyền -> coi như online)
-                if (!request.IsOnline.HasValue || request.IsOnline.Value)
+                // Kiểm tra xem Schedule có MeetingSession hay không
+                var meetingSession = await _meetingSessionService.GetByScheduleIdAsync(entity.Id);
+                
+                if (meetingSession != null)
                 {
-                    // Update MeetingSession theo Schedule hiện tại (MeetingSessionService sẽ gửi update lên Google và đồng bộ Start/End từ response)
-                    var meetingSession = await _meetingSessionService.GetByScheduleIdAsync(entity.Id);
-                    if (meetingSession != null)
+                    // Nếu đã có MeetingSession, luôn cập nhật nó (dù IsOnline = false)
+                    await _meetingSessionService.UpdateAsync(new MeetingSessionUpdateRequest
                     {
-                        await _meetingSessionService.UpdateAsync(new MeetingSessionUpdateRequest
-                        {
-                            Id = meetingSession.Id,
-                            ScheduleId = entity.Id
-                        });
-                    }
-                    else
-                    {
-                        // Offline -> Online và chưa có MeetingSession thì tạo mới
-                        await _meetingSessionService.CreateAsync(new MeetingSessionCreateRequest
-                        {
-                            ScheduleId = entity.Id
-                        });
-                    }
+                        Id = meetingSession.Id,
+                        ScheduleId = entity.Id
+                    });
                 }
+                else if (request.IsOnline == true)
+                {
+                    // Chỉ tạo mới MeetingSession khi IsOnline = true rõ ràng (không mặc định)
+                    // Offline -> Online và chưa có MeetingSession thì tạo mới
+                    await _meetingSessionService.CreateAsync(new MeetingSessionCreateRequest
+                    {
+                        ScheduleId = entity.Id
+                    });
+                }
+                // Nếu không có MeetingSession và IsOnline = false hoặc null: không làm gì (giữ nguyên offline)
 
                 // Cập nhật trạng thái Availability: old -> Available, new -> Booked
                 await _tutorAvailabilityService.UpdateStatusAsync(oldAvailabilityId, TutorAvailabilityStatus.Available);
@@ -334,6 +334,8 @@ namespace EduMatch.BusinessLogicLayer.Services
         /// </summary>
         public async Task DeleteAsync(int id)
         {
+            if (id <= 0)
+                throw new ArgumentException("ID must be greater than 0");
             // Xóa MeetingSession trước qua service (service sẽ xóa Google Event rồi xóa DB)
             var meetingSessionDto = await _meetingSessionService.GetByScheduleIdAsync(id);
             if (meetingSessionDto != null)
@@ -411,8 +413,39 @@ namespace EduMatch.BusinessLogicLayer.Services
             return await _scheduleRepository.HasTutorScheduleOnSlotDateAsync(tutorId, slotId, date);
         }
 
+        /// <summary>
+        /// Cập nhật Status của Schedule (chỉ cho phép update tiến dần, ngoại lệ: Completed và Absent có thể update qua lại)
+        /// </summary>
+        public async Task<ScheduleDto> UpdateStatusAsync(int id, ScheduleStatus status)
+        {
+            if (id <= 0)
+                throw new ArgumentException("ID phải lớn hơn 0");
 
-        
+            var entity = await _scheduleRepository.GetByIdAsync(id)
+                ?? throw new Exception("Schedule không tồn tại");
+
+            var oldStatus = (ScheduleStatus)entity.Status;
+
+            // Ngoại lệ: Completed và Absent có thể update qua lại
+            bool isCompletedOrAbsent = (oldStatus == ScheduleStatus.Completed && status == ScheduleStatus.Absent) ||
+                                      (oldStatus == ScheduleStatus.Absent && status == ScheduleStatus.Completed);
+
+            if (!isCompletedOrAbsent)
+            {
+                // Chỉ cho phép update tiến dần: status mới phải >= status cũ (theo giá trị enum)
+                if ((int)status < (int)oldStatus)
+                {
+                    throw new Exception($"Không thể cập nhật Status từ {oldStatus} về {status}. Chỉ cho phép chuyển từ status nhỏ hơn sang status lớn hơn, hoặc giữa Completed và Absent");
+                }
+            }
+
+            entity.Status = (int)status;
+            entity.UpdatedAt = DateTime.Now;
+
+            await _scheduleRepository.UpdateAsync(entity);
+
+            return _mapper.Map<ScheduleDto>(entity);
+        }
     }
 }
 

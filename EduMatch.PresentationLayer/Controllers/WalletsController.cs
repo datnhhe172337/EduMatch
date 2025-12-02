@@ -11,6 +11,9 @@ namespace EduMatch.PresentationLayer.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize] 
+    /// <summary>
+    /// Handles wallet queries for authenticated end users.
+    /// </summary>
     public class WalletsController : ControllerBase
     {
         private readonly IWalletService _walletService;
@@ -24,6 +27,9 @@ namespace EduMatch.PresentationLayer.Controllers
             _currentUserService = currentUserService;
         }
 
+        /// <summary>
+        /// Returns the current user's wallet, creating one if it does not exist.
+        /// </summary>
         [HttpGet("my-wallet")]
         [ProducesResponseType(typeof(ApiResponse<WalletDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
@@ -52,6 +58,9 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
 
+        /// <summary>
+        /// Returns the transaction history for the current user's wallet.
+        /// </summary>
         [HttpGet("my-transactions")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<WalletTransactionDto>>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]

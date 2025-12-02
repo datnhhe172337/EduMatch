@@ -29,9 +29,13 @@ public partial class TutorProfile
 
     public DateTime? VerifiedAt { get; set; }
 
+    public DateTime? LastSync { get; set; }
+
     public virtual ICollection<ChatRoom> ChatRooms { get; set; } = new List<ChatRoom>();
 
     public virtual ICollection<FavoriteTutor> FavoriteTutors { get; set; } = new List<FavoriteTutor>();
+
+    public virtual ICollection<LearnerTrialLesson> LearnerTrialLessons { get; set; } = new List<LearnerTrialLesson>();
 
     public virtual ICollection<TutorApplication> TutorApplications { get; set; } = new List<TutorApplication>();
 
@@ -41,7 +45,11 @@ public partial class TutorProfile
 
     public virtual ICollection<TutorEducation> TutorEducations { get; set; } = new List<TutorEducation>();
 
+    public virtual ICollection<TutorRatingSummary> TutorRatingSummaries { get; set; } = new List<TutorRatingSummary>();
+
     public virtual ICollection<TutorSubject> TutorSubjects { get; set; } = new List<TutorSubject>();
+
+    public virtual ICollection<TutorVerificationRequest> TutorVerificationRequests { get; set; } = new List<TutorVerificationRequest>();
 
     public virtual User UserEmailNavigation { get; set; } = null!;
 }

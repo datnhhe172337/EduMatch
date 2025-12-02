@@ -1,6 +1,8 @@
 using EduMatch.DataAccessLayer.Entities;
+using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -25,9 +27,13 @@ namespace EduMatch.DataAccessLayer.Repositories
                     .ThenInclude(ts => ts.Level)
                 .Include(b => b.TutorSubject)
                     .ThenInclude(ts => ts.Tutor)
+                        .ThenInclude(t => t.UserEmailNavigation)
+                            .ThenInclude(u => u.UserProfile)
                 .Include(b => b.Schedules)
                     .ThenInclude(s => s.Availabiliti)
                         .ThenInclude(a => a.Slot)
+                .Include(b => b.Schedules)
+                    .ThenInclude(s => s.MeetingSession)
                 .AsQueryable();
             if (!string.IsNullOrEmpty(email))
                 query = query.Where(b => b.LearnerEmail == email);
@@ -35,7 +41,12 @@ namespace EduMatch.DataAccessLayer.Repositories
                 query = query.Where(b => b.Status == status.Value);
             if (tutorSubjectId.HasValue)
                 query = query.Where(b => b.TutorSubjectId == tutorSubjectId.Value);
-            return await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            return await query
+                .OrderByDescending(b => b.CreatedAt)
+                .ThenByDescending(b => b.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
         }
 
         /// <summary>
@@ -51,9 +62,13 @@ namespace EduMatch.DataAccessLayer.Repositories
                     .ThenInclude(ts => ts.Level)
                 .Include(b => b.TutorSubject)
                     .ThenInclude(ts => ts.Tutor)
+                        .ThenInclude(t => t.UserEmailNavigation)
+                            .ThenInclude(u => u.UserProfile)
                 .Include(b => b.Schedules)
                     .ThenInclude(s => s.Availabiliti)
                         .ThenInclude(a => a.Slot)
+                .Include(b => b.Schedules)
+                    .ThenInclude(s => s.MeetingSession)
                 .AsQueryable();
             if (!string.IsNullOrEmpty(email))
                 query = query.Where(b => b.LearnerEmail == email);
@@ -61,7 +76,10 @@ namespace EduMatch.DataAccessLayer.Repositories
                 query = query.Where(b => b.Status == status.Value);
             if (tutorSubjectId.HasValue)
                 query = query.Where(b => b.TutorSubjectId == tutorSubjectId.Value);
-            return await query.ToListAsync();
+            return await query
+                .OrderByDescending(b => b.CreatedAt)
+                .ThenByDescending(b => b.Id)
+                .ToListAsync();
         }
 
         /// <summary>
@@ -91,9 +109,13 @@ namespace EduMatch.DataAccessLayer.Repositories
                     .ThenInclude(ts => ts.Level)
                 .Include(b => b.TutorSubject)
                     .ThenInclude(ts => ts.Tutor)
+                        .ThenInclude(t => t.UserEmailNavigation)
+                            .ThenInclude(u => u.UserProfile)
                 .Include(b => b.Schedules)
                     .ThenInclude(s => s.Availabiliti)
                         .ThenInclude(a => a.Slot)
+                .Include(b => b.Schedules)
+                    .ThenInclude(s => s.MeetingSession)
                 .Where(b => b.TutorSubject.TutorId == tutorId)   
                 .AsQueryable();
                 
@@ -101,7 +123,12 @@ namespace EduMatch.DataAccessLayer.Repositories
                 query = query.Where(b => b.Status == status.Value);
             if (tutorSubjectId.HasValue)
                 query = query.Where(b => b.TutorSubjectId == tutorSubjectId.Value);
-            return await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            return await query
+                .OrderByDescending(b => b.CreatedAt)
+                .ThenByDescending(b => b.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
         }
 
         /// <summary>
@@ -117,16 +144,23 @@ namespace EduMatch.DataAccessLayer.Repositories
                     .ThenInclude(ts => ts.Level)
                 .Include(b => b.TutorSubject)
                     .ThenInclude(ts => ts.Tutor)
+                        .ThenInclude(t => t.UserEmailNavigation)
+                            .ThenInclude(u => u.UserProfile)
                 .Include(b => b.Schedules)
                     .ThenInclude(s => s.Availabiliti)
                         .ThenInclude(a => a.Slot)
+                .Include(b => b.Schedules)
+                    .ThenInclude(s => s.MeetingSession)
                 .Where(b => b.TutorSubject.TutorId == tutorId)
                 .AsQueryable();
             if (status.HasValue)
                 query = query.Where(b => b.Status == status.Value);
             if (tutorSubjectId.HasValue)
                 query = query.Where(b => b.TutorSubjectId == tutorSubjectId.Value);
-            return await query.ToListAsync();
+            return await query
+                .OrderByDescending(b => b.CreatedAt)
+                .ThenByDescending(b => b.Id)
+                .ToListAsync();
         }
 
         /// <summary>
@@ -158,9 +192,15 @@ namespace EduMatch.DataAccessLayer.Repositories
                     .ThenInclude(ts => ts.Level)
                 .Include(b => b.TutorSubject)
                     .ThenInclude(ts => ts.Tutor)
+                        .ThenInclude(t => t.UserEmailNavigation)
+                            .ThenInclude(u => u.UserProfile)
                 .Include(b => b.Schedules)
                     .ThenInclude(s => s.Availabiliti)
                         .ThenInclude(a => a.Slot)
+                .Include(b => b.Schedules)
+                    .ThenInclude(s => s.MeetingSession)
+                .OrderByDescending(b => b.CreatedAt)
+                .ThenByDescending(b => b.Id)
                 .FirstOrDefaultAsync(b => b.Id == id);
         }
 
@@ -193,6 +233,27 @@ namespace EduMatch.DataAccessLayer.Repositories
                 _context.Bookings.Remove(booking);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        /// <summary>
+        /// Lấy danh sách booking cần auto-cancel nếu quá hạn xác nhận/thanh toán hoặc lịch học sắp diễn ra
+        /// </summary>
+        public async Task<List<Booking>> GetPendingBookingsNeedingAutoCancelAsync(DateTime createdBefore, DateTime scheduleStartBefore)
+        {
+            return await _context.Bookings
+                .AsSplitQuery()
+                .Include(b => b.Schedules)
+                    .ThenInclude(s => s.Availabiliti)
+                .Where(b =>
+                    (
+                        b.Status == (int)BookingStatus.Pending ||
+                        (b.Status == (int)BookingStatus.Confirmed && b.PaymentStatus == (int)PaymentStatus.Pending)
+                    ) &&
+                    (
+                        b.CreatedAt <= createdBefore ||
+                        b.Schedules.Any(s => s.Availabiliti.StartDate <= scheduleStartBefore)
+                    ))
+                .ToListAsync();
         }
     }
 }

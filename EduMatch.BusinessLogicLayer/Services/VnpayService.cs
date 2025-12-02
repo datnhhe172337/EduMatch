@@ -16,13 +16,13 @@ namespace EduMatch.BusinessLogicLayer.Services
     public class VnpayService : IVnpayService
     {
         private readonly VnpaySettings _settings;
-        // private readonly IConfiguration _configuration; // <-- YOU CAN REMOVE THIS
+        // private readonly IConfiguration _configuration; 
 
         // --- UPDATE THE CONSTRUCTOR ---
         public VnpayService(IOptions<VnpaySettings> settings)
         {
             _settings = settings.Value;
-            // _configuration = configuration; // <-- YOU CAN REMOVE THIS
+            // _configuration = configuration; 
         }
 
         // Filename: VnpayService.cs
@@ -43,13 +43,11 @@ namespace EduMatch.BusinessLogicLayer.Services
             vnpayData.Add("vnp_OrderType", "other");
             vnpayData.Add("vnp_ReturnUrl", _settings.ReturnUrl);
 
-            // --- THIS IS THE MISSING LINE ---
             //vnpayData.Add("vnp_IpnUrl", _settings.IpnUrl);
             // ---------------------------------
 
             vnpayData.Add("vnp_TxnRef", orderId);
 
-            // The rest of the code is correct
             string queryData = string.Join("&", vnpayData.Select(kv => $"{kv.Key}={WebUtility.UrlEncode(kv.Value)}"));
             string signature = HmacSHA512(_settings.HashSecret, queryData);
 

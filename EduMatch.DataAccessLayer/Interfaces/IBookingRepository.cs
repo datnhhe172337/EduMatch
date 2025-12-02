@@ -1,4 +1,5 @@
 using EduMatch.DataAccessLayer.Entities;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -46,5 +47,9 @@ namespace EduMatch.DataAccessLayer.Interfaces
         /// Xóa Booking theo ID
         /// </summary>
         Task DeleteAsync(int id);
+        /// <summary>
+        /// Lấy danh sách Booking Pending cần auto-cancel dựa trên thời gian tạo và lịch học sắp diễn ra
+        /// </summary>
+        Task<List<Booking>> GetPendingBookingsNeedingAutoCancelAsync(DateTime createdBeforeUtc, DateTime scheduleStartBeforeUtc);
     }
 }

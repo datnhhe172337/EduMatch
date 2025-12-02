@@ -29,6 +29,7 @@ namespace EduMatch.DataAccessLayer.Repositories
         public async Task<IEnumerable<WalletTransaction>> GetTransactionsByWalletIdAsync(int walletId)
         {
             return await _dbSet
+                .Include(t => t.Booking)
                 .Where(t => t.WalletId == walletId)
                 .OrderByDescending(t => t.CreatedAt) 
                 .ToListAsync();
