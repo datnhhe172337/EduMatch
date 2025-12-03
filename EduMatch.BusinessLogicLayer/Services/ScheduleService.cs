@@ -21,6 +21,9 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IMeetingSessionService _meetingSessionService;
         private readonly ITutorAvailabilityService _tutorAvailabilityService;
         private readonly ITutorProfileService _tutorProfileService;
+        private readonly IScheduleCompletionRepository _scheduleCompletionRepository;
+        private readonly ITutorPayoutRepository _tutorPayoutRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
         public ScheduleService(
             IScheduleRepository scheduleRepository,
@@ -28,6 +31,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             IMeetingSessionService meetingSessionService,
             ITutorAvailabilityService tutorAvailabilityService,
             ITutorProfileService tutorProfileService,
+            IScheduleCompletionRepository scheduleCompletionRepository,
+            ITutorPayoutRepository tutorPayoutRepository,
+            IUnitOfWork unitOfWork,
             IMapper mapper)
         {
             _scheduleRepository = scheduleRepository;
@@ -35,6 +41,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             _meetingSessionService = meetingSessionService;
             _tutorAvailabilityService = tutorAvailabilityService;
             _tutorProfileService = tutorProfileService;
+            _scheduleCompletionRepository = scheduleCompletionRepository;
+            _tutorPayoutRepository = tutorPayoutRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -171,6 +180,9 @@ namespace EduMatch.BusinessLogicLayer.Services
                     ScheduleId = entity.Id
                 });
             }
+
+            // Create completion & payout records for this schedule
+            await CreateCompletionAndPayoutAsync(entity, availability, bookingDto);
 
             return _mapper.Map<ScheduleDto>(entity);
         }
@@ -446,6 +458,80 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             return _mapper.Map<ScheduleDto>(entity);
         }
+
+        private async Task CreateCompletionAndPayoutAsync(Schedule schedule, TutorAvailabilityDto availability, BookingDto bookingDto)
+        {
+            var lessonDate = availability.StartDate.Date;
+            var endTime = availability.Slot?.EndTime ?? TimeOnly.MinValue;
+            var confirmationDeadline = lessonDate.Add(endTime.ToTimeSpan()).AddDays(3);
+            var now = DateTime.UtcNow;
+
+            var completion = new ScheduleCompletion
+            {
+                ScheduleId = schedule.Id,
+                BookingId = schedule.BookingId,
+                TutorId = availability.TutorId,
+                LearnerEmail = bookingDto.LearnerEmail,
+                Status = (byte)ScheduleCompletionStatus.PendingConfirm,
+                ConfirmationDeadline = confirmationDeadline,
+                CreatedAt = now
+            };
+            await _scheduleCompletionRepository.AddAsync(completion);
+
+            var totalSessions = bookingDto.TotalSessions <= 0 ? 1 : bookingDto.TotalSessions;
+            var perSessionTutor = decimal.Round(bookingDto.TutorReceiveAmount / totalSessions, 2, MidpointRounding.AwayFromZero);
+            var perSessionFee = decimal.Round(bookingDto.SystemFeeAmount / totalSessions, 2, MidpointRounding.AwayFromZero);
+
+            var tutorEmail = bookingDto.TutorSubject?.TutorEmail ?? availability.Tutor?.UserEmail;
+            if (string.IsNullOrWhiteSpace(tutorEmail))
+                throw new InvalidOperationException("Tutor email not found for payout creation.");
+
+            var tutorWallet = await GetOrCreateWalletAsync(tutorEmail);
+
+            var payout = new TutorPayout
+            {
+                ScheduleId = schedule.Id,
+                BookingId = schedule.BookingId,
+                TutorWalletId = tutorWallet.Id,
+                Amount = perSessionTutor,
+                SystemFeeAmount = perSessionFee,
+                Status = (byte)TutorPayoutStatus.Pending,
+                PayoutTrigger = (byte)TutorPayoutTrigger.None,
+                ScheduledPayoutDate = DateOnly.FromDateTime(now),
+                CreatedAt = now
+            };
+
+            await _tutorPayoutRepository.AddAsync(payout);
+            await _unitOfWork.CompleteAsync();
+        }
+
+        private async Task<Wallet> GetOrCreateWalletAsync(string userEmail)
+        {
+            var wallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(userEmail);
+            if (wallet != null)
+            {
+                return wallet;
+            }
+
+            var newWallet = new Wallet
+            {
+                UserEmail = userEmail,
+                Balance = 0,
+                LockedBalance = 0,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _unitOfWork.Wallets.AddAsync(newWallet);
+            await _unitOfWork.CompleteAsync();
+            return newWallet;
+        }
+
+        /// <summary>
+        /// Helper to confirm a schedule and release payout immediately via completion service; does not alter existing flows.
+        /// </summary>
+        public Task<bool> FinishAndPayScheduleAsync(int scheduleId, IScheduleCompletionService completionService)
+        {
+            if (completionService == null) throw new ArgumentNullException(nameof(completionService));
+            return completionService.FinishAndPayAsync(scheduleId);
+        }
     }
 }
-
