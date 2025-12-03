@@ -157,6 +157,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IAdminStatsService, AdminStatsService>();
             services.AddScoped<ILearnerTrialLessonService, LearnerTrialLessonService>();
             services.AddScoped<ITutorPayoutService, TutorPayoutService>();
+            services.AddScoped<IScheduleCompletionService, ScheduleCompletionService>();
                             // Services for Chatbot AI
             services.AddScoped<IGeminiChatService, GeminiChatService>();
             services.AddSingleton<IEmbeddingService, EmbeddingService>();
