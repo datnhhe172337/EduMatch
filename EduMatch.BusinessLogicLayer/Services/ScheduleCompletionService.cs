@@ -102,5 +102,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             return true;
         }
+
+        // New convenience method; does not change existing confirmation logic.
+        public Task<bool> FinishAndPayAsync(int scheduleId)
+        {
+            return ConfirmAsync(scheduleId, releasePayoutImmediately: true);
+        }
     }
 }

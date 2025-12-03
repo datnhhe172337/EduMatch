@@ -15,5 +15,10 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// Returns true if the confirmation updated the record, false if it was already confirmed.
         /// </summary>
         Task<bool> ConfirmAsync(int scheduleId, bool releasePayoutImmediately = true);
+
+        /// <summary>
+        /// Wrapper to confirm and pay in one call; leaves existing methods untouched.
+        /// </summary>
+        Task<bool> FinishAndPayAsync(int scheduleId);
     }
 }
