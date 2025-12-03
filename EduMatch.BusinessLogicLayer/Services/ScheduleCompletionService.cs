@@ -12,15 +12,18 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IScheduleCompletionRepository _completionRepository;
         private readonly ITutorPayoutRepository _payoutRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ITutorPayoutService _tutorPayoutService;
 
         public ScheduleCompletionService(
             IScheduleCompletionRepository completionRepository,
             ITutorPayoutRepository payoutRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            ITutorPayoutService tutorPayoutService)
         {
             _completionRepository = completionRepository;
             _payoutRepository = payoutRepository;
             _unitOfWork = unitOfWork;
+            _tutorPayoutService = tutorPayoutService;
         }
 
         public async Task<int> AutoCompletePastDueAsync()
@@ -53,6 +56,51 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             await _unitOfWork.CompleteAsync();
             return updated;
+        }
+
+        public async Task<bool> ConfirmAsync(int scheduleId, bool releasePayoutImmediately = true)
+        {
+            var completion = await _completionRepository.GetByScheduleIdAsync(scheduleId)
+                ?? throw new InvalidOperationException("Schedule completion not found.");
+
+            var currentStatus = (ScheduleCompletionStatus)completion.Status;
+            if (currentStatus == ScheduleCompletionStatus.LearnerConfirmed)
+                return false; // already confirmed
+
+            if (currentStatus == ScheduleCompletionStatus.ReportedOnHold)
+                throw new InvalidOperationException("Schedule is reported and cannot be confirmed until resolved.");
+
+            var now = DateTime.UtcNow;
+            completion.Status = (byte)ScheduleCompletionStatus.LearnerConfirmed;
+            completion.ConfirmedAt = now;
+            completion.UpdatedAt = now;
+            _completionRepository.Update(completion);
+
+            var payout = await _payoutRepository.GetByScheduleIdAsync(scheduleId);
+            if (payout != null)
+            {
+                // Only move forward if not on hold/cancelled/paid
+                var payoutStatus = (TutorPayoutStatus)payout.Status;
+                if (payoutStatus == TutorPayoutStatus.OnHold)
+                    throw new InvalidOperationException("Payout is on hold; resolve the report first.");
+
+                if (payoutStatus == TutorPayoutStatus.Pending)
+                {
+                    payout.Status = (byte)TutorPayoutStatus.ReadyForPayout;
+                    payout.PayoutTrigger = (byte)TutorPayoutTrigger.LearnerConfirmed;
+                    payout.UpdatedAt = now;
+                    _payoutRepository.Update(payout);
+                }
+            }
+
+            await _unitOfWork.CompleteAsync();
+
+            if (releasePayoutImmediately && payout != null && payout.Status == (byte)TutorPayoutStatus.ReadyForPayout)
+            {
+                await _tutorPayoutService.ProcessDuePayoutsAsync();
+            }
+
+            return true;
         }
     }
 }
