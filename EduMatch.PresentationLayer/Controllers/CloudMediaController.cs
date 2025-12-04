@@ -43,14 +43,10 @@ namespace EduMatch.PresentationLayer.Controllers
 				if (request?.File == null || request.File.Length == 0)
 					return BadRequest(ApiResponse<string>.Fail("File rỗng hoặc không tồn tại"));
 
-				// Lấy email từ currentUserService, nếu không có thì lấy từ GoogleCalendarSettings (system email)
-				var ownerEmail = _currentUserService.Email;
+				// Lấy email hệ thống từ GoogleCalendarSettings
+				var ownerEmail = _googleCalendarSettings.SystemAccountEmail;
 				if (string.IsNullOrWhiteSpace(ownerEmail))
-				{
-					ownerEmail = _googleCalendarSettings.SystemAccountEmail;
-					if (string.IsNullOrWhiteSpace(ownerEmail))
-						return BadRequest(ApiResponse<string>.Fail("Không thể xác định email người dùng và email hệ thống không được cấu hình"));
-				}
+					return BadRequest(ApiResponse<string>.Fail("Email hệ thống không được cấu hình"));
 
 				// Mở stream 1 lần và dùng nó cho validate + upload
 				await using var stream = request.File.OpenReadStream();
