@@ -20,5 +20,20 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// Wrapper to confirm and pay in one call; leaves existing methods untouched.
         /// </summary>
         Task<bool> FinishAndPayAsync(int scheduleId);
+
+        /// <summary>
+        /// Mark a schedule as reported/on-hold and tie it to a report.
+        /// </summary>
+        Task<bool> MarkReportedAsync(int scheduleId, int reportId);
+
+        /// <summary>
+        /// Admin resolution: release payout (back to ReadyForPayout) or cancel payout after review.
+        /// </summary>
+        Task<bool> ResolveReportAsync(int scheduleId, bool releaseToTutor);
+
+        /// <summary>
+        /// Learner cancels the schedule completion (no payout will be released).
+        /// </summary>
+        Task<bool> CancelAsync(int scheduleId, string? currentUserEmail = null);
     }
 }

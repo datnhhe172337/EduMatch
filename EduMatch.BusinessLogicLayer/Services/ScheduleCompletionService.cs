@@ -13,6 +13,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly ITutorPayoutRepository _payoutRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ITutorPayoutService _tutorPayoutService;
+        private readonly TimeZoneInfo _vietnamTz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
 
         public ScheduleCompletionService(
             IScheduleCompletionRepository completionRepository,
@@ -28,7 +29,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task<int> AutoCompletePastDueAsync()
         {
-            var now = DateTime.UtcNow;
+            var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTz);
             var dueCompletions = await _completionRepository.GetPendingAutoCompleteAsync(now);
             if (dueCompletions.Count == 0)
                 return 0;
@@ -58,7 +59,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             return updated;
         }
 
-        public async Task<bool> ConfirmAsync(int scheduleId, bool releasePayoutImmediately = true)
+        public async Task<bool> ConfirmAsync(int scheduleId, bool releasePayoutImmediately = true, string? currentUserEmail = null)
         {
             var completion = await _completionRepository.GetByScheduleIdAsync(scheduleId)
                 ?? throw new InvalidOperationException("Schedule completion not found.");
@@ -70,7 +71,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (currentStatus == ScheduleCompletionStatus.ReportedOnHold)
                 throw new InvalidOperationException("Schedule is reported and cannot be confirmed until resolved.");
 
-            var now = DateTime.UtcNow;
+            // Ownership check: only learner can confirm
+            if (!string.IsNullOrWhiteSpace(currentUserEmail) &&
+                !string.Equals(completion.LearnerEmail, currentUserEmail, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UnauthorizedAccessException("Only the learner can confirm this schedule.");
+            }
+
+            var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTz);
             completion.Status = (byte)ScheduleCompletionStatus.LearnerConfirmed;
             completion.ConfirmedAt = now;
             completion.UpdatedAt = now;
@@ -104,9 +112,116 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         // New convenience method; does not change existing confirmation logic.
-        public Task<bool> FinishAndPayAsync(int scheduleId)
+        public Task<bool> FinishAndPayAsync(int scheduleId, string? currentUserEmail = null)
         {
-            return ConfirmAsync(scheduleId, releasePayoutImmediately: true);
+            return ConfirmAsync(scheduleId, releasePayoutImmediately: true, currentUserEmail: currentUserEmail);
+        }
+
+        public async Task<bool> MarkReportedAsync(int scheduleId, int reportId)
+        {
+            var completion = await _completionRepository.GetByScheduleIdAsync(scheduleId)
+                ?? throw new InvalidOperationException("Schedule completion not found.");
+
+            var currentStatus = (ScheduleCompletionStatus)completion.Status;
+            if (currentStatus == ScheduleCompletionStatus.ReportedOnHold)
+                return false; // already on hold
+
+            completion.Status = (byte)ScheduleCompletionStatus.ReportedOnHold;
+            completion.ReportId = reportId;
+            completion.UpdatedAt = DateTime.UtcNow;
+            _completionRepository.Update(completion);
+
+            var payout = await _payoutRepository.GetByScheduleIdAsync(scheduleId);
+            if (payout != null)
+            {
+                payout.Status = (byte)TutorPayoutStatus.OnHold;
+                payout.UpdatedAt = DateTime.UtcNow;
+                _payoutRepository.Update(payout);
+            }
+
+            await _unitOfWork.CompleteAsync();
+            return true;
+        }
+
+        public async Task<bool> ResolveReportAsync(int scheduleId, bool releaseToTutor)
+        {
+            var completion = await _completionRepository.GetByScheduleIdAsync(scheduleId)
+                ?? throw new InvalidOperationException("Schedule completion not found.");
+
+            var currentStatus = (ScheduleCompletionStatus)completion.Status;
+            if (currentStatus != ScheduleCompletionStatus.ReportedOnHold)
+                return false; // nothing to resolve
+
+            var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTz);
+            if (releaseToTutor)
+            {
+                completion.Status = (byte)ScheduleCompletionStatus.AutoCompleted;
+                completion.AutoCompletedAt = now;
+                completion.UpdatedAt = now;
+                _completionRepository.Update(completion);
+
+                var payout = await _payoutRepository.GetByScheduleIdAsync(scheduleId);
+                if (payout != null)
+                {
+                    payout.Status = (byte)TutorPayoutStatus.ReadyForPayout;
+                    payout.PayoutTrigger = (byte)TutorPayoutTrigger.AdminApproved;
+                    payout.UpdatedAt = now;
+                    _payoutRepository.Update(payout);
+                }
+            }
+            else
+            {
+                completion.Status = (byte)ScheduleCompletionStatus.Cancelled;
+                completion.UpdatedAt = now;
+                _completionRepository.Update(completion);
+
+                var payout = await _payoutRepository.GetByScheduleIdAsync(scheduleId);
+                if (payout != null)
+                {
+                    payout.Status = (byte)TutorPayoutStatus.Cancelled;
+                    payout.UpdatedAt = now;
+                    _payoutRepository.Update(payout);
+                }
+            }
+
+            await _unitOfWork.CompleteAsync();
+            return true;
+        }
+
+        public async Task<bool> CancelAsync(int scheduleId, string? currentUserEmail = null)
+        {
+            var completion = await _completionRepository.GetByScheduleIdAsync(scheduleId)
+                ?? throw new InvalidOperationException("Schedule completion not found.");
+
+            var status = (ScheduleCompletionStatus)completion.Status;
+            if (status == ScheduleCompletionStatus.Cancelled)
+                return false;
+
+            // Ownership check: learner or tutor can cancel
+            var isLearner = string.IsNullOrWhiteSpace(currentUserEmail)
+                ? true
+                : string.Equals(completion.LearnerEmail, currentUserEmail, StringComparison.OrdinalIgnoreCase);
+            var tutorEmail = completion.Tutor?.UserEmail;
+            var isTutor = !string.IsNullOrWhiteSpace(currentUserEmail) && !string.IsNullOrWhiteSpace(tutorEmail) &&
+                          string.Equals(tutorEmail, currentUserEmail, StringComparison.OrdinalIgnoreCase);
+            if (!string.IsNullOrWhiteSpace(currentUserEmail) && !isLearner && !isTutor)
+                throw new UnauthorizedAccessException("Only the learner or tutor can cancel this schedule.");
+
+            var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTz);
+            completion.Status = (byte)ScheduleCompletionStatus.Cancelled;
+            completion.UpdatedAt = now;
+            _completionRepository.Update(completion);
+
+            var payout = await _payoutRepository.GetByScheduleIdAsync(scheduleId);
+            if (payout != null && payout.Status != (byte)TutorPayoutStatus.Paid)
+            {
+                payout.Status = (byte)TutorPayoutStatus.Cancelled;
+                payout.UpdatedAt = now;
+                _payoutRepository.Update(payout);
+            }
+
+            await _unitOfWork.CompleteAsync();
+            return true;
         }
     }
 }
