@@ -106,9 +106,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 			try
 			{
 				// CHECK IF TUTOR PROFILE EXISTS
-				if (string.IsNullOrWhiteSpace(_currentUserService.Email))
-					throw new Exception("Không tìm thấy email người dùng hiện tại");
-				var userEmail = _currentUserService.Email!;
+				if (string.IsNullOrWhiteSpace(request.UserEmail))
+					throw new Exception("Email người dùng không được để trống");
+				var userEmail = request.UserEmail;
 				var existing = await _tutorProfileRepository.GetByEmailFullAsync(userEmail);
 				
 				// Validate URLs
