@@ -461,10 +461,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         private async Task CreateCompletionAndPayoutAsync(Schedule schedule, TutorAvailabilityDto availability, BookingDto bookingDto)
         {
+            var vietnamTz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
             var lessonDate = availability.StartDate.Date;
             var endTime = availability.Slot?.EndTime ?? TimeOnly.MinValue;
             var confirmationDeadline = lessonDate.Add(endTime.ToTimeSpan()).AddDays(3);
-            var now = DateTime.UtcNow;
+            var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTz);
 
             var completion = new ScheduleCompletion
             {
