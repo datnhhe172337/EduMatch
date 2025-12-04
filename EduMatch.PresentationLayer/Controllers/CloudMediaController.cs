@@ -2,12 +2,14 @@
 using EduMatch.BusinessLogicLayer.Requests.Cloudinary;
 using EduMatch.BusinessLogicLayer.Requests.Common;
 using EduMatch.BusinessLogicLayer.Services;
+using EduMatch.BusinessLogicLayer.Settings;
 using EduMatch.BusinessLogicLayer.Utils;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
 
 namespace EduMatch.PresentationLayer.Controllers
@@ -19,13 +21,14 @@ namespace EduMatch.PresentationLayer.Controllers
 		private readonly ICloudMediaService _cloudService;
 		private readonly CurrentUserService _currentUserService;
 		private readonly IMediaValidator _mediaValidator;
+		private readonly GoogleCalendarSettings _googleCalendarSettings;
 
-		public CloudMediaController(ICloudMediaService cloudService, CurrentUserService currentUserService, IMediaValidator mediaValidator )
+		public CloudMediaController(ICloudMediaService cloudService, CurrentUserService currentUserService, IMediaValidator mediaValidator, IOptions<GoogleCalendarSettings> googleCalendarSettings)
 		{
 			_cloudService = cloudService;
 			_currentUserService = currentUserService;
 			_mediaValidator = mediaValidator;
-
+			_googleCalendarSettings = googleCalendarSettings.Value;
 		}
 
 		/// <summary>
@@ -40,8 +43,14 @@ namespace EduMatch.PresentationLayer.Controllers
 				if (request?.File == null || request.File.Length == 0)
 					return BadRequest(ApiResponse<string>.Fail("File rỗng hoặc không tồn tại"));
 
-				if (string.IsNullOrWhiteSpace(_currentUserService.Email))
-					return BadRequest(ApiResponse<string>.Fail("User email is missing"));
+				// Lấy email từ currentUserService, nếu không có thì lấy từ GoogleCalendarSettings (system email)
+				var ownerEmail = _currentUserService.Email;
+				if (string.IsNullOrWhiteSpace(ownerEmail))
+				{
+					ownerEmail = _googleCalendarSettings.SystemAccountEmail;
+					if (string.IsNullOrWhiteSpace(ownerEmail))
+						return BadRequest(ApiResponse<string>.Fail("Không thể xác định email người dùng và email hệ thống không được cấu hình"));
+				}
 
 				// Mở stream 1 lần và dùng nó cho validate + upload
 				await using var stream = request.File.OpenReadStream();
@@ -51,7 +60,7 @@ namespace EduMatch.PresentationLayer.Controllers
 					FileName: request.File.FileName,
 					ContentType: request.File.ContentType ?? "application/octet-stream",
 					LengthBytes: request.File.Length,
-					OwnerEmail: _currentUserService.Email,
+					OwnerEmail: ownerEmail,
 					MediaType: request.MediaType
 				);
 
