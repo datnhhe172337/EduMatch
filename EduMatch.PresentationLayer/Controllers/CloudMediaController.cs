@@ -31,7 +31,6 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// <summary>
 		/// Upload media file to cloud storage
 		/// </summary>
-		[Authorize]		
 		[HttpPost("upload")]
 		[Consumes("multipart/form-data")]
 		public async Task<IActionResult> Upload([FromForm] UploadMediaFormRequest request, CancellationToken ct)
