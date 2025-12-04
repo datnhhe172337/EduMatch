@@ -54,7 +54,7 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
         /// <summary>
-        /// Learner cancels the schedule completion (no payout).
+        /// Learner or tutor cancels the schedule completion (no payout).
         /// </summary>
         [Authorize]
         [HttpPost("{id:int}/cancel")]
