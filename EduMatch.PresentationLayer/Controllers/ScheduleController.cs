@@ -10,7 +10,6 @@ using EduMatch.DataAccessLayer.Enum;
 using EduMatch.PresentationLayer.Common;
 using System.ComponentModel.DataAnnotations;
 using EduMatch.BusinessLogicLayer.Constants;
-using EduMatch.BusinessLogicLayer.Services;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -21,30 +20,23 @@ namespace EduMatch.PresentationLayer.Controllers
 		private readonly IScheduleService _scheduleService;
 		private readonly IBookingService _bookingService;
 		private readonly IScheduleCompletionService _scheduleCompletionService;
-		private readonly CurrentUserService _currentUserService;
 		private readonly EduMatchContext _context;
 
 		/// <summary>
 		/// API Schedule: lấy danh sách (có/không phân trang), lấy theo Id/AvailabilityId, tạo, cập nhật, hủy theo BookingId
 		/// </summary>
-		public ScheduleController(
-			IScheduleService scheduleService,
-			IBookingService bookingService,
-			IScheduleCompletionService scheduleCompletionService,
-			CurrentUserService currentUserService,
-			EduMatchContext context)
+		public ScheduleController(IScheduleService scheduleService, IBookingService bookingService, IScheduleCompletionService scheduleCompletionService, EduMatchContext context)
 		{
 			_scheduleService = scheduleService;
 			_bookingService = bookingService;
 			_scheduleCompletionService = scheduleCompletionService;
-			_currentUserService = currentUserService;
 			_context = context;
-		}
+        }
 
         /// <summary>
         /// Learner confirms a schedule as finished and triggers payout immediately.
         /// </summary>
-		[Authorize(Roles = Roles.Learner)]
+		[Authorize]
 		[HttpPost("{id:int}/finish")]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -52,13 +44,6 @@ namespace EduMatch.PresentationLayer.Controllers
 		{
 			try
 			{
-				var currentEmail = _currentUserService.GetEmail();
-				var schedule = await _scheduleService.GetByIdAsync(id);
-				if (schedule == null)
-					return NotFound(ApiResponse<object>.Fail("Schedule not found"));
-				if (!string.Equals(schedule.LearnerEmail, currentEmail, StringComparison.OrdinalIgnoreCase))
-					return Forbid();
-
 				var updated = await _scheduleCompletionService.FinishAndPayAsync(id);
 				return Ok(ApiResponse<object>.Ok(new { updated }));
 			}
@@ -71,29 +56,17 @@ namespace EduMatch.PresentationLayer.Controllers
         /// <summary>
         /// Learner cancels the schedule completion (no payout).
         /// </summary>
-		[Authorize(Roles = Roles.Learner + "," + Roles.Tutor)]
-		[HttpPost("{id:int}/cancel")]
-		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-		public async Task<ActionResult<ApiResponse<object>>> CancelScheduleCompletion(int id)
-		{
-			try
-			{
-				var currentEmail = _currentUserService.GetEmail();
-				var schedule = await _scheduleService.GetByIdAsync(id);
-				if (schedule == null)
-					return NotFound(ApiResponse<object>.Fail("Schedule not found"));
-
-				var tutorEmail = schedule.TutorSubject?.TutorEmail;
-				var isLearner = string.Equals(schedule.LearnerEmail, currentEmail, StringComparison.OrdinalIgnoreCase);
-				var isTutor = !string.IsNullOrWhiteSpace(tutorEmail) &&
-				              string.Equals(tutorEmail, currentEmail, StringComparison.OrdinalIgnoreCase);
-				if (!isLearner && !isTutor)
-					return Forbid();
-
-				var updated = await _scheduleCompletionService.CancelAsync(id);
-				return Ok(ApiResponse<object>.Ok(new { updated }));
-			}
+        [Authorize]
+        [HttpPost("{id:int}/cancel")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ApiResponse<object>>> CancelScheduleCompletion(int id)
+        {
+            try
+            {
+                var updated = await _scheduleCompletionService.CancelAsync(id);
+                return Ok(ApiResponse<object>.Ok(new { updated }));
+            }
             catch (Exception ex)
             {
                 return BadRequest(ApiResponse<object>.Fail(ex.Message));
