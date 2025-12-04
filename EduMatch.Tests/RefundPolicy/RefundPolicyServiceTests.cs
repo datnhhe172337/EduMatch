@@ -272,8 +272,8 @@ public class RefundPolicyServiceTests
 				RefundPercentage = 75
 			},
 			"test@example.com",
-			false,
-			typeof(Exception)
+			true,
+			null
 		).SetName("CreateAsync_DescriptionIsNull_CreatesSuccessfully");
 
 		// Valid percentage at boundary (0)
@@ -285,8 +285,8 @@ public class RefundPolicyServiceTests
 				RefundPercentage = 0
 			},
 			"test@example.com",
-			false,
-			typeof(Exception)
+			true,
+			null
 		).SetName("CreateAsync_RefundPercentageIsZero_CreatesSuccessfully");
 
 		// Valid percentage at boundary (100)
@@ -319,8 +319,8 @@ public class RefundPolicyServiceTests
 		yield return new TestCaseData(
 			null!,
 			"test@example.com",
-			true,
-			null
+			false,
+			typeof(Exception)
 		).SetName("CreateAsync_RequestIsNull_ThrowsException");
 
 		// Empty name
