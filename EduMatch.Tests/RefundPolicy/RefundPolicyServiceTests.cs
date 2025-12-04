@@ -48,7 +48,7 @@ public class RefundPolicyServiceTests
 		);
 	}
 
-	#region GetAllAsync Tests
+
 
 	/// <summary>
 	/// Test GetAllAsync không có filter - trả về tất cả policies
@@ -169,9 +169,7 @@ public class RefundPolicyServiceTests
 		Assert.That(exception.Message, Does.Contain("Database error"));
 	}
 
-	#endregion
 
-	#region GetByIdAsync Tests
 
 	/// <summary>
 	/// Test GetByIdAsync với ID hợp lệ và entity tồn tại - trả về DTO
@@ -251,9 +249,7 @@ public class RefundPolicyServiceTests
 		Assert.That(exception.Message, Does.Contain("Database error"));
 	}
 
-	#endregion
 
-	#region CreateAsync Tests
 
 	/// <summary>
 	/// Test CreateAsync với request hợp lệ - tạo thành công và trả về DTO
@@ -467,9 +463,7 @@ public class RefundPolicyServiceTests
 		Assert.That(exception.Message, Does.Contain("Database error"));
 	}
 
-	#endregion
 
-	#region Helper Methods
 
 	/// <summary>
 	/// Tạo fake RefundPolicy entity cho testing
@@ -490,6 +484,6 @@ public class RefundPolicyServiceTests
 		};
 	}
 
-	#endregion
+
 }
 
