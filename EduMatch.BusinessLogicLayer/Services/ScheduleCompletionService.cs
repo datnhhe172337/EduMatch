@@ -13,18 +13,24 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly ITutorPayoutRepository _payoutRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ITutorPayoutService _tutorPayoutService;
+        private readonly IBookingRepository _bookingRepository;
+        private readonly INotificationService _notificationService;
         private readonly TimeZoneInfo _vietnamTz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
 
         public ScheduleCompletionService(
             IScheduleCompletionRepository completionRepository,
             ITutorPayoutRepository payoutRepository,
             IUnitOfWork unitOfWork,
-            ITutorPayoutService tutorPayoutService)
+            ITutorPayoutService tutorPayoutService,
+            IBookingRepository bookingRepository,
+            INotificationService notificationService)
         {
             _completionRepository = completionRepository;
             _payoutRepository = payoutRepository;
             _unitOfWork = unitOfWork;
             _tutorPayoutService = tutorPayoutService;
+            _bookingRepository = bookingRepository;
+            _notificationService = notificationService;
         }
 
         public async Task<int> AutoCompletePastDueAsync()
@@ -108,6 +114,11 @@ namespace EduMatch.BusinessLogicLayer.Services
                 await _tutorPayoutService.ProcessDuePayoutsAsync();
             }
 
+            var booking = await _bookingRepository.GetByIdAsync(completion.BookingId);
+            await SendNotificationsAsync(booking, completion.ScheduleId,
+                learnerMessage: $"Bạn đã xác nhận buổi học #{completion.ScheduleId}. Tiền sẽ được giải ngân cho gia sư.",
+                tutorMessage: $"Học viên đã xác nhận buổi học #{completion.ScheduleId}. Thanh toán sẽ được giải ngân.");
+
             return true;
         }
 
@@ -140,6 +151,10 @@ namespace EduMatch.BusinessLogicLayer.Services
             }
 
             await _unitOfWork.CompleteAsync();
+            var booking = await _bookingRepository.GetByIdAsync(completion.BookingId);
+            await SendNotificationsAsync(booking, completion.ScheduleId,
+                learnerMessage: null,
+                tutorMessage: $"Buổi học #{completion.ScheduleId} đã bị báo cáo. Thanh toán đang tạm giữ.");
             return true;
         }
 
@@ -185,6 +200,19 @@ namespace EduMatch.BusinessLogicLayer.Services
             }
 
             await _unitOfWork.CompleteAsync();
+            var booking = await _bookingRepository.GetByIdAsync(completion.BookingId);
+            if (releaseToTutor)
+            {
+                await SendNotificationsAsync(booking, completion.ScheduleId,
+                    learnerMessage: "Khiếu nại đã được xử lý. Thanh toán sẽ tiếp tục.",
+                    tutorMessage: $"Khiếu nại cho buổi học #{completion.ScheduleId} đã được xử lý. Thanh toán sẽ tiếp tục.");
+            }
+            else
+            {
+                await SendNotificationsAsync(booking, completion.ScheduleId,
+                    learnerMessage: "Khiếu nại đã được xử lý. Thanh toán cho buổi học này bị hủy.",
+                    tutorMessage: $"Khiếu nại cho buổi học #{completion.ScheduleId} đã được xử lý. Thanh toán bị hủy.");
+            }
             return true;
         }
 
@@ -221,7 +249,28 @@ namespace EduMatch.BusinessLogicLayer.Services
             }
 
             await _unitOfWork.CompleteAsync();
+            var booking = await _bookingRepository.GetByIdAsync(completion.BookingId);
+            await SendNotificationsAsync(booking, completion.ScheduleId,
+                learnerMessage: $"Buổi học #{completion.ScheduleId} đã bị hủy. Thanh toán sẽ không được thực hiện.",
+                tutorMessage: $"Buổi học #{completion.ScheduleId} đã bị hủy. Thanh toán sẽ không được thực hiện.");
             return true;
+        }
+
+        private async Task SendNotificationsAsync(Booking? booking, int scheduleId, string? learnerMessage, string? tutorMessage)
+        {
+            if (booking == null)
+                return;
+
+            if (!string.IsNullOrWhiteSpace(learnerMessage))
+            {
+                await _notificationService.CreateNotificationAsync(booking.LearnerEmail, learnerMessage, "/schedules");
+            }
+
+            var tutorEmail = booking.TutorSubject?.Tutor?.UserEmail ?? booking.TutorSubject?.TutorEmail;
+            if (!string.IsNullOrWhiteSpace(tutorEmail) && !string.IsNullOrWhiteSpace(tutorMessage))
+            {
+                await _notificationService.CreateNotificationAsync(tutorEmail, tutorMessage, "/schedules");
+            }
         }
     }
 }

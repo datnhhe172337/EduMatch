@@ -16,6 +16,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IBookingRepository _bookingRepository;
         private readonly IWalletRepository _walletRepository;
         private readonly IWalletTransactionRepository _walletTransactionRepository;
+        private readonly INotificationService _notificationService;
         private readonly IUnitOfWork _unitOfWork;
 
         public TutorPayoutService(
@@ -23,12 +24,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             IBookingRepository bookingRepository,
             IWalletRepository walletRepository,
             IWalletTransactionRepository walletTransactionRepository,
+            INotificationService notificationService,
             IUnitOfWork unitOfWork)
         {
             _tutorPayoutRepository = tutorPayoutRepository;
             _bookingRepository = bookingRepository;
             _walletRepository = walletRepository;
             _walletTransactionRepository = walletTransactionRepository;
+            _notificationService = notificationService;
             _unitOfWork = unitOfWork;
         }
 
@@ -125,10 +128,26 @@ namespace EduMatch.BusinessLogicLayer.Services
                 _tutorPayoutRepository.Update(payout);
 
                 processedCount++;
+
+                // Notify tutor
+                await NotifyTutorAsync(booking, payout.Amount, scheduleId: payout.ScheduleId);
             }
 
             await _unitOfWork.CompleteAsync();
             return processedCount;
+        }
+
+        private async Task NotifyTutorAsync(Booking booking, decimal amount, int? scheduleId)
+        {
+            var tutorEmail = booking.TutorSubject?.Tutor?.UserEmail ?? booking.TutorSubject?.TutorEmail;
+            if (string.IsNullOrWhiteSpace(tutorEmail))
+                return;
+
+            var message = scheduleId.HasValue
+                ? $"Bạn đã nhận {amount:N0} VND cho buổi học #{scheduleId}."
+                : $"Bạn đã nhận {amount:N0} VND từ payout.";
+
+            await _notificationService.CreateNotificationAsync(tutorEmail, message, "/wallet/my-wallet");
         }
     }
 }
