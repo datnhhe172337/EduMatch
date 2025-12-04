@@ -6,6 +6,7 @@ using EduMatch.BusinessLogicLayer.Requests.RefundRequestEvidence;
 using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
+using EduMatch.Tests.Common;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -46,8 +47,6 @@ public class RefundRequestEvidenceServiceTests
 		);
 	}
 
-	#region GetByIdAsync Tests
-
 	/// <summary>
 	/// Test GetByIdAsync với ID hợp lệ và entity tồn tại - trả về DTO
 	/// </summary>
@@ -56,7 +55,7 @@ public class RefundRequestEvidenceServiceTests
 	{
 		// Arrange
 		var id = 1;
-		var entity = CreateFakeRefundRequestEvidence(id, 1, "https://example.com/file1.jpg");
+		var entity = FakeDataFactory.CreateFakeRefundRequestEvidence(id, 1, "https://example.com/file1.jpg");
 
 		_refundRequestEvidenceRepositoryMock
 			.Setup(r => r.GetByIdAsync(id))
@@ -127,10 +126,6 @@ public class RefundRequestEvidenceServiceTests
 		Assert.That(exception.Message, Does.Contain("Database error"));
 	}
 
-	#endregion
-
-	#region GetByBookingRefundRequestIdAsync Tests
-
 	/// <summary>
 	/// Test GetByBookingRefundRequestIdAsync với ID hợp lệ - trả về danh sách DTOs
 	/// </summary>
@@ -141,9 +136,9 @@ public class RefundRequestEvidenceServiceTests
 		var bookingRefundRequestId = 1;
 		var entities = new List<RefundRequestEvidence>
 		{
-			CreateFakeRefundRequestEvidence(1, bookingRefundRequestId, "https://example.com/file1.jpg"),
-			CreateFakeRefundRequestEvidence(2, bookingRefundRequestId, "https://example.com/file2.jpg"),
-			CreateFakeRefundRequestEvidence(3, bookingRefundRequestId, "https://example.com/file3.jpg")
+			FakeDataFactory.CreateFakeRefundRequestEvidence(1, bookingRefundRequestId, "https://example.com/file1.jpg"),
+			FakeDataFactory.CreateFakeRefundRequestEvidence(2, bookingRefundRequestId, "https://example.com/file2.jpg"),
+			FakeDataFactory.CreateFakeRefundRequestEvidence(3, bookingRefundRequestId, "https://example.com/file3.jpg")
 		};
 
 		_refundRequestEvidenceRepositoryMock
@@ -216,153 +211,169 @@ public class RefundRequestEvidenceServiceTests
 		Assert.That(exception.Message, Does.Contain("Database error"));
 	}
 
-	#endregion
+	/// <summary>
+	/// Tạo các test cases cho CreateAsync - bao phủ các kịch bản: valid, null request, invalid BookingRefundRequestId, empty FileUrl, BookingRefundRequest not found
+	/// </summary>
+	private static IEnumerable<TestCaseData> CreateAsyncTestCases()
+	{
+		// Valid case
+		yield return new TestCaseData(
+			new RefundRequestEvidenceCreateRequest
+			{
+				BookingRefundRequestId = 1,
+				FileUrl = "https://example.com/evidence.jpg"
+			},
+			FakeDataFactory.CreateFakeBookingRefundRequest(1),
+			true,
+			null
+		).SetName("CreateAsync_ValidRequest_ReturnsCreatedDto");
 
-	#region CreateAsync Tests
+		// Null request
+		yield return new TestCaseData(
+			null!,
+			null,
+			false,
+			typeof(Exception)
+		).SetName("CreateAsync_RequestIsNull_ThrowsException");
+
+		// Invalid BookingRefundRequestId - zero
+		yield return new TestCaseData(
+			new RefundRequestEvidenceCreateRequest
+			{
+				BookingRefundRequestId = 0,
+				FileUrl = "https://example.com/evidence.jpg"
+			},
+			null,
+			false,
+			typeof(Exception)
+		).SetName("CreateAsync_BookingRefundRequestIdIsZero_ThrowsException");
+
+		// Invalid BookingRefundRequestId - negative
+		yield return new TestCaseData(
+			new RefundRequestEvidenceCreateRequest
+			{
+				BookingRefundRequestId = -1,
+				FileUrl = "https://example.com/evidence.jpg"
+			},
+			null,
+			false,
+			typeof(Exception)
+		).SetName("CreateAsync_BookingRefundRequestIdIsNegative_ThrowsException");
+
+		// Empty FileUrl
+		yield return new TestCaseData(
+			new RefundRequestEvidenceCreateRequest
+			{
+				BookingRefundRequestId = 1,
+				FileUrl = ""
+			},
+			null,
+			false,
+			typeof(Exception)
+		).SetName("CreateAsync_FileUrlIsEmpty_ThrowsException");
+
+		// Whitespace FileUrl
+		yield return new TestCaseData(
+			new RefundRequestEvidenceCreateRequest
+			{
+				BookingRefundRequestId = 1,
+				FileUrl = "   "
+			},
+			null,
+			false,
+			typeof(Exception)
+		).SetName("CreateAsync_FileUrlIsWhitespace_ThrowsException");
+
+		// Null FileUrl
+		yield return new TestCaseData(
+			new RefundRequestEvidenceCreateRequest
+			{
+				BookingRefundRequestId = 1,
+				FileUrl = null!
+			},
+			null,
+			false,
+			typeof(Exception)
+		).SetName("CreateAsync_FileUrlIsNull_ThrowsException");
+
+		// BookingRefundRequest not found
+		yield return new TestCaseData(
+			new RefundRequestEvidenceCreateRequest
+			{
+				BookingRefundRequestId = 999,
+				FileUrl = "https://example.com/evidence.jpg"
+			},
+			null,
+			false,
+			typeof(Exception)
+		).SetName("CreateAsync_BookingRefundRequestNotFound_ThrowsException");
+	}
 
 	/// <summary>
-	/// Test CreateAsync với request hợp lệ - tạo thành công và trả về DTO
+	/// Test CreateAsync với các scenarios khác nhau
 	/// </summary>
 	[Test]
-	public async Task CreateAsync_ValidRequest_CreatesAndReturnsDto()
+	[TestCaseSource(nameof(CreateAsyncTestCases))]
+	public async Task CreateAsync_WithVariousScenarios_HandlesCorrectly(
+		RefundRequestEvidenceCreateRequest? request,
+		BookingRefundRequest? bookingRefundRequest,
+		bool shouldSucceed,
+		Type? expectedExceptionType)
 	{
 		// Arrange
-		var request = new RefundRequestEvidenceCreateRequest
+		if (request != null && request.BookingRefundRequestId > 0)
 		{
-			BookingRefundRequestId = 1,
-			FileUrl = "https://example.com/evidence.jpg"
-		};
-
-		var bookingRefundRequest = CreateFakeBookingRefundRequest(1);
-		var entity = CreateFakeRefundRequestEvidence(1, request.BookingRefundRequestId, request.FileUrl);
-		var dto = _mapper.Map<RefundRequestEvidenceDto>(entity);
-		RefundRequestEvidence? capturedEntity = null;
-
-		_bookingRefundRequestRepositoryMock
-			.Setup(r => r.GetByIdAsync(request.BookingRefundRequestId))
-			.ReturnsAsync(bookingRefundRequest);
+			_bookingRefundRequestRepositoryMock
+				.Setup(r => r.GetByIdAsync(request.BookingRefundRequestId))
+				.ReturnsAsync(bookingRefundRequest);
+		}
 
 		// Mock mapper để map từ request sang entity
 		var mapperMock = new Mock<IMapper>();
-		mapperMock.Setup(m => m.Map<RefundRequestEvidence>(It.IsAny<RefundRequestEvidenceCreateRequest>()))
-			.Returns<RefundRequestEvidenceCreateRequest>(req => new RefundRequestEvidence
-			{
-				BookingRefundRequestId = req.BookingRefundRequestId,
-				FileUrl = req.FileUrl,
-				CreatedAt = DateTime.UtcNow
-			});
-		mapperMock.Setup(m => m.Map<RefundRequestEvidenceDto>(It.IsAny<RefundRequestEvidence>()))
-			.Returns<RefundRequestEvidence>(e => dto);
+		if (request != null && shouldSucceed)
+		{
+			var entity = FakeDataFactory.CreateFakeRefundRequestEvidence(1, request.BookingRefundRequestId, request.FileUrl);
+			var dto = _mapper.Map<RefundRequestEvidenceDto>(entity);
+
+			mapperMock.Setup(m => m.Map<RefundRequestEvidence>(It.IsAny<RefundRequestEvidenceCreateRequest>()))
+				.Returns<RefundRequestEvidenceCreateRequest>(req => new RefundRequestEvidence
+				{
+					BookingRefundRequestId = req.BookingRefundRequestId,
+					FileUrl = req.FileUrl,
+					CreatedAt = DateTime.UtcNow
+				});
+			mapperMock.Setup(m => m.Map<RefundRequestEvidenceDto>(It.IsAny<RefundRequestEvidence>()))
+				.Returns<RefundRequestEvidence>(e => dto);
+		}
 
 		var serviceWithMockedMapper = new RefundRequestEvidenceService(
 			_refundRequestEvidenceRepositoryMock.Object,
 			_bookingRefundRequestRepositoryMock.Object,
-			mapperMock.Object
+			shouldSucceed ? mapperMock.Object : _mapper
 		);
 
-		_refundRequestEvidenceRepositoryMock
-			.Setup(r => r.CreateAsync(It.IsAny<RefundRequestEvidence>()))
-			.Returns(Task.CompletedTask)
-			.Callback<RefundRequestEvidence>(e => capturedEntity = e);
-
-		// Act
-		var result = await serviceWithMockedMapper.CreateAsync(request);
-
-		// Assert
-		Assert.That(result, Is.Not.Null);
-		Assert.That(result.BookingRefundRequestId, Is.EqualTo(request.BookingRefundRequestId));
-		Assert.That(result.FileUrl, Is.EqualTo(request.FileUrl));
-
-		Assert.That(capturedEntity, Is.Not.Null);
-		Assert.That(capturedEntity!.BookingRefundRequestId, Is.EqualTo(request.BookingRefundRequestId));
-		Assert.That(capturedEntity.FileUrl, Is.EqualTo(request.FileUrl));
-
-		_bookingRefundRequestRepositoryMock.Verify(r => r.GetByIdAsync(request.BookingRefundRequestId), Times.Once);
-		_refundRequestEvidenceRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<RefundRequestEvidence>()), Times.Once);
-	}
-
-	/// <summary>
-	/// Test CreateAsync với request null - throw exception
-	/// </summary>
-	[Test]
-	public void CreateAsync_RequestIsNull_ThrowsException()
-	{
-		// Act & Assert
-		var exception = Assert.ThrowsAsync<Exception>(async () => await _service.CreateAsync(null!));
-		Assert.That(exception.Message, Does.Contain("Yêu cầu không được để trống"));
-		_bookingRefundRequestRepositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<int>()), Times.Never);
-		_refundRequestEvidenceRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<RefundRequestEvidence>()), Times.Never);
-	}
-
-	/// <summary>
-	/// Test CreateAsync với BookingRefundRequestId không hợp lệ (<= 0) - throw exception
-	/// </summary>
-	[Test]
-	[TestCase(0)]
-	[TestCase(-1)]
-	[TestCase(-100)]
-	public void CreateAsync_InvalidBookingRefundRequestId_ThrowsException(int invalidId)
-	{
-		// Arrange
-		var request = new RefundRequestEvidenceCreateRequest
+		if (shouldSucceed)
 		{
-			BookingRefundRequestId = invalidId,
-			FileUrl = "https://example.com/evidence.jpg"
-		};
+			_refundRequestEvidenceRepositoryMock
+				.Setup(r => r.CreateAsync(It.IsAny<RefundRequestEvidence>()))
+				.Returns(Task.CompletedTask);
 
-		// Act & Assert
-		var exception = Assert.ThrowsAsync<Exception>(async () => await _service.CreateAsync(request));
-		Assert.That(exception.Message, Does.Contain("BookingRefundRequestId phải lớn hơn 0"));
-		_bookingRefundRequestRepositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<int>()), Times.Never);
-		_refundRequestEvidenceRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<RefundRequestEvidence>()), Times.Never);
-	}
+			// Act
+			var result = await serviceWithMockedMapper.CreateAsync(request!);
 
-	/// <summary>
-	/// Test CreateAsync với FileUrl rỗng hoặc whitespace - throw exception
-	/// </summary>
-	[Test]
-	[TestCase("")]
-	[TestCase(" ")]
-	[TestCase("   ")]
-	[TestCase(null)]
-	public void CreateAsync_FileUrlIsEmptyOrWhitespace_ThrowsException(string? invalidFileUrl)
-	{
-		// Arrange
-		var request = new RefundRequestEvidenceCreateRequest
+			// Assert
+			Assert.That(result, Is.Not.Null);
+			Assert.That(result.BookingRefundRequestId, Is.EqualTo(request!.BookingRefundRequestId));
+			Assert.That(result.FileUrl, Is.EqualTo(request.FileUrl));
+			_bookingRefundRequestRepositoryMock.Verify(r => r.GetByIdAsync(request.BookingRefundRequestId), Times.Once);
+			_refundRequestEvidenceRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<RefundRequestEvidence>()), Times.Once);
+		}
+		else
 		{
-			BookingRefundRequestId = 1,
-			FileUrl = invalidFileUrl!
-		};
-
-		// Act & Assert
-		var exception = Assert.ThrowsAsync<Exception>(async () => await _service.CreateAsync(request));
-		Assert.That(exception.Message, Does.Contain("FileUrl không được để trống"));
-		_bookingRefundRequestRepositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<int>()), Times.Never);
-		_refundRequestEvidenceRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<RefundRequestEvidence>()), Times.Never);
-	}
-
-	/// <summary>
-	/// Test CreateAsync khi BookingRefundRequest không tồn tại - throw exception
-	/// </summary>
-	[Test]
-	public void CreateAsync_BookingRefundRequestNotFound_ThrowsException()
-	{
-		// Arrange
-		var request = new RefundRequestEvidenceCreateRequest
-		{
-			BookingRefundRequestId = 999,
-			FileUrl = "https://example.com/evidence.jpg"
-		};
-
-		_bookingRefundRequestRepositoryMock
-			.Setup(r => r.GetByIdAsync(request.BookingRefundRequestId))
-			.ReturnsAsync((BookingRefundRequest?)null);
-
-		// Act & Assert
-		var exception = Assert.ThrowsAsync<Exception>(async () => await _service.CreateAsync(request));
-		Assert.That(exception.Message, Does.Contain("BookingRefundRequest không tồn tại"));
-		_bookingRefundRequestRepositoryMock.Verify(r => r.GetByIdAsync(request.BookingRefundRequestId), Times.Once);
-		_refundRequestEvidenceRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<RefundRequestEvidence>()), Times.Never);
+			// Act & Assert
+			var exception = Assert.ThrowsAsync<Exception>(async () => await serviceWithMockedMapper.CreateAsync(request!));
+			Assert.That(exception, Is.InstanceOf(expectedExceptionType!));
+		}
 	}
 
 	/// <summary>
@@ -378,8 +389,8 @@ public class RefundRequestEvidenceServiceTests
 			FileUrl = "https://example.com/evidence.jpg"
 		};
 
-		var bookingRefundRequest = CreateFakeBookingRefundRequest(1);
-		var entity = CreateFakeRefundRequestEvidence(1, request.BookingRefundRequestId, request.FileUrl);
+		var bookingRefundRequest = FakeDataFactory.CreateFakeBookingRefundRequest(1);
+		var entity = FakeDataFactory.CreateFakeRefundRequestEvidence(1, request.BookingRefundRequestId, request.FileUrl);
 		var dto = _mapper.Map<RefundRequestEvidenceDto>(entity);
 
 		_bookingRefundRequestRepositoryMock
@@ -436,43 +447,4 @@ public class RefundRequestEvidenceServiceTests
 		Assert.That(exception.Message, Does.Contain("Lỗi khi tạo bằng chứng hoàn tiền"));
 		Assert.That(exception.Message, Does.Contain("Database error"));
 	}
-
-	#endregion
-
-	#region Helper Methods
-
-	/// <summary>
-	/// Tạo fake RefundRequestEvidence entity cho testing
-	/// </summary>
-	private RefundRequestEvidence CreateFakeRefundRequestEvidence(int id, int bookingRefundRequestId, string fileUrl)
-	{
-		return new RefundRequestEvidence
-		{
-			Id = id,
-			BookingRefundRequestId = bookingRefundRequestId,
-			FileUrl = fileUrl,
-			CreatedAt = DateTime.UtcNow,
-			BookingRefundRequest = CreateFakeBookingRefundRequest(bookingRefundRequestId)
-		};
-	}
-
-	/// <summary>
-	/// Tạo fake BookingRefundRequest entity cho testing
-	/// </summary>
-	private BookingRefundRequest CreateFakeBookingRefundRequest(int id)
-	{
-		return new BookingRefundRequest
-		{
-			Id = id,
-			BookingId = 1,
-			LearnerEmail = "learner@example.com",
-			RefundPolicyId = 1,
-			Reason = "Test reason",
-			Status = 0,
-			CreatedAt = DateTime.UtcNow
-		};
-	}
-
-	#endregion
 }
-

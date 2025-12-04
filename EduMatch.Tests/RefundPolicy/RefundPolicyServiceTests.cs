@@ -48,8 +48,6 @@ public class RefundPolicyServiceTests
 		);
 	}
 
-
-
 	/// <summary>
 	/// Test GetAllAsync không có filter - trả về tất cả policies
 	/// </summary>
@@ -59,9 +57,9 @@ public class RefundPolicyServiceTests
 		// Arrange
 		var entities = new List<RefundPolicy>
 		{
-			CreateFakeRefundPolicy(1, "Policy 1", true),
-			CreateFakeRefundPolicy(2, "Policy 2", false),
-			CreateFakeRefundPolicy(3, "Policy 3", true)
+			FakeDataFactory.CreateFakeRefundPolicy(1, "Policy 1", 50, true),
+			FakeDataFactory.CreateFakeRefundPolicy(2, "Policy 2", 50, false),
+			FakeDataFactory.CreateFakeRefundPolicy(3, "Policy 3", 50, true)
 		};
 
 		_refundPolicyRepositoryMock
@@ -86,8 +84,8 @@ public class RefundPolicyServiceTests
 		// Arrange
 		var entities = new List<RefundPolicy>
 		{
-			CreateFakeRefundPolicy(1, "Policy 1", true),
-			CreateFakeRefundPolicy(3, "Policy 3", true)
+			FakeDataFactory.CreateFakeRefundPolicy(1, "Policy 1", 50, true),
+			FakeDataFactory.CreateFakeRefundPolicy(3, "Policy 3", 50, true)
 		};
 
 		_refundPolicyRepositoryMock
@@ -113,7 +111,7 @@ public class RefundPolicyServiceTests
 		// Arrange
 		var entities = new List<RefundPolicy>
 		{
-			CreateFakeRefundPolicy(2, "Policy 2", false)
+			FakeDataFactory.CreateFakeRefundPolicy(2, "Policy 2", 50, false)
 		};
 
 		_refundPolicyRepositoryMock
@@ -169,8 +167,6 @@ public class RefundPolicyServiceTests
 		Assert.That(exception.Message, Does.Contain("Database error"));
 	}
 
-
-
 	/// <summary>
 	/// Test GetByIdAsync với ID hợp lệ và entity tồn tại - trả về DTO
 	/// </summary>
@@ -179,7 +175,7 @@ public class RefundPolicyServiceTests
 	{
 		// Arrange
 		var id = 1;
-		var entity = CreateFakeRefundPolicy(id, "Policy 1", true);
+		var entity = FakeDataFactory.CreateFakeRefundPolicy(id, "Policy 1", 50, true);
 
 		_refundPolicyRepositoryMock
 			.Setup(r => r.GetByIdAsync(id))
@@ -249,194 +245,207 @@ public class RefundPolicyServiceTests
 		Assert.That(exception.Message, Does.Contain("Database error"));
 	}
 
-
-
 	/// <summary>
-	/// Test CreateAsync với request hợp lệ - tạo thành công và trả về DTO
+	/// Tạo các test cases cho CreateAsync - bao phủ các kịch bản: valid, null request, empty name, invalid percentage, empty email
 	/// </summary>
-	[Test]
-	public async Task CreateAsync_ValidRequest_CreatesAndReturnsDto()
+	private static IEnumerable<TestCaseData> CreateAsyncTestCases()
 	{
-		// Arrange
-		var request = new RefundPolicyCreateRequest
-		{
-			Name = "Test Policy",
-			Description = "Test Description",
-			RefundPercentage = 50
-		};
+		// Valid case
+		yield return new TestCaseData(
+			new RefundPolicyCreateRequest
+			{
+				Name = "Test Policy",
+				Description = "Test Description",
+				RefundPercentage = 50
+			},
+			"test@example.com",
+			true,
+			null
+		).SetName("CreateAsync_ValidRequest_ReturnsCreatedDto");
 
-		RefundPolicy? capturedEntity = null;
-		_refundPolicyRepositoryMock
-			.Setup(r => r.CreateAsync(It.IsAny<RefundPolicy>()))
-			.Returns(Task.CompletedTask)
-			.Callback<RefundPolicy>(e => capturedEntity = e);
+		// Valid case with null description
+		yield return new TestCaseData(
+			new RefundPolicyCreateRequest
+			{
+				Name = "Test Policy",
+				Description = null,
+				RefundPercentage = 75
+			},
+			"test@example.com",
+			true,
+			null
+		).SetName("CreateAsync_DescriptionIsNull_CreatesSuccessfully");
 
-		// Act
-		var result = await _service.CreateAsync(request);
+		// Valid percentage at boundary (0)
+		yield return new TestCaseData(
+			new RefundPolicyCreateRequest
+			{
+				Name = "Test Policy",
+				Description = "Test Description",
+				RefundPercentage = 0
+			},
+			"test@example.com",
+			true,
+			null
+		).SetName("CreateAsync_RefundPercentageIsZero_CreatesSuccessfully");
 
-		// Assert
-		Assert.That(result, Is.Not.Null);
-		Assert.That(result.Name, Is.EqualTo(request.Name));
-		Assert.That(result.Description, Is.EqualTo(request.Description));
-		Assert.That(result.RefundPercentage, Is.EqualTo(request.RefundPercentage));
-		Assert.That(result.IsActive, Is.True);
-		Assert.That(result.CreatedBy, Is.EqualTo("test@example.com"));
+		// Valid percentage at boundary (100)
+		yield return new TestCaseData(
+			new RefundPolicyCreateRequest
+			{
+				Name = "Test Policy",
+				Description = "Test Description",
+				RefundPercentage = 100
+			},
+			"test@example.com",
+			true,
+			null
+		).SetName("CreateAsync_RefundPercentageIs100_CreatesSuccessfully");
 
-		Assert.That(capturedEntity, Is.Not.Null);
-		Assert.That(capturedEntity!.Name, Is.EqualTo(request.Name));
-		Assert.That(capturedEntity.Description, Is.EqualTo(request.Description));
-		Assert.That(capturedEntity.RefundPercentage, Is.EqualTo(request.RefundPercentage));
-		Assert.That(capturedEntity.IsActive, Is.True);
-		Assert.That(capturedEntity.CreatedBy, Is.EqualTo("test@example.com"));
-		Assert.That(capturedEntity.UpdatedAt, Is.Null);
-		Assert.That(capturedEntity.UpdatedBy, Is.Null);
+		// Valid percentage with decimal
+		yield return new TestCaseData(
+			new RefundPolicyCreateRequest
+			{
+				Name = "Test Policy",
+				Description = "Test Description",
+				RefundPercentage = 25.5m
+			},
+			"test@example.com",
+			true,
+			null
+		).SetName("CreateAsync_RefundPercentageIsDecimal_CreatesSuccessfully");
 
-		_refundPolicyRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<RefundPolicy>()), Times.Once);
+		// Null request
+		yield return new TestCaseData(
+			null!,
+			"test@example.com",
+			false,
+			typeof(Exception)
+		).SetName("CreateAsync_RequestIsNull_ThrowsException");
+
+		// Empty name
+		yield return new TestCaseData(
+			new RefundPolicyCreateRequest
+			{
+				Name = "",
+				Description = "Test Description",
+				RefundPercentage = 50
+			},
+			"test@example.com",
+			false,
+			typeof(Exception)
+		).SetName("CreateAsync_NameIsEmpty_ThrowsException");
+
+		// Whitespace name
+		yield return new TestCaseData(
+			new RefundPolicyCreateRequest
+			{
+				Name = "   ",
+				Description = "Test Description",
+				RefundPercentage = 50
+			},
+			"test@example.com",
+			false,
+			typeof(Exception)
+		).SetName("CreateAsync_NameIsWhitespace_ThrowsException");
+
+		// Null name
+		yield return new TestCaseData(
+			new RefundPolicyCreateRequest
+			{
+				Name = null!,
+				Description = "Test Description",
+				RefundPercentage = 50
+			},
+			"test@example.com",
+			false,
+			typeof(Exception)
+		).SetName("CreateAsync_NameIsNull_ThrowsException");
+
+		// Invalid percentage - negative
+		yield return new TestCaseData(
+			new RefundPolicyCreateRequest
+			{
+				Name = "Test Policy",
+				Description = "Test Description",
+				RefundPercentage = -1
+			},
+			"test@example.com",
+			false,
+			typeof(Exception)
+		).SetName("CreateAsync_RefundPercentageIsNegative_ThrowsException");
+
+		// Invalid percentage - over 100
+		yield return new TestCaseData(
+			new RefundPolicyCreateRequest
+			{
+				Name = "Test Policy",
+				Description = "Test Description",
+				RefundPercentage = 101
+			},
+			"test@example.com",
+			false,
+			typeof(Exception)
+		).SetName("CreateAsync_RefundPercentageOver100_ThrowsException");
+
+		// Empty email
+		yield return new TestCaseData(
+			new RefundPolicyCreateRequest
+			{
+				Name = "Test Policy",
+				Description = "Test Description",
+				RefundPercentage = 50
+			},
+			"",
+			false,
+			typeof(Exception)
+		).SetName("CreateAsync_CurrentUserEmailIsEmpty_ThrowsException");
 	}
 
 	/// <summary>
-	/// Test CreateAsync với Description null - vẫn tạo thành công
+	/// Test CreateAsync với các scenarios khác nhau
 	/// </summary>
 	[Test]
-	public async Task CreateAsync_DescriptionIsNull_CreatesSuccessfully()
+	[TestCaseSource(nameof(CreateAsyncTestCases))]
+	public async Task CreateAsync_WithVariousScenarios_HandlesCorrectly(
+		RefundPolicyCreateRequest? request,
+		string currentUserEmail,
+		bool shouldSucceed,
+		Type? expectedExceptionType)
 	{
 		// Arrange
-		var request = new RefundPolicyCreateRequest
-		{
-			Name = "Test Policy",
-			Description = null,
-			RefundPercentage = 75
-		};
-
-		_refundPolicyRepositoryMock
-			.Setup(r => r.CreateAsync(It.IsAny<RefundPolicy>()))
-			.Returns(Task.CompletedTask);
-
-		// Act
-		var result = await _service.CreateAsync(request);
-
-		// Assert
-		Assert.That(result, Is.Not.Null);
-		Assert.That(result.Description, Is.Null);
-		Assert.That(result.RefundPercentage, Is.EqualTo(75));
-		_refundPolicyRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<RefundPolicy>()), Times.Once);
-	}
-
-	/// <summary>
-	/// Test CreateAsync với request null - throw exception
-	/// </summary>
-	[Test]
-	public void CreateAsync_RequestIsNull_ThrowsException()
-	{
-		// Act & Assert
-		var exception = Assert.ThrowsAsync<Exception>(async () => await _service.CreateAsync(null!));
-		Assert.That(exception.Message, Does.Contain("Yêu cầu không được để trống"));
-		_refundPolicyRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<RefundPolicy>()), Times.Never);
-	}
-
-	/// <summary>
-	/// Test CreateAsync với Name rỗng hoặc whitespace - throw exception
-	/// </summary>
-	[Test]
-	[TestCase("")]
-	[TestCase(" ")]
-	[TestCase("   ")]
-	[TestCase(null)]
-	public void CreateAsync_NameIsEmptyOrWhitespace_ThrowsException(string? invalidName)
-	{
-		// Arrange
-		var request = new RefundPolicyCreateRequest
-		{
-			Name = invalidName!,
-			Description = "Test Description",
-			RefundPercentage = 50
-		};
-
-		// Act & Assert
-		var exception = Assert.ThrowsAsync<Exception>(async () => await _service.CreateAsync(request));
-		Assert.That(exception.Message, Does.Contain("Tên chính sách hoàn tiền không được để trống"));
-		_refundPolicyRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<RefundPolicy>()), Times.Never);
-	}
-
-	/// <summary>
-	/// Test CreateAsync với RefundPercentage ngoài phạm vi [0, 100] - throw exception
-	/// </summary>
-	[Test]
-	[TestCase(-1)]
-	[TestCase(101)]
-	[TestCase(150)]
-	[TestCase(-50)]
-	public void CreateAsync_RefundPercentageOutOfRange_ThrowsException(decimal invalidPercentage)
-	{
-		// Arrange
-		var request = new RefundPolicyCreateRequest
-		{
-			Name = "Test Policy",
-			Description = "Test Description",
-			RefundPercentage = invalidPercentage
-		};
-
-		// Act & Assert
-		var exception = Assert.ThrowsAsync<Exception>(async () => await _service.CreateAsync(request));
-		Assert.That(exception.Message, Does.Contain("Tỷ lệ hoàn tiền phải từ 0 đến 100"));
-		_refundPolicyRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<RefundPolicy>()), Times.Never);
-	}
-
-	/// <summary>
-	/// Test CreateAsync với RefundPercentage trong phạm vi hợp lệ [0, 100] - tạo thành công
-	/// </summary>
-	[Test]
-	[TestCase(0)]
-	[TestCase(100)]
-	[TestCase(50)]
-	[TestCase(25.5)]
-	public async Task CreateAsync_RefundPercentageInValidRange_CreatesSuccessfully(decimal validPercentage)
-	{
-		// Arrange
-		var request = new RefundPolicyCreateRequest
-		{
-			Name = "Test Policy",
-			Description = "Test Description",
-			RefundPercentage = validPercentage
-		};
-
-		_refundPolicyRepositoryMock
-			.Setup(r => r.CreateAsync(It.IsAny<RefundPolicy>()))
-			.Returns(Task.CompletedTask);
-
-		// Act
-		var result = await _service.CreateAsync(request);
-
-		// Assert
-		Assert.That(result, Is.Not.Null);
-		Assert.That(result.RefundPercentage, Is.EqualTo(validPercentage));
-		_refundPolicyRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<RefundPolicy>()), Times.Once);
-	}
-
-	/// <summary>
-	/// Test CreateAsync khi CurrentUserService Email rỗng - throw exception
-	/// </summary>
-	[Test]
-	public void CreateAsync_CurrentUserEmailIsEmpty_ThrowsException()
-	{
-		// Arrange
-		var serviceWithEmptyEmail = new RefundPolicyService(
+		var currentUserService = new CurrentUserServiceFake(currentUserEmail);
+		var service = new RefundPolicyService(
 			_refundPolicyRepositoryMock.Object,
 			_mapper,
-			new CurrentUserServiceFake("")
+			currentUserService
 		);
 
-		var request = new RefundPolicyCreateRequest
+		if (shouldSucceed && request != null)
 		{
-			Name = "Test Policy",
-			Description = "Test Description",
-			RefundPercentage = 50
-		};
+			_refundPolicyRepositoryMock
+				.Setup(r => r.CreateAsync(It.IsAny<RefundPolicy>()))
+				.Returns(Task.CompletedTask);
 
-		// Act & Assert
-		var exception = Assert.ThrowsAsync<Exception>(async () => await serviceWithEmptyEmail.CreateAsync(request));
-		Assert.That(exception.Message, Does.Contain("Không thể xác định người dùng hiện tại"));
-		_refundPolicyRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<RefundPolicy>()), Times.Never);
+			// Act
+			var result = await service.CreateAsync(request);
+
+			// Assert
+			Assert.That(result, Is.Not.Null);
+			Assert.That(result.Name, Is.EqualTo(request.Name));
+			Assert.That(result.Description, Is.EqualTo(request.Description));
+			Assert.That(result.RefundPercentage, Is.EqualTo(request.RefundPercentage));
+			Assert.That(result.IsActive, Is.True);
+			Assert.That(result.CreatedBy, Is.EqualTo(currentUserEmail));
+			_refundPolicyRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<RefundPolicy>()), Times.Once);
+		}
+		else
+		{
+			// Act & Assert
+			var exception = Assert.ThrowsAsync<Exception>(async () => await service.CreateAsync(request!));
+			Assert.That(exception, Is.InstanceOf(expectedExceptionType!));
+			_refundPolicyRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<RefundPolicy>()), Times.Never);
+		}
 	}
 
 	/// <summary>
@@ -462,28 +471,4 @@ public class RefundPolicyServiceTests
 		Assert.That(exception.Message, Does.Contain("Lỗi khi tạo chính sách hoàn tiền"));
 		Assert.That(exception.Message, Does.Contain("Database error"));
 	}
-
-
-
-	/// <summary>
-	/// Tạo fake RefundPolicy entity cho testing
-	/// </summary>
-	private RefundPolicy CreateFakeRefundPolicy(int id, string name, bool isActive)
-	{
-		return new RefundPolicy
-		{
-			Id = id,
-			Name = name,
-			Description = $"Description for {name}",
-			RefundPercentage = 50,
-			IsActive = isActive,
-			CreatedAt = DateTime.UtcNow,
-			CreatedBy = "test@example.com",
-			UpdatedAt = null,
-			UpdatedBy = null
-		};
-	}
-
-
 }
-
