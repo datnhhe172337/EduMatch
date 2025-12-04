@@ -12,7 +12,7 @@ namespace EduMatch.BusinessLogicLayer.BackgroundServices
 	/// <summary>
 	/// Background service tự động cập nhật trạng thái Schedule:
 	/// - Chuyển Upcoming -> InProgress khi đến giờ bắt đầu học
-	/// - Chuyển InProgress -> Completed nếu quá 3 ngày vẫn còn InProgress
+	/// - Chuyển InProgress -> Completed nếu đã qua 24 giờ từ lúc bắt đầu học
 	/// </summary>
 	public class ScheduleAutoStatusUpdateBackgroundService : BackgroundService
 	{
@@ -76,20 +76,20 @@ namespace EduMatch.BusinessLogicLayer.BackgroundServices
 								}
 							}
 
-							// Nếu quá 3 ngày vẫn InProgress thì chuyển sang Completed
+							// Nếu đã qua 24 giờ từ lúc bắt đầu học vẫn InProgress thì chuyển sang Completed
 							if (currentStatus == ScheduleStatus.InProgress)
 							{
-								// Tính số ngày đã trôi qua kể từ ngày học
-								var daysSinceStart = (now.Date - startDate).Days;
+								// Tính thời gian đã trôi qua từ lúc bắt đầu học
+								var timeElapsed = now - startDateTime;
 								
-								// Nếu đã quá 3 ngày (tức là >= 4 ngày)
-								if (daysSinceStart >= 3)
+								// Nếu đã qua 24 giờ (1 ngày)
+								if (timeElapsed >= TimeSpan.FromHours(24))
 								{
 									try
 									{
 										await scheduleService.UpdateStatusAsync(schedule.Id, ScheduleStatus.Completed);
 										inProgressToCompletedCount++;
-										Console.WriteLine($"[ScheduleAutoStatusUpdate] Schedule {schedule.Id} chuyển từ InProgress sang Completed (đã quá 3 ngày)");
+										Console.WriteLine($"[ScheduleAutoStatusUpdate] Schedule {schedule.Id} chuyển từ InProgress sang Completed (đã qua 24 giờ từ lúc bắt đầu học)");
 									}
 									catch (Exception ex)
 									{
