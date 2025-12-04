@@ -259,8 +259,8 @@ public class RefundPolicyServiceTests
 				RefundPercentage = 50
 			},
 			"test@example.com",
-			false,
-			typeof(Exception)
+			true,
+			null
 		).SetName("CreateAsync_ValidRequest_ReturnsCreatedDto");
 
 		// Valid case with null description
@@ -298,8 +298,8 @@ public class RefundPolicyServiceTests
 				RefundPercentage = 100
 			},
 			"test@example.com",
-			false,
-			typeof(Exception)
+			true,
+			null
 		).SetName("CreateAsync_RefundPercentageIs100_CreatesSuccessfully");
 
 		// Valid percentage with decimal
@@ -311,8 +311,8 @@ public class RefundPolicyServiceTests
 				RefundPercentage = 25.5m
 			},
 			"test@example.com",
-			false,
-			typeof(Exception)
+			true,
+			null
 		).SetName("CreateAsync_RefundPercentageIsDecimal_CreatesSuccessfully");
 
 		// Null request
@@ -332,8 +332,8 @@ public class RefundPolicyServiceTests
 				RefundPercentage = 50
 			},
 			"test@example.com",
-			true,
-			null
+			false,
+			typeof(Exception)
 		).SetName("CreateAsync_NameIsEmpty_ThrowsException");
 
 		// Whitespace name
@@ -345,8 +345,8 @@ public class RefundPolicyServiceTests
 				RefundPercentage = 50
 			},
 			"test@example.com",
-			true,
-			null
+			false,
+			typeof(Exception)
 		).SetName("CreateAsync_NameIsWhitespace_ThrowsException");
 
 		// Null name
@@ -358,8 +358,8 @@ public class RefundPolicyServiceTests
 				RefundPercentage = 50
 			},
 			"test@example.com",
-			true,
-			null
+			false,
+			typeof(Exception)
 		).SetName("CreateAsync_NameIsNull_ThrowsException");
 
 		// Invalid percentage - negative
@@ -371,8 +371,8 @@ public class RefundPolicyServiceTests
 				RefundPercentage = -1
 			},
 			"test@example.com",
-			true,
-			null
+			false,
+			typeof(Exception)
 		).SetName("CreateAsync_RefundPercentageIsNegative_ThrowsException");
 
 		// Invalid percentage - over 100
@@ -384,8 +384,8 @@ public class RefundPolicyServiceTests
 				RefundPercentage = 101
 			},
 			"test@example.com",
-			true,
-			null
+			false,
+			typeof(Exception)
 		).SetName("CreateAsync_RefundPercentageOver100_ThrowsException");
 
 		// Empty email
@@ -397,8 +397,8 @@ public class RefundPolicyServiceTests
 				RefundPercentage = 50
 			},
 			"",
-			true,
-			null
+			false,
+			typeof(Exception)
 		).SetName("CreateAsync_CurrentUserEmailIsEmpty_ThrowsException");
 	}
 
