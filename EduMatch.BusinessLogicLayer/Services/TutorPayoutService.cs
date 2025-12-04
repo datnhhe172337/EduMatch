@@ -34,13 +34,14 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task<int> ProcessDuePayoutsAsync()
         {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var vietnamTz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTz));
             var readyPayouts = await _tutorPayoutRepository.GetReadyForPayoutAsync(today);
             if (readyPayouts.Count == 0)
                 return 0;
 
             var processedCount = 0;
-            var now = DateTime.UtcNow;
+            var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vietnamTz);
 
             // Ensure system wallet is available for balance adjustments
             var systemWallet = await _walletRepository.GetWalletByUserEmailAsync(SystemWalletEmail);
@@ -56,12 +57,14 @@ namespace EduMatch.BusinessLogicLayer.Services
                 var booking = await _bookingRepository.GetByIdAsync(payout.BookingId)
                     ?? throw new InvalidOperationException($"Booking not found for payout {payout.Id}.");
 
-                if (systemWallet.LockedBalance < payout.Amount)
+                var totalToRelease = payout.Amount + payout.SystemFeeAmount;
+
+                if (systemWallet.LockedBalance < totalToRelease)
                     throw new InvalidOperationException("System locked balance is insufficient to release payout.");
 
                 var learnerWallet = await _walletRepository.GetWalletByUserEmailAsync(booking.LearnerEmail)
                     ?? throw new InvalidOperationException("Learner wallet not found for payout release.");
-                if (learnerWallet.LockedBalance < payout.Amount)
+                if (learnerWallet.LockedBalance < totalToRelease)
                     throw new InvalidOperationException("Learner locked balance is insufficient to release payout.");
 
                 var tutorBalanceBefore = tutorWallet.Balance;
@@ -69,11 +72,16 @@ namespace EduMatch.BusinessLogicLayer.Services
                 tutorWallet.UpdatedAt = now;
                 _walletRepository.Update(tutorWallet);
 
-                learnerWallet.LockedBalance -= payout.Amount;
+                learnerWallet.LockedBalance -= totalToRelease;
                 learnerWallet.UpdatedAt = now;
                 _walletRepository.Update(learnerWallet);
 
-                systemWallet.LockedBalance -= payout.Amount;
+                var systemBalanceBefore = systemWallet.Balance;
+                systemWallet.LockedBalance -= totalToRelease;
+                if (payout.SystemFeeAmount > 0)
+                {
+                    systemWallet.Balance += payout.SystemFeeAmount;
+                }
                 systemWallet.UpdatedAt = now;
                 _walletRepository.Update(systemWallet);
 
@@ -92,6 +100,24 @@ namespace EduMatch.BusinessLogicLayer.Services
                 };
 
                 await _walletTransactionRepository.AddAsync(transaction);
+
+                if (payout.SystemFeeAmount > 0)
+                {
+                    var sysTx = new WalletTransaction
+                    {
+                        WalletId = systemWallet.Id,
+                        Amount = payout.SystemFeeAmount,
+                        TransactionType = WalletTransactionType.Credit,
+                        Reason = WalletTransactionReason.PlatformFee,
+                        Status = TransactionStatus.Completed,
+                        BalanceBefore = systemBalanceBefore,
+                        BalanceAfter = systemWallet.Balance,
+                        CreatedAt = now,
+                        ReferenceCode = $"BOOKING_PLATFORM_FEE_{payout.BookingId}",
+                        BookingId = payout.BookingId
+                    };
+                    await _walletTransactionRepository.AddAsync(sysTx);
+                }
 
                 payout.Status = (byte)TutorPayoutStatus.Paid;
                 payout.ReleasedAt = now;
