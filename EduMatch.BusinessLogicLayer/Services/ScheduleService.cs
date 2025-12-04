@@ -21,9 +21,9 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IMeetingSessionService _meetingSessionService;
         private readonly ITutorAvailabilityService _tutorAvailabilityService;
         private readonly ITutorProfileService _tutorProfileService;
-        private readonly IScheduleCompletionRepository _scheduleCompletionRepository;
-        private readonly ITutorPayoutRepository _tutorPayoutRepository;
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IScheduleCompletionRepository? _scheduleCompletionRepository;
+        private readonly ITutorPayoutRepository? _tutorPayoutRepository;
+        private readonly IUnitOfWork? _unitOfWork;
 
         public ScheduleService(
             IScheduleRepository scheduleRepository,
@@ -31,9 +31,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             IMeetingSessionService meetingSessionService,
             ITutorAvailabilityService tutorAvailabilityService,
             ITutorProfileService tutorProfileService,
-            IScheduleCompletionRepository scheduleCompletionRepository,
-            ITutorPayoutRepository tutorPayoutRepository,
-            IUnitOfWork unitOfWork,
+            IScheduleCompletionRepository? scheduleCompletionRepository,
+            ITutorPayoutRepository? tutorPayoutRepository,
+            IUnitOfWork? unitOfWork,
             IMapper mapper)
         {
             _scheduleRepository = scheduleRepository;
@@ -45,6 +45,17 @@ namespace EduMatch.BusinessLogicLayer.Services
             _tutorPayoutRepository = tutorPayoutRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+        }
+
+        public ScheduleService(
+            IScheduleRepository scheduleRepository,
+            IBookingService bookingService,
+            IMeetingSessionService meetingSessionService,
+            ITutorAvailabilityService tutorAvailabilityService,
+            ITutorProfileService tutorProfileService,
+            IMapper mapper)
+            : this(scheduleRepository, bookingService, meetingSessionService, tutorAvailabilityService, tutorProfileService, null, null, null, mapper)
+        {
         }
 
         /// <summary>
@@ -461,6 +472,9 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         private async Task CreateCompletionAndPayoutAsync(Schedule schedule, TutorAvailabilityDto availability, BookingDto bookingDto)
         {
+            if (_scheduleCompletionRepository == null || _tutorPayoutRepository == null || _unitOfWork == null)
+                throw new InvalidOperationException("Completion/payout dependencies are not configured.");
+
             var vietnamTz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
             var lessonDate = availability.StartDate.Date;
             var endTime = availability.Slot?.EndTime ?? TimeOnly.MinValue;

@@ -15,6 +15,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly ITutorPayoutService _tutorPayoutService;
         private readonly IBookingRepository _bookingRepository;
         private readonly INotificationService _notificationService;
+        private readonly IScheduleRepository _scheduleRepository;
         private readonly TimeZoneInfo _vietnamTz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
 
         public ScheduleCompletionService(
@@ -23,7 +24,8 @@ namespace EduMatch.BusinessLogicLayer.Services
             IUnitOfWork unitOfWork,
             ITutorPayoutService tutorPayoutService,
             IBookingRepository bookingRepository,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IScheduleRepository scheduleRepository)
         {
             _completionRepository = completionRepository;
             _payoutRepository = payoutRepository;
@@ -31,6 +33,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             _tutorPayoutService = tutorPayoutService;
             _bookingRepository = bookingRepository;
             _notificationService = notificationService;
+            _scheduleRepository = scheduleRepository;
         }
 
         public async Task<int> AutoCompletePastDueAsync()
@@ -84,7 +87,17 @@ namespace EduMatch.BusinessLogicLayer.Services
                 throw new UnauthorizedAccessException("Only the learner can confirm this schedule.");
             }
 
+            // Prevent confirming before class starts
+            var schedule = await _scheduleRepository.GetByIdAsync(completion.ScheduleId)
+                ?? throw new InvalidOperationException("Schedule not found for confirmation.");
+            if (schedule.Availabiliti == null || schedule.Availabiliti.Slot == null)
+                throw new InvalidOperationException("Schedule availability or slot is missing.");
+            var startTime = schedule.Availabiliti.Slot.StartTime;
+            var lessonStart = schedule.Availabiliti.StartDate.Date.Add(startTime.ToTimeSpan());
             var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTz);
+            if (now < lessonStart)
+                throw new InvalidOperationException("Cannot confirm before the class start time.");
+
             completion.Status = (byte)ScheduleCompletionStatus.LearnerConfirmed;
             completion.ConfirmedAt = now;
             completion.UpdatedAt = now;
@@ -266,7 +279,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 await _notificationService.CreateNotificationAsync(booking.LearnerEmail, learnerMessage, "/schedules");
             }
 
-            var tutorEmail = booking.TutorSubject?.Tutor?.UserEmail ?? booking.TutorSubject?.TutorEmail;
+            var tutorEmail = booking.TutorSubject?.Tutor?.UserEmail;
             if (!string.IsNullOrWhiteSpace(tutorEmail) && !string.IsNullOrWhiteSpace(tutorMessage))
             {
                 await _notificationService.CreateNotificationAsync(tutorEmail, tutorMessage, "/schedules");

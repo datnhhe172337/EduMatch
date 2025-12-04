@@ -14,12 +14,12 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// Learner confirms a schedule as finished; optionally triggers immediate payout release.
         /// Returns true if the confirmation updated the record, false if it was already confirmed.
         /// </summary>
-        Task<bool> ConfirmAsync(int scheduleId, bool releasePayoutImmediately = true);
+        Task<bool> ConfirmAsync(int scheduleId, bool releasePayoutImmediately = true, string? currentUserEmail = null);
 
         /// <summary>
         /// Wrapper to confirm and pay in one call; leaves existing methods untouched.
         /// </summary>
-        Task<bool> FinishAndPayAsync(int scheduleId);
+        Task<bool> FinishAndPayAsync(int scheduleId, string? currentUserEmail = null);
 
         /// <summary>
         /// Mark a schedule as reported/on-hold and tie it to a report.

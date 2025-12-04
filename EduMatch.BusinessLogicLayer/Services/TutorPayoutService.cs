@@ -139,7 +139,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         private async Task NotifyTutorAsync(Booking booking, decimal amount, int? scheduleId)
         {
-            var tutorEmail = booking.TutorSubject?.Tutor?.UserEmail ?? booking.TutorSubject?.TutorEmail;
+            var tutorEmail = booking.TutorSubject?.Tutor?.UserEmail;
             if (string.IsNullOrWhiteSpace(tutorEmail))
                 return;
 
