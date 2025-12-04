@@ -19,6 +19,8 @@ public partial class Wallet
 
     public virtual ICollection<Deposit> Deposits { get; set; } = new List<Deposit>();
 
+    public virtual ICollection<TutorPayout> TutorPayouts { get; set; } = new List<TutorPayout>();
+
     public virtual User UserEmailNavigation { get; set; } = null!;
 
     public virtual ICollection<WalletTransaction> WalletTransactions { get; set; } = new List<WalletTransaction>();
