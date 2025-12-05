@@ -43,9 +43,13 @@ public partial class Booking
 
     public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
 
+    public virtual ICollection<ScheduleCompletion> ScheduleCompletions { get; set; } = new List<ScheduleCompletion>();
+
     public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
 
     public virtual SystemFee SystemFee { get; set; } = null!;
+
+    public virtual ICollection<TutorPayout> TutorPayouts { get; set; } = new List<TutorPayout>();
 
     public virtual TutorSubject TutorSubject { get; set; } = null!;
 
