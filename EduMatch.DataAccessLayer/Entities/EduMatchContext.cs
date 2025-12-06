@@ -77,6 +77,8 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<ScheduleChangeRequest> ScheduleChangeRequests { get; set; }
 
+    public virtual DbSet<ScheduleCompletion> ScheduleCompletions { get; set; }
+
     public virtual DbSet<SubDistrict> SubDistricts { get; set; }
 
     public virtual DbSet<Subject> Subjects { get; set; }
@@ -96,6 +98,8 @@ public partial class EduMatchContext : DbContext
     public virtual DbSet<TutorFeedback> TutorFeedbacks { get; set; }
 
     public virtual DbSet<TutorFeedbackDetail> TutorFeedbackDetails { get; set; }
+
+    public virtual DbSet<TutorPayout> TutorPayouts { get; set; }
 
     public virtual DbSet<TutorProfile> TutorProfiles { get; set; }
 
@@ -205,8 +209,8 @@ public partial class EduMatchContext : DbContext
             entity.ToTable("booking_notes");
 
             entity.HasIndex(e => e.BookingId, "IX_booking_notes_booking_id");
-            entity.HasIndex(e => e.CreatedByEmail, "IX_booking_notes_created_by_email");
 
+            entity.HasIndex(e => e.CreatedByEmail, "IX_booking_notes_created_by_email");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.BookingId).HasColumnName("booking_id");
@@ -219,9 +223,17 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.CreatedByEmail)
                 .HasMaxLength(100)
                 .HasColumnName("created_by_email");
+            entity.Property(e => e.ImagePublicId)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("image_public_id");
             entity.Property(e => e.ImageUrl)
                 .HasMaxLength(500)
                 .HasColumnName("image_url");
+            entity.Property(e => e.VideoPublicId)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("video_public_id");
             entity.Property(e => e.VideoUrl)
                 .HasMaxLength(500)
                 .HasColumnName("video_url");
@@ -838,6 +850,8 @@ public partial class EduMatchContext : DbContext
 
             entity.HasIndex(e => e.BookingId, "IX_reports_bookingId");
 
+            entity.HasIndex(e => e.ScheduleId, "IX_reports_scheduleId");
+
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.AdminNotes).HasColumnName("adminNotes");
             entity.Property(e => e.BookingId).HasColumnName("bookingId");
@@ -855,6 +869,7 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.ReporterUserEmail)
                 .HasMaxLength(100)
                 .HasColumnName("reporterUserEmail");
+            entity.Property(e => e.ScheduleId).HasColumnName("scheduleId");
             entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.TutorDefenseNote).HasColumnName("tutorDefenseNote");
             entity.Property(e => e.UpdatedAt)
@@ -878,6 +893,8 @@ public partial class EduMatchContext : DbContext
                 .HasForeignKey(d => d.ReporterUserEmail)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_reports_reporter_users");
+
+            entity.HasOne(d => d.Schedule).WithMany(p => p.Reports).HasForeignKey(d => d.ScheduleId);
         });
 
         modelBuilder.Entity<ReportDefense>(entity =>
@@ -1041,6 +1058,72 @@ public partial class EduMatchContext : DbContext
                 .HasForeignKey(d => d.ScheduleId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_SCR_Schedule");
+        });
+
+        modelBuilder.Entity<ScheduleCompletion>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__schedule__3213E83FC6A0EEE5");
+
+            entity.ToTable("schedule_completions");
+
+            entity.HasIndex(e => e.BookingId, "IX_schedule_completions_booking");
+
+            entity.HasIndex(e => new { e.Status, e.ConfirmationDeadline }, "IX_schedule_completions_status_deadline");
+
+            entity.HasIndex(e => e.ScheduleId, "UQ_schedule_completions_schedule").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AutoCompletedAt)
+                .HasPrecision(0)
+                .HasColumnName("auto_completed_at");
+            entity.Property(e => e.BookingId).HasColumnName("booking_id");
+            entity.Property(e => e.ConfirmationDeadline)
+                .HasPrecision(0)
+                .HasColumnName("confirmation_deadline");
+            entity.Property(e => e.ConfirmedAt)
+                .HasPrecision(0)
+                .HasColumnName("confirmed_at");
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("created_at");
+            entity.Property(e => e.LearnerEmail)
+                .HasMaxLength(100)
+                .HasColumnName("learner_email");
+            entity.Property(e => e.Note)
+                .HasMaxLength(500)
+                .HasColumnName("note");
+            entity.Property(e => e.ReportId).HasColumnName("report_id");
+            entity.Property(e => e.ScheduleId).HasColumnName("schedule_id");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.TutorId).HasColumnName("tutor_id");
+            entity.Property(e => e.UpdatedAt)
+                .HasPrecision(0)
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Booking).WithMany(p => p.ScheduleCompletions)
+                .HasForeignKey(d => d.BookingId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_schedule_completions_booking");
+
+            entity.HasOne(d => d.LearnerEmailNavigation).WithMany(p => p.ScheduleCompletions)
+                .HasForeignKey(d => d.LearnerEmail)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_schedule_completions_learner");
+
+            entity.HasOne(d => d.Report).WithMany(p => p.ScheduleCompletions)
+                .HasForeignKey(d => d.ReportId)
+                .HasConstraintName("FK_schedule_completions_report");
+
+            entity.HasOne(d => d.Schedule).WithOne(p => p.ScheduleCompletion)
+                .HasForeignKey<ScheduleCompletion>(d => d.ScheduleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_schedule_completions_schedule");
+
+            entity.HasOne(d => d.Tutor).WithMany(p => p.ScheduleCompletions)
+                .HasForeignKey(d => d.TutorId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_schedule_completions_tutor");
         });
 
         modelBuilder.Entity<SubDistrict>(entity =>
@@ -1259,6 +1342,66 @@ public partial class EduMatchContext : DbContext
                 .HasForeignKey(d => d.FeedbackId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_TutorFeedbackDetails_Feedback");
+        });
+
+        modelBuilder.Entity<TutorPayout>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__tutor_pa__3213E83F6BFFF89C");
+
+            entity.ToTable("tutor_payouts");
+
+            entity.HasIndex(e => new { e.Status, e.ScheduledPayoutDate }, "IX_tutor_payouts_status_date");
+
+            entity.HasIndex(e => new { e.TutorWalletId, e.Status }, "IX_tutor_payouts_wallet_status");
+
+            entity.HasIndex(e => e.ScheduleId, "UQ_tutor_payouts_schedule").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Amount)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("amount");
+            entity.Property(e => e.BookingId).HasColumnName("booking_id");
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("created_at");
+            entity.Property(e => e.HoldReason)
+                .HasMaxLength(255)
+                .HasColumnName("hold_reason");
+            entity.Property(e => e.PayoutTrigger).HasColumnName("payout_trigger");
+            entity.Property(e => e.ReleasedAt)
+                .HasPrecision(0)
+                .HasColumnName("released_at");
+            entity.Property(e => e.ScheduleId).HasColumnName("schedule_id");
+            entity.Property(e => e.ScheduledPayoutDate).HasColumnName("scheduled_payout_date");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.SystemFeeAmount)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("system_fee_amount");
+            entity.Property(e => e.TutorWalletId).HasColumnName("tutor_wallet_id");
+            entity.Property(e => e.UpdatedAt)
+                .HasPrecision(0)
+                .HasColumnName("updated_at");
+            entity.Property(e => e.WalletTransactionId).HasColumnName("wallet_transaction_id");
+
+            entity.HasOne(d => d.Booking).WithMany(p => p.TutorPayouts)
+                .HasForeignKey(d => d.BookingId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_tutor_payouts_booking");
+
+            entity.HasOne(d => d.Schedule).WithOne(p => p.TutorPayout)
+                .HasForeignKey<TutorPayout>(d => d.ScheduleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_tutor_payouts_schedule");
+
+            entity.HasOne(d => d.TutorWallet).WithMany(p => p.TutorPayouts)
+                .HasForeignKey(d => d.TutorWalletId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_tutor_payouts_wallet");
+
+            entity.HasOne(d => d.WalletTransaction).WithMany(p => p.TutorPayouts)
+                .HasForeignKey(d => d.WalletTransactionId)
+                .HasConstraintName("FK_tutor_payouts_tx");
         });
 
         modelBuilder.Entity<TutorProfile>(entity =>

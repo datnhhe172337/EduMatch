@@ -240,7 +240,8 @@ namespace EduMatch.PresentationLayer.Controllers
 
 		/// <summary>
 		/// Tạo Booking mới và tính phí hệ thống theo SystemFee đang hoạt động. Tự động lấy SystemFee có Id nhỏ nhất đang hoạt động.
-		/// Sau khi tạo Booking thành công, lấy ID của Booking để tạo Schedule. BookingId trong request Schedule có thể truyền bất kỳ số nào > 0, sẽ được ghi đè bằng ID của Booking vừa tạo.
+		/// Sau khi tạo Booking thành công, lấy ID của Booking để tạo Schedule, sau đó tiến hành thanh toán luôn cho Booking đó.
+		/// BookingId trong request Schedule có thể truyền bất kỳ số nào > 0, sẽ được ghi đè bằng ID của Booking vừa tạo.
 		/// </summary>
 		[Authorize (Roles = Roles.BusinessAdmin + ","  + Roles.Learner)]
 		[HttpPost("create-booking")]
@@ -254,6 +255,13 @@ namespace EduMatch.PresentationLayer.Controllers
 				if (!ModelState.IsValid)
 				{
 					return BadRequest(ApiResponse<object>.Fail("Dữ liệu không hợp lệ", ModelState));
+				}
+
+				// Lấy email học viên từ token để dùng cho bước thanh toán
+				var learnerEmail = _currentUserService.Email;
+				if (string.IsNullOrWhiteSpace(learnerEmail))
+				{
+					return Unauthorized(ApiResponse<object>.Fail("User email not found in token."));
 				}
 
 				// Tạo Booking
@@ -275,8 +283,20 @@ namespace EduMatch.PresentationLayer.Controllers
 					await _scheduleService.CreateListAsync(request.Schedules);
 				}
 
+				// Nếu là đơn học thử (tổng tiền = 0) thì không cần thanh toán ví,
+				// có thể cập nhật PaymentStatus sang Paid cho rõ ràng.
+				if (createdBooking.TotalAmount <= 0)
+				{
+					var trialBooking = await _bookingService.UpdatePaymentStatusAsync(createdBooking.Id, PaymentStatus.Paid);
+					await transaction.CommitAsync();
+					return Ok(ApiResponse<BookingDto>.Ok(trialBooking, "Tạo Booking học thử (miễn phí) và cập nhật thanh toán thành công"));
+				}
+
+				// Thanh toán luôn cho booking vừa tạo (khóa tiền từ ví học viên, v.v.)
+				var paidBooking = await _bookingService.PayForBookingAsync(createdBooking.Id, learnerEmail);
+
 				await transaction.CommitAsync();
-				return Ok(ApiResponse<BookingDto>.Ok(createdBooking, "Tạo Booking và danh sách Schedule thành công"));
+				return Ok(ApiResponse<BookingDto>.Ok(paidBooking, "Tạo Booking, danh sách Schedule và thanh toán thành công"));
 			}
 			catch (Exception ex)
 			{

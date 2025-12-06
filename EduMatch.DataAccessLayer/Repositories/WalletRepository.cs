@@ -26,6 +26,11 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .FirstOrDefaultAsync(w => w.UserEmail == userEmail);
         }
 
+        public async Task<Wallet?> GetByIdAsync(int id)
+        {
+            return await _dbSet.FirstOrDefaultAsync(w => w.Id == id);
+        }
+
         public async Task AddAsync(Wallet entity)
         {
             await _dbSet.AddAsync(entity);

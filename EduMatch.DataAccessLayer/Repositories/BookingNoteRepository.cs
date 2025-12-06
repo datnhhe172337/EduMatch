@@ -45,7 +45,9 @@ namespace EduMatch.DataAccessLayer.Repositories
 
             existing.Content = entity.Content;
             existing.ImageUrl = entity.ImageUrl;
+            existing.ImagePublicId = entity.ImagePublicId;
             existing.VideoUrl = entity.VideoUrl;
+            existing.VideoPublicId = entity.VideoPublicId;
 
             await _context.SaveChangesAsync();
             return existing;
