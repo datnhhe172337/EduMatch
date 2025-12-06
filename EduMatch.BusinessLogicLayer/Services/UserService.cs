@@ -288,7 +288,8 @@ namespace EduMatch.BusinessLogicLayer.Services
                 throw new UnauthorizedAccessException("Email is logged in with google");
 
             var valid = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
-            if (!valid) return null;
+            if (!valid)
+                throw new UnauthorizedAccessException("Invalid password");
 
             if (user.IsEmailConfirmed == false)
                 throw new UnauthorizedAccessException("Email not verified. Please verify before login!");

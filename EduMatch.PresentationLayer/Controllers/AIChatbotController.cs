@@ -195,7 +195,7 @@ namespace EduMatch.PresentationLayer.Controllers
                 var final = await _qdrantService.MergeAndRankAsync(vectorResults, keywordResults);
 
                 //Step 5: Rerank
-                float threshold = 0.5f;
+                float threshold = 0.6f;
                 var filteredTutors = final
                     .Where(t => t.Score >= threshold)
                     .OrderByDescending(t => t.Score)
