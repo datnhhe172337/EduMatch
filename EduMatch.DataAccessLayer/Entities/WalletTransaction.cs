@@ -36,6 +36,8 @@ public partial class WalletTransaction
 
     public virtual Deposit? Deposit { get; set; }
 
+    public virtual ICollection<TutorPayout> TutorPayouts { get; set; } = new List<TutorPayout>();
+
     public virtual Wallet Wallet { get; set; } = null!;
 
     public virtual Withdrawal? Withdrawal { get; set; }

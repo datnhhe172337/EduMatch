@@ -16,6 +16,7 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 	public class BecomeTutorRequest
 	{
 		// ----- PROFILE -----
+		[Required(ErrorMessage = "Tutor profile is required.")]
 		public TutorProfileCreateRequest TutorProfile { get; set; } = new();
 
 		// ----- EDUCATION -----

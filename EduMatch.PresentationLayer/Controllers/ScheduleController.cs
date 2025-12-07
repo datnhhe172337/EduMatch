@@ -19,16 +19,98 @@ namespace EduMatch.PresentationLayer.Controllers
 	{
 		private readonly IScheduleService _scheduleService;
 		private readonly IBookingService _bookingService;
+		private readonly IScheduleCompletionService _scheduleCompletionService;
 		private readonly EduMatchContext _context;
 
 		/// <summary>
 		/// API Schedule: lấy danh sách (có/không phân trang), lấy theo Id/AvailabilityId, tạo, cập nhật, hủy theo BookingId
 		/// </summary>
-		public ScheduleController(IScheduleService scheduleService, IBookingService bookingService, EduMatchContext context)
+		public ScheduleController(IScheduleService scheduleService, IBookingService bookingService, IScheduleCompletionService scheduleCompletionService, EduMatchContext context)
 		{
 			_scheduleService = scheduleService;
 			_bookingService = bookingService;
+			_scheduleCompletionService = scheduleCompletionService;
 			_context = context;
+        }
+
+        /// <summary>
+        /// Learner confirms a schedule as finished and triggers payout immediately.
+        /// </summary>
+		[Authorize]
+		[HttpPost("{id:int}/finish")]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<object>>> FinishSchedule(int id)
+		{
+			try
+			{
+				var updated = await _scheduleCompletionService.FinishAndPayAsync(id);
+				return Ok(ApiResponse<object>.Ok(new { updated }));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Learner or tutor cancels the schedule completion (no payout).
+        /// </summary>
+        [Authorize]
+        [HttpPost("{id:int}/cancel")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ApiResponse<object>>> CancelScheduleCompletion(int id)
+        {
+            try
+            {
+                var updated = await _scheduleCompletionService.CancelAsync(id);
+                return Ok(ApiResponse<object>.Ok(new { updated }));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Mark schedule as reported/on-hold (ties to an existing report).
+        /// </summary>
+		[Authorize]
+		[HttpPost("{id:int}/report/{reportId:int}")]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<object>>> ReportSchedule(int id, int reportId)
+		{
+			try
+			{
+				var updated = await _scheduleCompletionService.MarkReportedAsync(id, reportId);
+				return Ok(ApiResponse<object>.Ok(new { updated }));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Admin resolution: release payout or cancel after review.
+		/// </summary>
+		[Authorize(Roles = Roles.SystemAdmin)]
+		[HttpPost("{id:int}/resolve-report")]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<object>>> ResolveReport(int id, [FromQuery] bool releaseToTutor = true)
+		{
+			try
+			{
+				var updated = await _scheduleCompletionService.ResolveReportAsync(id, releaseToTutor);
+				return Ok(ApiResponse<object>.Ok(new { updated }));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
 		}
 
 		/// <summary>

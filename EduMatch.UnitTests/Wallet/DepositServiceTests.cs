@@ -18,7 +18,6 @@ namespace EduMatch.UnitTests.WalletTests;
 
 public sealed class DepositServiceTests : IAsyncLifetime
 {
-    #region Setup
     private readonly EduMatchContext _context;
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
     private readonly Mock<IDepositRepository> _depositRepository = new();
@@ -46,7 +45,6 @@ public sealed class DepositServiceTests : IAsyncLifetime
     {
         await _context.DisposeAsync();
     }
-    #endregion
 
     #region CreateDepositRequestAsync Tests
 
@@ -56,6 +54,7 @@ public sealed class DepositServiceTests : IAsyncLifetime
         const string userEmail = "new@test.com";
         var request = new WalletDepositRequest { Amount = 100_000 };
         Wallet? capturedWallet = null;
+
         _walletRepository.Setup(r => r.GetWalletByUserEmailAsync(userEmail)).ReturnsAsync((Wallet?)null);
         _walletRepository.Setup(r => r.AddAsync(It.IsAny<Wallet>()))
             .Callback<Wallet>(w => { w.Id = 10; capturedWallet = w; })
@@ -77,6 +76,7 @@ public sealed class DepositServiceTests : IAsyncLifetime
         const string userEmail = "existing@test.com";
         var request = new WalletDepositRequest { Amount = 50_000 };
         var wallet = new Wallet { Id = 7, UserEmail = userEmail };
+
         _walletRepository.Setup(r => r.GetWalletByUserEmailAsync(userEmail)).ReturnsAsync(wallet);
         _depositRepository.Setup(r => r.AddAsync(It.IsAny<Deposit>())).Returns(Task.CompletedTask);
 
@@ -85,6 +85,10 @@ public sealed class DepositServiceTests : IAsyncLifetime
         deposit.WalletId.Should().Be(wallet.Id);
         _walletRepository.Verify(r => r.AddAsync(It.IsAny<Wallet>()), Times.Never);
     }
+
+    #endregion
+
+    #region CleanupExpiredDepositsAsync Tests
 
     [Fact]
     public async Task CleanupExpiredDepositsAsync_MarksPendingOlderThan24Hours()
@@ -111,12 +115,17 @@ public sealed class DepositServiceTests : IAsyncLifetime
         _depositRepository.Verify(r => r.Update(expired[0]), Times.Once);
     }
 
+    #endregion
+
+    #region CancelDepositRequestAsync Tests
+
     [Fact]
     public async Task CancelDepositRequestAsync_SucceedsForOwnerPending()
     {
         const string userEmail = "owner@test.com";
         var wallet = new Wallet { UserEmail = userEmail };
         var deposit = new Deposit { Id = 5, Wallet = wallet, Status = TransactionStatus.Pending };
+
         _depositRepository.Setup(r => r.GetByIdAsync(deposit.Id)).ReturnsAsync(deposit);
         _unitOfWork.Setup(u => u.CompleteAsync()).ReturnsAsync(1);
 
@@ -132,6 +141,7 @@ public sealed class DepositServiceTests : IAsyncLifetime
     {
         var wallet = new Wallet { UserEmail = "owner@test.com" };
         var deposit = new Deposit { Id = 5, Wallet = wallet, Status = TransactionStatus.Pending };
+
         _depositRepository.Setup(r => r.GetByIdAsync(deposit.Id)).ReturnsAsync(deposit);
 
         await _sut.Invoking(s => s.CancelDepositRequestAsync(deposit.Id, "intruder@test.com"))
@@ -144,6 +154,7 @@ public sealed class DepositServiceTests : IAsyncLifetime
     {
         var wallet = new Wallet { UserEmail = "owner@test.com" };
         var deposit = new Deposit { Id = 5, Wallet = wallet, Status = TransactionStatus.Completed };
+
         _depositRepository.Setup(r => r.GetByIdAsync(deposit.Id)).ReturnsAsync(deposit);
 
         await _sut.Invoking(s => s.CancelDepositRequestAsync(deposit.Id, wallet.UserEmail))
@@ -160,6 +171,10 @@ public sealed class DepositServiceTests : IAsyncLifetime
             .Should().ThrowAsync<Exception>()
             .WithMessage("Deposit request not found.");
     }
+
+    #endregion
+
+    #region ProcessVnpayPaymentAsync Tests
 
     [Fact]
     public async Task ProcessVnpayPaymentAsync_PendingDeposit_CreditsWalletAndNotifies()
@@ -189,7 +204,7 @@ public sealed class DepositServiceTests : IAsyncLifetime
             t.TransactionType == WalletTransactionType.Credit)), Times.Once);
         _notificationService.Verify(n =>
             n.CreateNotificationAsync(wallet.UserEmail,
-                It.Is<string>(msg => msg.Contains("n?p")),
+                It.Is<string>(msg => msg.Contains("đã nạp thành công")),
                 "/wallet/my-wallet"),
             Times.Once);
     }

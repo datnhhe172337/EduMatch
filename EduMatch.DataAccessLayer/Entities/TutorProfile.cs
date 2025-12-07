@@ -35,6 +35,10 @@ public partial class TutorProfile
 
     public virtual ICollection<FavoriteTutor> FavoriteTutors { get; set; } = new List<FavoriteTutor>();
 
+    public virtual ICollection<LearnerTrialLesson> LearnerTrialLessons { get; set; } = new List<LearnerTrialLesson>();
+
+    public virtual ICollection<ScheduleCompletion> ScheduleCompletions { get; set; } = new List<ScheduleCompletion>();
+
     public virtual ICollection<TutorApplication> TutorApplications { get; set; } = new List<TutorApplication>();
 
     public virtual ICollection<TutorAvailability> TutorAvailabilities { get; set; } = new List<TutorAvailability>();

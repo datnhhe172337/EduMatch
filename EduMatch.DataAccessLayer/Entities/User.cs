@@ -35,6 +35,8 @@ public partial class User
 
     public virtual ICollection<FavoriteTutor> FavoriteTutors { get; set; } = new List<FavoriteTutor>();
 
+    public virtual ICollection<LearnerTrialLesson> LearnerTrialLessons { get; set; } = new List<LearnerTrialLesson>();
+
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
@@ -50,6 +52,8 @@ public partial class User
     public virtual ICollection<ScheduleChangeRequest> ScheduleChangeRequestRequestedToEmailNavigations { get; set; } = new List<ScheduleChangeRequest>();
 
     public virtual ICollection<ScheduleChangeRequest> ScheduleChangeRequestRequesterEmailNavigations { get; set; } = new List<ScheduleChangeRequest>();
+
+    public virtual ICollection<ScheduleCompletion> ScheduleCompletions { get; set; } = new List<ScheduleCompletion>();
 
     public virtual TutorProfile? TutorProfile { get; set; }
 

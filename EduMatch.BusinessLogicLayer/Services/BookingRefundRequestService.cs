@@ -350,6 +350,19 @@ namespace EduMatch.BusinessLogicLayer.Services
                         "/wallet/my-wallet");
                 }
 
+                // Nếu status được update sang Rejected, gửi thông báo cho học viên
+                if (newStatus == BookingRefundRequestStatus.Rejected)
+                {
+                    var rejectMessage = !string.IsNullOrWhiteSpace(entity.AdminNote)
+                        ? $"Yêu cầu hoàn tiền của bạn đã bị từ chối. Lý do: {entity.AdminNote}."
+                        : "Yêu cầu hoàn tiền của bạn đã bị từ chối.";
+
+                    await _notificationService.CreateNotificationAsync(
+                        entity.LearnerEmail,
+                        rejectMessage,
+                        "/booking/refund-requests");
+                }
+
                 await _bookingRefundRequestRepository.UpdateAsync(entity);
                 
                 // Commit transaction

@@ -22,7 +22,6 @@ namespace EduMatch.PresentationLayer.Controllers
             _currentUserService = currentUserService;
         }
 
-        // POST: api/withdrawals/create-request
         [HttpPost("create-request")]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status401Unauthorized)]
@@ -37,7 +36,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
                 await _withdrawalService.CreateWithdrawalRequestAsync(request, userEmail);
 
-                return StatusCode(StatusCodes.Status201Created, ApiResponse<string>.Ok("Y�u c?u r�t ti?n d� du?c x? l� th�nh c�ng."));
+                return StatusCode(StatusCodes.Status201Created, ApiResponse<string>.Ok("Yeu cau rut tien cua ban dang duoc xu ly."));
             }
             catch (Exception ex)
             {
@@ -77,9 +76,5 @@ namespace EduMatch.PresentationLayer.Controllers
         ////     var requests = await _withdrawalService.GetPendingWithdrawalsAsync();
         ////     return Ok(ApiResponse<IEnumerable<AdminWithdrawalDto>>.Ok(requests));
         //// }
-    }
-    public class RejectRequest
-    {
-        public string Reason { get; set; }
     }
 }
