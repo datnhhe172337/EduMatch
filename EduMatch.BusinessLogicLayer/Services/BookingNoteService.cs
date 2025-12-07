@@ -58,7 +58,6 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (string.IsNullOrWhiteSpace(request.Content))
                 throw new Exception("Content không được để trống");
 
-            // Validate booking exists
             var booking = await _bookingRepository.GetByIdAsync(request.BookingId);
             if (booking == null)
                 throw new Exception("Booking không tồn tại");
