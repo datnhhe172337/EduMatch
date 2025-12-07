@@ -75,7 +75,13 @@ namespace EduMatch.DataAccessLayer.Repositories
             await _context.SaveChangesAsync();
         }
 
-		public async Task UpdateUserAsync(User user)
+        public async Task CreateUserProfileAsync(UserProfile user)
+        {
+            _context.UserProfiles.Add(user);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateUserAsync(User user)
 		{
 			_context.Users.Update(user);
 			await _context.SaveChangesAsync();

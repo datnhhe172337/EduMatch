@@ -69,6 +69,13 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             await _userRepo.CreateUserAsync(user);
 
+            var profile = new UserProfile
+            {
+                UserEmail = email
+            };
+
+            await _userRepo.CreateUserProfileAsync(profile);
+
             var verificationToken = GenerateEmailVerificationToken(user);
 
             var verifyUrl = $"{baseUrl}/api/User/verify-email?token={verificationToken}";
