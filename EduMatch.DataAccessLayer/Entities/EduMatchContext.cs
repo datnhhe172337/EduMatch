@@ -121,9 +121,21 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<Withdrawal> Withdrawals { get; set; }
 
+    partial void OnConfiguringPartial(DbContextOptionsBuilder optionsBuilder);
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
+    {
+        // If already configured (e.g., InMemory for tests), do not apply another provider.
+        if (optionsBuilder.IsConfigured)
+        {
+            OnConfiguringPartial(optionsBuilder);
+            return;
+        }
+
+        optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
+        OnConfiguringPartial(optionsBuilder);
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

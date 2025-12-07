@@ -15,7 +15,7 @@ using Xunit;
 
 namespace EduMatch.UnitTests
 {
-    #region BookingNoteServiceTests
+
     public class BookingNoteServiceTests
     {
         private readonly Mock<IBookingNoteRepository> _noteRepo = new();
@@ -294,5 +294,5 @@ namespace EduMatch.UnitTests
         }
         #endregion
     }
-    #endregion
+
 }

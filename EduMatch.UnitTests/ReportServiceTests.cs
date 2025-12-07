@@ -307,6 +307,20 @@ namespace EduMatch.UnitTests
         }
 
         [Fact]
+        public async Task UpdateDefenseAsync_UnauthorizedUser_Throws()
+        {
+            var report = new Report { Id = 10, ReportedUserEmail = "tutor@test.com", StatusEnum = ReportStatus.Pending, CreatedAt = DateTime.UtcNow.AddDays(-1) };
+            var defense = new ReportDefense { Id = 41, ReportId = report.Id, TutorEmail = "tutor@test.com", Note = "old" };
+            _reportRepo.Setup(r => r.GetByIdAsync(report.Id)).ReturnsAsync(report);
+            _defenseRepo.Setup(r => r.GetByIdAsync(defense.Id)).ReturnsAsync(defense);
+
+            var service = CreateService();
+
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+                service.UpdateDefenseAsync(report.Id, defense.Id, new ReportDefenseUpdateRequest { Note = "new" }, "other@test.com", false));
+        }
+
+        [Fact]
         public async Task DeleteDefenseAsync_Unauthorized_Throws()
         {
             var report = new Report { Id = 11, ReportedUserEmail = "tutor@test.com", ReporterUserEmail = "rep@test.com", StatusEnum = ReportStatus.Pending, CreatedAt = DateTime.UtcNow };
