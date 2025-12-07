@@ -268,13 +268,6 @@ namespace EduMatch.BusinessLogicLayer.Services
                 user.IsActive = true;
                 await _userRepo.UpdateUserAsync(user);
 
-                var profile = new UserProfile
-                {
-                    UserEmail = userEmail,
-
-                };
-                await _profileRepo.CreateUserProfileAsync(profile);
-
                 return true;
             }
             catch (Exception ex)
