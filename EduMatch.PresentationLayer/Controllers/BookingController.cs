@@ -23,16 +23,20 @@ namespace EduMatch.PresentationLayer.Controllers
 		private readonly IScheduleService _scheduleService;
 		private readonly EduMatchContext _context;
 		private readonly CurrentUserService _currentUserService;
+		private readonly INotificationService _notificationService;
+		private readonly ITutorSubjectService _tutorSubjectService;
 
 		/// <summary>
 		/// API Booking: lấy danh sách theo LearnerEmail/TutorId (có/không phân trang), lấy theo Id, tạo, cập nhật, cập nhật Status/PaymentStatus
 		/// </summary>
-		public BookingController(IBookingService bookingService, IScheduleService scheduleService, EduMatchContext context, CurrentUserService currentUserService)
+		public BookingController(IBookingService bookingService, IScheduleService scheduleService, EduMatchContext context, CurrentUserService currentUserService, INotificationService notificationService, ITutorSubjectService tutorSubjectService)
 		{
 			_bookingService = bookingService;
 			_scheduleService = scheduleService;
 			_context = context;
 			_currentUserService = currentUserService;
+			_notificationService = notificationService;
+			_tutorSubjectService = tutorSubjectService;
 		}
 
 		/// <summary>
@@ -289,6 +293,17 @@ namespace EduMatch.PresentationLayer.Controllers
 				{
 					var trialBooking = await _bookingService.UpdatePaymentStatusAsync(createdBooking.Id, PaymentStatus.Paid);
 					await transaction.CommitAsync();
+					
+					// Gửi notification cho tutor về đơn yêu cầu dạy học mới
+					var tutorSubject = await _tutorSubjectService.GetByIdFullAsync(createdBooking.TutorSubjectId);
+					if (!string.IsNullOrWhiteSpace(tutorSubject?.TutorEmail))
+					{
+						await _notificationService.CreateNotificationAsync(
+							tutorSubject.TutorEmail,
+							$"Bạn có đơn yêu cầu dạy học mới #{trialBooking.Id}. Vui lòng xác nhận đơn hàng.",
+							"/bookings");
+					}
+					
 					return Ok(ApiResponse<BookingDto>.Ok(trialBooking, "Tạo Booking học thử (miễn phí) và cập nhật thanh toán thành công"));
 				}
 
@@ -296,6 +311,17 @@ namespace EduMatch.PresentationLayer.Controllers
 				var paidBooking = await _bookingService.PayForBookingAsync(createdBooking.Id, learnerEmail);
 
 				await transaction.CommitAsync();
+				
+				// Gửi notification cho tutor về đơn yêu cầu dạy học mới
+				var tutorSubjectForPaid = await _tutorSubjectService.GetByIdFullAsync(paidBooking.TutorSubjectId);
+				if (!string.IsNullOrWhiteSpace(tutorSubjectForPaid?.TutorEmail))
+				{
+					await _notificationService.CreateNotificationAsync(
+						tutorSubjectForPaid.TutorEmail,
+						$"Bạn có đơn yêu cầu dạy học mới #{paidBooking.Id}. Vui lòng xác nhận đơn hàng.",
+						"/bookings");
+				}
+				
 				return Ok(ApiResponse<BookingDto>.Ok(paidBooking, "Tạo Booking, danh sách Schedule và thanh toán thành công"));
 			}
 			catch (Exception ex)
