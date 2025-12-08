@@ -24,6 +24,8 @@ namespace EduMatch.DataAccessLayer.Repositories
 				.ThenInclude(s => s.Slot)
 			.Include(s => s.Booking)
             .Include(s => s.MeetingSession)
+            .Include(s => s.ScheduleCompletion)
+            .Include(s => s.TutorPayout)
             .Where(s => s.BookingId == bookingId);
             if (status.HasValue)
                 query = query.Where(s => s.Status == status.Value);
@@ -45,6 +47,8 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .ThenInclude(s =>s .Slot)
             .Include(s => s.Booking)
             .Include(s => s.MeetingSession)
+            .Include(s => s.ScheduleCompletion)
+            .Include(s => s.TutorPayout)
             .Where(s => s.BookingId == bookingId);
             if (status.HasValue)
                 query = query.Where(s => s.Status == status.Value);
@@ -73,6 +77,8 @@ namespace EduMatch.DataAccessLayer.Repositories
         {
             return await _context.Schedules
                 .Include(s => s.MeetingSession)
+                .Include(s => s.ScheduleCompletion)
+                .Include(s => s.TutorPayout)
                 .FirstOrDefaultAsync(s => s.AvailabilitiId == availabilitiId);
         }
         /// <summary>
@@ -93,6 +99,8 @@ namespace EduMatch.DataAccessLayer.Repositories
                     .ThenInclude(b => b.TutorSubject)
                         .ThenInclude(ts => ts.Level)
                 .Include(s => s.MeetingSession)
+                .Include(s => s.ScheduleCompletion)
+                .Include(s => s.TutorPayout)
                 .FirstOrDefaultAsync(s => s.Id == id);
         }
         /// <summary>
@@ -103,6 +111,8 @@ namespace EduMatch.DataAccessLayer.Repositories
             return await _context.Schedules
                 .Where(s => s.BookingId == bookingId)
                 .Include(s => s.MeetingSession)
+                .Include(s => s.ScheduleCompletion)
+                .Include(s => s.TutorPayout)
                 .OrderBy(s => s.Availabiliti.StartDate)
                 .ThenBy(s => s.Id)
                 .ToListAsync();
@@ -126,6 +136,8 @@ namespace EduMatch.DataAccessLayer.Repositories
                     .ThenInclude(b => b.TutorSubject)
                         .ThenInclude(ts => ts.Level)
                 .Include(s => s.MeetingSession)
+                .Include(s => s.ScheduleCompletion)
+                .Include(s => s.TutorPayout)
                 .Where(s => s.Booking.LearnerEmail == learnerEmail);
 
             if (startDate.HasValue)
@@ -169,6 +181,8 @@ namespace EduMatch.DataAccessLayer.Repositories
                     .ThenInclude(b => b.TutorSubject)
                         .ThenInclude(ts => ts.Level)
                 .Include(s => s.MeetingSession)
+                .Include(s => s.ScheduleCompletion)
+                .Include(s => s.TutorPayout)
                 .Where(s => s.Booking.TutorSubject.Tutor.UserEmail == tutorEmail);
 
             if (startDate.HasValue)
@@ -255,6 +269,8 @@ namespace EduMatch.DataAccessLayer.Repositories
                     .ThenInclude(a => a.Slot)
                 .Include(s => s.Booking)
                 .Include(s => s.MeetingSession)
+                .Include(s => s.ScheduleCompletion)
+                .Include(s => s.TutorPayout)
                 .Where(s => s.Status == (int)ScheduleStatus.Upcoming || s.Status == (int)ScheduleStatus.InProgress)
                 .OrderBy(s => s.Availabiliti.StartDate)
                 .ThenBy(s => s.Id)
