@@ -8,7 +8,6 @@ using EduMatch.DataAccessLayer.Enum;
 using EduMatch.PresentationLayer.Common;
 using System.ComponentModel.DataAnnotations;
 using EduMatch.BusinessLogicLayer.Constants;
-using EduMatch.BusinessLogicLayer.Services;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -17,17 +16,13 @@ namespace EduMatch.PresentationLayer.Controllers
 	public class ScheduleChangeRequestController : ControllerBase
 	{
 		private readonly IScheduleChangeRequestService _scheduleChangeRequestService;
-		private readonly INotificationService _notificationService;
-		private readonly CurrentUserService _currentUserService;
 
 		/// <summary>
 		/// API ScheduleChangeRequest: lấy theo Id, tạo, cập nhật Status, lấy danh sách theo RequesterEmail/RequestedToEmail
 		/// </summary>
-		public ScheduleChangeRequestController(IScheduleChangeRequestService scheduleChangeRequestService, INotificationService notificationService, CurrentUserService currentUserService)
+		public ScheduleChangeRequestController(IScheduleChangeRequestService scheduleChangeRequestService)
 		{
 			_scheduleChangeRequestService = scheduleChangeRequestService;
-			_notificationService = notificationService;
-			_currentUserService = currentUserService;
 		}
 
 		/// <summary>
@@ -75,16 +70,6 @@ namespace EduMatch.PresentationLayer.Controllers
 				}
 
 				var created = await _scheduleChangeRequestService.CreateAsync(request);
-				
-				// Gửi notification cho người được yêu cầu (RequestedToEmail)
-				if (!string.IsNullOrWhiteSpace(created.RequestedToEmail))
-				{
-					await _notificationService.CreateNotificationAsync(
-						created.RequestedToEmail,
-						$"Bạn có yêu cầu thay đổi lịch học mới từ {created.RequesterEmail}. Vui lòng xem xét và phản hồi.",
-						$"/schedule-change-requests/{created.Id}");
-				}
-				
 				return Ok(ApiResponse<ScheduleChangeRequestDto>.Ok(created, "Tạo ScheduleChangeRequest thành công"));
 			}
 			catch (Exception ex)

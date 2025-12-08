@@ -111,6 +111,15 @@ namespace EduMatch.BusinessLogicLayer.Services
                 // Commit transaction
                 await dbTransaction.CommitAsync();
 
+                // Gửi notification cho người được yêu cầu (RequestedToEmail)
+                if (!string.IsNullOrWhiteSpace(entity.RequestedToEmail))
+                {
+                    await _notificationService.CreateNotificationAsync(
+                        entity.RequestedToEmail,
+                        $"Bạn có yêu cầu thay đổi lịch học mới từ {entity.RequesterEmail}. Vui lòng xem xét và phản hồi.",
+                        $"/schedule-change-requests/{entity.Id}");
+                }
+
                 // Map entity sang DTO
                 return _mapper.Map<ScheduleChangeRequestDto>(entity);
             }
