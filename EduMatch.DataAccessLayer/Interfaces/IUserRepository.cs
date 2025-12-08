@@ -20,7 +20,8 @@ namespace EduMatch.DataAccessLayer.Interfaces
         Task CreateUserAsync(User user);
 		Task UpdateUserAsync(User user);
 		Task UpdateNameAndPhoneUserAsync(string name,string phone, string email);
-        Task<bool> UpdateRoleUserAsync(string email, int roleId);  
+        Task<bool> UpdateRoleUserAsync(string email, int roleId);
+        Task CreateUserProfileAsync(UserProfile user);
         Task<Role> GetRoleByIdAsync(int roleId);
 
 	}

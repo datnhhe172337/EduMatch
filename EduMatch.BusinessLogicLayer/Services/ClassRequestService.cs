@@ -123,9 +123,9 @@ namespace EduMatch.BusinessLogicLayer.Services
                 await _repo.UpdateStatusAsync(classRequest);
                 
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw new Exception(e.Message);
+                throw;
             }
         }
 

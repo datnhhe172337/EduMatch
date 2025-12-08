@@ -72,6 +72,13 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             await _userRepo.CreateUserAsync(user);
 
+            var profile = new UserProfile
+            {
+                UserEmail = email
+            };
+
+            await _userRepo.CreateUserProfileAsync(profile);
+
             var verificationToken = GenerateEmailVerificationToken(user);
 
             var verifyUrl = $"{baseUrl}/api/User/verify-email?token={verificationToken}";
@@ -261,13 +268,6 @@ namespace EduMatch.BusinessLogicLayer.Services
                 user.IsActive = true;
                 await _userRepo.UpdateUserAsync(user);
 
-                var profile = new UserProfile
-                {
-                    UserEmail = userEmail,
-
-                };
-                await _profileRepo.CreateUserProfileAsync(profile);
-
                 return true;
             }
             catch (Exception ex)
@@ -288,7 +288,8 @@ namespace EduMatch.BusinessLogicLayer.Services
                 throw new UnauthorizedAccessException("Email is logged in with google");
 
             var valid = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
-            if (!valid) return null;
+            if (!valid)
+                throw new UnauthorizedAccessException("Invalid password");
 
             if (user.IsEmailConfirmed == false)
                 throw new UnauthorizedAccessException("Email not verified. Please verify before login!");

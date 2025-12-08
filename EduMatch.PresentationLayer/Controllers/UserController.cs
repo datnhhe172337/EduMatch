@@ -73,7 +73,6 @@ namespace EduMatch.PresentationLayer.Controllers
                     return BadRequest("Email and password required");
 
                 var auth = await _userService.LoginAsync(req.Email, req.Password);
-                if (auth == null) return Unauthorized("Invalid credentials");
 
                 // Refresh token set vào cookie
                 Response.Cookies.Append("refresh_token", auth.RefreshToken, new CookieOptions
@@ -92,9 +91,12 @@ namespace EduMatch.PresentationLayer.Controllers
                     message = "Login successful!"
                 });
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
             catch (Exception ex)
             {
-                // Nếu email chưa xác thực
                 return BadRequest(new { message = ex.Message });
             }
         }
