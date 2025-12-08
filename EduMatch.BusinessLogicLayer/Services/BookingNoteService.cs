@@ -14,17 +14,20 @@ namespace EduMatch.BusinessLogicLayer.Services
     {
         private readonly IBookingNoteRepository _bookingNoteRepository;
         private readonly IBookingRepository _bookingRepository;
+        private readonly IBookingNoteMediaRepository _bookingNoteMediaRepository;
         private readonly CurrentUserService _currentUserService;
         private readonly IMapper _mapper;
 
         public BookingNoteService(
             IBookingNoteRepository bookingNoteRepository,
             IBookingRepository bookingRepository,
+            IBookingNoteMediaRepository bookingNoteMediaRepository,
             CurrentUserService currentUserService,
             IMapper mapper)
         {
             _bookingNoteRepository = bookingNoteRepository;
             _bookingRepository = bookingRepository;
+            _bookingNoteMediaRepository = bookingNoteMediaRepository;
             _currentUserService = currentUserService;
             _mapper = mapper;
         }
@@ -35,7 +38,11 @@ namespace EduMatch.BusinessLogicLayer.Services
                 throw new Exception("Id phải lớn hơn 0");
 
             var entity = await _bookingNoteRepository.GetByIdAsync(id);
-            return entity == null ? null : _mapper.Map<BookingNoteDto>(entity);
+            if (entity == null)
+                return null;
+
+            entity.BookingNoteMedia = await _bookingNoteMediaRepository.GetByBookingNoteIdAsync(entity.Id);
+            return _mapper.Map<BookingNoteDto>(entity);
         }
 
         public async Task<List<BookingNoteDto>> GetByBookingIdAsync(int bookingId)
@@ -44,6 +51,10 @@ namespace EduMatch.BusinessLogicLayer.Services
                 throw new Exception("BookingId phải lớn hơn 0");
 
             var entities = await _bookingNoteRepository.GetByBookingIdAsync(bookingId);
+            foreach (var note in entities)
+            {
+                note.BookingNoteMedia = await _bookingNoteMediaRepository.GetByBookingNoteIdAsync(note.Id);
+            }
             return _mapper.Map<List<BookingNoteDto>>(entities);
         }
 
@@ -71,15 +82,30 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 BookingId = request.BookingId,
                 Content = request.Content.Trim(),
-                ImageUrl = string.IsNullOrWhiteSpace(request.ImageUrl) ? null : request.ImageUrl.Trim(),
-                ImagePublicId = string.IsNullOrWhiteSpace(request.ImagePublicId) ? null : request.ImagePublicId.Trim(),
-                VideoUrl = string.IsNullOrWhiteSpace(request.VideoUrl) ? null : request.VideoUrl.Trim(),
-                VideoPublicId = string.IsNullOrWhiteSpace(request.VideoPublicId) ? null : request.VideoPublicId.Trim(),
                 CreatedAt = DateTime.UtcNow,
                 CreatedByEmail = currentEmail
             };
 
             await _bookingNoteRepository.CreateAsync(entity);
+            if (request.Media != null && request.Media.Count > 0)
+            {
+                var mediaEntities = new List<BookingNoteMedium>();
+                foreach (var m in request.Media)
+                {
+                    mediaEntities.Add(new BookingNoteMedium
+                    {
+                        BookingNoteId = entity.Id,
+                        MediaType = (int)m.MediaType,
+                        FileUrl = m.FileUrl.Trim(),
+                        FilePublicId = string.IsNullOrWhiteSpace(m.FilePublicId) ? null : m.FilePublicId.Trim(),
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+
+                await _bookingNoteMediaRepository.ReplaceMediaAsync(entity.Id, mediaEntities);
+                entity.BookingNoteMedia = mediaEntities;
+            }
+
             return _mapper.Map<BookingNoteDto>(entity);
         }
 
@@ -103,12 +129,27 @@ namespace EduMatch.BusinessLogicLayer.Services
             EnsureUserIsBookingParticipant(booking);
 
             existing.Content = request.Content.Trim();
-            existing.ImageUrl = string.IsNullOrWhiteSpace(request.ImageUrl) ? null : request.ImageUrl.Trim();
-            existing.ImagePublicId = string.IsNullOrWhiteSpace(request.ImagePublicId) ? null : request.ImagePublicId.Trim();
-            existing.VideoUrl = string.IsNullOrWhiteSpace(request.VideoUrl) ? null : request.VideoUrl.Trim();
-            existing.VideoPublicId = string.IsNullOrWhiteSpace(request.VideoPublicId) ? null : request.VideoPublicId.Trim();
-
             var updated = await _bookingNoteRepository.UpdateAsync(existing);
+
+            if (request.Media != null)
+            {
+                var mediaEntities = new List<BookingNoteMedium>();
+                foreach (var m in request.Media)
+                {
+                    mediaEntities.Add(new BookingNoteMedium
+                    {
+                        BookingNoteId = existing.Id,
+                        MediaType = (int)m.MediaType,
+                        FileUrl = m.FileUrl.Trim(),
+                        FilePublicId = string.IsNullOrWhiteSpace(m.FilePublicId) ? null : m.FilePublicId.Trim(),
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+
+                await _bookingNoteMediaRepository.ReplaceMediaAsync(existing.Id, mediaEntities);
+                existing.BookingNoteMedia = mediaEntities;
+            }
+
             return updated == null ? null : _mapper.Map<BookingNoteDto>(updated);
         }
 
