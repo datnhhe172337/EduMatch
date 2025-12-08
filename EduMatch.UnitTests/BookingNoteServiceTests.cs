@@ -15,11 +15,12 @@ using Xunit;
 
 namespace EduMatch.UnitTests
 {
-    #region BookingNoteServiceTests
+
     public class BookingNoteServiceTests
     {
         private readonly Mock<IBookingNoteRepository> _noteRepo = new();
         private readonly Mock<IBookingRepository> _bookingRepo = new();
+        private readonly Mock<IBookingNoteMediaRepository> _mediaRepo = new();
         private readonly Mock<CurrentUserService> _currentUser = new(MockBehavior.Loose, new object[] { new Mock<IHttpContextAccessor>().Object });
         private readonly IMapper _mapper;
 
@@ -32,7 +33,7 @@ namespace EduMatch.UnitTests
         }
 
         private BookingNoteService CreateService() =>
-            new BookingNoteService(_noteRepo.Object, _bookingRepo.Object, _currentUser.Object, _mapper);
+            new BookingNoteService(_noteRepo.Object, _bookingRepo.Object, _mediaRepo.Object, _currentUser.Object, _mapper);
 
         #region CreateAsync
         [Fact]
@@ -294,5 +295,5 @@ namespace EduMatch.UnitTests
         }
         #endregion
     }
-    #endregion
+
 }

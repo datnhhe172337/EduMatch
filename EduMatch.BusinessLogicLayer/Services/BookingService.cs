@@ -750,6 +750,34 @@ namespace EduMatch.BusinessLogicLayer.Services
                     availability.Status = (int)TutorAvailabilityStatus.Available;
                     await _tutorAvailabilityRepository.UpdateAsync(availability);
                 }
+
+                // Cancel related completion and payout if they exist
+                if (_unitOfWork.ScheduleCompletions != null)
+                {
+                    var completion = await _unitOfWork.ScheduleCompletions.GetByScheduleIdAsync(schedule.Id);
+                    if (completion != null)
+                    {
+                        completion.Status = (byte)ScheduleCompletionStatus.Cancelled;
+                        completion.UpdatedAt = DateTime.UtcNow;
+                        _unitOfWork.ScheduleCompletions.Update(completion);
+                    }
+                }
+
+                if (_unitOfWork.TutorPayouts != null)
+                {
+                    var payout = await _unitOfWork.TutorPayouts.GetByScheduleIdAsync(schedule.Id);
+                    if (payout != null && payout.Status != (byte)TutorPayoutStatus.Paid)
+                    {
+                        payout.Status = (byte)TutorPayoutStatus.Cancelled;
+                        payout.UpdatedAt = DateTime.UtcNow;
+                        _unitOfWork.TutorPayouts.Update(payout);
+                    }
+                }
+            }
+
+            if (_unitOfWork.ScheduleCompletions != null || _unitOfWork.TutorPayouts != null)
+            {
+                await _unitOfWork.CompleteAsync();
             }
         }
 

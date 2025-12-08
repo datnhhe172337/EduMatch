@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
@@ -33,6 +34,34 @@ namespace EduMatch.BusinessLogicLayer.Services
             _walletTransactionRepository = walletTransactionRepository;
             _notificationService = notificationService;
             _unitOfWork = unitOfWork;
+        }
+
+        public async Task<List<TutorPayoutDto>> GetByBookingIdAsync(int bookingId)
+        {
+            if (bookingId <= 0)
+                throw new ArgumentException("BookingId must be greater than 0.");
+
+            var payouts = await _tutorPayoutRepository.GetByBookingIdAsync(bookingId);
+            var result = new List<TutorPayoutDto>(payouts.Count);
+            foreach (var p in payouts)
+            {
+                result.Add(new TutorPayoutDto
+                {
+                    Id = p.Id,
+                    ScheduleId = p.ScheduleId,
+                    BookingId = p.BookingId,
+                    Amount = p.Amount,
+                    SystemFeeAmount = p.SystemFeeAmount,
+                    Status = p.Status,
+                    PayoutTrigger = p.PayoutTrigger,
+                    ScheduledPayoutDate = p.ScheduledPayoutDate,
+                    ReleasedAt = p.ReleasedAt,
+                    WalletTransactionId = p.WalletTransactionId,
+                    CreatedAt = p.CreatedAt,
+                    UpdatedAt = p.UpdatedAt
+                });
+            }
+            return result;
         }
 
         public async Task<int> ProcessDuePayoutsAsync()
@@ -144,10 +173,11 @@ namespace EduMatch.BusinessLogicLayer.Services
                 return;
 
             var message = scheduleId.HasValue
-                ? $"Bạn đã nhận {amount:N0} VND cho buổi học #{scheduleId}."
-                : $"Bạn đã nhận {amount:N0} VND từ payout.";
+                 ? $"B?n ?� nh?n {amount:N0} VND cho bu?i h?c #{scheduleId}."
+                 : $"B?n ?� nh?n {amount:N0} VND t? payout.";
 
             await _notificationService.CreateNotificationAsync(tutorEmail, message, "/wallet/my-wallet");
         }
     }
 }
+

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -425,7 +425,27 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<List<ScheduleDto>>(entities);
         }
 
- 
+        /// <summary>
+        /// Trả về thống kê số buổi đã học/chưa học/đã hủy theo booking
+        /// </summary>
+        public async Task<ScheduleAttendanceSummaryDto> GetAttendanceSummaryByBookingAsync(int bookingId)
+        {
+            if (bookingId <= 0)
+                throw new ArgumentException("BookingId must be greater than 0");
+
+            var studied = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, (int)ScheduleStatus.Completed);
+            var upcoming = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, (int)ScheduleStatus.Upcoming);
+            var inProgress = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, (int)ScheduleStatus.InProgress);
+            var cancelled = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, (int)ScheduleStatus.Cancelled);
+
+            return new ScheduleAttendanceSummaryDto
+            {
+                Studied = studied,
+                NotStudiedYet = upcoming + inProgress,
+                Cancelled = cancelled
+            };
+        }
+
         /// <summary>
         /// Kiểm tra tutor có lịch học trùng với slot và ngày hay không (loại trừ Schedule bị Cancelled)
         /// </summary>
