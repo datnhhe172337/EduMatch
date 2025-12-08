@@ -405,6 +405,41 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 						MeetLink = src.MeetingSession.MeetLink,
 						MeetCode = src.MeetingSession.MeetCode,
 						CreatedAt = src.MeetingSession.CreatedAt,
+					} : null))
+				.ForMember(dest => dest.ScheduleCompletion,
+					opt => opt.MapFrom(src => src.ScheduleCompletion != null ? new ScheduleCompletionDto
+					{
+						Id = src.ScheduleCompletion.Id,
+						ScheduleId = src.ScheduleCompletion.ScheduleId,
+						BookingId = src.ScheduleCompletion.BookingId,
+						TutorId = src.ScheduleCompletion.TutorId,
+						LearnerEmail = src.ScheduleCompletion.LearnerEmail,
+						Status = (ScheduleCompletionStatus)src.ScheduleCompletion.Status,
+						ConfirmationDeadline = src.ScheduleCompletion.ConfirmationDeadline,
+						ConfirmedAt = src.ScheduleCompletion.ConfirmedAt,
+						AutoCompletedAt = src.ScheduleCompletion.AutoCompletedAt,
+						ReportId = src.ScheduleCompletion.ReportId,
+						Note = src.ScheduleCompletion.Note,
+						CreatedAt = src.ScheduleCompletion.CreatedAt,
+						UpdatedAt = src.ScheduleCompletion.UpdatedAt
+					} : null))
+				.ForMember(dest => dest.TutorPayout,
+					opt => opt.MapFrom(src => src.TutorPayout != null ? new TutorPayoutDto
+					{
+						Id = src.TutorPayout.Id,
+						ScheduleId = src.TutorPayout.ScheduleId,
+						BookingId = src.TutorPayout.BookingId,
+						TutorWalletId = src.TutorPayout.TutorWalletId,
+						Amount = src.TutorPayout.Amount,
+						SystemFeeAmount = src.TutorPayout.SystemFeeAmount,
+						Status = (TutorPayoutStatus)src.TutorPayout.Status,
+						PayoutTrigger = src.TutorPayout.PayoutTrigger,
+						ScheduledPayoutDate = src.TutorPayout.ScheduledPayoutDate,
+						ReleasedAt = src.TutorPayout.ReleasedAt,
+						WalletTransactionId = src.TutorPayout.WalletTransactionId,
+						HoldReason = src.TutorPayout.HoldReason,
+						CreatedAt = src.TutorPayout.CreatedAt,
+						UpdatedAt = src.TutorPayout.UpdatedAt
 					} : null));
 
             // MeetingSession 
