@@ -21,6 +21,8 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<BookingNote> BookingNotes { get; set; }
 
+    public virtual DbSet<BookingNoteMedium> BookingNoteMedia { get; set; }
+
     public virtual DbSet<BookingRefundRequest> BookingRefundRequests { get; set; }
 
     public virtual DbSet<CertificateType> CertificateTypes { get; set; }
@@ -121,21 +123,9 @@ public partial class EduMatchContext : DbContext
 
     public virtual DbSet<Withdrawal> Withdrawals { get; set; }
 
-    partial void OnConfiguringPartial(DbContextOptionsBuilder optionsBuilder);
-
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-    {
-        // If already configured (e.g., InMemory for tests), do not apply another provider.
-        if (optionsBuilder.IsConfigured)
-        {
-            OnConfiguringPartial(optionsBuilder);
-            return;
-        }
-
-        optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
-        OnConfiguringPartial(optionsBuilder);
-    }
+        => optionsBuilder.UseSqlServer("Server=72.60.209.239,1433;Database=EduMatch_v1;User ID=sa;Password=FPTFall@2025!;Encrypt=True;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -235,24 +225,36 @@ public partial class EduMatchContext : DbContext
             entity.Property(e => e.CreatedByEmail)
                 .HasMaxLength(100)
                 .HasColumnName("created_by_email");
-            entity.Property(e => e.ImagePublicId)
-                .HasMaxLength(255)
-                .IsUnicode(false)
-                .HasColumnName("image_public_id");
-            entity.Property(e => e.ImageUrl)
-                .HasMaxLength(500)
-                .HasColumnName("image_url");
-            entity.Property(e => e.VideoPublicId)
-                .HasMaxLength(255)
-                .IsUnicode(false)
-                .HasColumnName("video_public_id");
-            entity.Property(e => e.VideoUrl)
-                .HasMaxLength(500)
-                .HasColumnName("video_url");
 
             entity.HasOne(d => d.Booking).WithMany(p => p.BookingNotes)
                 .HasForeignKey(d => d.BookingId)
                 .HasConstraintName("FK_booking_notes_bookings");
+        });
+
+        modelBuilder.Entity<BookingNoteMedium>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__booking___3213E83F3E0B1F1C");
+
+            entity.ToTable("booking_note_media");
+
+            entity.HasIndex(e => e.BookingNoteId, "IX_booking_note_media_note_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.BookingNoteId).HasColumnName("booking_note_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("created_at");
+            entity.Property(e => e.FilePublicId)
+                .HasMaxLength(255)
+                .HasColumnName("file_public_id");
+            entity.Property(e => e.FileUrl)
+                .HasMaxLength(500)
+                .HasColumnName("file_url");
+            entity.Property(e => e.MediaType).HasColumnName("media_type");
+
+            entity.HasOne(d => d.BookingNote).WithMany(p => p.BookingNoteMedia)
+                .HasForeignKey(d => d.BookingNoteId)
+                .HasConstraintName("FK_booking_note_media_booking_notes");
         });
 
         modelBuilder.Entity<BookingRefundRequest>(entity =>
