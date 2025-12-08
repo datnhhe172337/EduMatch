@@ -182,22 +182,42 @@ namespace EduMatch.PresentationLayer.Controllers
 				{
 					return BadRequest(ApiResponse<object>.Fail("Status không hợp lệ"));
 				}
-				var items = await _scheduleService.GetAllByBookingIdAndStatusAsync(bookingId, status, page, pageSize);
-				var total = await _scheduleService.CountByBookingIdAndStatusAsync(bookingId, status);
-				var result = new PagedResult<ScheduleDto>
-				{
-					Items = items,
-					PageNumber = page,
-					PageSize = pageSize,
-					TotalCount = total
-				};
-				return Ok(ApiResponse<PagedResult<ScheduleDto>>.Ok(result));
-			}
-			catch (Exception ex)
-			{
-				return BadRequest(ApiResponse<object>.Fail(ex.Message));
-			}
-		}
+                var items = await _scheduleService.GetAllByBookingIdAndStatusAsync(bookingId, status, page, pageSize);
+                var total = await _scheduleService.CountByBookingIdAndStatusAsync(bookingId, status);
+                var result = new PagedResult<ScheduleDto>
+                {
+                    Items = items,
+                    PageNumber = page,
+                    PageSize = pageSize,
+                    TotalCount = total
+                };
+                return Ok(ApiResponse<PagedResult<ScheduleDto>>.Ok(result));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Get attendance summary counts for a booking (studied / not studied yet / cancelled)
+        /// </summary>
+        [Authorize]
+        [HttpGet("{bookingId:int}/attendance-summary")]
+        [ProducesResponseType(typeof(ApiResponse<ScheduleAttendanceSummaryDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ApiResponse<ScheduleAttendanceSummaryDto>>> GetAttendanceSummary(int bookingId)
+        {
+            try
+            {
+                var summary = await _scheduleService.GetAttendanceSummaryByBookingAsync(bookingId);
+                return Ok(ApiResponse<ScheduleAttendanceSummaryDto>.Ok(summary));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
 
 		/// <summary>
 		/// Lấy danh sách Schedule theo BookingId và Status (không phân trang)
