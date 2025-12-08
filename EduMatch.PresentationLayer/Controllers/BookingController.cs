@@ -406,7 +406,61 @@ namespace EduMatch.PresentationLayer.Controllers
 				{
 					return BadRequest(ApiResponse<object>.Fail("Status không hợp lệ"));
 				}
+				
+				// Lấy email của người đang gọi API
+				var currentUserEmail = _currentUserService.Email;
+				var isAdmin = User.IsInRole(Roles.BusinessAdmin) || User.IsInRole(Roles.SystemAdmin);
+				
 				var updated = await _bookingService.UpdateStatusAsync(id, status);
+				
+				// Lấy thông tin tutor từ booking
+				var tutorSubject = await _tutorSubjectService.GetByIdFullAsync(updated.TutorSubjectId);
+				var tutorEmail = tutorSubject?.TutorEmail;
+				
+				// Xác định ai là người gọi và gửi notification cho người còn lại
+				if (isAdmin)
+				{
+					// Nếu là admin thì gửi notification cho cả learner và tutor
+					if (!string.IsNullOrWhiteSpace(updated.LearnerEmail))
+					{
+						await _notificationService.CreateNotificationAsync(
+							updated.LearnerEmail,
+							$"Trạng thái đơn hàng booking #{updated.Id} đã được cập nhật thành {status}.",
+							"/bookings");
+					}
+					if (!string.IsNullOrWhiteSpace(tutorEmail))
+					{
+						await _notificationService.CreateNotificationAsync(
+							tutorEmail,
+							$"Trạng thái đơn hàng booking #{updated.Id} đã được cập nhật thành {status}.",
+							"/bookings");
+					}
+				}
+				else if (!string.IsNullOrWhiteSpace(currentUserEmail))
+				{
+					// So sánh email để xác định người gọi
+					var isLearner = string.Equals(currentUserEmail, updated.LearnerEmail, StringComparison.OrdinalIgnoreCase);
+					var isTutor = !string.IsNullOrWhiteSpace(tutorEmail) && 
+					               string.Equals(currentUserEmail, tutorEmail, StringComparison.OrdinalIgnoreCase);
+					
+					if (isLearner && !string.IsNullOrWhiteSpace(tutorEmail))
+					{
+						// Learner gọi → gửi notification cho tutor
+						await _notificationService.CreateNotificationAsync(
+							tutorEmail,
+							$"Trạng thái đơn hàng booking #{updated.Id} đã được cập nhật thành {status} bởi học viên.",
+							"/bookings");
+					}
+					else if (isTutor && !string.IsNullOrWhiteSpace(updated.LearnerEmail))
+					{
+						// Tutor gọi → gửi notification cho learner
+						await _notificationService.CreateNotificationAsync(
+							updated.LearnerEmail,
+							$"Trạng thái đơn hàng booking #{updated.Id} đã được cập nhật thành {status} bởi gia sư.",
+							"/bookings");
+					}
+				}
+				
 				return Ok(ApiResponse<BookingDto>.Ok(updated, "Cập nhật Status thành công"));
 			}
 			catch (Exception ex)
