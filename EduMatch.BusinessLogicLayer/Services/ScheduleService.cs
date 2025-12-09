@@ -469,17 +469,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             var oldStatus = (ScheduleStatus)entity.Status;
 
-            // Ngoại lệ: Completed và Absent có thể update qua lại
-            bool isCompletedOrAbsent = (oldStatus == ScheduleStatus.Completed && status == ScheduleStatus.Absent) ||
-                                      (oldStatus == ScheduleStatus.Absent && status == ScheduleStatus.Completed);
-
-            if (!isCompletedOrAbsent)
+            // Chỉ cho phép update tiến dần: status mới phải >= status cũ (theo giá trị enum)
+            if ((int)status < (int)oldStatus)
             {
-                // Chỉ cho phép update tiến dần: status mới phải >= status cũ (theo giá trị enum)
-                if ((int)status < (int)oldStatus)
-                {
-                    throw new Exception($"Không thể cập nhật Status từ {oldStatus} về {status}. Chỉ cho phép chuyển từ status nhỏ hơn sang status lớn hơn, hoặc giữa Completed và Absent");
-                }
+                throw new Exception($"Không thể cập nhật Status từ {oldStatus} về {status}. Chỉ cho phép chuyển từ status nhỏ hơn sang status lớn hơn");
             }
 
             entity.Status = (int)status;
