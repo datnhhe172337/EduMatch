@@ -394,6 +394,26 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
+        /// Lấy danh sách ScheduleChangeRequest theo ScheduleId (có thể lọc theo status)
+        /// </summary>
+        public async Task<List<ScheduleChangeRequestDto>> GetAllByScheduleIdAsync(int scheduleId, ScheduleChangeRequestStatus? status = null)
+        {
+            if (scheduleId <= 0)
+                throw new ArgumentException("scheduleId phải lớn hơn 0");
+
+            int? statusInt = null;
+            if (status.HasValue)
+            {
+                if (!Enum.IsDefined(typeof(ScheduleChangeRequestStatus), status.Value))
+                    throw new ArgumentException("Status không hợp lệ");
+                statusInt = (int)status.Value;
+            }
+
+            var entities = await _scheduleChangeRequestRepository.GetAllByScheduleIdAsync(scheduleId, statusInt);
+            return _mapper.Map<List<ScheduleChangeRequestDto>>(entities);
+        }
+
+        /// <summary>
         /// Tự động hủy các ScheduleChangeRequest Pending quá 3 ngày hoặc sắp đến giờ học
         /// </summary>
         public async Task<int> AutoCancelExpiredPendingRequestsAsync()

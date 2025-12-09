@@ -103,6 +103,33 @@ namespace EduMatch.DataAccessLayer.Repositories
         }
 
         /// <summary>
+        /// Lấy danh sách ScheduleChangeRequest theo ScheduleId (có thể lọc thêm status)
+        /// </summary>
+        public async Task<IEnumerable<ScheduleChangeRequest>> GetAllByScheduleIdAsync(int scheduleId, int? status = null)
+        {
+            var query = _context.ScheduleChangeRequests
+                .AsSplitQuery()
+                .Include(scr => scr.Schedule)
+                    .ThenInclude(s => s.Availabiliti)
+                        .ThenInclude(a => a.Slot)
+                .Include(scr => scr.OldAvailabiliti)
+                    .ThenInclude(a => a.Slot)
+                .Include(scr => scr.NewAvailabiliti)
+                    .ThenInclude(a => a.Slot)
+                .Where(scr => scr.ScheduleId == scheduleId);
+
+            if (status.HasValue)
+            {
+                query = query.Where(scr => scr.Status == status.Value);
+            }
+
+            return await query
+                .OrderByDescending(scr => scr.CreatedAt)
+                .ThenByDescending(scr => scr.Id)
+                .ToListAsync();
+        }
+
+        /// <summary>
         /// Lấy tất cả ScheduleChangeRequest có Status = Pending với đầy đủ thông tin liên quan
         /// </summary>
         public async Task<IEnumerable<ScheduleChangeRequest>> GetAllPendingAsync()
