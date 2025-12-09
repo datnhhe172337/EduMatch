@@ -220,7 +220,7 @@ namespace EduMatch.PresentationLayer.Controllers
                 //    ";
 
                 var prompt = $@"
-                    Bạn là EduMatch AI – trợ lý ảo hỗ trợ người học tìm kiếm gia sư. 
+                    Bạn là EduMatch AI – trợ lý ảo hỗ trợ người học tìm kiếm gia sư phù hợp. 
 
                     Người dùng hỏi: ""{req.Message}""
                     
@@ -248,13 +248,7 @@ namespace EduMatch.PresentationLayer.Controllers
                       ]
                     }}
 
-                    - Hãy trả lời thân thiện, tự nhiên
-                    - Nếu danh sách gia sư trống (không tìm thấy gia sư phù hợp), hãy hướng dẫn người dùng mô tả rõ nhu cầu hơn.
-                    - Nếu người dùng hỏi nội dung *không liên quan* đến tìm gia sư (ví dụ: hỏi kiến thức, hỏi đời tư, hỏi triết lý, chém gió.):
-                       + Không từ chối thẳng thừng.
-                       + Hãy trả lời ngắn gọn, lịch sự, và khéo léo hướng họ quay lại chủ đề tìm gia sư.
-                       + Nhắc nhẹ rằng bạn được thiết kế chủ yếu để hỗ trợ tìm gia sư (ví dụ: “Nếu bạn cần tìm gia sư, mình luôn sẵn sàng hỗ trợ”).
-                    - **Không thêm text nào khác ngoài JSON.**
+                  {_promptService.PromptV2}
 
 
                 ";
