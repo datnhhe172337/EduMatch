@@ -86,6 +86,26 @@ public sealed class DepositServiceTests : IAsyncLifetime
         _walletRepository.Verify(r => r.AddAsync(It.IsAny<Wallet>()), Times.Never);
     }
 
+    [Fact]
+    public async Task CreateDepositRequestAsync_WithZeroAmount_AllowsAndReturnsDeposit()
+    {
+        const string userEmail = "zero@test.com";
+        var request = new WalletDepositRequest { Amount = 0 };
+        Wallet? captured = null;
+
+        _walletRepository.Setup(r => r.GetWalletByUserEmailAsync(userEmail)).ReturnsAsync((Wallet?)null);
+        _walletRepository.Setup(r => r.AddAsync(It.IsAny<Wallet>()))
+            .Callback<Wallet>(w => captured = w)
+            .Returns(Task.CompletedTask);
+        _depositRepository.Setup(r => r.AddAsync(It.IsAny<Deposit>())).Returns(Task.CompletedTask);
+
+        var deposit = await _sut.CreateDepositRequestAsync(request, userEmail);
+
+        captured.Should().NotBeNull();
+        deposit.Amount.Should().Be(0);
+        deposit.WalletId.Should().Be(captured!.Id);
+    }
+
     #endregion
 
     #region CleanupExpiredDepositsAsync Tests
@@ -113,6 +133,20 @@ public sealed class DepositServiceTests : IAsyncLifetime
         result.Should().Be(expired.Count);
         expired[0].Status.Should().Be(TransactionStatus.Failed);
         _depositRepository.Verify(r => r.Update(expired[0]), Times.Once);
+    }
+
+    [Fact]
+    public async Task CleanupExpiredDepositsAsync_NoExpiredDeposits_ReturnsZero()
+    {
+        _depositRepository
+            .Setup(r => r.FindAsync(It.IsAny<Expression<Func<Deposit, bool>>>()))
+            .ReturnsAsync(new List<Deposit>());
+
+        var result = await _sut.CleanupExpiredDepositsAsync();
+
+        result.Should().Be(0);
+        _depositRepository.Verify(r => r.Update(It.IsAny<Deposit>()), Times.Never);
+        _unitOfWork.Verify(u => u.CompleteAsync(), Times.Never);
     }
 
     #endregion
@@ -210,6 +244,16 @@ public sealed class DepositServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ProcessVnpayPaymentAsync_DepositNotFound_Throws()
+    {
+        _depositRepository.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync((Deposit?)null);
+
+        await _sut.Invoking(s => s.ProcessVnpayPaymentAsync(999, "NA", 0m))
+            .Should().ThrowAsync<Exception>()
+            .WithMessage("Deposit 999 not found.");
+    }
+
+    [Fact]
     public async Task ProcessVnpayPaymentAsync_AmountMismatch_ThrowsAndFailsDeposit()
     {
         var wallet = new Wallet { Id = 2, UserEmail = "user@test.com", Balance = 10m };
@@ -229,6 +273,40 @@ public sealed class DepositServiceTests : IAsyncLifetime
         await act.Should().ThrowAsync<System.Exception>().WithMessage("*Amount mismatch*");
         deposit.Status.Should().Be(TransactionStatus.Failed);
         _notificationService.Verify(n => n.CreateNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _walletTransactionRepository.Verify(r => r.AddAsync(It.IsAny<WalletTransaction>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ProcessVnpayPaymentAsync_DepositNotPending_ReturnsFalseWithoutUpdates()
+    {
+        var deposit = new Deposit { Id = 12, Status = TransactionStatus.Failed, Amount = 5m };
+        _depositRepository.Setup(r => r.GetByIdAsync(deposit.Id)).ReturnsAsync(deposit);
+
+        var result = await _sut.ProcessVnpayPaymentAsync(deposit.Id, "IGNORED", deposit.Amount);
+
+        result.Should().BeFalse();
+        _depositRepository.Verify(r => r.Update(It.IsAny<Deposit>()), Times.Never);
+        _unitOfWork.Verify(u => u.CompleteAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task ProcessVnpayPaymentAsync_PendingDepositWithoutWallet_ThrowsAndKeepsPending()
+    {
+        var deposit = new Deposit
+        {
+            Id = 15,
+            WalletId = 77,
+            Status = TransactionStatus.Pending,
+            Amount = 25m,
+            Wallet = null
+        };
+        _depositRepository.Setup(r => r.GetByIdAsync(deposit.Id)).ReturnsAsync(deposit);
+
+        await _sut.Invoking(s => s.ProcessVnpayPaymentAsync(deposit.Id, "TXN-MISSING", deposit.Amount))
+            .Should().ThrowAsync<Exception>()
+            .WithMessage("Wallet 77 not found.");
+
+        deposit.Status.Should().Be(TransactionStatus.Pending);
         _walletTransactionRepository.Verify(r => r.AddAsync(It.IsAny<WalletTransaction>()), Times.Never);
     }
 

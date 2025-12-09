@@ -26,11 +26,9 @@ namespace EduMatch.UnitTests
             _mapper = new Mapper(config);
         }
 
-        private NotificationService CreateService()
-        {
-            return new NotificationService(_repo.Object, _mapper, _pusher.Object);
-        }
+        private NotificationService CreateService() => new(_repo.Object, _mapper, _pusher.Object);
 
+        #region CreateNotificationAsync
         [Fact]
         public async Task CreateNotificationAsync_SavesNotificationAndPushesDto()
         {
@@ -47,8 +45,7 @@ namespace EduMatch.UnitTests
                 IsRead = false
             };
 
-            _repo.Setup(r => r.CreateAsync(It.IsAny<Notification>()))
-                .ReturnsAsync(savedNotification);
+            _repo.Setup(r => r.CreateAsync(It.IsAny<Notification>())).ReturnsAsync(savedNotification);
 
             var service = CreateService();
 
@@ -68,114 +65,6 @@ namespace EduMatch.UnitTests
         }
 
         [Fact]
-        public async Task GetNotificationsForUserAsync_MapsEntitiesToDtos()
-        {
-            var userEmail = "user@test.com";
-            var notifications = new List<Notification>
-            {
-                new Notification { Id = 1, UserEmail = userEmail, Message = "m1", CreatedAt = DateTime.UtcNow, IsRead = false, LinkUrl = "/l1" },
-                new Notification { Id = 2, UserEmail = userEmail, Message = "m2", CreatedAt = DateTime.UtcNow.AddMinutes(-5), IsRead = true, LinkUrl = "/l2" }
-            };
-
-            _repo.Setup(r => r.GetByUserAsync(userEmail, 1, 10))
-                .ReturnsAsync(notifications);
-
-            var service = CreateService();
-
-            var result = await service.GetNotificationsForUserAsync(userEmail, 1, 10);
-
-            var list = result.ToList();
-            Assert.Equal(notifications.Count, list.Count);
-            Assert.Equal(notifications[0].Id, list[0].Id);
-            Assert.Equal(notifications[1].Message, list[1].Message);
-            Assert.Equal(notifications[1].LinkUrl, list[1].LinkUrl);
-        }
-
-        [Fact]
-        public async Task MarkAsReadAsync_ForwardsToRepository()
-        {
-            var notificationId = 10;
-            var userEmail = "user@test.com";
-            _repo.Setup(r => r.MarkAsReadAsync(notificationId, userEmail)).ReturnsAsync(true);
-
-            var service = CreateService();
-            var result = await service.MarkAsReadAsync(notificationId, userEmail);
-
-            Assert.True(result);
-            _repo.Verify(r => r.MarkAsReadAsync(notificationId, userEmail), Times.Once);
-        }
-
-        [Fact]
-        public async Task MarkAsReadAsync_WhenRepositoryReturnsFalse_ReturnsFalse()
-        {
-            var notificationId = 11;
-            var userEmail = "user@test.com";
-            _repo.Setup(r => r.MarkAsReadAsync(notificationId, userEmail)).ReturnsAsync(false);
-
-            var service = CreateService();
-            var result = await service.MarkAsReadAsync(notificationId, userEmail);
-
-            Assert.False(result);
-            _repo.Verify(r => r.MarkAsReadAsync(notificationId, userEmail), Times.Once);
-        }
-
-        [Theory]
-        [InlineData(3, true)]
-        [InlineData(0, false)]
-        public async Task MarkAllAsReadAsync_ReturnsTrueOnlyWhenRowsAffected(int rows, bool expected)
-        {
-            var userEmail = "user@test.com";
-            _repo.Setup(r => r.MarkAllAsReadAsync(userEmail)).ReturnsAsync(rows);
-
-            var service = CreateService();
-            var result = await service.MarkAllAsReadAsync(userEmail);
-
-            Assert.Equal(expected, result);
-            _repo.Verify(r => r.MarkAllAsReadAsync(userEmail), Times.Once);
-        }
-
-        [Fact]
-        public async Task DeleteNotificationAsync_ForwardsResult()
-        {
-            var notificationId = 7;
-            var userEmail = "user@test.com";
-            _repo.Setup(r => r.DeleteAsync(notificationId, userEmail)).ReturnsAsync(true);
-
-            var service = CreateService();
-            var result = await service.DeleteNotificationAsync(notificationId, userEmail);
-
-            Assert.True(result);
-            _repo.Verify(r => r.DeleteAsync(notificationId, userEmail), Times.Once);
-        }
-
-        [Fact]
-        public async Task DeleteNotificationAsync_WhenRepositoryReturnsFalse_ReturnsFalse()
-        {
-            var notificationId = 8;
-            var userEmail = "user@test.com";
-            _repo.Setup(r => r.DeleteAsync(notificationId, userEmail)).ReturnsAsync(false);
-
-            var service = CreateService();
-            var result = await service.DeleteNotificationAsync(notificationId, userEmail);
-
-            Assert.False(result);
-            _repo.Verify(r => r.DeleteAsync(notificationId, userEmail), Times.Once);
-        }
-
-        [Fact]
-        public async Task GetUnreadNotificationCountAsync_ReturnsCountFromRepository()
-        {
-            var userEmail = "user@test.com";
-            _repo.Setup(r => r.GetUnreadCountAsync(userEmail)).ReturnsAsync(4);
-
-            var service = CreateService();
-            var count = await service.GetUnreadNotificationCountAsync(userEmail);
-
-            Assert.Equal(4, count);
-            _repo.Verify(r => r.GetUnreadCountAsync(userEmail), Times.Once);
-        }
-
-        [Fact]
         public async Task CreateNotificationAsync_WhenRepositoryThrows_PropagatesException()
         {
             var userEmail = "user@test.com";
@@ -183,7 +72,7 @@ namespace EduMatch.UnitTests
             _repo.Setup(r => r.CreateAsync(It.IsAny<Notification>())).ThrowsAsync(new InvalidOperationException("repo fail"));
 
             var service = CreateService();
-
+ 
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 service.CreateNotificationAsync(userEmail, message, null));
 
@@ -216,6 +105,31 @@ namespace EduMatch.UnitTests
             _repo.Verify(r => r.CreateAsync(It.IsAny<Notification>()), Times.Once);
             _pusher.Verify(p => p.PushNotificationToUserAsync(userEmail, It.IsAny<NotificationDto>()), Times.Once);
         }
+        #endregion
+
+        #region GetNotificationsForUserAsync
+        [Fact]
+        public async Task GetNotificationsForUserAsync_MapsEntitiesToDtos()
+        {
+            var userEmail = "user@test.com";
+            var notifications = new List<Notification>
+            {
+                new Notification { Id = 1, UserEmail = userEmail, Message = "m1", CreatedAt = DateTime.UtcNow, IsRead = false, LinkUrl = "/l1" },
+                new Notification { Id = 2, UserEmail = userEmail, Message = "m2", CreatedAt = DateTime.UtcNow.AddMinutes(-5), IsRead = true, LinkUrl = "/l2" }
+            };
+
+            _repo.Setup(r => r.GetByUserAsync(userEmail, 1, 10)).ReturnsAsync(notifications);
+
+            var service = CreateService();
+
+            var result = await service.GetNotificationsForUserAsync(userEmail, 1, 10);
+
+            var list = result.ToList();
+            Assert.Equal(notifications.Count, list.Count);
+            Assert.Equal(notifications[0].Id, list[0].Id);
+            Assert.Equal(notifications[1].Message, list[1].Message);
+            Assert.Equal(notifications[1].LinkUrl, list[1].LinkUrl);
+        }
 
         [Fact]
         public async Task GetNotificationsForUserAsync_WhenRepositoryThrows_PropagatesException()
@@ -227,6 +141,53 @@ namespace EduMatch.UnitTests
 
             await Assert.ThrowsAsync<TimeoutException>(() =>
                 service.GetNotificationsForUserAsync(userEmail, 2, 5));
+        }
+        #endregion
+
+        #region MarkAsReadAsync
+        [Fact]
+        public async Task MarkAsReadAsync_ForwardsToRepository()
+        {
+            var notificationId = 10;
+            var userEmail = "user@test.com";
+            _repo.Setup(r => r.MarkAsReadAsync(notificationId, userEmail)).ReturnsAsync(true);
+
+            var service = CreateService();
+            var result = await service.MarkAsReadAsync(notificationId, userEmail);
+
+            Assert.True(result);
+            _repo.Verify(r => r.MarkAsReadAsync(notificationId, userEmail), Times.Once);
+        }
+
+        [Fact]
+        public async Task MarkAsReadAsync_WhenRepositoryReturnsFalse_ReturnsFalse()
+        {
+            var notificationId = 11;
+            var userEmail = "user@test.com";
+            _repo.Setup(r => r.MarkAsReadAsync(notificationId, userEmail)).ReturnsAsync(false);
+
+            var service = CreateService();
+            var result = await service.MarkAsReadAsync(notificationId, userEmail);
+
+            Assert.False(result);
+            _repo.Verify(r => r.MarkAsReadAsync(notificationId, userEmail), Times.Once);
+        }
+        #endregion
+
+        #region MarkAllAsReadAsync
+        [Theory]
+        [InlineData(3, true)]
+        [InlineData(0, false)]
+        public async Task MarkAllAsReadAsync_ReturnsTrueOnlyWhenRowsAffected(int rows, bool expected)
+        {
+            var userEmail = "user@test.com";
+            _repo.Setup(r => r.MarkAllAsReadAsync(userEmail)).ReturnsAsync(rows);
+
+            var service = CreateService();
+            var result = await service.MarkAllAsReadAsync(userEmail);
+
+            Assert.Equal(expected, result);
+            _repo.Verify(r => r.MarkAllAsReadAsync(userEmail), Times.Once);
         }
 
         [Fact]
@@ -240,6 +201,51 @@ namespace EduMatch.UnitTests
             await Assert.ThrowsAsync<Exception>(() =>
                 service.MarkAllAsReadAsync(userEmail));
         }
+        #endregion
+
+        #region DeleteNotificationAsync
+        [Fact]
+        public async Task DeleteNotificationAsync_ForwardsResult()
+        {
+            var notificationId = 7;
+            var userEmail = "user@test.com";
+            _repo.Setup(r => r.DeleteAsync(notificationId, userEmail)).ReturnsAsync(true);
+
+            var service = CreateService();
+            var result = await service.DeleteNotificationAsync(notificationId, userEmail);
+
+            Assert.True(result);
+            _repo.Verify(r => r.DeleteAsync(notificationId, userEmail), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteNotificationAsync_WhenRepositoryReturnsFalse_ReturnsFalse()
+        {
+            var notificationId = 8;
+            var userEmail = "user@test.com";
+            _repo.Setup(r => r.DeleteAsync(notificationId, userEmail)).ReturnsAsync(false);
+
+            var service = CreateService();
+            var result = await service.DeleteNotificationAsync(notificationId, userEmail);
+
+            Assert.False(result);
+            _repo.Verify(r => r.DeleteAsync(notificationId, userEmail), Times.Once);
+        }
+        #endregion
+
+        #region GetUnreadNotificationCountAsync
+        [Fact]
+        public async Task GetUnreadNotificationCountAsync_ReturnsCountFromRepository()
+        {
+            var userEmail = "user@test.com";
+            _repo.Setup(r => r.GetUnreadCountAsync(userEmail)).ReturnsAsync(4);
+
+            var service = CreateService();
+            var count = await service.GetUnreadNotificationCountAsync(userEmail);
+
+            Assert.Equal(4, count);
+            _repo.Verify(r => r.GetUnreadCountAsync(userEmail), Times.Once);
+        }
 
         [Fact]
         public async Task GetUnreadNotificationCountAsync_WhenRepositoryThrows_PropagatesException()
@@ -252,5 +258,6 @@ namespace EduMatch.UnitTests
             await Assert.ThrowsAsync<Exception>(() =>
                 service.GetUnreadNotificationCountAsync(userEmail));
         }
+        #endregion
     }
 }

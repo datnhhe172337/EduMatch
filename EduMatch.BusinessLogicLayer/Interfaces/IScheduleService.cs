@@ -57,6 +57,8 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// Lấy tất cả lịch dạy của Tutor theo email (có thể lọc theo khoảng thời gian và Status)
         /// </summary>
         Task<List<ScheduleDto>> GetAllByTutorEmailAsync(string tutorEmail, DateTime? startDate = null, DateTime? endDate = null, ScheduleStatus? status = null);
+
+        Task<ScheduleAttendanceSummaryDto> GetAttendanceSummaryByBookingAsync(int bookingId);
         /// <summary>
         /// Kiểm tra tutor có lịch học trùng với slot và ngày hay không (loại trừ Schedule bị Cancelled)
         /// </summary>

@@ -11,17 +11,11 @@ public partial class BookingNote
 
     public string Content { get; set; } = null!;
 
-    public string? ImageUrl { get; set; }
-
-    public string? VideoUrl { get; set; }
-
     public DateTime CreatedAt { get; set; }
 
     public string? CreatedByEmail { get; set; }
 
-    public string? ImagePublicId { get; set; }
-
-    public string? VideoPublicId { get; set; }
-
     public virtual Booking Booking { get; set; } = null!;
+
+    public virtual ICollection<BookingNoteMedium> BookingNoteMedia { get; set; } = new List<BookingNoteMedium>();
 }

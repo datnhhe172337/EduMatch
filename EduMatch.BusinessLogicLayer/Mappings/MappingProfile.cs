@@ -609,7 +609,11 @@ namespace EduMatch.BusinessLogicLayer.Mappings
 
             CreateMap<ReportDefense, ReportDefenseDto>();
 
-            CreateMap<BookingNote, BookingNoteDto>();
+            CreateMap<BookingNote, BookingNoteDto>()
+                .ForMember(dest => dest.Media,
+                    opt => opt.MapFrom(src => src.BookingNoteMedia != null ? src.BookingNoteMedia : new List<BookingNoteMedium>()));
+            CreateMap<BookingNoteMedium, BookingNoteMediaDto>()
+                .ForMember(dest => dest.MediaType, opt => opt.MapFrom(src => (MediaType)src.MediaType));
 
         }
     }

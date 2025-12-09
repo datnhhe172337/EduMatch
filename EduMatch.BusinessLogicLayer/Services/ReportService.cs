@@ -517,7 +517,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 throw new InvalidOperationException("Đã quá hạn 2 ngày để chỉnh sửa báo vệ.");
 
             defense.Note = request.Note.Trim();
-            defense.CreatedAt = defense.CreatedAt; // preserve
+            defense.CreatedAt = defense.CreatedAt; // giữ nguyên thời gian tạo
 
             var updated = await _reportDefenseRepository.UpdateAsync(defense);
             return _mapper.Map<ReportDefenseDto>(updated);
@@ -545,7 +545,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 throw new UnauthorizedAccessException("Bạn không thể xóa báo vệ này.");
 
             if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
-                throw new InvalidOperationException("Báo cáo đã được xử lý, không thể xóa báo vệ.");
+                throw new InvalidOperationException("Báo cáo đã xử lý, không thể xóa báo vệ.");
 
             await _reportDefenseRepository.DeleteAsync(defense);
         }

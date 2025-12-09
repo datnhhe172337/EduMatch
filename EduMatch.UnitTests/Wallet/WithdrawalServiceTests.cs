@@ -149,6 +149,27 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task CreateWithdrawalRequestAsync_ExactBalance_LeavesZeroBalance()
+    {
+        const string userEmail = "student@test.com";
+        var wallet = new Wallet { Id = 2, UserEmail = userEmail, Balance = 75_000m, LockedBalance = 0 };
+        var bankAccount = new UserBankAccount { Id = 5, UserEmail = userEmail };
+
+        _userBankAccountRepository.Setup(r => r.GetByIdAsync(bankAccount.Id)).ReturnsAsync(bankAccount);
+        _walletRepository.Setup(r => r.GetWalletByUserEmailAsync(userEmail)).ReturnsAsync(wallet);
+        _withdrawalRepository.Setup(r => r.AddAsync(It.IsAny<Withdrawal>())).Returns(Task.CompletedTask);
+        _walletTransactionRepository.Setup(r => r.AddAsync(It.IsAny<WalletTransaction>())).Returns(Task.CompletedTask);
+        _unitOfWork.SetupSequence(u => u.CompleteAsync()).ReturnsAsync(1).ReturnsAsync(1);
+
+        var request = new CreateWithdrawalRequest { Amount = 75_000m, UserBankAccountId = bankAccount.Id };
+
+        await _sut.CreateWithdrawalRequestAsync(request, userEmail);
+
+        wallet.Balance.Should().Be(0m);
+        _withdrawalRepository.Verify(r => r.AddAsync(It.Is<Withdrawal>(w => w.Amount == request.Amount)), Times.Once);
+    }
+
+    [Fact]
     public async Task CreateWithdrawalRequestAsync_InvalidBankAccount_Throws()
     {
         const string userEmail = "student@test.com";
@@ -159,6 +180,35 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
         await _sut.Invoking(s => s.CreateWithdrawalRequestAsync(request, userEmail))
             .Should().ThrowAsync<System.Exception>()
             .WithMessage("Invalid bank account.*");
+    }
+
+    [Fact]
+    public async Task CreateWithdrawalRequestAsync_BankAccountOwnedByDifferentUser_Throws()
+    {
+        const string userEmail = "student@test.com";
+        var bankAccount = new UserBankAccount { Id = 11, UserEmail = "other@test.com" };
+        _userBankAccountRepository.Setup(r => r.GetByIdAsync(bankAccount.Id)).ReturnsAsync(bankAccount);
+
+        var request = new CreateWithdrawalRequest { Amount = 10_000m, UserBankAccountId = bankAccount.Id };
+
+        await _sut.Invoking(s => s.CreateWithdrawalRequestAsync(request, userEmail))
+            .Should().ThrowAsync<System.Exception>()
+            .WithMessage("Invalid bank account.");
+    }
+
+    [Fact]
+    public async Task CreateWithdrawalRequestAsync_WalletNotFound_Throws()
+    {
+        const string userEmail = "student@test.com";
+        var bankAccount = new UserBankAccount { Id = 3, UserEmail = userEmail };
+        _userBankAccountRepository.Setup(r => r.GetByIdAsync(bankAccount.Id)).ReturnsAsync(bankAccount);
+        _walletRepository.Setup(r => r.GetWalletByUserEmailAsync(userEmail)).ReturnsAsync((Wallet?)null);
+
+        var request = new CreateWithdrawalRequest { Amount = 5_000m, UserBankAccountId = bankAccount.Id };
+
+        await _sut.Invoking(s => s.CreateWithdrawalRequestAsync(request, userEmail))
+            .Should().ThrowAsync<System.Exception>()
+            .WithMessage("Wallet not found.");
     }
 
     [Fact]
@@ -177,6 +227,31 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
             .Should().ThrowAsync<System.Exception>()
             .WithMessage("Không đủ số dư.");
 
+        _notificationService.Verify(n => n.CreateNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateWithdrawalRequestAsync_FirstCommitFails_DoesNotChangeBalance()
+    {
+        const string userEmail = "student@test.com";
+        var bankAccount = new UserBankAccount { Id = 21, UserEmail = userEmail };
+        var wallet = new Wallet { Id = 9, UserEmail = userEmail, Balance = 20_000m };
+
+        _userBankAccountRepository.Setup(r => r.GetByIdAsync(bankAccount.Id)).ReturnsAsync(bankAccount);
+        _walletRepository.Setup(r => r.GetWalletByUserEmailAsync(userEmail)).ReturnsAsync(wallet);
+        _withdrawalRepository.Setup(r => r.AddAsync(It.IsAny<Withdrawal>())).Returns(Task.CompletedTask);
+        _unitOfWork.SetupSequence(u => u.CompleteAsync())
+            .ThrowsAsync(new System.Exception("Commit failed"))
+            .ReturnsAsync(1);
+
+        var request = new CreateWithdrawalRequest { Amount = 10_000m, UserBankAccountId = bankAccount.Id };
+
+        await _sut.Invoking(s => s.CreateWithdrawalRequestAsync(request, userEmail))
+            .Should().ThrowAsync<System.Exception>()
+            .WithMessage("Commit failed");
+
+        wallet.Balance.Should().Be(20_000m);
+        _walletTransactionRepository.Verify(r => r.AddAsync(It.IsAny<WalletTransaction>()), Times.Never);
         _notificationService.Verify(n => n.CreateNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 

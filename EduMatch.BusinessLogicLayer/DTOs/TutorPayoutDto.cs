@@ -1,8 +1,11 @@
+
 using EduMatch.DataAccessLayer.Enum;
+
 using System;
 
 namespace EduMatch.BusinessLogicLayer.DTOs
 {
+
 	public class TutorPayoutDto
 	{
 		public int Id { get; set; }

@@ -7,11 +7,8 @@ namespace EduMatch.BusinessLogicLayer.DTOs
         public int Id { get; set; }
         public int BookingId { get; set; }
         public string Content { get; set; } = null!;
-        public string? ImageUrl { get; set; }
-        public string? ImagePublicId { get; set; }
-        public string? VideoUrl { get; set; }
-        public string? VideoPublicId { get; set; }
         public string? CreatedByEmail { get; set; }
         public DateTime CreatedAt { get; set; }
+        public List<BookingNoteMediaDto>? Media { get; set; }
     }
 }

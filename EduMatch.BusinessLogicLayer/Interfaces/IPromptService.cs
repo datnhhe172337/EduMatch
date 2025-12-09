@@ -9,5 +9,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
     public interface IPromptService
     {
         string PromptV1();
+        string PromptV2();
     }
 }
