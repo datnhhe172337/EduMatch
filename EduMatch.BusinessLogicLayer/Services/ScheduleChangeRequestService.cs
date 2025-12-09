@@ -119,9 +119,17 @@ namespace EduMatch.BusinessLogicLayer.Services
                         $"Bạn có yêu cầu thay đổi lịch học mới từ {entity.RequesterEmail}. Vui lòng xem xét và phản hồi.",
                         $"/schedule-change-requests/{entity.Id}");
                 }
+				// Gửi notification cho người  yêu cầu (RequesterEmail)
+				if (!string.IsNullOrWhiteSpace(entity.RequesterEmail))
+				{
+					await _notificationService.CreateNotificationAsync(
+						entity.RequesterEmail,
+						$"Yêu cầu chuyển lịch của bạn tạo thành công. Vui lòng chờ phản hồi từ {entity.RequestedToEmail}.",
+						$"/schedule-change-requests/{entity.Id}");
+				}
 
-                // Map entity sang DTO
-                return _mapper.Map<ScheduleChangeRequestDto>(entity);
+				// Map entity sang DTO
+				return _mapper.Map<ScheduleChangeRequestDto>(entity);
             }
             catch (Exception ex)
             {
@@ -325,11 +333,6 @@ namespace EduMatch.BusinessLogicLayer.Services
                         "Yêu cầu thay đổi lịch học của bạn đã được chấp nhận. Lịch học đã được cập nhật.",
                         $"/schedule/{entity.ScheduleId}");
 
-                    // Thông báo cho người được yêu cầu (RequestedToEmail)
-                    await _notificationService.CreateNotificationAsync(
-                        entity.RequestedToEmail,
-                        "Yêu cầu thay đổi lịch học đã được chấp nhận. Lịch học đã được cập nhật.",
-                        $"/schedule/{entity.ScheduleId}");
                 }
                 else if (status == ScheduleChangeRequestStatus.Rejected)
                 {
@@ -350,11 +353,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                         entity.RequesterEmail,
                         "Yêu cầu thay đổi lịch học của bạn đã bị hủy.",
                         $"/schedule/{entity.ScheduleId}");
-
-                    await _notificationService.CreateNotificationAsync(
-                        entity.RequestedToEmail,
-                        "Yêu cầu thay đổi lịch học đã bị hủy.",
-                        $"/schedule/{entity.ScheduleId}");
+                   
                 }
 
                 // Map entity sang DTO
