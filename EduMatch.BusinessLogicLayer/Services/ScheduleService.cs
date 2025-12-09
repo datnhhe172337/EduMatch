@@ -436,12 +436,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             var studied = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, (int)ScheduleStatus.Completed);
             var upcoming = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, (int)ScheduleStatus.Upcoming);
             var inProgress = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, (int)ScheduleStatus.InProgress);
+            var pending = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, (int)ScheduleStatus.Pending);
+            var processing = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, (int)ScheduleStatus.Processing);
             var cancelled = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, (int)ScheduleStatus.Cancelled);
 
             return new ScheduleAttendanceSummaryDto
             {
                 Studied = studied,
-                NotStudiedYet = upcoming + inProgress,
+                NotStudiedYet = upcoming + inProgress + pending + processing,
                 Cancelled = cancelled
             };
         }
@@ -457,7 +459,9 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
-        /// Cập nhật Status của Schedule (chỉ cho phép update tiến dần, ngoại lệ: Completed và Absent có thể update qua lại)
+        /// Cập nhật Status của Schedule (chỉ cho phép update tiến dần: status mới phải >= status cũ theo giá trị enum)
+        /// Flow: Upcoming (0) → InProgress (1) → Pending (2) → Processing (3) → Completed (4)
+        /// Cancelled (5) có thể được set từ bất kỳ status nào
         /// </summary>
         public async Task<ScheduleDto> UpdateStatusAsync(int id, ScheduleStatus status)
         {
