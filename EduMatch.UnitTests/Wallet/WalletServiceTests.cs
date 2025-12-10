@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -71,6 +72,39 @@ public sealed class WalletServiceTests
     }
 
     [Fact]
+    public async Task GetOrCreateWalletForUserAsync_WalletExists_DoesNotPersist()
+    {
+        const string userEmail = "persist-check@test.com";
+        var wallet = new Wallet { Id = 4, UserEmail = userEmail, Balance = 5m };
+        _walletRepository.Setup(r => r.GetWalletByUserEmailAsync(userEmail)).ReturnsAsync(wallet);
+
+        await _sut.GetOrCreateWalletForUserAsync(userEmail);
+
+        _unitOfWork.Verify(u => u.CompleteAsync(), Times.Never);
+        _walletRepository.Verify(r => r.AddAsync(It.IsAny<Wallet>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetOrCreateWalletForUserAsync_NewWallet_InitializesBalances()
+    {
+        const string userEmail = "init@test.com";
+        _walletRepository.Setup(r => r.GetWalletByUserEmailAsync(userEmail)).ReturnsAsync((Wallet?)null);
+        _walletRepository.Setup(r => r.AddAsync(It.IsAny<Wallet>())).Returns(Task.CompletedTask);
+
+        var result = await _sut.GetOrCreateWalletForUserAsync(userEmail);
+
+        result.Should().NotBeNull();
+        result!.Balance.Should().Be(0m);
+        result.LockedBalance.Should().Be(0m);
+        _unitOfWork.Verify(u => u.CompleteAsync(), Times.AtLeastOnce);
+        _walletRepository.Verify(r => r.AddAsync(It.Is<Wallet>(w => w.UserEmail == userEmail)), Times.Once);
+    }
+
+    #endregion
+
+    #region GetTransactionHistoryAsync Tests
+
+    [Fact]
     public async Task GetTransactionHistoryAsync_WalletMissing_ReturnsEmptySequence()
     {
         _walletRepository.Setup(r => r.GetWalletByUserEmailAsync("missing@test.com")).ReturnsAsync((Wallet?)null);
@@ -115,6 +149,18 @@ public sealed class WalletServiceTests
         history.Should().HaveCount(2);
         history.Select(h => h.Id).Should().BeEquivalentTo(new[] { 1, 2 });
         history.First().TransactionType.Should().Be(WalletTransactionType.Credit);
+    }
+
+    [Fact]
+    public async Task GetTransactionHistoryAsync_WalletExists_NoTransactions_ReturnsEmpty()
+    {
+        var wallet = new Wallet { Id = 5, UserEmail = "empty@test.com" };
+        _walletRepository.Setup(r => r.GetWalletByUserEmailAsync(wallet.UserEmail)).ReturnsAsync(wallet);
+        _transactionRepository.Setup(r => r.GetTransactionsByWalletIdAsync(wallet.Id)).ReturnsAsync(Enumerable.Empty<WalletTransaction>());
+
+        var history = await _sut.GetTransactionHistoryAsync(wallet.UserEmail);
+
+        history.Should().BeEmpty();
     }
     #endregion
 }

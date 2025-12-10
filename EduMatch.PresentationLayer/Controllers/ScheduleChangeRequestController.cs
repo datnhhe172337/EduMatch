@@ -183,6 +183,38 @@ namespace EduMatch.PresentationLayer.Controllers
 				return BadRequest(ApiResponse<object>.Fail(ex.Message));
 			}
 		}
+
+		/// <summary>
+		/// Lấy danh sách ScheduleChangeRequest theo scheduleId (có thể lọc thêm theo status)
+		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
+		[HttpGet("get-all-by-schedule-id/{scheduleId:int}")]
+		[ProducesResponseType(typeof(ApiResponse<IEnumerable<ScheduleChangeRequestDto>>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<IEnumerable<ScheduleChangeRequestDto>>>> GetAllByScheduleId(
+			int scheduleId,
+			[FromQuery] ScheduleChangeRequestStatus? status = null)
+		{
+			try
+			{
+				if (scheduleId <= 0)
+				{
+					return BadRequest(ApiResponse<object>.Fail("scheduleId phải lớn hơn 0"));
+				}
+
+				if (status.HasValue && !Enum.IsDefined(typeof(ScheduleChangeRequestStatus), status.Value))
+				{
+					return BadRequest(ApiResponse<object>.Fail("Status không hợp lệ"));
+				}
+
+				var items = await _scheduleChangeRequestService.GetAllByScheduleIdAsync(scheduleId, status);
+				return Ok(ApiResponse<IEnumerable<ScheduleChangeRequestDto>>.Ok(items));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+		}
 	}
 }
 

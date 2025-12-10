@@ -10,9 +10,11 @@ namespace EduMatch.DataAccessLayer.Enum
 	{
 		Upcoming = 0,    // Sắp diễn ra
 		InProgress = 1,  // Đang học
-		Completed = 2,   // Hoàn thành
-		Cancelled = 3,   // Đã hủy
-		Absent = 4       // Vắng mặt
+		Pending = 2,     // Chờ xử lý
+		Processing = 3,   // Đang xử lý
+		Completed = 4,   // Hoàn thành
+		Cancelled = 5,   // Đã hủy
+
 	}
 }
 

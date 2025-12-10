@@ -31,6 +31,11 @@ namespace EduMatch.DataAccessLayer.Interfaces
         /// </summary>
         Task<IEnumerable<ScheduleChangeRequest>> GetAllByRequestedToEmailAsync(string requestedToEmail, int? status = null);
 
+		/// <summary>
+		/// Lấy danh sách ScheduleChangeRequest theo ScheduleId (có thể lọc theo status)
+		/// </summary>
+		Task<IEnumerable<ScheduleChangeRequest>> GetAllByScheduleIdAsync(int scheduleId, int? status = null);
+
         /// <summary>
         /// Lấy tất cả ScheduleChangeRequest có Status = Pending với đầy đủ thông tin liên quan
         /// </summary>

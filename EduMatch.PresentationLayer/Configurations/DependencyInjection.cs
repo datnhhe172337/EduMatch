@@ -55,6 +55,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<ISystemFeeRepository, SystemFeeRepository>();
             services.AddScoped<IBookingRepository, BookingRepository>();
             services.AddScoped<IBookingNoteRepository, BookingNoteRepository>();
+            services.AddScoped<IBookingNoteMediaRepository, BookingNoteMediaRepository>();
             services.AddScoped<IScheduleRepository, ScheduleRepository>();
             services.AddScoped<IScheduleChangeRequestRepository, ScheduleChangeRequestRepository>();
             services.AddScoped<IMeetingSessionRepository, MeetingSessionRepository>();

@@ -23,16 +23,20 @@ namespace EduMatch.PresentationLayer.Controllers
 		private readonly IScheduleService _scheduleService;
 		private readonly EduMatchContext _context;
 		private readonly CurrentUserService _currentUserService;
+		private readonly INotificationService _notificationService;
+		private readonly ITutorSubjectService _tutorSubjectService;
 
 		/// <summary>
 		/// API Booking: lấy danh sách theo LearnerEmail/TutorId (có/không phân trang), lấy theo Id, tạo, cập nhật, cập nhật Status/PaymentStatus
 		/// </summary>
-		public BookingController(IBookingService bookingService, IScheduleService scheduleService, EduMatchContext context, CurrentUserService currentUserService)
+		public BookingController(IBookingService bookingService, IScheduleService scheduleService, EduMatchContext context, CurrentUserService currentUserService, INotificationService notificationService, ITutorSubjectService tutorSubjectService)
 		{
 			_bookingService = bookingService;
 			_scheduleService = scheduleService;
 			_context = context;
 			_currentUserService = currentUserService;
+			_notificationService = notificationService;
+			_tutorSubjectService = tutorSubjectService;
 		}
 
 		/// <summary>
@@ -289,6 +293,17 @@ namespace EduMatch.PresentationLayer.Controllers
 				{
 					var trialBooking = await _bookingService.UpdatePaymentStatusAsync(createdBooking.Id, PaymentStatus.Paid);
 					await transaction.CommitAsync();
+					
+					// Gửi notification cho tutor về đơn yêu cầu dạy học mới
+					var tutorSubject = await _tutorSubjectService.GetByIdFullAsync(createdBooking.TutorSubjectId);
+					if (!string.IsNullOrWhiteSpace(tutorSubject?.TutorEmail))
+					{
+						await _notificationService.CreateNotificationAsync(
+							tutorSubject.TutorEmail,
+							$"Bạn có đơn yêu cầu dạy học mới #{trialBooking.Id}. Vui lòng xác nhận đơn hàng.",
+							"/bookings");
+					}
+					
 					return Ok(ApiResponse<BookingDto>.Ok(trialBooking, "Tạo Booking học thử (miễn phí) và cập nhật thanh toán thành công"));
 				}
 
@@ -296,6 +311,17 @@ namespace EduMatch.PresentationLayer.Controllers
 				var paidBooking = await _bookingService.PayForBookingAsync(createdBooking.Id, learnerEmail);
 
 				await transaction.CommitAsync();
+				
+				// Gửi notification cho tutor về đơn yêu cầu dạy học mới
+				var tutorSubjectForPaid = await _tutorSubjectService.GetByIdFullAsync(paidBooking.TutorSubjectId);
+				if (!string.IsNullOrWhiteSpace(tutorSubjectForPaid?.TutorEmail))
+				{
+					await _notificationService.CreateNotificationAsync(
+						tutorSubjectForPaid.TutorEmail,
+						$"Bạn có đơn yêu cầu dạy học mới #{paidBooking.Id}. Vui lòng xác nhận đơn hàng.",
+						"/bookings");
+				}
+				
 				return Ok(ApiResponse<BookingDto>.Ok(paidBooking, "Tạo Booking, danh sách Schedule và thanh toán thành công"));
 			}
 			catch (Exception ex)
@@ -380,7 +406,61 @@ namespace EduMatch.PresentationLayer.Controllers
 				{
 					return BadRequest(ApiResponse<object>.Fail("Status không hợp lệ"));
 				}
+				
+				// Lấy email của người đang gọi API
+				var currentUserEmail = _currentUserService.Email;
+				var isAdmin = User.IsInRole(Roles.BusinessAdmin) || User.IsInRole(Roles.SystemAdmin);
+				
 				var updated = await _bookingService.UpdateStatusAsync(id, status);
+				
+				// Lấy thông tin tutor từ booking
+				var tutorSubject = await _tutorSubjectService.GetByIdFullAsync(updated.TutorSubjectId);
+				var tutorEmail = tutorSubject?.TutorEmail;
+				
+				// Xác định ai là người gọi và gửi notification cho người còn lại
+				if (isAdmin)
+				{
+					// Nếu là admin thì gửi notification cho cả learner và tutor
+					if (!string.IsNullOrWhiteSpace(updated.LearnerEmail))
+					{
+						await _notificationService.CreateNotificationAsync(
+							updated.LearnerEmail,
+							$"Trạng thái đơn hàng booking #{updated.Id} đã được cập nhật thành {status}.",
+							"/bookings");
+					}
+					if (!string.IsNullOrWhiteSpace(tutorEmail))
+					{
+						await _notificationService.CreateNotificationAsync(
+							tutorEmail,
+							$"Trạng thái đơn hàng booking #{updated.Id} đã được cập nhật thành {status}.",
+							"/bookings");
+					}
+				}
+				else if (!string.IsNullOrWhiteSpace(currentUserEmail))
+				{
+					// So sánh email để xác định người gọi
+					var isLearner = string.Equals(currentUserEmail, updated.LearnerEmail, StringComparison.OrdinalIgnoreCase);
+					var isTutor = !string.IsNullOrWhiteSpace(tutorEmail) && 
+					               string.Equals(currentUserEmail, tutorEmail, StringComparison.OrdinalIgnoreCase);
+					
+					if (isLearner && !string.IsNullOrWhiteSpace(tutorEmail))
+					{
+						// Learner gọi → gửi notification cho tutor
+						await _notificationService.CreateNotificationAsync(
+							tutorEmail,
+							$"Trạng thái đơn hàng booking #{updated.Id} đã được cập nhật thành {status} bởi học viên.",
+							"/bookings");
+					}
+					else if (isTutor && !string.IsNullOrWhiteSpace(updated.LearnerEmail))
+					{
+						// Tutor gọi → gửi notification cho learner
+						await _notificationService.CreateNotificationAsync(
+							updated.LearnerEmail,
+							$"Trạng thái đơn hàng booking #{updated.Id} đã được cập nhật thành {status} bởi gia sư.",
+							"/bookings");
+					}
+				}
+				
 				return Ok(ApiResponse<BookingDto>.Ok(updated, "Cập nhật Status thành công"));
 			}
 			catch (Exception ex)

@@ -12,7 +12,7 @@ namespace EduMatch.BusinessLogicLayer.BackgroundServices
 	/// <summary>
 	/// Background service tự động cập nhật trạng thái Schedule:
 	/// - Chuyển Upcoming -> InProgress khi đến giờ bắt đầu học
-	/// - Chuyển InProgress -> Completed nếu đã qua 24 giờ từ lúc bắt đầu học
+	/// - Chuyển InProgress -> Pending khi hết giờ học (chờ xác nhận)
 	/// </summary>
 	public class ScheduleAutoStatusUpdateBackgroundService : BackgroundService
 	{
@@ -47,7 +47,7 @@ namespace EduMatch.BusinessLogicLayer.BackgroundServices
 						var schedules = (await scheduleRepository.GetAllUpcomingAndInProgressAsync()).ToList();
 
 						int upComingToInProgressCount = 0;
-						int inProgressToCompletedCount = 0;
+						int inProgressToPendingCount = 0;
 
 						foreach (var schedule in schedules)
 						{
@@ -57,11 +57,13 @@ namespace EduMatch.BusinessLogicLayer.BackgroundServices
 
 							var startDate = schedule.Availabiliti.StartDate.Date;
 							var startTime = schedule.Availabiliti.Slot.StartTime;
+							var endTime = schedule.Availabiliti.Slot.EndTime;
 							var startDateTime = startDate.Add(startTime.ToTimeSpan());
+							var endDateTime = startDate.Add(endTime.ToTimeSpan());
 
 							var currentStatus = (ScheduleStatus)schedule.Status;
 
-							// Chuyển Upcoming -> InProgress khi đến giờ bắt đầu
+							// Chuyển Upcoming -> InProgress khi đến giờ bắt đầu học
 							if (currentStatus == ScheduleStatus.Upcoming && now >= startDateTime)
 							{
 								try
@@ -76,32 +78,25 @@ namespace EduMatch.BusinessLogicLayer.BackgroundServices
 								}
 							}
 
-							// Nếu đã qua 24 giờ từ lúc bắt đầu học vẫn InProgress thì chuyển sang Completed
-							if (currentStatus == ScheduleStatus.InProgress)
+							// Chuyển InProgress -> Pending khi hết giờ học
+							if (currentStatus == ScheduleStatus.InProgress && now >= endDateTime)
 							{
-								// Tính thời gian đã trôi qua từ lúc bắt đầu học
-								var timeElapsed = now - startDateTime;
-								
-								// Nếu đã qua 24 giờ (1 ngày)
-								if (timeElapsed >= TimeSpan.FromHours(24))
+								try
 								{
-									try
-									{
-										await scheduleService.UpdateStatusAsync(schedule.Id, ScheduleStatus.Completed);
-										inProgressToCompletedCount++;
-										Console.WriteLine($"[ScheduleAutoStatusUpdate] Schedule {schedule.Id} chuyển từ InProgress sang Completed (đã qua 24 giờ từ lúc bắt đầu học)");
-									}
-									catch (Exception ex)
-									{
-										Console.WriteLine($"[ScheduleAutoStatusUpdate] Lỗi khi cập nhật Schedule {schedule.Id} sang Completed: {ex.Message}");
-									}
+									await scheduleService.UpdateStatusAsync(schedule.Id, ScheduleStatus.Pending);
+									inProgressToPendingCount++;
+									Console.WriteLine($"[ScheduleAutoStatusUpdate] Schedule {schedule.Id} chuyển từ InProgress sang Pending (đã hết giờ học)");
+								}
+								catch (Exception ex)
+								{
+									Console.WriteLine($"[ScheduleAutoStatusUpdate] Lỗi khi cập nhật Schedule {schedule.Id} sang Pending: {ex.Message}");
 								}
 							}
 						}
 
-						if (upComingToInProgressCount > 0 || inProgressToCompletedCount > 0)
+						if (upComingToInProgressCount > 0 || inProgressToPendingCount > 0)
 						{
-							Console.WriteLine($"[ScheduleAutoStatusUpdate] Đã cập nhật: {upComingToInProgressCount} Upcoming->InProgress, {inProgressToCompletedCount} InProgress->Completed");
+							Console.WriteLine($"[ScheduleAutoStatusUpdate] Đã cập nhật: {upComingToInProgressCount} Upcoming->InProgress, {inProgressToPendingCount} InProgress->Pending");
 						}
 					}
 					catch (Exception ex)

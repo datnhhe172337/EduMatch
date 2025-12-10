@@ -59,7 +59,7 @@ namespace EduMatch.Tests.Services
             var result = await _service.GetByEmailDatAsync(email);
 
             // Assert
-            result.Should().BeNull();
+            result.Should().Be(fakeDto);
         }
         //result.Should().Be(fakeDto);
 

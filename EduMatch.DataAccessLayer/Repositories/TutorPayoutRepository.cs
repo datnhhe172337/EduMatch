@@ -31,6 +31,13 @@ namespace EduMatch.DataAccessLayer.Repositories
             return await _dbSet.FirstOrDefaultAsync(x => x.ScheduleId == scheduleId);
         }
 
+        public async Task<List<TutorPayout>> GetByBookingIdAsync(int bookingId)
+        {
+            return await _dbSet
+                .Where(x => x.BookingId == bookingId)
+                .ToListAsync();
+        }
+
         public async Task AddAsync(TutorPayout entity)
         {
             await _dbSet.AddAsync(entity);

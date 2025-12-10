@@ -9,6 +9,7 @@ namespace EduMatch.DataAccessLayer.Interfaces
     {
         Task<List<TutorPayout>> GetReadyForPayoutAsync(DateOnly payoutDate);
         Task<TutorPayout?> GetByScheduleIdAsync(int scheduleId);
+        Task<List<TutorPayout>> GetByBookingIdAsync(int bookingId);
         Task AddAsync(TutorPayout entity);
         void Update(TutorPayout entity);
     }

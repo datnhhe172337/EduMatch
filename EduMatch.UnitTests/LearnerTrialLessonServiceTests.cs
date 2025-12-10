@@ -14,6 +14,7 @@ namespace EduMatch.UnitTests
 
         private LearnerTrialLessonService CreateService() => new(_repo.Object, _tutorSubjectRepo.Object);
 
+        #region HasTrialedAsync
         [Fact]
         public async Task HasTrialedAsync_ForwardsToRepository()
         {
@@ -25,7 +26,9 @@ namespace EduMatch.UnitTests
             Assert.True(result);
             _repo.Verify(r => r.ExistsAsync("a@test.com", 1, 2), Times.Once);
         }
+        #endregion
 
+        #region RecordTrialAsync
         [Fact]
         public async Task RecordTrialAsync_WhenAlreadyExists_ReturnsFalse_DoesNotAdd()
         {
@@ -52,7 +55,9 @@ namespace EduMatch.UnitTests
             _repo.Verify(r => r.ExistsAsync("c@test.com", 4, 5), Times.Once);
             _repo.Verify(r => r.AddAsync("c@test.com", 4, 5), Times.Once);
         }
+        #endregion
 
+        #region GetSubjectTrialStatusesAsync
         [Fact]
         public async Task GetSubjectTrialStatusesAsync_ReturnsHasTrialedFlags()
         {
@@ -73,5 +78,6 @@ namespace EduMatch.UnitTests
             Assert.Contains(result, r => r.SubjectId == 1 && r.HasTrialed == false);
             Assert.Contains(result, r => r.SubjectId == 2 && r.HasTrialed == true);
         }
+        #endregion
     }
 }

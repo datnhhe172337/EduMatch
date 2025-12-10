@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -262,6 +262,27 @@ namespace EduMatch.BusinessLogicLayer.Services
                     if (availability.Status != TutorAvailabilityStatus.Available)
                         throw new Exception("TutorAvailability mới không ở trạng thái Available");
 
+                    // Availability mới phải cách thời điểm hiện tại tối thiểu 12h (StartDate đã theo giờ VN)
+                    const double MIN_HOURS_FROM_NOW = 12;
+                    // So sánh theo giờ Việt Nam, tránh lệch timezone của máy chủ (Ubuntu/Coolify dùng "Asia/Ho_Chi_Minh")
+                    TimeZoneInfo vnTz;
+                    try
+                    {
+                        vnTz = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+                    }
+                    catch (TimeZoneNotFoundException)
+                    {
+                        // Fallback cho môi trường Windows / một số distro
+                        vnTz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                    }
+					var nowVn = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTz);
+
+					// Availability.StartDate giữ nguyên (đã là giờ VN), chỉ quy đổi "hiện tại" sang VN
+					var availabilityStart = availability.StartDate;
+                    var hoursDiff = (availabilityStart - nowVn).TotalHours;
+                    if (hoursDiff < MIN_HOURS_FROM_NOW)
+                        throw new Exception("TutorAvailability mới phải cách thời điểm hiện tại tối thiểu 12 giờ.");
+
                     // Nếu LearnerEmail là tutor: không được đổi sang khung trùng với lịch dạy (cùng slot và cùng ngày)
                     var bookingDtoForUpdate = await _bookingService.GetByIdAsync(entity.BookingId)
                         ?? throw new Exception("Booking không tồn tại");
@@ -425,7 +446,29 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<List<ScheduleDto>>(entities);
         }
 
- 
+        /// <summary>
+        /// Trả về thống kê số buổi đã học/chưa học/đã hủy theo booking
+        /// </summary>
+        public async Task<ScheduleAttendanceSummaryDto> GetAttendanceSummaryByBookingAsync(int bookingId)
+        {
+            if (bookingId <= 0)
+                throw new ArgumentException("BookingId must be greater than 0");
+
+            var studied = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, (int)ScheduleStatus.Completed);
+            var upcoming = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, (int)ScheduleStatus.Upcoming);
+            var inProgress = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, (int)ScheduleStatus.InProgress);
+            var pending = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, (int)ScheduleStatus.Pending);
+            var processing = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, (int)ScheduleStatus.Processing);
+            var cancelled = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, (int)ScheduleStatus.Cancelled);
+
+            return new ScheduleAttendanceSummaryDto
+            {
+                Studied = studied,
+                NotStudiedYet = upcoming + inProgress + pending + processing,
+                Cancelled = cancelled
+            };
+        }
+
         /// <summary>
         /// Kiểm tra tutor có lịch học trùng với slot và ngày hay không (loại trừ Schedule bị Cancelled)
         /// </summary>
@@ -437,7 +480,9 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
-        /// Cập nhật Status của Schedule (chỉ cho phép update tiến dần, ngoại lệ: Completed và Absent có thể update qua lại)
+        /// Cập nhật Status của Schedule (chỉ cho phép update tiến dần: status mới phải >= status cũ theo giá trị enum)
+        /// Flow: Upcoming (0) → InProgress (1) → Pending (2) → Processing (3) → Completed (4)
+        /// Cancelled (5) có thể được set từ bất kỳ status nào
         /// </summary>
         public async Task<ScheduleDto> UpdateStatusAsync(int id, ScheduleStatus status)
         {
@@ -449,17 +494,10 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             var oldStatus = (ScheduleStatus)entity.Status;
 
-            // Ngoại lệ: Completed và Absent có thể update qua lại
-            bool isCompletedOrAbsent = (oldStatus == ScheduleStatus.Completed && status == ScheduleStatus.Absent) ||
-                                      (oldStatus == ScheduleStatus.Absent && status == ScheduleStatus.Completed);
-
-            if (!isCompletedOrAbsent)
+            // Chỉ cho phép update tiến dần: status mới phải >= status cũ (theo giá trị enum)
+            if ((int)status < (int)oldStatus)
             {
-                // Chỉ cho phép update tiến dần: status mới phải >= status cũ (theo giá trị enum)
-                if ((int)status < (int)oldStatus)
-                {
-                    throw new Exception($"Không thể cập nhật Status từ {oldStatus} về {status}. Chỉ cho phép chuyển từ status nhỏ hơn sang status lớn hơn, hoặc giữa Completed và Absent");
-                }
+                throw new Exception($"Không thể cập nhật Status từ {oldStatus} về {status}. Chỉ cho phép chuyển từ status nhỏ hơn sang status lớn hơn");
             }
 
             entity.Status = (int)status;
@@ -548,5 +586,8 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (completionService == null) throw new ArgumentNullException(nameof(completionService));
             return completionService.FinishAndPayAsync(scheduleId);
         }
+
+
+
     }
 }
