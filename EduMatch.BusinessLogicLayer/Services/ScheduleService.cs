@@ -262,6 +262,17 @@ namespace EduMatch.BusinessLogicLayer.Services
                     if (availability.Status != TutorAvailabilityStatus.Available)
                         throw new Exception("TutorAvailability mới không ở trạng thái Available");
 
+                    // Availability mới phải cách thời điểm hiện tại tối thiểu 12h (StartDate đã theo giờ VN)
+                    const double MIN_HOURS_FROM_NOW = 12;
+                    // So sánh theo giờ Việt Nam, tránh lệch timezone của máy chủ
+                    var vnTz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"); // GMT+7
+                    var nowVn = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTz);
+                    // Availability.StartDate giữ nguyên (đã là giờ VN), chỉ quy đổi "hiện tại" sang VN
+                    var availabilityStart = availability.StartDate;
+                    var hoursDiff = (availabilityStart - nowVn).TotalHours;
+                    if (hoursDiff < MIN_HOURS_FROM_NOW)
+                        throw new Exception("TutorAvailability mới phải cách thời điểm hiện tại tối thiểu 12 giờ.");
+
                     // Nếu LearnerEmail là tutor: không được đổi sang khung trùng với lịch dạy (cùng slot và cùng ngày)
                     var bookingDtoForUpdate = await _bookingService.GetByIdAsync(entity.BookingId)
                         ?? throw new Exception("Booking không tồn tại");
