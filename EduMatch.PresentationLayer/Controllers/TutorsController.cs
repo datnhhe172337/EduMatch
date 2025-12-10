@@ -107,7 +107,7 @@ namespace EduMatch.PresentationLayer.Controllers
 					var profileDto = await _tutorProfileService.CreateAsync(request.TutorProfile);
 					var tutorId = profileDto.Id;
 
-					await _summaryService.EnsureAndUpdateSummaryAsync(tutorId);
+					await _summaryService.AddRatingSummary(tutorId);
 					if (request.Educations.Any())
 					{
 						foreach (var e in request.Educations) e.TutorId = tutorId;

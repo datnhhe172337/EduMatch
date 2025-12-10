@@ -22,6 +22,26 @@ namespace EduMatch.BusinessLogicLayer.Services
             _summaryRepo = summaryRepo;
         }
 
+        public async Task<TutorRatingSummary> AddRatingSummary(int tutorId)
+        {
+            var existing = await _summaryRepo.GetByTutorIdAsync(tutorId);
+            if (existing != null)
+                return existing;
+
+            var summary = new TutorRatingSummary
+            {
+                TutorId = tutorId,
+                AverageRating = 5.0,
+                TotalFeedbackCount = 0,
+                UpdatedAt = DateTime.UtcNow,
+            };
+
+            await _summaryRepo.AddAsync(summary);
+            await _summaryRepo.SaveAsync();
+
+            return summary;
+        }
+
         public async Task<TutorRatingSummary> EnsureAndUpdateSummaryAsync(int tutorId)
         {
             // Lấy avg và count từ feedback

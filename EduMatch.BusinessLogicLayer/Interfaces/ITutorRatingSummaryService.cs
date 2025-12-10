@@ -11,5 +11,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
     {
         Task<TutorRatingSummary> EnsureAndUpdateSummaryAsync(int tutorId);
         Task<TutorRatingSummary?> GetByTutorIdAsync(int tutorId);
+        Task<TutorRatingSummary> AddRatingSummary(int tutorId);
     }
 }
