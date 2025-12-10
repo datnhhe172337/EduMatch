@@ -51,6 +51,14 @@ namespace EduMatch.BusinessLogicLayer.Services
                 completion.UpdatedAt = now;
                 _completionRepository.Update(completion);
 
+                var schedule = await _scheduleRepository.GetByIdAsync(completion.ScheduleId);
+                if (schedule != null && schedule.Status != (int)ScheduleStatus.Completed)
+                {
+                    schedule.Status = (int)ScheduleStatus.Completed;
+                    schedule.UpdatedAt = now;
+                    _scheduleRepository.Update(schedule);
+                }
+
                 // If a payout exists and is still Pending, move it to ReadyForPayout
                 var payout = await _payoutRepository.GetByScheduleIdAsync(completion.ScheduleId);
                 if (payout != null && payout.Status == (byte)TutorPayoutStatus.Pending)
@@ -102,6 +110,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             completion.ConfirmedAt = now;
             completion.UpdatedAt = now;
             _completionRepository.Update(completion);
+
+            // Update schedule status to Completed
+            if (schedule.Status != (int)ScheduleStatus.Completed)
+            {
+                schedule.Status = (int)ScheduleStatus.Completed;
+                schedule.UpdatedAt = now;
+                _scheduleRepository.Update(schedule);
+            }
 
             var payout = await _payoutRepository.GetByScheduleIdAsync(scheduleId);
             if (payout != null)
@@ -187,6 +203,14 @@ namespace EduMatch.BusinessLogicLayer.Services
                 completion.AutoCompletedAt = now;
                 completion.UpdatedAt = now;
                 _completionRepository.Update(completion);
+
+                var schedule = await _scheduleRepository.GetByIdAsync(completion.ScheduleId);
+                if (schedule != null && schedule.Status != (int)ScheduleStatus.Completed)
+                {
+                    schedule.Status = (int)ScheduleStatus.Completed;
+                    schedule.UpdatedAt = now;
+                    _scheduleRepository.Update(schedule);
+                }
 
                 var payout = await _payoutRepository.GetByScheduleIdAsync(scheduleId);
                 if (payout != null)
@@ -287,3 +311,4 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
     }
 }
+
