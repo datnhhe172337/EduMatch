@@ -26,5 +26,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task DeleteDefenseAsync(int reportId, int defenseId, string currentUserEmail, bool currentUserIsAdmin);
         Task<ReportFullDetailDto?> GetFullReportDetailAsync(int reportId, string requesterEmail, bool requesterIsAdmin);
         Task<bool> CanSubmitDefenseAsync(int reportId, string tutorEmail, bool currentUserIsAdmin);
+        Task<bool> IsReportResolvedAsync(int reportId, string requesterEmail, bool requesterIsAdmin);
     }
 }
