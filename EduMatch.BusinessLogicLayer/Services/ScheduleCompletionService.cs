@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.DataAccessLayer.Entities;
@@ -56,7 +56,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 {
                     schedule.Status = (int)ScheduleStatus.Completed;
                     schedule.UpdatedAt = now;
-                    _scheduleRepository.Update(schedule);
+                    await _scheduleRepository.UpdateAsync(schedule);
                 }
 
                 // If a payout exists and is still Pending, move it to ReadyForPayout
@@ -116,7 +116,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 schedule.Status = (int)ScheduleStatus.Completed;
                 schedule.UpdatedAt = now;
-                _scheduleRepository.Update(schedule);
+                await _scheduleRepository.UpdateAsync(schedule);
             }
 
             var payout = await _payoutRepository.GetByScheduleIdAsync(scheduleId);
@@ -209,7 +209,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 {
                     schedule.Status = (int)ScheduleStatus.Completed;
                     schedule.UpdatedAt = now;
-                    _scheduleRepository.Update(schedule);
+                    await _scheduleRepository.UpdateAsync(schedule);
                 }
 
                 var payout = await _payoutRepository.GetByScheduleIdAsync(scheduleId);
@@ -311,4 +311,5 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
     }
 }
+
 
