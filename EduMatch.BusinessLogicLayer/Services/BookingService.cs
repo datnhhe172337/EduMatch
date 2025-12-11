@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -498,8 +498,24 @@ namespace EduMatch.BusinessLogicLayer.Services
                 var learnerWallet = await GetOrCreateWalletAsync(booking.LearnerEmail);
                 var systemWallet = await GetOrCreateWalletAsync(SystemWalletEmail);
 
-                var remaining = Math.Max(booking.TotalAmount - booking.RefundedAmount, 0);
-                var refundable = Math.Min(remaining, Math.Min(learnerWallet.LockedBalance, systemWallet.LockedBalance));
+                var upcomingCount = booking.Schedules?.Count(s =>
+                    s.Status != (int)ScheduleStatus.Completed &&
+                    s.Status != (int)ScheduleStatus.Cancelled &&
+                    (s.TutorPayout == null || s.TutorPayout.Status != (byte)TutorPayoutStatus.OnHold)) ?? 0;
+                var totalSessions = booking.TotalSessions > 0 ? booking.TotalSessions : booking.Schedules?.Count ?? 0;
+                var perSessionAmount = totalSessions > 0 ? booking.TotalAmount / totalSessions : 0;
+                var refundableBase = decimal.Round(perSessionAmount * upcomingCount, 2, MidpointRounding.AwayFromZero);
+
+                decimal paidToTutor = 0;
+                if (booking.Schedules != null && booking.Schedules.Any())
+                {
+                    paidToTutor = booking.Schedules
+                        .Where(s => s.TutorPayout != null && s.TutorPayout.Status == (byte)TutorPayoutStatus.Paid)
+                        .Sum(s => s.TutorPayout!.Amount);
+                }
+
+                var refundable = Math.Max(refundableBase - paidToTutor, 0);
+                refundable = Math.Min(refundable, Math.Min(learnerWallet.LockedBalance, systemWallet.LockedBalance));
 
                 if (refundable > 0)
                 {
@@ -562,8 +578,39 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
-        /// Hoàn tiền booking theo tỷ lệ và chuyển phần còn lại cho gia sư sau khi trừ phí hệ thống.
+        /// Xem trước thông tin hủy booking: số buổi chưa học và số tiền dự kiến hoàn lại.
         /// </summary>
+        public async Task<BookingCancelPreviewDto> GetCancelPreviewAsync(int bookingId)
+        {
+            var booking = await _bookingRepository.GetByIdAsync(bookingId)
+                ?? throw new Exception("Booking không tồn tại");
+
+            var upcomingCount = booking.Schedules?.Count(s =>
+                s.Status != (int)ScheduleStatus.Completed &&
+                s.Status != (int)ScheduleStatus.Cancelled &&
+                (s.TutorPayout == null || s.TutorPayout.Status != (byte)TutorPayoutStatus.OnHold)) ?? 0;
+
+            decimal paidToTutor = 0;
+            if (booking.Schedules != null && booking.Schedules.Any())
+            {
+                paidToTutor = booking.Schedules
+                    .Where(s => s.TutorPayout != null && s.TutorPayout.Status == (byte)TutorPayoutStatus.Paid)
+                    .Sum(s => s.TutorPayout!.Amount);
+            }
+
+            var totalSessions = booking.TotalSessions > 0 ? booking.TotalSessions : booking.Schedules?.Count ?? 0;
+            var perSessionAmount = totalSessions > 0 ? booking.TotalAmount / totalSessions : 0;
+            var refundableBase = decimal.Round(perSessionAmount * upcomingCount, 2, MidpointRounding.AwayFromZero);
+            var refundable = Math.Max(refundableBase - booking.RefundedAmount - paidToTutor, 0);
+
+            return new BookingCancelPreviewDto
+            {
+                BookingId = booking.Id,
+                UpcomingSchedules = upcomingCount,
+                RefundableAmount = refundable
+            };
+        }
+
         public async Task<BookingDto> RefundBookingAsync(int bookingId, decimal learnerPercentage)
         {
             if (bookingId <= 0)

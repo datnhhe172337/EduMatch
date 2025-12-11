@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System.Linq;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.DTOs;
@@ -110,6 +111,26 @@ namespace EduMatch.PresentationLayer.Controllers
 			catch (UnauthorizedAccessException)
 			{
 				return Forbid();
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail(ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Xem trước số buổi chưa học và số tiền dự kiến hoàn lại nếu hủy booking.
+		/// </summary>
+		[Authorize(Roles = Roles.Learner)]
+		[HttpGet("{id:int}/cancel-preview")]
+		[ProducesResponseType(typeof(ApiResponse<BookingCancelPreviewDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		public async Task<IActionResult> GetCancelPreview(int id)
+		{
+			try
+			{
+				var preview = await _bookingService.GetCancelPreviewAsync(id);
+				return Ok(ApiResponse<BookingCancelPreviewDto>.Ok(preview, "Xem trước thông tin hủy booking."));
 			}
 			catch (Exception ex)
 			{
