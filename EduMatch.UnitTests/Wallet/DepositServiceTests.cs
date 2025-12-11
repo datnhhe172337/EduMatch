@@ -74,7 +74,7 @@ public sealed class DepositServiceTests : IAsyncLifetime
     public async Task CreateDepositRequestAsync_UsesExistingWallet()
     {
         const string userEmail = "existing@test.com";
-        var request = new WalletDepositRequest { Amount = 50_000 };
+        var request = new WalletDepositRequest { Amount = 60_000 };
         var wallet = new Wallet { Id = 7, UserEmail = userEmail };
 
         _walletRepository.Setup(r => r.GetWalletByUserEmailAsync(userEmail)).ReturnsAsync(wallet);
@@ -87,10 +87,10 @@ public sealed class DepositServiceTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task CreateDepositRequestAsync_WithZeroAmount_AllowsAndReturnsDeposit()
+    public async Task CreateDepositRequestAsync_WithMinimumAmount_AllowsAndReturnsDeposit()
     {
         const string userEmail = "zero@test.com";
-        var request = new WalletDepositRequest { Amount = 0 };
+        var request = new WalletDepositRequest { Amount = 50_000 };
         Wallet? captured = null;
 
         _walletRepository.Setup(r => r.GetWalletByUserEmailAsync(userEmail)).ReturnsAsync((Wallet?)null);
@@ -102,7 +102,7 @@ public sealed class DepositServiceTests : IAsyncLifetime
         var deposit = await _sut.CreateDepositRequestAsync(request, userEmail);
 
         captured.Should().NotBeNull();
-        deposit.Amount.Should().Be(0);
+        deposit.Amount.Should().Be(50_000);
         deposit.WalletId.Should().Be(captured!.Id);
     }
 
