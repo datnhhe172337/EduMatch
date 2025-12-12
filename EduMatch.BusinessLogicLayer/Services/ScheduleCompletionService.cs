@@ -292,7 +292,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 schedule.Status = (int)ScheduleStatus.Cancelled;
                 schedule.UpdatedAt = now;
-                _scheduleRepository.Update(schedule);
+                await _scheduleRepository.UpdateAsync(schedule);
             }
 
             var payout = await _payoutRepository.GetByScheduleIdAsync(scheduleId);
@@ -303,11 +303,11 @@ namespace EduMatch.BusinessLogicLayer.Services
                 _payoutRepository.Update(payout);
 
                 // Return funds to learner (no fee taken)
-                var booking = await _bookingRepository.GetByIdAsync(completion.BookingId);
-                if (booking != null && payout.Amount + payout.SystemFeeAmount > 0)
+                var bookingForRefund = await _bookingRepository.GetByIdAsync(completion.BookingId);
+                if (bookingForRefund != null && payout.Amount + payout.SystemFeeAmount > 0)
                 {
                     var totalRefund = payout.Amount + payout.SystemFeeAmount;
-                    var learnerWallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(booking.LearnerEmail)
+                    var learnerWallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(bookingForRefund.LearnerEmail)
                         ?? throw new InvalidOperationException("Learner wallet not found.");
                     var systemWallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(SystemWalletEmail)
                         ?? throw new InvalidOperationException("System wallet not found.");
@@ -337,7 +337,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                         BalanceAfter = systemWallet.Balance,
                         CreatedAt = now,
                         ReferenceCode = $"SCHEDULE_CANCEL_REFUND_{scheduleId}",
-                        BookingId = booking.Id
+                        BookingId = bookingForRefund.Id
                     });
 
                     await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
@@ -351,7 +351,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                         BalanceAfter = learnerWallet.Balance,
                         CreatedAt = now,
                         ReferenceCode = $"SCHEDULE_CANCEL_REFUND_{scheduleId}",
-                        BookingId = booking.Id
+                        BookingId = bookingForRefund.Id
                     });
                 }
             }

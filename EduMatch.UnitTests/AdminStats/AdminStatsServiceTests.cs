@@ -21,7 +21,7 @@ namespace EduMatch.UnitTests.AdminStats
             var options = new DbContextOptionsBuilder<EduMatchContext>()
                 .UseInMemoryDatabase(databaseName: dbName)
                 .Options;
-            return new EduMatchContext(options);
+            return new InMemoryEduMatchContext(options);
         }
 
         private static AdminStatsService CreateService(EduMatchContext context)
@@ -247,6 +247,16 @@ namespace EduMatch.UnitTests.AdminStats
                 m.Revenue.NetPlatformRevenueAmount == 0m &&
                 m.Revenue.RefundedAmount == 0m &&
                 m.Revenue.TutorPayoutAmount == 0m);
+        }
+
+        private sealed class InMemoryEduMatchContext : EduMatchContext
+        {
+            public InMemoryEduMatchContext(DbContextOptions<EduMatchContext> options) : base(options) { }
+
+            protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+            {
+                // Intentionally no-op to avoid overriding in-memory provider in tests.
+            }
         }
     }
 }

@@ -67,7 +67,7 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
             new()
             {
                 Id = 1,
-                Amount = 20_000m,
+                Amount = 80_000m,
                 Status = WithdrawalStatus.Completed,
                 UserBankAccount = new UserBankAccount
                 {
@@ -95,7 +95,7 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
             new()
             {
                 Id = 4,
-                Amount = 30_000m,
+                Amount = 80_000m,
                 Status = WithdrawalStatus.Pending,
                 UserBankAccount = new UserBankAccount
                 {
@@ -152,7 +152,7 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
     public async Task CreateWithdrawalRequestAsync_MinAmountEqualBalance_LeavesZeroBalance()
     {
         const string userEmail = "student@test.com";
-        var wallet = new Wallet { Id = 2, UserEmail = userEmail, Balance = 50_000m, LockedBalance = 0 };
+        var wallet = new Wallet { Id = 2, UserEmail = userEmail, Balance = 80_000m, LockedBalance = 0 };
         var bankAccount = new UserBankAccount { Id = 5, UserEmail = userEmail };
 
         _userBankAccountRepository.Setup(r => r.GetByIdAsync(bankAccount.Id)).ReturnsAsync(bankAccount);
@@ -161,7 +161,7 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
         _walletTransactionRepository.Setup(r => r.AddAsync(It.IsAny<WalletTransaction>())).Returns(Task.CompletedTask);
         _unitOfWork.SetupSequence(u => u.CompleteAsync()).ReturnsAsync(1).ReturnsAsync(1);
 
-        var request = new CreateWithdrawalRequest { Amount = 50_000m, UserBankAccountId = bankAccount.Id };
+        var request = new CreateWithdrawalRequest { Amount = 80_000m, UserBankAccountId = bankAccount.Id };
 
         await _sut.CreateWithdrawalRequestAsync(request, userEmail);
 

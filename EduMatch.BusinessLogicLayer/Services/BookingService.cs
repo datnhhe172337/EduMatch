@@ -27,6 +27,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly INotificationService _notificationService;
         private readonly ILearnerTrialLessonService _learnerTrialLessonService;
         private const string SystemWalletEmail = "system@edumatch.com";
+        private readonly TimeZoneInfo _vietnamTz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
 
         public BookingService(
             IBookingRepository bookingRepository,
@@ -487,8 +488,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             var now = DateTime.UtcNow;
 
-            // Huy tat ca lich lien quan de giai phong slot va chan tra tien cho tutor
-            await CancelAllSchedulesByBookingAsync(bookingId);
+            // Huy cac lich sap toi de giai phong slot va chan tra tien cho tutor
+            await CancelUpcomingSchedulesByBookingAsync(bookingId);
 
             decimal refunded = 0;
 
@@ -498,23 +499,17 @@ namespace EduMatch.BusinessLogicLayer.Services
                 var learnerWallet = await GetOrCreateWalletAsync(booking.LearnerEmail);
                 var systemWallet = await GetOrCreateWalletAsync(SystemWalletEmail);
 
+                var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTz);
                 var upcomingCount = booking.Schedules?.Count(s =>
                     s.Status != (int)ScheduleStatus.Completed &&
                     s.Status != (int)ScheduleStatus.Cancelled &&
-                    (s.TutorPayout == null || s.TutorPayout.Status != (byte)TutorPayoutStatus.OnHold)) ?? 0;
+                    (s.TutorPayout == null || s.TutorPayout.Status != (byte)TutorPayoutStatus.OnHold) &&
+                    IsFutureSchedule(s, nowLocal)) ?? 0;
                 var totalSessions = booking.TotalSessions > 0 ? booking.TotalSessions : booking.Schedules?.Count ?? 0;
                 var perSessionAmount = totalSessions > 0 ? booking.TotalAmount / totalSessions : 0;
                 var refundableBase = decimal.Round(perSessionAmount * upcomingCount, 2, MidpointRounding.AwayFromZero);
 
-                decimal paidToTutor = 0;
-                if (booking.Schedules != null && booking.Schedules.Any())
-                {
-                    paidToTutor = booking.Schedules
-                        .Where(s => s.TutorPayout != null && s.TutorPayout.Status == (byte)TutorPayoutStatus.Paid)
-                        .Sum(s => s.TutorPayout!.Amount);
-                }
-
-                var refundable = Math.Max(refundableBase - paidToTutor, 0);
+                var refundable = Math.Max(refundableBase - booking.RefundedAmount, 0);
                 refundable = Math.Min(refundable, Math.Min(learnerWallet.LockedBalance, systemWallet.LockedBalance));
 
                 if (refundable > 0)
@@ -585,10 +580,12 @@ namespace EduMatch.BusinessLogicLayer.Services
             var booking = await _bookingRepository.GetByIdAsync(bookingId)
                 ?? throw new Exception("Booking không tồn tại");
 
+            var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTz);
             var upcomingCount = booking.Schedules?.Count(s =>
                 s.Status != (int)ScheduleStatus.Completed &&
                 s.Status != (int)ScheduleStatus.Cancelled &&
-                (s.TutorPayout == null || s.TutorPayout.Status != (byte)TutorPayoutStatus.OnHold)) ?? 0;
+                (s.TutorPayout == null || s.TutorPayout.Status != (byte)TutorPayoutStatus.OnHold) &&
+                IsFutureSchedule(s, nowLocal)) ?? 0;
 
             decimal paidToTutor = 0;
             if (booking.Schedules != null && booking.Schedules.Any())
@@ -601,7 +598,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             var totalSessions = booking.TotalSessions > 0 ? booking.TotalSessions : booking.Schedules?.Count ?? 0;
             var perSessionAmount = totalSessions > 0 ? booking.TotalAmount / totalSessions : 0;
             var refundableBase = decimal.Round(perSessionAmount * upcomingCount, 2, MidpointRounding.AwayFromZero);
-            var refundable = Math.Max(refundableBase - booking.RefundedAmount - paidToTutor, 0);
+            var refundable = Math.Max(refundableBase - booking.RefundedAmount, 0);
 
             return new BookingCancelPreviewDto
             {
@@ -925,6 +922,92 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 await _unitOfWork.CompleteAsync();
             }
+        }
+
+        /// <summary>
+        /// Hủy các Schedule chưa diễn ra (chưa Completed/Cancelled và chưa tới giờ bắt đầu) theo bookingId.
+        /// </summary>
+        private async Task CancelUpcomingSchedulesByBookingAsync(int bookingId)
+        {
+            var schedules = (await _scheduleRepository.GetAllByBookingIdOrderedAsync(bookingId)).ToList();
+            var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTz);
+            foreach (var schedule in schedules)
+            {
+                // Chỉ hủy các buổi học chưa diễn ra và chưa hoàn thành
+                if (schedule.Status == (int)ScheduleStatus.Completed ||
+                    schedule.Status == (int)ScheduleStatus.Cancelled ||
+                    !IsFutureSchedule(schedule, nowLocal))
+                {
+                    continue;
+                }
+
+                // Delete meeting session first (includes Google event deletion)
+                var meetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(schedule.Id);
+                if (meetingSession != null)
+                {
+                    if (!string.IsNullOrEmpty(meetingSession.EventId))
+                    {
+                        try
+                        {
+                            await _googleCalendarService.DeleteEventAsync(meetingSession.EventId);
+                        }
+                        catch
+                        {
+                            // Log error but continue
+                        }
+                    }
+                    await _meetingSessionRepository.DeleteAsync(meetingSession.Id);
+                }
+
+                schedule.Status = (int)ScheduleStatus.Cancelled;
+                schedule.UpdatedAt = DateTime.UtcNow;
+                await _scheduleRepository.UpdateAsync(schedule);
+
+                var availability = await _tutorAvailabilityRepository.GetByIdFullAsync(schedule.AvailabilitiId);
+                if (availability != null)
+                {
+                    availability.Status = (int)TutorAvailabilityStatus.Available;
+                    await _tutorAvailabilityRepository.UpdateAsync(availability);
+                }
+
+                if (_unitOfWork.ScheduleCompletions != null)
+                {
+                    var completion = await _unitOfWork.ScheduleCompletions.GetByScheduleIdAsync(schedule.Id);
+                    if (completion != null)
+                    {
+                        completion.Status = (byte)ScheduleCompletionStatus.Cancelled;
+                        completion.UpdatedAt = DateTime.UtcNow;
+                        _unitOfWork.ScheduleCompletions.Update(completion);
+                    }
+                }
+
+                if (_unitOfWork.TutorPayouts != null)
+                {
+                    var payout = await _unitOfWork.TutorPayouts.GetByScheduleIdAsync(schedule.Id);
+                    if (payout != null && payout.Status != (byte)TutorPayoutStatus.Paid)
+                    {
+                        payout.Status = (byte)TutorPayoutStatus.Cancelled;
+                        payout.UpdatedAt = DateTime.UtcNow;
+                        _unitOfWork.TutorPayouts.Update(payout);
+                    }
+                }
+            }
+
+            if (_unitOfWork.ScheduleCompletions != null || _unitOfWork.TutorPayouts != null)
+            {
+                await _unitOfWork.CompleteAsync();
+            }
+        }
+
+        private bool IsFutureSchedule(Schedule schedule, DateTime nowLocal)
+        {
+            if (schedule?.Availabiliti?.Slot == null)
+            {
+                return true;
+            }
+
+            var lessonStart = schedule.Availabiliti.StartDate.Date.Add(schedule.Availabiliti.Slot.StartTime.ToTimeSpan());
+            return lessonStart > nowLocal;
         }
 
         private async Task<Wallet> GetOrCreateWalletAsync(string userEmail)
