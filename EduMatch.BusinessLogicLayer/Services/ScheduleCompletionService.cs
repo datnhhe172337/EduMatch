@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.DataAccessLayer.Entities;
@@ -9,6 +9,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 {
     public class ScheduleCompletionService : IScheduleCompletionService
     {
+        private const string SystemWalletEmail = "system@edumatch.com";
         private readonly IScheduleCompletionRepository _completionRepository;
         private readonly ITutorPayoutRepository _payoutRepository;
         private readonly IUnitOfWork _unitOfWork;
@@ -50,6 +51,14 @@ namespace EduMatch.BusinessLogicLayer.Services
                 completion.AutoCompletedAt = now;
                 completion.UpdatedAt = now;
                 _completionRepository.Update(completion);
+
+                var schedule = await _scheduleRepository.GetByIdAsync(completion.ScheduleId);
+                if (schedule != null && schedule.Status != (int)ScheduleStatus.Completed)
+                {
+                    schedule.Status = (int)ScheduleStatus.Completed;
+                    schedule.UpdatedAt = now;
+                    await _scheduleRepository.UpdateAsync(schedule);
+                }
 
                 // If a payout exists and is still Pending, move it to ReadyForPayout
                 var payout = await _payoutRepository.GetByScheduleIdAsync(completion.ScheduleId);
@@ -103,6 +112,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             completion.UpdatedAt = now;
             _completionRepository.Update(completion);
 
+            // Update schedule status to Completed
+            if (schedule.Status != (int)ScheduleStatus.Completed)
+            {
+                schedule.Status = (int)ScheduleStatus.Completed;
+                schedule.UpdatedAt = now;
+                await _scheduleRepository.UpdateAsync(schedule);
+            }
+
             var payout = await _payoutRepository.GetByScheduleIdAsync(scheduleId);
             if (payout != null)
             {
@@ -141,7 +158,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             return ConfirmAsync(scheduleId, releasePayoutImmediately: true, currentUserEmail: currentUserEmail);
         }
 
-        public async Task<bool> MarkReportedAsync(int scheduleId, int reportId)
+        public async Task<bool> MarkReportedAsync(int scheduleId, int reportId, string? currentUserEmail = null)
         {
             var completion = await _completionRepository.GetByScheduleIdAsync(scheduleId)
                 ?? throw new InvalidOperationException("Schedule completion not found.");
@@ -149,6 +166,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             var currentStatus = (ScheduleCompletionStatus)completion.Status;
             if (currentStatus == ScheduleCompletionStatus.ReportedOnHold)
                 return false; // already on hold
+
+            // Ownership check: only learner can report
+            if (!string.IsNullOrWhiteSpace(currentUserEmail))
+            {
+                var isLearner = string.Equals(completion.LearnerEmail, currentUserEmail, StringComparison.OrdinalIgnoreCase);
+                if (!isLearner)
+                    throw new UnauthorizedAccessException("Only the learner can report this schedule.");
+            }
 
             completion.Status = (byte)ScheduleCompletionStatus.ReportedOnHold;
             completion.ReportId = reportId;
@@ -187,6 +212,14 @@ namespace EduMatch.BusinessLogicLayer.Services
                 completion.AutoCompletedAt = now;
                 completion.UpdatedAt = now;
                 _completionRepository.Update(completion);
+
+                var schedule = await _scheduleRepository.GetByIdAsync(completion.ScheduleId);
+                if (schedule != null && schedule.Status != (int)ScheduleStatus.Completed)
+                {
+                    schedule.Status = (int)ScheduleStatus.Completed;
+                    schedule.UpdatedAt = now;
+                    await _scheduleRepository.UpdateAsync(schedule);
+                }
 
                 var payout = await _payoutRepository.GetByScheduleIdAsync(scheduleId);
                 if (payout != null)
@@ -238,20 +271,29 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (status == ScheduleCompletionStatus.Cancelled)
                 return false;
 
-            // Ownership check: learner or tutor can cancel
-            var isLearner = string.IsNullOrWhiteSpace(currentUserEmail)
-                ? true
-                : string.Equals(completion.LearnerEmail, currentUserEmail, StringComparison.OrdinalIgnoreCase);
-            var tutorEmail = completion.Tutor?.UserEmail;
-            var isTutor = !string.IsNullOrWhiteSpace(currentUserEmail) && !string.IsNullOrWhiteSpace(tutorEmail) &&
-                          string.Equals(tutorEmail, currentUserEmail, StringComparison.OrdinalIgnoreCase);
-            if (!string.IsNullOrWhiteSpace(currentUserEmail) && !isLearner && !isTutor)
-                throw new UnauthorizedAccessException("Only the learner or tutor can cancel this schedule.");
+            // Ownership check: learner or tutor can cancel (admin passes null to bypass)
+            if (!string.IsNullOrWhiteSpace(currentUserEmail))
+            {
+                var isLearner = string.Equals(completion.LearnerEmail, currentUserEmail, StringComparison.OrdinalIgnoreCase);
+                var tutorEmail = completion.Tutor?.UserEmail;
+                var isTutor = !string.IsNullOrWhiteSpace(tutorEmail) &&
+                              string.Equals(tutorEmail, currentUserEmail, StringComparison.OrdinalIgnoreCase);
+                if (!isLearner && !isTutor)
+                    throw new UnauthorizedAccessException("Only the learner or tutor can cancel this schedule.");
+            }
 
             var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTz);
             completion.Status = (byte)ScheduleCompletionStatus.Cancelled;
             completion.UpdatedAt = now;
             _completionRepository.Update(completion);
+
+            var schedule = await _scheduleRepository.GetByIdAsync(completion.ScheduleId);
+            if (schedule != null && schedule.Status != (int)ScheduleStatus.Cancelled)
+            {
+                schedule.Status = (int)ScheduleStatus.Cancelled;
+                schedule.UpdatedAt = now;
+                await _scheduleRepository.UpdateAsync(schedule);
+            }
 
             var payout = await _payoutRepository.GetByScheduleIdAsync(scheduleId);
             if (payout != null && payout.Status != (byte)TutorPayoutStatus.Paid)
@@ -259,6 +301,59 @@ namespace EduMatch.BusinessLogicLayer.Services
                 payout.Status = (byte)TutorPayoutStatus.Cancelled;
                 payout.UpdatedAt = now;
                 _payoutRepository.Update(payout);
+
+                // Return funds to learner (no fee taken)
+                var bookingForRefund = await _bookingRepository.GetByIdAsync(completion.BookingId);
+                if (bookingForRefund != null && payout.Amount + payout.SystemFeeAmount > 0)
+                {
+                    var totalRefund = payout.Amount + payout.SystemFeeAmount;
+                    var learnerWallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(bookingForRefund.LearnerEmail)
+                        ?? throw new InvalidOperationException("Learner wallet not found.");
+                    var systemWallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(SystemWalletEmail)
+                        ?? throw new InvalidOperationException("System wallet not found.");
+
+                    if (learnerWallet.LockedBalance < totalRefund || systemWallet.LockedBalance < totalRefund)
+                        throw new InvalidOperationException("Locked balances are insufficient to refund.");
+
+                    var learnerBefore = learnerWallet.Balance;
+                    learnerWallet.LockedBalance -= totalRefund;
+                    learnerWallet.Balance += totalRefund;
+                    learnerWallet.UpdatedAt = now;
+                    _unitOfWork.Wallets.Update(learnerWallet);
+
+                    systemWallet.LockedBalance -= totalRefund;
+                    systemWallet.UpdatedAt = now;
+                    _unitOfWork.Wallets.Update(systemWallet);
+
+                    var sysBefore = systemWallet.Balance;
+                    await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
+                    {
+                        WalletId = systemWallet.Id,
+                        Amount = totalRefund,
+                        TransactionType = WalletTransactionType.Debit,
+                        Reason = WalletTransactionReason.BookingRefund,
+                        Status = TransactionStatus.Completed,
+                        BalanceBefore = sysBefore,
+                        BalanceAfter = systemWallet.Balance,
+                        CreatedAt = now,
+                        ReferenceCode = $"SCHEDULE_CANCEL_REFUND_{scheduleId}",
+                        BookingId = bookingForRefund.Id
+                    });
+
+                    await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
+                    {
+                        WalletId = learnerWallet.Id,
+                        Amount = totalRefund,
+                        TransactionType = WalletTransactionType.Credit,
+                        Reason = WalletTransactionReason.BookingRefund,
+                        Status = TransactionStatus.Completed,
+                        BalanceBefore = learnerBefore,
+                        BalanceAfter = learnerWallet.Balance,
+                        CreatedAt = now,
+                        ReferenceCode = $"SCHEDULE_CANCEL_REFUND_{scheduleId}",
+                        BookingId = bookingForRefund.Id
+                    });
+                }
             }
 
             await _unitOfWork.CompleteAsync();
@@ -287,3 +382,5 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
     }
 }
+
+

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System.Linq;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.DTOs;
@@ -83,6 +84,53 @@ namespace EduMatch.PresentationLayer.Controllers
 			catch (UnauthorizedAccessException)
 			{
 				return Forbid();
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail(ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Hủy booking bởi học viên, hoàn lại toàn bộ số tiền còn lại và hủy lịch.
+		/// </summary>
+		[Authorize(Roles = Roles.Learner)]
+		[HttpPost("{id:int}/learner-cancel")]
+		[ProducesResponseType(typeof(ApiResponse<BookingDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status400BadRequest)]
+		public async Task<IActionResult> CancelByLearner(int id)
+		{
+			try
+			{
+				var learnerEmail = _currentUserService.Email;
+				if (string.IsNullOrWhiteSpace(learnerEmail))
+					return Unauthorized(ApiResponse<string>.Fail("User email not found in token."));
+				var booking = await _bookingService.CancelByLearnerAsync(id, learnerEmail);
+				return Ok(ApiResponse<BookingDto>.Ok(booking, "Hủy booking thành công và hoàn lại toàn bộ số tiền còn lại."));
+			}
+			catch (UnauthorizedAccessException)
+			{
+				return Forbid();
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<string>.Fail(ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Xem trước số buổi chưa học và số tiền dự kiến hoàn lại nếu hủy booking.
+		/// </summary>
+		[Authorize(Roles = Roles.Learner)]
+		[HttpGet("{id:int}/cancel-preview")]
+		[ProducesResponseType(typeof(ApiResponse<BookingCancelPreviewDto>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status404NotFound)]
+		public async Task<IActionResult> GetCancelPreview(int id)
+		{
+			try
+			{
+				var preview = await _bookingService.GetCancelPreviewAsync(id);
+				return Ok(ApiResponse<BookingCancelPreviewDto>.Ok(preview, "Xem trước thông tin hủy booking."));
 			}
 			catch (Exception ex)
 			{

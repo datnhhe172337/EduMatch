@@ -30,6 +30,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task CreateWithdrawalRequestAsync(CreateWithdrawalRequest request, string userEmail)
         {
+            if (request.Amount < 50_000)
+            {
+                throw new Exception("Số tiền tối thiểu là 50,000 VND.");
+            }
+
             var bankAccount = await _unitOfWork.UserBankAccounts.GetByIdAsync(request.UserBankAccountId);
             if (bankAccount == null || bankAccount.UserEmail != userEmail)
             {

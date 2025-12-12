@@ -601,6 +601,27 @@ namespace EduMatch.BusinessLogicLayer.Services
             };
         }
 
+        public async Task<bool> IsReportResolvedAsync(int reportId, string requesterEmail, bool requesterIsAdmin)
+        {
+            var report = await _reportRepository.GetByIdAsync(reportId)
+                ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
+
+            if (!requesterIsAdmin)
+            {
+                if (string.IsNullOrWhiteSpace(requesterEmail))
+                    throw new UnauthorizedAccessException("Bạn không có quyền xem báo cáo này.");
+
+                var normalizedEmail = requesterEmail.Trim();
+                var isReporter = normalizedEmail.Equals(report.ReporterUserEmail, StringComparison.OrdinalIgnoreCase);
+                var isReported = normalizedEmail.Equals(report.ReportedUserEmail, StringComparison.OrdinalIgnoreCase);
+
+                if (!isReporter && !isReported)
+                    throw new UnauthorizedAccessException("Bạn không có quyền xem báo cáo này.");
+            }
+
+            return report.StatusEnum == ReportStatus.Resolved;
+        }
+
         private async Task NotifyStatusChangeAsync(Report report)
         {
             var statusMessage = report.StatusEnum switch

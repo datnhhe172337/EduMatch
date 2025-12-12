@@ -6,6 +6,7 @@ using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.PresentationLayer.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -533,6 +534,35 @@ namespace EduMatch.PresentationLayer.Controllers
             catch (UnauthorizedAccessException ex)
             {
                 return Forbid(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Check if a report has been resolved.
+        /// </summary>
+        [Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Learner + "," + Roles.Tutor)]
+        [HttpGet("{id:int}/is-resolved")]
+        public async Task<IActionResult> IsReportResolvedAsync(int id)
+        {
+            var requesterEmail = _currentUserService.Email;
+            var isAdmin = User.IsInRole(Roles.BusinessAdmin) || User.IsInRole(Roles.SystemAdmin);
+
+            try
+            {
+                var isResolved = await _reportService.IsReportResolvedAsync(id, requesterEmail ?? string.Empty, isAdmin);
+                return Ok(ApiResponse<string>.Ok(isResolved ? "yes" : "no"));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
             }
         }
 

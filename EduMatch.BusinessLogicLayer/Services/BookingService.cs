@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -27,6 +27,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly INotificationService _notificationService;
         private readonly ILearnerTrialLessonService _learnerTrialLessonService;
         private const string SystemWalletEmail = "system@edumatch.com";
+        private readonly TimeZoneInfo _vietnamTz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
 
         public BookingService(
             IBookingRepository bookingRepository,
@@ -463,8 +464,150 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
-        /// Hoàn tiền booking theo tỷ lệ và chuyển phần còn lại cho gia sư sau khi trừ phí hệ thống.
+        /// Huy booking do learner yeu cau, tra lai toan bo so tien con khoa va giai phong lich.
         /// </summary>
+        public async Task<BookingDto> CancelByLearnerAsync(int bookingId, string learnerEmail)
+        {
+            if (bookingId <= 0)
+                throw new ArgumentException("BookingId must be greater than 0.");
+            if (string.IsNullOrWhiteSpace(learnerEmail))
+                throw new ArgumentException("Learner email is required.", nameof(learnerEmail));
+
+            var booking = await _bookingRepository.GetByIdAsync(bookingId)
+                ?? throw new Exception("Booking khong ton tai");
+
+            if (!booking.LearnerEmail.Equals(learnerEmail, StringComparison.OrdinalIgnoreCase))
+                throw new UnauthorizedAccessException("Only the booking owner can cancel this booking.");
+
+            var currentStatus = (BookingStatus)booking.Status;
+            if (currentStatus == BookingStatus.Completed)
+                throw new InvalidOperationException("Khong the huy booking da hoan thanh.");
+
+            if (currentStatus == BookingStatus.Cancelled)
+                return _mapper.Map<BookingDto>(booking);
+
+            var now = DateTime.UtcNow;
+
+            // Huy cac lich sap toi de giai phong slot va chan tra tien cho tutor
+            await CancelUpcomingSchedulesByBookingAsync(bookingId);
+
+            decimal refunded = 0;
+
+            if (booking.PaymentStatus == (int)PaymentStatus.Paid ||
+                booking.PaymentStatus == (int)PaymentStatus.RefundPending)
+            {
+                var learnerWallet = await GetOrCreateWalletAsync(booking.LearnerEmail);
+                var systemWallet = await GetOrCreateWalletAsync(SystemWalletEmail);
+
+                var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTz);
+                var upcomingCount = booking.Schedules?.Count(s =>
+                    s.Status != (int)ScheduleStatus.Completed &&
+                    s.Status != (int)ScheduleStatus.Cancelled &&
+                    (s.TutorPayout == null || s.TutorPayout.Status != (byte)TutorPayoutStatus.OnHold) &&
+                    IsFutureSchedule(s, nowLocal)) ?? 0;
+                var totalSessions = booking.TotalSessions > 0 ? booking.TotalSessions : booking.Schedules?.Count ?? 0;
+                var perSessionAmount = totalSessions > 0 ? booking.TotalAmount / totalSessions : 0;
+                var refundableBase = decimal.Round(perSessionAmount * upcomingCount, 2, MidpointRounding.AwayFromZero);
+
+                var refundable = Math.Max(refundableBase - booking.RefundedAmount, 0);
+                refundable = Math.Min(refundable, Math.Min(learnerWallet.LockedBalance, systemWallet.LockedBalance));
+
+                if (refundable > 0)
+                {
+                    learnerWallet.LockedBalance -= refundable;
+                    var learnerBalanceBefore = learnerWallet.Balance;
+                    learnerWallet.Balance += refundable;
+                    learnerWallet.UpdatedAt = now;
+                    _unitOfWork.Wallets.Update(learnerWallet);
+
+                    systemWallet.LockedBalance -= refundable;
+                    systemWallet.UpdatedAt = now;
+                    _unitOfWork.Wallets.Update(systemWallet);
+
+                    await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
+                    {
+                        WalletId = learnerWallet.Id,
+                        Amount = refundable,
+                        TransactionType = WalletTransactionType.Credit,
+                        Reason = WalletTransactionReason.BookingRefund,
+                        Status = TransactionStatus.Completed,
+                        BalanceBefore = learnerBalanceBefore,
+                        BalanceAfter = learnerWallet.Balance,
+                        CreatedAt = now,
+                        ReferenceCode = $"BOOKING_LEARNER_CANCEL_{booking.Id}",
+                        BookingId = booking.Id
+                    });
+
+                    await _unitOfWork.CompleteAsync();
+
+                    booking.RefundedAmount += refundable;
+                    booking.PaymentStatus = booking.RefundedAmount >= booking.TotalAmount
+                        ? (int)PaymentStatus.Refunded
+                        : (int)PaymentStatus.RefundPending;
+
+                    refunded = refundable;
+                }
+            }
+
+            booking.Status = (int)BookingStatus.Cancelled;
+            booking.UpdatedAt = now;
+            await _bookingRepository.UpdateAsync(booking);
+
+            await _notificationService.CreateNotificationAsync(
+                booking.LearnerEmail,
+                refunded > 0
+                    ? $"Booking #{booking.Id} da bi huy. {refunded:N0} VND da duoc hoan ve vi cua ban."
+                    : $"Booking #{booking.Id} da bi huy.",
+                "/bookings");
+
+            var tutorEmail = booking.TutorSubject?.Tutor?.UserEmail;
+            if (!string.IsNullOrWhiteSpace(tutorEmail))
+            {
+                await _notificationService.CreateNotificationAsync(
+                    tutorEmail,
+                    $"Booking #{booking.Id} da bi huy boi hoc vien.",
+                    "/bookings");
+            }
+
+            return _mapper.Map<BookingDto>(booking);
+        }
+
+        /// <summary>
+        /// Xem trước thông tin hủy booking: số buổi chưa học và số tiền dự kiến hoàn lại.
+        /// </summary>
+        public async Task<BookingCancelPreviewDto> GetCancelPreviewAsync(int bookingId)
+        {
+            var booking = await _bookingRepository.GetByIdAsync(bookingId)
+                ?? throw new Exception("Booking không tồn tại");
+
+            var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTz);
+            var upcomingCount = booking.Schedules?.Count(s =>
+                s.Status != (int)ScheduleStatus.Completed &&
+                s.Status != (int)ScheduleStatus.Cancelled &&
+                (s.TutorPayout == null || s.TutorPayout.Status != (byte)TutorPayoutStatus.OnHold) &&
+                IsFutureSchedule(s, nowLocal)) ?? 0;
+
+            decimal paidToTutor = 0;
+            if (booking.Schedules != null && booking.Schedules.Any())
+            {
+                paidToTutor = booking.Schedules
+                    .Where(s => s.TutorPayout != null && s.TutorPayout.Status == (byte)TutorPayoutStatus.Paid)
+                    .Sum(s => s.TutorPayout!.Amount);
+            }
+
+            var totalSessions = booking.TotalSessions > 0 ? booking.TotalSessions : booking.Schedules?.Count ?? 0;
+            var perSessionAmount = totalSessions > 0 ? booking.TotalAmount / totalSessions : 0;
+            var refundableBase = decimal.Round(perSessionAmount * upcomingCount, 2, MidpointRounding.AwayFromZero);
+            var refundable = Math.Max(refundableBase - booking.RefundedAmount, 0);
+
+            return new BookingCancelPreviewDto
+            {
+                BookingId = booking.Id,
+                UpcomingSchedules = upcomingCount,
+                RefundableAmount = refundable
+            };
+        }
+
         public async Task<BookingDto> RefundBookingAsync(int bookingId, decimal learnerPercentage)
         {
             if (bookingId <= 0)
@@ -779,6 +922,92 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 await _unitOfWork.CompleteAsync();
             }
+        }
+
+        /// <summary>
+        /// Hủy các Schedule chưa diễn ra (chưa Completed/Cancelled và chưa tới giờ bắt đầu) theo bookingId.
+        /// </summary>
+        private async Task CancelUpcomingSchedulesByBookingAsync(int bookingId)
+        {
+            var schedules = (await _scheduleRepository.GetAllByBookingIdOrderedAsync(bookingId)).ToList();
+            var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _vietnamTz);
+            foreach (var schedule in schedules)
+            {
+                // Chỉ hủy các buổi học chưa diễn ra và chưa hoàn thành
+                if (schedule.Status == (int)ScheduleStatus.Completed ||
+                    schedule.Status == (int)ScheduleStatus.Cancelled ||
+                    !IsFutureSchedule(schedule, nowLocal))
+                {
+                    continue;
+                }
+
+                // Delete meeting session first (includes Google event deletion)
+                var meetingSession = await _meetingSessionRepository.GetByScheduleIdAsync(schedule.Id);
+                if (meetingSession != null)
+                {
+                    if (!string.IsNullOrEmpty(meetingSession.EventId))
+                    {
+                        try
+                        {
+                            await _googleCalendarService.DeleteEventAsync(meetingSession.EventId);
+                        }
+                        catch
+                        {
+                            // Log error but continue
+                        }
+                    }
+                    await _meetingSessionRepository.DeleteAsync(meetingSession.Id);
+                }
+
+                schedule.Status = (int)ScheduleStatus.Cancelled;
+                schedule.UpdatedAt = DateTime.UtcNow;
+                await _scheduleRepository.UpdateAsync(schedule);
+
+                var availability = await _tutorAvailabilityRepository.GetByIdFullAsync(schedule.AvailabilitiId);
+                if (availability != null)
+                {
+                    availability.Status = (int)TutorAvailabilityStatus.Available;
+                    await _tutorAvailabilityRepository.UpdateAsync(availability);
+                }
+
+                if (_unitOfWork.ScheduleCompletions != null)
+                {
+                    var completion = await _unitOfWork.ScheduleCompletions.GetByScheduleIdAsync(schedule.Id);
+                    if (completion != null)
+                    {
+                        completion.Status = (byte)ScheduleCompletionStatus.Cancelled;
+                        completion.UpdatedAt = DateTime.UtcNow;
+                        _unitOfWork.ScheduleCompletions.Update(completion);
+                    }
+                }
+
+                if (_unitOfWork.TutorPayouts != null)
+                {
+                    var payout = await _unitOfWork.TutorPayouts.GetByScheduleIdAsync(schedule.Id);
+                    if (payout != null && payout.Status != (byte)TutorPayoutStatus.Paid)
+                    {
+                        payout.Status = (byte)TutorPayoutStatus.Cancelled;
+                        payout.UpdatedAt = DateTime.UtcNow;
+                        _unitOfWork.TutorPayouts.Update(payout);
+                    }
+                }
+            }
+
+            if (_unitOfWork.ScheduleCompletions != null || _unitOfWork.TutorPayouts != null)
+            {
+                await _unitOfWork.CompleteAsync();
+            }
+        }
+
+        private bool IsFutureSchedule(Schedule schedule, DateTime nowLocal)
+        {
+            if (schedule?.Availabiliti?.Slot == null)
+            {
+                return true;
+            }
+
+            var lessonStart = schedule.Availabiliti.StartDate.Date.Add(schedule.Availabiliti.Slot.StartTime.ToTimeSpan());
+            return lessonStart > nowLocal;
         }
 
         private async Task<Wallet> GetOrCreateWalletAsync(string userEmail)

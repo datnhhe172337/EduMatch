@@ -1,4 +1,4 @@
-using EduMatch.BusinessLogicLayer.DTOs;
+﻿using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Requests.Booking;
 using EduMatch.DataAccessLayer.Enum;
 using System.Collections.Generic;
@@ -60,6 +60,14 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// Cập nhật Status của Booking
         /// </summary>
         Task<BookingDto> UpdateStatusAsync(int id, BookingStatus status);
+        /// <summary>
+        /// Hủy booking do học viên yêu cầu và hoàn trả số tiền còn lại (không trừ phí).
+        /// </summary>
+        Task<BookingDto> CancelByLearnerAsync(int bookingId, string learnerEmail);
+        /// <summary>
+        /// Xem trước thông tin hủy booking: số buổi chưa học và số tiền dự kiến hoàn lại.
+        /// </summary>
+        Task<BookingCancelPreviewDto> GetCancelPreviewAsync(int bookingId);
         /// <summary>
         /// Hoàn tiền booking với tỷ lệ phần trăm dành cho học viên.
         /// </summary>

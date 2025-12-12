@@ -36,20 +36,20 @@ namespace EduMatch.PresentationLayer.Controllers
         /// <summary>
         /// Learner confirms a schedule as finished and triggers payout immediately.
         /// </summary>
-		[Authorize]
-		[HttpPost("{id:int}/finish")]
-		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-		public async Task<ActionResult<ApiResponse<object>>> FinishSchedule(int id)
-		{
-			try
-			{
-				var updated = await _scheduleCompletionService.FinishAndPayAsync(id);
-				return Ok(ApiResponse<object>.Ok(new { updated }));
-			}
-			catch (Exception ex)
-			{
-				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        [Authorize(Roles = Roles.Learner)]
+        [HttpPost("{id:int}/finish")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ApiResponse<object>>> FinishSchedule(int id)
+        {
+            try
+            {
+                var updated = await _scheduleCompletionService.FinishAndPayAsync(id, User?.Identity?.Name);
+                return Ok(ApiResponse<object>.Ok(new { updated }));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -76,22 +76,62 @@ namespace EduMatch.PresentationLayer.Controllers
         /// <summary>
         /// Mark schedule as reported/on-hold (ties to an existing report).
         /// </summary>
-		[Authorize]
-		[HttpPost("{id:int}/report/{reportId:int}")]
-		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-		public async Task<ActionResult<ApiResponse<object>>> ReportSchedule(int id, int reportId)
-		{
-			try
-			{
-				var updated = await _scheduleCompletionService.MarkReportedAsync(id, reportId);
-				return Ok(ApiResponse<object>.Ok(new { updated }));
-			}
-			catch (Exception ex)
-			{
-				return BadRequest(ApiResponse<object>.Fail(ex.Message));
-			}
-		}
+        [Authorize(Roles = Roles.Learner)]
+        [HttpPost("{id:int}/report/{reportId:int}")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ApiResponse<object>>> ReportSchedule(int id, int reportId)
+        {
+            try
+            {
+                var updated = await _scheduleCompletionService.MarkReportedAsync(id, reportId, User?.Identity?.Name);
+                return Ok(ApiResponse<object>.Ok(new { updated }));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Admin finishes a schedule (bypasses learner ownership) and triggers payout.
+        /// </summary>
+        [Authorize(Roles = Roles.SystemAdmin)]
+        [HttpPost("{id:int}/admin/finish")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ApiResponse<object>>> AdminFinishSchedule(int id)
+        {
+            try
+            {
+                var updated = await _scheduleCompletionService.FinishAndPayAsync(id, null);
+                return Ok(ApiResponse<object>.Ok(new { updated }));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Admin cancels a schedule completion (no payout).
+        /// </summary>
+        [Authorize(Roles = Roles.SystemAdmin)]
+        [HttpPost("{id:int}/admin/cancel")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ApiResponse<object>>> AdminCancelSchedule(int id)
+        {
+            try
+            {
+                var updated = await _scheduleCompletionService.CancelAsync(id, null);
+                return Ok(ApiResponse<object>.Ok(new { updated }));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
 
 		/// <summary>
 		/// Admin resolution: release payout or cancel after review.

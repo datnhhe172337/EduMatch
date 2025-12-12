@@ -34,6 +34,11 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         public async Task<Deposit> CreateDepositRequestAsync(WalletDepositRequest request, string userEmail)
         {
+            if (request.Amount < 50_000)
+            {
+                throw new Exception("Số tiền tối thiểu là 50,000 VND.");
+            }
+
             var wallet = await _unitOfWork.Wallets.GetWalletByUserEmailAsync(userEmail);
             if (wallet == null)
             {

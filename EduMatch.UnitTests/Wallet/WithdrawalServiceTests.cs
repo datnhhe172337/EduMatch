@@ -67,7 +67,7 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
             new()
             {
                 Id = 1,
-                Amount = 20_000m,
+                Amount = 80_000m,
                 Status = WithdrawalStatus.Completed,
                 UserBankAccount = new UserBankAccount
                 {
@@ -95,7 +95,7 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
             new()
             {
                 Id = 4,
-                Amount = 30_000m,
+                Amount = 80_000m,
                 Status = WithdrawalStatus.Pending,
                 UserBankAccount = new UserBankAccount
                 {
@@ -149,10 +149,10 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task CreateWithdrawalRequestAsync_ExactBalance_LeavesZeroBalance()
+    public async Task CreateWithdrawalRequestAsync_MinAmountEqualBalance_LeavesZeroBalance()
     {
         const string userEmail = "student@test.com";
-        var wallet = new Wallet { Id = 2, UserEmail = userEmail, Balance = 75_000m, LockedBalance = 0 };
+        var wallet = new Wallet { Id = 2, UserEmail = userEmail, Balance = 80_000m, LockedBalance = 0 };
         var bankAccount = new UserBankAccount { Id = 5, UserEmail = userEmail };
 
         _userBankAccountRepository.Setup(r => r.GetByIdAsync(bankAccount.Id)).ReturnsAsync(bankAccount);
@@ -161,7 +161,7 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
         _walletTransactionRepository.Setup(r => r.AddAsync(It.IsAny<WalletTransaction>())).Returns(Task.CompletedTask);
         _unitOfWork.SetupSequence(u => u.CompleteAsync()).ReturnsAsync(1).ReturnsAsync(1);
 
-        var request = new CreateWithdrawalRequest { Amount = 75_000m, UserBankAccountId = bankAccount.Id };
+        var request = new CreateWithdrawalRequest { Amount = 80_000m, UserBankAccountId = bankAccount.Id };
 
         await _sut.CreateWithdrawalRequestAsync(request, userEmail);
 
@@ -173,7 +173,7 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
     public async Task CreateWithdrawalRequestAsync_InvalidBankAccount_Throws()
     {
         const string userEmail = "student@test.com";
-        var request = new CreateWithdrawalRequest { Amount = 10_000m, UserBankAccountId = 999 };
+        var request = new CreateWithdrawalRequest { Amount = 60_000m, UserBankAccountId = 999 };
 
         _userBankAccountRepository.Setup(r => r.GetByIdAsync(request.UserBankAccountId)).ReturnsAsync((UserBankAccount?)null);
 
@@ -189,7 +189,7 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
         var bankAccount = new UserBankAccount { Id = 11, UserEmail = "other@test.com" };
         _userBankAccountRepository.Setup(r => r.GetByIdAsync(bankAccount.Id)).ReturnsAsync(bankAccount);
 
-        var request = new CreateWithdrawalRequest { Amount = 10_000m, UserBankAccountId = bankAccount.Id };
+        var request = new CreateWithdrawalRequest { Amount = 60_000m, UserBankAccountId = bankAccount.Id };
 
         await _sut.Invoking(s => s.CreateWithdrawalRequestAsync(request, userEmail))
             .Should().ThrowAsync<System.Exception>()
@@ -204,7 +204,7 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
         _userBankAccountRepository.Setup(r => r.GetByIdAsync(bankAccount.Id)).ReturnsAsync(bankAccount);
         _walletRepository.Setup(r => r.GetWalletByUserEmailAsync(userEmail)).ReturnsAsync((Wallet?)null);
 
-        var request = new CreateWithdrawalRequest { Amount = 5_000m, UserBankAccountId = bankAccount.Id };
+        var request = new CreateWithdrawalRequest { Amount = 60_000m, UserBankAccountId = bankAccount.Id };
 
         await _sut.Invoking(s => s.CreateWithdrawalRequestAsync(request, userEmail))
             .Should().ThrowAsync<System.Exception>()
@@ -216,12 +216,12 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
     {
         const string userEmail = "student@test.com";
         var bankAccount = new UserBankAccount { Id = 1, UserEmail = userEmail };
-        var wallet = new Wallet { Id = 5, UserEmail = userEmail, Balance = 1_000m };
+        var wallet = new Wallet { Id = 5, UserEmail = userEmail, Balance = 30_000m };
 
         _userBankAccountRepository.Setup(r => r.GetByIdAsync(bankAccount.Id)).ReturnsAsync(bankAccount);
         _walletRepository.Setup(r => r.GetWalletByUserEmailAsync(userEmail)).ReturnsAsync(wallet);
 
-        var request = new CreateWithdrawalRequest { Amount = 2_000m, UserBankAccountId = bankAccount.Id };
+        var request = new CreateWithdrawalRequest { Amount = 80_000m, UserBankAccountId = bankAccount.Id };
 
         await _sut.Invoking(s => s.CreateWithdrawalRequestAsync(request, userEmail))
             .Should().ThrowAsync<System.Exception>()
@@ -235,7 +235,7 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
     {
         const string userEmail = "student@test.com";
         var bankAccount = new UserBankAccount { Id = 21, UserEmail = userEmail };
-        var wallet = new Wallet { Id = 9, UserEmail = userEmail, Balance = 20_000m };
+        var wallet = new Wallet { Id = 9, UserEmail = userEmail, Balance = 100_000m };
 
         _userBankAccountRepository.Setup(r => r.GetByIdAsync(bankAccount.Id)).ReturnsAsync(bankAccount);
         _walletRepository.Setup(r => r.GetWalletByUserEmailAsync(userEmail)).ReturnsAsync(wallet);
@@ -244,13 +244,13 @@ public sealed class WithdrawalServiceTests : IAsyncLifetime
             .ThrowsAsync(new System.Exception("Commit failed"))
             .ReturnsAsync(1);
 
-        var request = new CreateWithdrawalRequest { Amount = 10_000m, UserBankAccountId = bankAccount.Id };
+        var request = new CreateWithdrawalRequest { Amount = 80_000m, UserBankAccountId = bankAccount.Id };
 
         await _sut.Invoking(s => s.CreateWithdrawalRequestAsync(request, userEmail))
             .Should().ThrowAsync<System.Exception>()
             .WithMessage("Commit failed");
 
-        wallet.Balance.Should().Be(20_000m);
+        wallet.Balance.Should().Be(100_000m);
         _walletTransactionRepository.Verify(r => r.AddAsync(It.IsAny<WalletTransaction>()), Times.Never);
         _notificationService.Verify(n => n.CreateNotificationAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }

@@ -24,7 +24,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// <summary>
         /// Mark a schedule as reported/on-hold and tie it to a report.
         /// </summary>
-        Task<bool> MarkReportedAsync(int scheduleId, int reportId);
+        Task<bool> MarkReportedAsync(int scheduleId, int reportId, string? currentUserEmail = null);
 
         /// <summary>
         /// Admin resolution: release payout (back to ReadyForPayout) or cancel payout after review.

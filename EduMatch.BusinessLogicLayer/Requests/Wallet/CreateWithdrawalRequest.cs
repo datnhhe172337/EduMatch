@@ -10,7 +10,7 @@ namespace EduMatch.BusinessLogicLayer.Requests.Wallet
     public class CreateWithdrawalRequest
     {
         [Required]
-        [Range(50000, 5000000, ErrorMessage = "Amount must be between 50,000 and 5,000,000 VND")]
+        [Range(50000, double.MaxValue, ErrorMessage = "Amount must be at least 50,000 VND")]
         public decimal Amount { get; set; }
 
         [Required]
