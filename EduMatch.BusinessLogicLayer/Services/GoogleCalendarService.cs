@@ -117,7 +117,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 			_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
 			string calendarId = _googleCalendarSettings.SystemAccountEmail;
-			string endpoint = $"{_googleCalendarSettings.CalendarApiBaseUrl}/calendars/{calendarId}/events?conferenceDataVersion=1";
+			string endpoint = $"{_googleCalendarSettings.CalendarApiBaseUrl}/calendars/{calendarId}/events?conferenceDataVersion=1&sendUpdates=none";
 
 			var jsonBody = JsonConvert.SerializeObject(eventRequest);
 			var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");

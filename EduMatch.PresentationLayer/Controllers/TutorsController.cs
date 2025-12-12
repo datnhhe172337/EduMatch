@@ -107,7 +107,7 @@ namespace EduMatch.PresentationLayer.Controllers
 					var profileDto = await _tutorProfileService.CreateAsync(request.TutorProfile);
 					var tutorId = profileDto.Id;
 
-					await _summaryService.EnsureAndUpdateSummaryAsync(tutorId);
+					await _summaryService.AddRatingSummary(tutorId);
 					if (request.Educations.Any())
 					{
 						foreach (var e in request.Educations) e.TutorId = tutorId;
@@ -134,7 +134,8 @@ namespace EduMatch.PresentationLayer.Controllers
 
 					await _emailService.SendBecomeTutorWelcomeAsync(userEmail);
 
-					// await _userService.UpdateRoleUserAsync(userEmail, 2);
+					// Cấp role Tutor ngay khi đăng ký become-tutor
+					await _userService.UpdateRoleUserAsync(userEmail, 2);
 
 					await tx.CommitAsync();
 
@@ -460,9 +461,6 @@ namespace EduMatch.PresentationLayer.Controllers
 						RejectReason = null
 					});
 				}
-
-				// Update user role to tutor since status is Approved
-				await _userService.UpdateRoleUserAsync(existingProfile.UserEmail, 2); // Role 2 = Tutor
 
 				// Commit transaction
 				await dbTransaction.CommitAsync();
