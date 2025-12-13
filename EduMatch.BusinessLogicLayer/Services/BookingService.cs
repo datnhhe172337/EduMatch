@@ -509,7 +509,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 var perSessionAmount = totalSessions > 0 ? booking.TotalAmount / totalSessions : 0;
                 var refundableBase = decimal.Round(perSessionAmount * upcomingCount, 2, MidpointRounding.AwayFromZero);
 
-                var refundable = Math.Max(refundableBase - booking.RefundedAmount, 0);
+                var refundable = refundableBase;
                 refundable = Math.Min(refundable, Math.Min(learnerWallet.LockedBalance, systemWallet.LockedBalance));
 
                 if (refundable > 0)
@@ -541,7 +541,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                     await _unitOfWork.CompleteAsync();
 
                     booking.RefundedAmount += refundable;
-                    booking.PaymentStatus = booking.RefundedAmount >= booking.TotalAmount
+                    booking.PaymentStatus = Math.Abs(refundable - refundableBase) < 0.01m
                         ? (int)PaymentStatus.Refunded
                         : (int)PaymentStatus.RefundPending;
 
@@ -598,7 +598,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             var totalSessions = booking.TotalSessions > 0 ? booking.TotalSessions : booking.Schedules?.Count ?? 0;
             var perSessionAmount = totalSessions > 0 ? booking.TotalAmount / totalSessions : 0;
             var refundableBase = decimal.Round(perSessionAmount * upcomingCount, 2, MidpointRounding.AwayFromZero);
-            var refundable = Math.Max(refundableBase - booking.RefundedAmount, 0);
+            var refundable = refundableBase;
 
             return new BookingCancelPreviewDto
             {
@@ -1032,4 +1032,3 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
     }
 }
-

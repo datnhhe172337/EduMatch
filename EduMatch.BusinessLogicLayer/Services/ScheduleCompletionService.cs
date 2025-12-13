@@ -77,7 +77,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             return updated;
         }
 
-        public async Task<bool> ConfirmAsync(int scheduleId, bool releasePayoutImmediately = true, string? currentUserEmail = null)
+        public async Task<bool> ConfirmAsync(int scheduleId, bool releasePayoutImmediately = true, string? currentUserEmail = null, bool adminAction = false)
         {
             var completion = await _completionRepository.GetByScheduleIdAsync(scheduleId)
                 ?? throw new InvalidOperationException("Schedule completion not found.");
@@ -131,7 +131,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 if (payoutStatus == TutorPayoutStatus.Pending)
                 {
                     payout.Status = (byte)TutorPayoutStatus.ReadyForPayout;
-                    payout.PayoutTrigger = (byte)TutorPayoutTrigger.LearnerConfirmed;
+                    payout.PayoutTrigger = (byte)(adminAction ? TutorPayoutTrigger.AdminApproved : TutorPayoutTrigger.LearnerConfirmed);
                     payout.UpdatedAt = now;
                     _payoutRepository.Update(payout);
                 }
@@ -153,9 +153,9 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         // New convenience method; does not change existing confirmation logic.
-        public Task<bool> FinishAndPayAsync(int scheduleId, string? currentUserEmail = null)
+        public Task<bool> FinishAndPayAsync(int scheduleId, string? currentUserEmail = null, bool adminAction = false)
         {
-            return ConfirmAsync(scheduleId, releasePayoutImmediately: true, currentUserEmail: currentUserEmail);
+            return ConfirmAsync(scheduleId, releasePayoutImmediately: true, currentUserEmail: currentUserEmail, adminAction: adminAction);
         }
 
         public async Task<bool> MarkReportedAsync(int scheduleId, int reportId, string? currentUserEmail = null)
@@ -262,7 +262,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             return true;
         }
 
-        public async Task<bool> CancelAsync(int scheduleId, string? currentUserEmail = null)
+        public async Task<bool> CancelAsync(int scheduleId, string? currentUserEmail = null, bool adminAction = false)
         {
             var completion = await _completionRepository.GetByScheduleIdAsync(scheduleId)
                 ?? throw new InvalidOperationException("Schedule completion not found.");
@@ -325,6 +325,11 @@ namespace EduMatch.BusinessLogicLayer.Services
                     systemWallet.UpdatedAt = now;
                     _unitOfWork.Wallets.Update(systemWallet);
 
+                    // Cập nhật số tiền đã hoàn (không thay đổi PaymentStatus ở đây)
+                    bookingForRefund.RefundedAmount += totalRefund;
+                    bookingForRefund.UpdatedAt = now;
+                    await _bookingRepository.UpdateAsync(bookingForRefund);
+
                     var sysBefore = systemWallet.Balance;
                     await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
                     {
@@ -382,5 +387,3 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
     }
 }
-
-
