@@ -15,6 +15,7 @@ namespace EduMatch.BusinessLogicLayer.DTOs
         public string Reason { get; set; } = string.Empty;
         public ReportStatus Status { get; set; }
         public int? BookingId { get; set; }
+        public int? ScheduleId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }

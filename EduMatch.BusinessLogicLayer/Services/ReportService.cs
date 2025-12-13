@@ -248,6 +248,17 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (string.IsNullOrWhiteSpace(request.FileUrl))
                 throw new ArgumentException("FileUrl là bắt buộc.");
 
+            if (request.DefenseId.HasValue)
+            {
+                var defense = await _reportDefenseRepository.GetByIdAsync(request.DefenseId.Value);
+
+                if (defense == null && !currentUserIsAdmin)
+                    throw new KeyNotFoundException("Không tìm thấy báo vệ.");
+
+                if (defense != null && defense.ReportId != report.Id)
+                    throw new InvalidOperationException("Bằng chứng không thuộc báo cáo/báo vệ này.");
+            }
+
             var evidenceType = request.EvidenceType ??
                 (isReporter ? ReportEvidenceType.ReporterEvidence :
                  isReported ? ReportEvidenceType.TutorDefense :

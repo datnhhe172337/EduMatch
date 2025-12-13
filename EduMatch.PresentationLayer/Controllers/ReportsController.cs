@@ -4,6 +4,7 @@ using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests.Report;
 using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.PresentationLayer.Common;
+using EduMatch.DataAccessLayer.Enum;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -16,11 +17,16 @@ namespace EduMatch.PresentationLayer.Controllers
     {
         private readonly IReportService _reportService;
         private readonly CurrentUserService _currentUserService;
+        private readonly IScheduleCompletionService _scheduleCompletionService;
 
-        public ReportsController(IReportService reportService, CurrentUserService currentUserService)
+        public ReportsController(
+            IReportService reportService,
+            CurrentUserService currentUserService,
+            IScheduleCompletionService scheduleCompletionService)
         {
             _reportService = reportService;
             _currentUserService = currentUserService;
+            _scheduleCompletionService = scheduleCompletionService;
         }
 
         /// <summary>
@@ -370,6 +376,23 @@ namespace EduMatch.PresentationLayer.Controllers
             try
             {
                 var result = await _reportService.UpdateReportAsync(id, request, adminEmail);
+
+                // If the report is tied to a schedule, also resolve the schedule completion/payout.
+                var scheduleId = result.ScheduleId ?? result.Schedule?.Id;
+                if (scheduleId.HasValue)
+                {
+                    if (request.Status == ReportStatus.Resolved)
+                    {
+                        // Approve/release: finish and pay immediately
+                        await _scheduleCompletionService.FinishAndPayAsync(scheduleId.Value, null, adminAction: true);
+                    }
+                    else if (request.Status == ReportStatus.Dismissed)
+                    {
+                        // Reject: cancel completion/payout and refund learner
+                        await _scheduleCompletionService.CancelAsync(scheduleId.Value, null, adminAction: true);
+                    }
+                }
+
                 return Ok(ApiResponse<ReportDetailDto>.Ok(result, "Report updated successfully."));
             }
             catch (KeyNotFoundException ex)

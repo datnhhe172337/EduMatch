@@ -40,16 +40,16 @@ namespace EduMatch.PresentationLayer.Controllers
         [HttpPost("{id:int}/finish")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<ApiResponse<object>>> FinishSchedule(int id)
-        {
-            try
-            {
-                var updated = await _scheduleCompletionService.FinishAndPayAsync(id, User?.Identity?.Name);
-                return Ok(ApiResponse<object>.Ok(new { updated }));
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+		public async Task<ActionResult<ApiResponse<object>>> FinishSchedule(int id)
+		{
+			try
+			{
+				var updated = await _scheduleCompletionService.FinishAndPayAsync(id, User?.Identity?.Name, adminAction: false);
+				return Ok(ApiResponse<object>.Ok(new { updated }));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -104,7 +104,7 @@ namespace EduMatch.PresentationLayer.Controllers
         {
             try
             {
-                var updated = await _scheduleCompletionService.FinishAndPayAsync(id, null);
+                var updated = await _scheduleCompletionService.FinishAndPayAsync(id, null, adminAction: true);
                 return Ok(ApiResponse<object>.Ok(new { updated }));
             }
             catch (Exception ex)
@@ -124,7 +124,7 @@ namespace EduMatch.PresentationLayer.Controllers
         {
             try
             {
-                var updated = await _scheduleCompletionService.CancelAsync(id, null);
+                var updated = await _scheduleCompletionService.CancelAsync(id, null, adminAction: true);
                 return Ok(ApiResponse<object>.Ok(new { updated }));
             }
             catch (Exception ex)
