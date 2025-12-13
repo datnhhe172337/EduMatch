@@ -35,7 +35,15 @@ namespace EduMatch.DataAccessLayer.Repositories
                         .ThenInclude(ts => ts.Subject)
                 .Include(r => r.Booking)
                     .ThenInclude(b => b.TutorSubject)
-                        .ThenInclude(ts => ts.Level);
+                        .ThenInclude(ts => ts.Level)
+                .Include(r => r.Schedule)
+                    .ThenInclude(s => s.MeetingSession)
+                .Include(r => r.Schedule)
+                    .ThenInclude(s => s.ScheduleCompletion)
+                .Include(r => r.Schedule)
+                    .ThenInclude(s => s.TutorPayout)
+                .Include(r => r.Schedule)
+                    .ThenInclude(s => s.Availabiliti);
         }
 
         public async Task<Report> CreateAsync(Report report)
