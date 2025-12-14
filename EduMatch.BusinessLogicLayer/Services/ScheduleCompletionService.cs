@@ -145,10 +145,21 @@ namespace EduMatch.BusinessLogicLayer.Services
             }
 
             var booking = await _bookingRepository.GetByIdAsync(completion.BookingId);
-            await SendNotificationsAsync(booking, completion.ScheduleId,
+            //await SendNotificationsAsync(booking, completion.ScheduleId,
+            //    learnerMessage: $"Bạn đã xác nhận buổi học #{completion.ScheduleId}. Tiền sẽ được giải ngân cho gia sư.",
+            //    tutorMessage: $"Học viên đã xác nhận buổi học #{completion.ScheduleId}. Thanh toán sẽ được giải ngân.");
+            if (adminAction)
+            {
+                await SendNotificationsAsync(booking, completion.ScheduleId,
+                    learnerMessage: "Khiếu nại đã được xử lý. Thanh toán cho buổi học này sẽ tiếp tục.",
+                    tutorMessage: $"Khiếu nại cho buổi học #{completion.ScheduleId} đã được xử lý.Thanh toán sẽ được giải ngân.");
+            }
+            else
+            {
+                await SendNotificationsAsync(booking, completion.ScheduleId,
                 learnerMessage: $"Bạn đã xác nhận buổi học #{completion.ScheduleId}. Tiền sẽ được giải ngân cho gia sư.",
                 tutorMessage: $"Học viên đã xác nhận buổi học #{completion.ScheduleId}. Thanh toán sẽ được giải ngân.");
-
+            }
             return true;
         }
 
@@ -363,9 +374,19 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             await _unitOfWork.CompleteAsync();
             var booking = await _bookingRepository.GetByIdAsync(completion.BookingId);
-            await SendNotificationsAsync(booking, completion.ScheduleId,
+            if (adminAction)
+            {
+                await SendNotificationsAsync(booking, completion.ScheduleId,
+                    learnerMessage: "Khiếu nại đã được xử lý. Thanh toán cho buổi học này bị hủy.Bạn sẽ được hoàn tiền.",
+                    tutorMessage: $"Khiếu nại cho buổi học #{completion.ScheduleId} đã được xử lý. Thanh toán bị hủy.");
+            }
+            else
+            {
+                await SendNotificationsAsync(booking, completion.ScheduleId,
                 learnerMessage: $"Buổi học #{completion.ScheduleId} đã bị hủy. Thanh toán sẽ không được thực hiện.",
                 tutorMessage: $"Buổi học #{completion.ScheduleId} đã bị hủy. Thanh toán sẽ không được thực hiện.");
+            }
+           
             return true;
         }
 
@@ -387,3 +408,5 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
     }
 }
+
+

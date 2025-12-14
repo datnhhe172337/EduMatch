@@ -383,13 +383,14 @@ namespace EduMatch.PresentationLayer.Controllers
                 {
                     if (request.Status == ReportStatus.Resolved)
                     {
-                        // Approve/release: finish and pay immediately
+                        // approve: cancel completion/payout and refund learner
                         await _scheduleCompletionService.FinishAndPayAsync(scheduleId.Value, null, adminAction: true);
                     }
                     else if (request.Status == ReportStatus.Dismissed)
                     {
-                        // Reject: cancel completion/payout and refund learner
-                        await _scheduleCompletionService.CancelAsync(scheduleId.Value, null, adminAction: true);
+                        // reject/release: finish and pay immediately
+                        await _scheduleCompletionService.FinishAndPayAsync(scheduleId.Value, null, adminAction: true);
+                       
                     }
                 }
 
