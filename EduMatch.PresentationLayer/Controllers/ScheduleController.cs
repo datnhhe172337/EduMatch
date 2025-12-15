@@ -490,7 +490,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 		/// <summary>
-		/// Lấy một số buổi dạy của Tutor theo email và status, mặc định lấy 1 buổi tiếp theo, sắp xếp theo thời gian tăng dần
+		/// Lấy một số buổi dạy của Tutor theo email và status, mặc định lấy 1  và status là Upcoming
 		/// </summary>
 		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
 		[HttpGet("get-by-tutor-email-and-status")]

@@ -390,8 +390,7 @@ public class TutorAvailabilityServiceTests
 				Id = 1,
 				TutorId = 1,
 				SlotId = 1,
-				StartDate = testDate,
-				Status = TutorAvailabilityStatus.Booked
+				StartDate = testDate
 			},
 			FakeDataFactory.CreateFakeTutorAvailability(1),
 			FakeDataFactory.CreateFakeTimeSlot(1),
@@ -542,10 +541,7 @@ public class TutorAvailabilityServiceTests
 			Assert.That(result.TutorId, Is.EqualTo(request.TutorId));
 			Assert.That(result.SlotId, Is.EqualTo(request.SlotId));
 
-			if (request.Status.HasValue)
-			{
-				Assert.That(result.Status, Is.EqualTo(request.Status.Value));
-			}
+			
 
 			_tutorAvailabilityRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<TutorAvailability>()), Times.Once);
 		}
