@@ -40,6 +40,11 @@ namespace EduMatch.PresentationLayer.Controllers
 		[HttpPost("tutor-availability-create-list")]
 		public async Task<IActionResult> TutorAvailabilityCreateList([FromBody] List<TutorAvailabilityCreateRequest> requests)
 		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ApiResponse<object>.Fail("Dữ liệu không hợp lệ", ModelState));
+			}
+
 			await using var transaction = await _context.Database.BeginTransactionAsync();
 			try
 			{
