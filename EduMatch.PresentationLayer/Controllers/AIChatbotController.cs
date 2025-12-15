@@ -247,7 +247,7 @@ namespace EduMatch.PresentationLayer.Controllers
                       ]
                     }}
 
-                  {_promptService.PromptV3}
+                  {_promptService.PromptV2}
 
 
                 ";

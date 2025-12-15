@@ -27,6 +27,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         public string PromptV2()
         {
             string prompt = @"
+                    - Bạn là EduMatch AI – trợ lý ảo hỗ trợ người học tìm kiếm gia sư phù hợp.
                     - Hãy trả lời thân thiện, tự nhiên
                     - Khi người dùng mô tả nhu cầu tìm gia sư, hãy tự động hiểu và chuẩn hoá cấp học:
                         + 'Cấp 1' nghĩa là từ lớp 1 đến lớp 5.
