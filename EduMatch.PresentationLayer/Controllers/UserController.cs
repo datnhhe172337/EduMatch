@@ -50,6 +50,15 @@ namespace EduMatch.PresentationLayer.Controllers
             return Redirect("http://localhost:3000/login");
         }
 
+        [HttpGet("check-email-available")]
+        public async Task<IActionResult> IsEmailAvailableAsync(string email)
+        {
+            var success = await _userService.IsEmailAvailableAsync(email);
+            if (!success) return BadRequest("Email already exists");
+
+            return Ok(new { message = "Email is not available. Continue taking steps to become a tutor." });
+        }
+
         [HttpPost("resend-verify")]
         public async Task<IActionResult> ResendVerificationAsync([FromBody] string email)
         {

@@ -33,6 +33,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
 
         Task<bool> ChangePasswordAsync(string email, ChangePasswordRequest request);
         Task<bool> ResetPasswordAsync(string email);
+        Task<bool> IsEmailAvailableAsync(string email);
 
 
     }

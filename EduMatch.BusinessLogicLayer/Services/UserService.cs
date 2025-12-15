@@ -98,6 +98,16 @@ namespace EduMatch.BusinessLogicLayer.Services
             return true;
         }
 
+        public async Task<bool> IsEmailAvailableAsync(string email)
+        {
+            if (await _userRepo.IsEmailAvailableAsync(email))
+                return false;
+
+            return true;
+        }
+
+
+
         private string GenerateEmailVerificationToken(User user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
