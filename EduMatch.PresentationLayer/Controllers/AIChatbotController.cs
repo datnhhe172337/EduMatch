@@ -203,7 +203,7 @@ namespace EduMatch.PresentationLayer.Controllers
                     .ToList();
 
 
-                // Step 3: Buld Context + Prompt
+                // Step 3: Build Context + Prompt
                 var contextJson = BuildContextJson(filteredTutors);
                 var contextJsonString = JsonSerializer.Serialize(contextJson, new JsonSerializerOptions { WriteIndented = false });
 
@@ -219,8 +219,7 @@ namespace EduMatch.PresentationLayer.Controllers
                 //    {systemPrompt}
                 //    ";
 
-                var prompt = $@"
-                    Bạn là EduMatch AI – trợ lý ảo hỗ trợ người học tìm kiếm gia sư phù hợp. 
+                var prompt = $@" 
 
                     Người dùng hỏi: ""{req.Message}""
                     
@@ -248,7 +247,7 @@ namespace EduMatch.PresentationLayer.Controllers
                       ]
                     }}
 
-                  {_promptService.PromptV2}
+                  {_promptService.PromptV3}
 
 
                 ";

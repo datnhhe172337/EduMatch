@@ -10,5 +10,6 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
     {
         string PromptV1();
         string PromptV2();
+        string PromptV3();
     }
 }
