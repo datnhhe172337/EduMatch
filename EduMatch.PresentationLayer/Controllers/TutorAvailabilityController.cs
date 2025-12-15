@@ -172,6 +172,7 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
+
 		/// <summary>
 		/// Lấy lịch trình theo trạng thái (repository đã lọc những ngày còn tương lai)
 		/// </summary>
@@ -190,6 +191,32 @@ namespace EduMatch.PresentationLayer.Controllers
 				return Ok(ApiResponse<IReadOnlyList<TutorAvailabilityDto>>.Ok(
 					filteredAvailabilities, 
 					$"Lấy danh sách lịch trình của gia sư {tutorId} theo trạng thái {status} thành công. Tìm thấy {filteredAvailabilities.Count} lịch trình"));
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, ApiResponse<object>.Fail("Lỗi hệ thống", ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Cập nhật trạng thái của một lịch trình
+		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
+		[HttpPut("tutor-availability-update-status/{id}")]
+		public async Task<IActionResult> TutorAvailabilityUpdateStatus(int id, [FromQuery] TutorAvailabilityStatus status)
+		{
+			try
+			{
+				var result = await _tutorAvailabilityService.UpdateStatusAsync(id, status);
+				return Ok(ApiResponse<TutorAvailabilityDto>.Ok(result, "Cập nhật trạng thái lịch trình thành công"));
+			}
+			catch (ArgumentException ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+			catch (InvalidOperationException ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
 			}
 			catch (Exception ex)
 			{
