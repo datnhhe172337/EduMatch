@@ -298,6 +298,41 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
 
+        //private object BuildContextJson(List<(TutorProfileDto Tutor, float Score)> topTutors)
+        //{
+        //    if (topTutors == null || !topTutors.Any())
+        //        return new { message = "Không tìm thấy tutor phù hợp.", tutors = new List<object>() };
+
+        //    var tutorList = topTutors.Select((t, idx) =>
+        //    {
+        //        var tutor = t.Tutor;
+        //        var subjects = tutor.TutorSubjects?.Select(s => s.Subject.SubjectName).ToList() ?? new List<string>();
+        //        var levels = tutor.TutorSubjects?.Select(s => s.Level.Name).ToList() ?? new List<string>();
+        //        var hourlyRates = tutor.TutorSubjects?.Select(s => s.HourlyRate).ToList();
+
+        //        return new
+        //        {
+        //            Rank = idx + 1,
+        //            TutorId = tutor.Id,
+        //            Name = tutor.UserName,
+        //            Subjects = subjects,
+        //            Levels = levels,
+        //            TeachingExp = tutor.TeachingExp,
+        //            Province = tutor.Province?.Name,
+        //            SubDistrict = tutor.SubDistrict?.Name,
+        //            HourlyRates = hourlyRates.Select(r => $"{r}").ToList(),
+        //            MatchScore = Math.Round(t.Score, 2),
+        //            ProfileUrl = $"http://localhost:3000/tutor/{tutor.Id}"
+        //        };
+        //    }).ToList();
+
+        //    return new
+        //    {
+        //        message = $"Tìm thấy {tutorList.Count} tutor phù hợp",
+        //        tutors = tutorList
+        //    };
+        //}
+
         private object BuildContextJson(List<(TutorProfileDto Tutor, float Score)> topTutors)
         {
             if (topTutors == null || !topTutors.Any())
@@ -306,23 +341,38 @@ namespace EduMatch.PresentationLayer.Controllers
             var tutorList = topTutors.Select((t, idx) =>
             {
                 var tutor = t.Tutor;
-                var subjects = tutor.TutorSubjects?.Select(s => s.Subject.SubjectName).ToList() ?? new List<string>();
-                var levels = tutor.TutorSubjects?.Select(s => s.Level.Name).ToList() ?? new List<string>();
-                var hourlyRates = tutor.TutorSubjects?.Select(s => s.HourlyRate).ToList();
+                var tutorSubjects = tutor.TutorSubjects ?? new List<TutorSubjectDto>();
+
+                var subjects = tutorSubjects
+                    .Select(s => s.Subject.SubjectName)
+                    .Distinct()
+                    .ToList();
+
+                var levelNumbers = tutorSubjects
+                    .Select(s => s.Level.Name) 
+                    .Distinct()
+                    .ToList();
+
+                var hourlyRates = tutorSubjects
+                    .Select(s => s.HourlyRate)
+                    .Distinct()
+                    .ToList();
 
                 return new
                 {
-                    Rank = idx + 1,
-                    TutorId = tutor.Id,
-                    Name = tutor.UserName,
-                    Subjects = subjects,
-                    Levels = levels,
-                    TeachingExp = tutor.TeachingExp,
-                    Province = tutor.Province?.Name,
-                    SubDistrict = tutor.SubDistrict?.Name,
-                    HourlyRates = hourlyRates.Select(r => $"{r}").ToList(),
-                    MatchScore = Math.Round(t.Score, 2),
-                    ProfileUrl = $"http://localhost:3000/tutor/{tutor.Id}"
+                    rank = idx + 1,
+                    tutorId = tutor.Id,
+                    name = tutor.UserName,
+
+                    subjects = subjects,
+                    levels = levelNumbers,
+                    hourlyRate = hourlyRates,
+
+                    province = tutor.Province?.Name,
+                    subDistrict = tutor.SubDistrict?.Name,
+                    teachingExp = tutor.TeachingExp,
+                    matchScore = Math.Round(t.Score, 2),
+                    profileUrl = $"http://localhost:3000/tutor/{tutor.Id}"
                 };
             }).ToList();
 
@@ -332,6 +382,32 @@ namespace EduMatch.PresentationLayer.Controllers
                 tutors = tutorList
             };
         }
+
+        //private static string NormalizeLevels(List<string> levels)
+        //{
+        //    var distinct = levels.Distinct().OrderBy(x => x).ToList();
+
+        //    if (!distinct.Any()) return "";
+
+        //    if (distinct.Count > 1 &&
+        //        distinct.Last() - distinct.First() + 1 == distinct.Count)
+        //    {
+        //        return $"Lớp {distinct.First()}–{distinct.Last()}";
+        //    }
+
+        //    return string.Join(", ", distinct.Select(l => $"Lớp {l}"));
+        //}
+
+        //private static string NormalizeHourlyRate(List<decimal?> rates)
+        //{
+        //    var distinct = rates.Distinct().OrderBy(x => x).ToList();
+
+        //    if (distinct.Count == 1)
+        //        return $"{distinct[0]:N0}đ / giờ";
+
+        //    return $"{distinct.First():N0}đ – {distinct.Last():N0}đ / giờ";
+        //}
+
 
         //[HttpPost("testCallLLM")]
         //public async Task<IActionResult> TestCallLLMAsync([FromBody] ChatRequestDto req)
