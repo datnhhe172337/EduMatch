@@ -131,14 +131,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 		{
 			try
 			{
-				// Validate request
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-				}
-
 				// Check if entity exists
 				var existingEntity = await _repository.GetByIdFullAsync(request.Id);
 				if (existingEntity == null)
