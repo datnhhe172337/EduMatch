@@ -136,7 +136,7 @@ namespace EduMatch.PresentationLayer.Controllers
                 if (embeddingVector == null || embeddingVector.Length != 768)
                     throw new InvalidOperationException("Embedding vector is null or has invalid length.");
 
-                var systemPrompt = _promptService.PromptV2(); ;
+                var systemPrompt = _promptService.PromptV3();
 
                 if (_chatbotService.IsTutorQuery(req.Message) == false)
                 {
@@ -160,34 +160,6 @@ namespace EduMatch.PresentationLayer.Controllers
                 // Step 2: Vector search (Semantic search) - Qdrant
                 var vectorResults = await _qdrantService.SearchTutorsAsync(embeddingVector, topK: 5);
 
-                // Filter theo score threshold
-                //float threshold = 0.65f;
-                //var filteredTutors = vectorResults
-                //    .Where(t => t.Score >= threshold)
-                //    .OrderByDescending(t => t.Score)
-                //    .Take(3)
-                //    .ToList();
-
-                //if (!filteredTutors.Any())
-                //{
-                //    var promptWithQueryIsNull = $@"
-                //    Người dùng hỏi: ""{req.Message}""
-                    
-                //    Không có tutor nào phù hợp từ yêu cầu của người dùng.
-
-                //    Hãy trả lời người dùng theo hướng dẫn như sau: 
-                //    {systemPrompt}
-                //    ";
-
-                //    var resp = await _gemini.GenerateTextAsync(sessionId, promptWithQueryIsNull, req.Message);
-
-                //    return Ok(new ChatResponseDto
-                //    {
-                //        SessionId = sessionId,
-                //        Reply = resp
-                //    });
-                //}
-
                 // Step 3: Keyword search
                 var keywordResults = await _service.SearchByKeywordAsync(req.Message);
 
@@ -202,22 +174,27 @@ namespace EduMatch.PresentationLayer.Controllers
                     .Take(3)
                     .ToList();
 
+                if(filteredTutors == null || !filteredTutors.Any())
+                {
+                    var promptWithQueryIsNull = $@"
+                    Người dùng hỏi: ""{req.Message}""
 
-                // Step 3: Build Context + Prompt
+                    Hãy trả lời người dùng theo hướng dẫn như sau: 
+                    {systemPrompt}
+                    ";
+
+                    var resp = await _gemini.GenerateTextAsync(sessionId, promptWithQueryIsNull, req.Message);
+                    return Ok(new ChatResponseDto
+                    {
+                        SessionId = sessionId,
+                        Reply = resp
+                    });
+                }
+                // Step 6: Build Context + Prompt
                 var contextJson = BuildContextJson(filteredTutors);
                 var contextJsonString = JsonSerializer.Serialize(contextJson, new JsonSerializerOptions { WriteIndented = false });
 
                  Console.WriteLine(contextJsonString);
-
-                //var prompt = $@"
-                //    Người dùng hỏi: ""{req.Message}""
-
-                //    Dưới đây là danh sách tutor phù hợp (JSON context):
-                //    {contextJsonString}
-
-                //    Hãy trả lời người dùng theo đúng hướng dẫn như sau: 
-                //    {systemPrompt}
-                //    ";
 
                 var prompt = $@" 
 
@@ -247,8 +224,7 @@ namespace EduMatch.PresentationLayer.Controllers
                       ]
                     }}
 
-                  {_promptService.PromptV2}
-
+                  {systemPrompt}
 
                 ";
 
@@ -335,8 +311,8 @@ namespace EduMatch.PresentationLayer.Controllers
 
         private object BuildContextJson(List<(TutorProfileDto Tutor, float Score)> topTutors)
         {
-            if (topTutors == null || !topTutors.Any())
-                return new { message = "Không tìm thấy tutor phù hợp.", tutors = new List<object>() };
+            //if (topTutors == null || !topTutors.Any())
+            //    return new { message = "Không tìm thấy tutor phù hợp.", tutors = new List<object>() };
 
             var tutorList = topTutors.Select((t, idx) =>
             {
@@ -406,29 +382,6 @@ namespace EduMatch.PresentationLayer.Controllers
         //        return $"{distinct[0]:N0}đ / giờ";
 
         //    return $"{distinct.First():N0}đ – {distinct.Last():N0}đ / giờ";
-        //}
-
-
-        //[HttpPost("testCallLLM")]
-        //public async Task<IActionResult> TestCallLLMAsync([FromBody] ChatRequestDto req)
-        //{
-        //    if (string.IsNullOrWhiteSpace(req.Message))
-        //        return BadRequest("Message is required");
-
-        //    var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-
-        //    int sessionId = req.SessionId ?? await _chatbotService.CreateSessionAsync(userEmail);
-
-        //    try
-        //    {
-        //        // Step 5: Call LLM - Gemini
-        //        var response = await _gemini.GenerateTextAsync(sessionId, req.Message);
-
-        //        var resp = new ChatResponseDto { Reply = response };
-        //        return Ok(resp);
-        //    }
-        //    catch (InvalidOperationException ex) { throw new Exception(ex.Message); }
-
         //}
 
 
