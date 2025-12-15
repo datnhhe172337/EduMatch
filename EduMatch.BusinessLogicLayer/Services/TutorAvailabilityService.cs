@@ -85,14 +85,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 		{
 			try
 			{
-				// Validate request
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-				}
-
 				var tutor = await _tutorProfileRepository.GetByIdFullAsync(request.TutorId);
 				if (tutor is null)
 					throw new ArgumentException($"Tutor with ID {request.TutorId} not found.");
