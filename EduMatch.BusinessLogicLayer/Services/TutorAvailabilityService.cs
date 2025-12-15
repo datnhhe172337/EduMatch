@@ -220,7 +220,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 ?? throw new ArgumentException($"Tutor availability with ID {id} not found");
 
             existingEntity.Status = (int)status;
-            existingEntity.UpdatedAt = DateTime.UtcNow;
+            existingEntity.UpdatedAt = DateTime.UtcNow.AddHours(7);
             await _repository.UpdateAsync(existingEntity);
             return _mapper.Map<TutorAvailabilityDto>(existingEntity);
         }
