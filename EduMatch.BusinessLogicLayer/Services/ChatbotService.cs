@@ -82,7 +82,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (string.IsNullOrWhiteSpace(message)) return false;
 
             string lower = message.ToLower();
-            string[] keywords = { "gia sư", "dạy", "môn", "lớp", "học sinh", "học phí", "khu vực", "học online", "offline", "trực tiếp", "trực tuyến", "giá", "phí"};
+            string[] keywords = { "gia sư", "dạy", "môn", "lớp", "học sinh", "học phí", "khu vực", "học online", "offline", "trực tiếp", "trực tuyến", "giá", "phí", "kèm"};
 
             return keywords.Any(k => lower.Contains(k));
         }
