@@ -36,20 +36,15 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Tạo nhiều lịch trình cùng lúc cho gia sư
 		/// </summary>
 
-		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor )]
 		[HttpPost("tutor-availability-create-list")]
 		public async Task<IActionResult> TutorAvailabilityCreateList([FromBody] List<TutorAvailabilityCreateRequest> requests)
 		{
 			await using var transaction = await _context.Database.BeginTransactionAsync();
 			try
 			{
-				var results = new List<TutorAvailabilityDto>();
-				foreach (var request in requests)
-				{
-					var result = await _tutorAvailabilityService.CreateAsync(request);
-					results.Add(result);
-				}
-				
+				var results = await _tutorAvailabilityService.CreateBulkAsync(requests);
+
 				await transaction.CommitAsync();
 				return Ok(ApiResponse<List<TutorAvailabilityDto>>.Ok(results, $"Tạo {results.Count} lịch trình thành công"));
 			}
