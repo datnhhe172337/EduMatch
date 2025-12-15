@@ -58,6 +58,12 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// </summary>
         Task<List<ScheduleDto>> GetAllByTutorEmailAsync(string tutorEmail, DateTime? startDate = null, DateTime? endDate = null, ScheduleStatus? status = null);
 
+        /// <summary>
+        /// Lấy một số buổi dạy của Tutor theo email và status, sắp xếp theo thời gian tăng dần (mặc định lấy 1 buổi).
+        /// Nếu không truyền status ở API thì mặc định là Upcoming.
+        /// </summary>
+        Task<List<ScheduleDto>> GetByTutorEmailAndStatusAsync(string tutorEmail, ScheduleStatus status, int take = 1);
+
         Task<ScheduleAttendanceSummaryDto> GetAttendanceSummaryByBookingAsync(int bookingId);
         /// <summary>
         /// Kiểm tra tutor có lịch học trùng với slot và ngày hay không (loại trừ Schedule bị Cancelled)
