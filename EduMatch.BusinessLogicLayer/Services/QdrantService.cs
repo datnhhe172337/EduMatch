@@ -99,7 +99,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                  new[]
                  {
                     //$"Tên: {tutor.UserName ?? ""}",
-                        //$"Giới tính: {tutor.Gender?.ToString() ?? ""}",
+                        $"Giới tính: {tutor.Gender?.ToString() ?? ""}",
                         //$"Ngày sinh: {tutor.Dob?.ToString("yyyy-MM-dd") ?? ""}",
                         $"Môn học: {string.Join(", ", tutor.TutorSubjects?.Select(s => s.Subject?.SubjectName ?? "") ?? Enumerable.Empty<string>())}",
                         $"Tỉnh/Thành phố: {tutor.Province?.Name ?? ""}",

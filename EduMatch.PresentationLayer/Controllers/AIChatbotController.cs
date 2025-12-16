@@ -136,7 +136,7 @@ namespace EduMatch.PresentationLayer.Controllers
                 if (embeddingVector == null || embeddingVector.Length != 768)
                     throw new InvalidOperationException("Embedding vector is null or has invalid length.");
 
-                var systemPrompt = _promptService.PromptV3();
+                var systemPrompt = _promptService.PromptV4();
 
                 if (_chatbotService.IsTutorQuery(req.Message) == false)
                 {
