@@ -110,7 +110,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             - Trước tiên, hãy xác định câu hỏi của người dùng thuộc một trong ba loại:
 
             (1) CÂU HỎI TÌM GIA SƯ – ĐỦ THÔNG TIN
-                → Có đủ tối thiểu: MÔN HỌC + CẤP HỌC/ LỚP.
+                → Có đủ tối thiểu cả MÔN HỌC và LỚP (CẤP HỌC).
 
             (2) CÂU HỎI TÌM GIA SƯ – THIẾU THÔNG TIN
                 → Người dùng có ý định tìm gia sư nhưng thiếu một hoặc nhiều thông tin quan trọng.
@@ -138,7 +138,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 + 'Cấp 1' nghĩa là từ lớp 1 đến lớp 5.
                 + 'Cấp 2' nghĩa là từ lớp 6 đến lớp 9.
                 + 'Cấp 3' nghĩa là từ lớp 10 đến lớp 12.
-                + Nếu người dùng chỉ nói 'cấp 1 / cấp 2 / cấp 3' mà không ghi rõ lớp, hãy tự động diễn giải thành phạm vi lớp tương ứng.
+                + Nếu người dùng chỉ nói 'cấp 1 / cấp 2 / cấp 3' mà không ghi cụ thể lớp nào, hãy tự động diễn giải thành phạm vi lớp tương ứng.
             - Nếu tìm thấy gia sư phù hợp:
                 + BẮT BUỘC chỉ trả về JSON.
                 + KHÔNG thêm bất kỳ text, lời giải thích hay ký tự nào ngoài JSON.

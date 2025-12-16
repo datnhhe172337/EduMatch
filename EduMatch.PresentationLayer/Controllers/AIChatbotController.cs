@@ -354,7 +354,7 @@ namespace EduMatch.PresentationLayer.Controllers
 
             return new
             {
-                message = $"Tìm thấy 1 số gia sư phù hợp với yêu cầu của bạn",
+                message = $"Tìm thấy {tutorList.Count} gia sư phù hợp với yêu cầu của bạn",
                 tutors = tutorList
             };
         }
