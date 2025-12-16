@@ -199,7 +199,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
-        /// Tạo danh sách Schedule cho một Booking; tổng sau khi tạo phải bằng TotalSessions của Booking
+        /// Tạo danh sách Schedule cho một Booking; nếu Booking đã có Schedule thì chặn tạo mới
         /// </summary>
         public async Task<List<ScheduleDto>> CreateListAsync(List<ScheduleCreateRequest> requests)
         {
@@ -211,16 +211,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (requests.Any(r => r.BookingId != bookingId))
                 throw new Exception("Tất cả Schedule phải thuộc cùng một Booking");
 
-            // Lấy booking và kiểm tra tổng sessions
-            var bookingDto = await _bookingService.GetByIdAsync(bookingId)
-                ?? throw new Exception("Booking không tồn tại");
+            // Lấy booking và chặn tạo mới nếu đã có Schedule trước đó
+            var bookingDto = await _bookingService.GetByIdAsync(bookingId);
+            if (bookingDto == null)
+                throw new Exception("Booking không tồn tại");
 
             var currentCount = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, null);
-
-            var totalAfterCreate = currentCount + requests.Count;
-
-            if (totalAfterCreate != bookingDto.TotalSessions)
-                throw new Exception($"Tổng số Schedule sau khi tạo ({totalAfterCreate}) phải bằng TotalSessions ({bookingDto.TotalSessions}) của Booking");
+            if (currentCount > 0)
+                throw new Exception("Booking này đã có Schedule, không thể tạo thêm");
 
             var created = new List<ScheduleDto>();
             foreach (var req in requests)
