@@ -466,7 +466,10 @@ namespace EduMatch.BusinessLogicLayer.Services
             var bookingDto = await _bookingService.GetByIdAsync(bookingId);
             if (bookingDto == null)
                 throw new Exception("Booking không tồn tại");
-          
+
+            // Kiểm tra booking có thuộc về tutor không
+            if (bookingDto.TutorSubject == null || bookingDto.TutorSubject.TutorEmail != tutorEmail)
+                throw new Exception("Booking không thuộc về tutor này");
 
             int statusInt = (int)status;
             // Lấy schedule theo bookingId và status

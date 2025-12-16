@@ -498,8 +498,8 @@ namespace EduMatch.PresentationLayer.Controllers
 		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
 		public async Task<ActionResult<ApiResponse<IEnumerable<ScheduleDto>>>> GetByTutorEmailAndStatus(
 			[FromQuery] string tutorEmail,
-			[FromQuery] ScheduleStatus status = ScheduleStatus.Upcoming,
 			[FromQuery] int bookingId,
+			[FromQuery] ScheduleStatus status = ScheduleStatus.Upcoming,
 			[FromQuery] int take = 1)
 		{
 			try
