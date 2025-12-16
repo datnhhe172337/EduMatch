@@ -85,13 +85,8 @@ namespace EduMatch.BusinessLogicLayer.Services
 		{
 			try
 			{
-				// Validate request
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-				}
+				// Đảm bảo ngày tạo không nhỏ hơn ngày hiện tại (giờ VN)
+				EnsureDateNotInPastVietnamTime(request.StartDate);
 
 				var tutor = await _tutorProfileRepository.GetByIdFullAsync(request.TutorId);
 				if (tutor is null)
@@ -139,14 +134,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 		{
 			try
 			{
-				// Validate request
-				var validationContext = new ValidationContext(request);
-				var validationResults = new List<ValidationResult>();
-				if (!Validator.TryValidateObject(request, validationContext, validationResults, true))
-				{
-					throw new ArgumentException($"Validation failed: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
-				}
-
 				// Check if entity exists
 				var existingEntity = await _repository.GetByIdFullAsync(request.Id);
 				if (existingEntity == null)
@@ -154,12 +141,20 @@ namespace EduMatch.BusinessLogicLayer.Services
 					throw new ArgumentException($"Tutor availability with ID {request.Id} not found");
 				}
 
-				// Update only provided fields
-				existingEntity.TutorId = request.TutorId;
-				existingEntity.SlotId = request.SlotId;
-				if (request.Status.HasValue)
-					existingEntity.Status = (int)request.Status.Value;
+				// Đảm bảo ngày update không nhỏ hơn ngày hiện tại (giờ VN)
+				EnsureDateNotInPastVietnamTime(request.StartDate);
 
+				// Update only provided fields
+				if (request.TutorId > 0)
+				{
+					existingEntity.TutorId = request.TutorId;
+				}
+
+				if (request.SlotId > 0)
+				{
+					existingEntity.SlotId = request.SlotId;
+				}
+			
 				// Update StartDate and EndDate based on SlotId
 				var timeSlot = await _timeSlotRepository.GetByIdAsync(request.SlotId);
 				if (timeSlot is null)
@@ -179,7 +174,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
 				existingEntity.StartDate = request.StartDate.Date.Add(timeSlot.StartTime.ToTimeSpan());
 				existingEntity.EndDate = request.StartDate.Date.Add(timeSlot.EndTime.ToTimeSpan());
-				existingEntity.UpdatedAt = DateTime.UtcNow;
+				existingEntity.UpdatedAt = DateTime.UtcNow.AddHours(7);
 
 				await _repository.UpdateAsync(existingEntity);
 				return _mapper.Map<TutorAvailabilityDto>(existingEntity);
@@ -225,7 +220,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 ?? throw new ArgumentException($"Tutor availability with ID {id} not found");
 
             existingEntity.Status = (int)status;
-            existingEntity.UpdatedAt = DateTime.UtcNow;
+            existingEntity.UpdatedAt = DateTime.UtcNow.AddHours(7);
             await _repository.UpdateAsync(existingEntity);
             return _mapper.Map<TutorAvailabilityDto>(existingEntity);
         }
@@ -241,7 +236,26 @@ namespace EduMatch.BusinessLogicLayer.Services
             await _repository.RemoveByIdAsync(id);
         }
 
-      
+		/// <summary>
+		/// Lấy thời gian hiện tại theo múi giờ Việt Nam
+		/// </summary>
+		private static DateTime GetCurrentVietnamTime()
+		{
+			return DateTime.UtcNow.AddHours(7);
+		}
+
+		/// <summary>
+		/// Check ngày truyền vào phải >= ngày hiện tại theo giờ Việt Nam
+		/// </summary>
+		
+		private static void EnsureDateNotInPastVietnamTime(DateTime date)
+		{
+			var todayVn = GetCurrentVietnamTime().Date;
+			if (date.Date < todayVn)
+			{
+				throw new ArgumentException("Ngày phải lớn hơn hoặc bằng ngày hiện tại theo giờ Việt Nam");
+			}
+		}
        
     }
 }

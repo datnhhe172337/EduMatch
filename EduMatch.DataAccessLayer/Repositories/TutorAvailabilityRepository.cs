@@ -13,10 +13,9 @@ namespace EduMatch.DataAccessLayer.Repositories
 	public sealed class TutorAvailabilityRepository : ITutorAvailabilityRepository
 	{
 		private readonly EduMatchContext _ctx;
-		private static readonly TimeZoneInfo VietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
 
 		private static DateTime GetVietnamNow() =>
-			TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, VietnamTimeZone);
+			DateTime.UtcNow.AddHours(7);
 
 		public TutorAvailabilityRepository(EduMatchContext ctx) => _ctx = ctx;
 

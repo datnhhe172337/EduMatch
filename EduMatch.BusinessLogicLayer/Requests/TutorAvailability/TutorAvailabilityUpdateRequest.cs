@@ -18,7 +18,6 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorAvailability
 		[Range(1, int.MaxValue, ErrorMessage = "Slot ID must be greater than 0")]
 		public int SlotId { get; set; }
 
-		public TutorAvailabilityStatus? Status { get; set; }
 
 		[Required(ErrorMessage = "Start date is required")]
 		public DateTime StartDate { get; set; }

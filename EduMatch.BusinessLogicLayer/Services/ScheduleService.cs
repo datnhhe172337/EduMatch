@@ -447,6 +447,38 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
+        /// Lấy một số buổi dạy của Tutor theo email và status, sắp xếp theo thời gian tăng dần (mặc định lấy 1 buổi).
+        /// Nếu API không truyền status thì controller sẽ mặc định là Upcoming.
+        /// </summary>
+        public async Task<List<ScheduleDto>> GetByTutorEmailAndStatusAsync(string tutorEmail, ScheduleStatus status, int take = 1)
+        {
+            if (string.IsNullOrWhiteSpace(tutorEmail))
+                throw new Exception("TutorEmail không được để trống");
+
+            if (!Enum.IsDefined(typeof(ScheduleStatus), status))
+                throw new Exception("Status không hợp lệ");
+
+            if (take <= 0)
+            {
+                take = 1;
+            }
+
+            int statusInt = (int)status;
+            var entities = await _scheduleRepository.GetAllByTutorEmailAsync(tutorEmail, null, null, statusInt);
+            var dtos = _mapper.Map<List<ScheduleDto>>(entities);
+
+            // Lấy theo giờ Việt Nam (UTC+7) để đảm bảo là lịch sắp dạy
+            var nowVn = DateTime.UtcNow.AddHours(7);
+
+            return dtos
+                .Where(s => s.Availability != null && s.Availability.StartDate >= nowVn)
+                .OrderBy(s => s.Availability!.StartDate)
+                .ThenBy(s => s.Id)
+                .Take(take)
+                .ToList();
+        }
+
+        /// <summary>
         /// Trả về thống kê số buổi đã học/chưa học/đã hủy theo booking
         /// </summary>
         public async Task<ScheduleAttendanceSummaryDto> GetAttendanceSummaryByBookingAsync(int bookingId)
