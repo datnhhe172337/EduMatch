@@ -137,14 +137,15 @@ namespace EduMatch.PresentationLayer.Controllers
 					// Cấp role Tutor ngay khi đăng ký become-tutor
 					await _userService.UpdateRoleUserAsync(userEmail, 2);
 
-					await tx.CommitAsync();
-
 					// Gửi thông báo đăng ký trở thành gia sư thành công
 					await _notificationService.CreateNotificationAsync(
 						userEmail,
 						"Đăng ký trở thành gia sư thành công! Hồ sơ của bạn đang chờ được phê duyệt.",
 						$"/tutor/profile/{tutorId}"
 					);
+
+				await tx.CommitAsync();
+
 
 					var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
 
