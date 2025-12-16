@@ -499,6 +499,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		public async Task<ActionResult<ApiResponse<IEnumerable<ScheduleDto>>>> GetByTutorEmailAndStatus(
 			[FromQuery] string tutorEmail,
 			[FromQuery] ScheduleStatus status = ScheduleStatus.Upcoming,
+			[FromQuery] int bookingId,
 			[FromQuery] int take = 1)
 		{
 			try
@@ -512,6 +513,11 @@ namespace EduMatch.PresentationLayer.Controllers
 					return BadRequest(ApiResponse<object>.Fail("TutorEmail không đúng định dạng"));
 				}
 
+				if (bookingId <= 0)
+				{
+					return BadRequest(ApiResponse<object>.Fail("BookingId phải lớn hơn 0"));
+				}
+
 				if (take <= 0)
 				{
 					take = 1;
@@ -522,7 +528,7 @@ namespace EduMatch.PresentationLayer.Controllers
 					return BadRequest(ApiResponse<object>.Fail("Status không hợp lệ"));
 				}
 
-				var items = await _scheduleService.GetByTutorEmailAndStatusAsync(tutorEmail, status, take);
+				var items = await _scheduleService.GetByTutorEmailAndStatusAsync(tutorEmail, status, bookingId, take);
 				return Ok(ApiResponse<IEnumerable<ScheduleDto>>.Ok(items));
 			}
 			catch (Exception ex)
