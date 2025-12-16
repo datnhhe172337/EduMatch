@@ -120,9 +120,10 @@ namespace EduMatch.BusinessLogicLayer.Services
             ========================
             ▶ Nếu là (1) CÂU HỎI TÌM GIA SƯ – ĐỦ THÔNG TIN:
             - Chuẩn hoá cấp học:
-                + 'Cấp 1' → Lớp 1–5
-                + 'Cấp 2' → Lớp 6–9
-                + 'Cấp 3' → Lớp 10–12
+                + 'Cấp 1' nghĩa là từ lớp 1 đến lớp 5.
+                + 'Cấp 2' nghĩa là từ lớp 6 đến lớp 9.
+                + 'Cấp 3' nghĩa là từ lớp 10 đến lớp 12.
+                + Nếu người dùng chỉ nói 'cấp 1 / cấp 2 / cấp 3' mà không ghi rõ lớp, hãy tự động diễn giải thành phạm vi lớp tương ứng.
             - Nếu tìm thấy gia sư phù hợp:
                 + BẮT BUỘC chỉ trả về JSON.
                 + KHÔNG thêm bất kỳ text, lời giải thích hay ký tự nào ngoài JSON.
