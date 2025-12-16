@@ -214,8 +214,11 @@ namespace EduMatch.BusinessLogicLayer.Services
             // Lấy booking và kiểm tra tổng sessions
             var bookingDto = await _bookingService.GetByIdAsync(bookingId)
                 ?? throw new Exception("Booking không tồn tại");
+
             var currentCount = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, null);
+
             var totalAfterCreate = currentCount + requests.Count;
+
             if (totalAfterCreate != bookingDto.TotalSessions)
                 throw new Exception($"Tổng số Schedule sau khi tạo ({totalAfterCreate}) phải bằng TotalSessions ({bookingDto.TotalSessions}) của Booking");
 
