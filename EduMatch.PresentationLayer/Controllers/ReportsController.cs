@@ -177,6 +177,62 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
         /// <summary>
+        /// Lists report ids by booking id (admins or involved users).
+        /// </summary>
+        [Authorize]
+        [HttpGet("booking/{bookingId:int}/ids")]
+        public async Task<IActionResult> GetReportIdsByBookingIdAsync(int bookingId)
+        {
+            var userEmail = _currentUserService.Email;
+            var isAdmin = User.IsInRole(Roles.BusinessAdmin) || User.IsInRole(Roles.SystemAdmin);
+
+            if (!isAdmin && string.IsNullOrWhiteSpace(userEmail))
+                return Unauthorized(ApiResponse<string>.Fail("User email not found in token."));
+
+            try
+            {
+                var reportIds = await _reportService.GetReportIdsByBookingIdAsync(bookingId, userEmail, isAdmin);
+                return Ok(ApiResponse<IReadOnlyList<int>>.Ok(reportIds, "Report ids retrieved successfully."));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Lists report ids by schedule id (admins or involved users).
+        /// </summary>
+        [Authorize]
+        [HttpGet("schedule/{scheduleId:int}/ids")]
+        public async Task<IActionResult> GetReportIdsByScheduleIdAsync(int scheduleId)
+        {
+            var userEmail = _currentUserService.Email;
+            var isAdmin = User.IsInRole(Roles.BusinessAdmin) || User.IsInRole(Roles.SystemAdmin);
+
+            if (!isAdmin && string.IsNullOrWhiteSpace(userEmail))
+                return Unauthorized(ApiResponse<string>.Fail("User email not found in token."));
+
+            try
+            {
+                var reportIds = await _reportService.GetReportIdsByScheduleIdAsync(scheduleId, userEmail, isAdmin);
+                return Ok(ApiResponse<IReadOnlyList<int>>.Ok(reportIds, "Report ids retrieved successfully."));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+        }
+
+        /// <summary>
         /// Checks if the reported tutor (or admin) can still submit a defense for this report.
         /// </summary>
         [AllowAnonymous]

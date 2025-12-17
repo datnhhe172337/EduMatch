@@ -10,6 +10,8 @@ namespace EduMatch.DataAccessLayer.Interfaces
         Task<Report?> GetByIdAsync(int id);
         Task<List<Report>> GetByReporterAsync(string reporterEmail);
         Task<List<Report>> GetByReportedUserAsync(string reportedEmail);
+        Task<List<Report>> GetByBookingIdAsync(int bookingId);
+        Task<List<Report>> GetByScheduleIdAsync(int scheduleId);
         Task<List<Report>> GetAllAsync();
         Task<Report> UpdateAsync(Report report);
         Task DeleteAsync(Report report);
