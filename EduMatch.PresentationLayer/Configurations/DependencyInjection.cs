@@ -156,6 +156,7 @@ namespace EduMatch.PresentationLayer.Configurations
             services.AddScoped<IAdminWalletService, AdminWalletService>();
             services.AddScoped<ITutorRatingSummaryService, TutorRatingSummaryService>();
             services.AddScoped<IAdminStatsService, AdminStatsService>();
+            services.AddScoped<ITutorDashboardService, TutorDashboardService>();
             services.AddScoped<ILearnerTrialLessonService, LearnerTrialLessonService>();
             services.AddScoped<ITutorPayoutService, TutorPayoutService>();
             services.AddScoped<IScheduleCompletionService, ScheduleCompletionService>();
