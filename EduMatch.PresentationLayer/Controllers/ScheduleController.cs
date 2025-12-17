@@ -10,6 +10,7 @@ using EduMatch.DataAccessLayer.Enum;
 using EduMatch.PresentationLayer.Common;
 using System.ComponentModel.DataAnnotations;
 using EduMatch.BusinessLogicLayer.Constants;
+using EduMatch.BusinessLogicLayer.Services;
 
 namespace EduMatch.PresentationLayer.Controllers
 {
@@ -20,16 +21,23 @@ namespace EduMatch.PresentationLayer.Controllers
 		private readonly IScheduleService _scheduleService;
 		private readonly IBookingService _bookingService;
 		private readonly IScheduleCompletionService _scheduleCompletionService;
+		private readonly CurrentUserService _currentUserService;
 		private readonly EduMatchContext _context;
 
 		/// <summary>
 		/// API Schedule: lấy danh sách (có/không phân trang), lấy theo Id/AvailabilityId, tạo, cập nhật, hủy theo BookingId
 		/// </summary>
-		public ScheduleController(IScheduleService scheduleService, IBookingService bookingService, IScheduleCompletionService scheduleCompletionService, EduMatchContext context)
+		public ScheduleController(
+			IScheduleService scheduleService,
+			IBookingService bookingService,
+			IScheduleCompletionService scheduleCompletionService,
+			CurrentUserService currentUserService,
+			EduMatchContext context)
 		{
 			_scheduleService = scheduleService;
 			_bookingService = bookingService;
 			_scheduleCompletionService = scheduleCompletionService;
+			_currentUserService = currentUserService;
 			_context = context;
         }
 
@@ -44,7 +52,7 @@ namespace EduMatch.PresentationLayer.Controllers
 		{
 			try
 			{
-				var updated = await _scheduleCompletionService.FinishAndPayAsync(id, User?.Identity?.Name, adminAction: false);
+				var updated = await _scheduleCompletionService.FinishAndPayAsync(id, _currentUserService.Email, adminAction: false);
 				return Ok(ApiResponse<object>.Ok(new { updated }));
 			}
 			catch (Exception ex)
@@ -84,9 +92,9 @@ namespace EduMatch.PresentationLayer.Controllers
         {
             try
             {
-                var updated = await _scheduleCompletionService.MarkReportedAsync(id, reportId, User?.Identity?.Name);
-                return Ok(ApiResponse<object>.Ok(new { updated }));
-            }
+				var updated = await _scheduleCompletionService.MarkReportedAsync(id, reportId, _currentUserService.Email);
+				return Ok(ApiResponse<object>.Ok(new { updated }));
+			}
             catch (Exception ex)
             {
                 return BadRequest(ApiResponse<object>.Fail(ex.Message));

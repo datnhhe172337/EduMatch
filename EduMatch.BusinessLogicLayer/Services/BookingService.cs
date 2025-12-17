@@ -429,7 +429,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             var systemWallet = await GetOrCreateWalletAsync(SystemWalletEmail);
 
-            var systemBalanceBefore = systemWallet.Balance;
+            var systemLockedBefore = systemWallet.LockedBalance;
             systemWallet.LockedBalance += amountToPay;
             systemWallet.UpdatedAt = now;
             _unitOfWork.Wallets.Update(systemWallet);
@@ -439,10 +439,10 @@ namespace EduMatch.BusinessLogicLayer.Services
                 WalletId = systemWallet.Id,
                 Amount = amountToPay,
                 TransactionType = WalletTransactionType.Credit,
-                Reason = WalletTransactionReason.BookingPayment,
+                Reason = WalletTransactionReason.BookingPayout,
                 Status = TransactionStatus.Pending,
-                BalanceBefore = systemBalanceBefore,
-                BalanceAfter = systemWallet.Balance,
+                BalanceBefore = systemLockedBefore,
+                BalanceAfter = systemWallet.LockedBalance,
                 CreatedAt = now,
                 ReferenceCode = referenceCode,
                 BookingId = booking.Id
@@ -514,6 +514,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                 if (refundable > 0)
                 {
+                    var systemLockedBefore = systemWallet.LockedBalance;
                     learnerWallet.LockedBalance -= refundable;
                     var learnerBalanceBefore = learnerWallet.Balance;
                     learnerWallet.Balance += refundable;
@@ -533,6 +534,20 @@ namespace EduMatch.BusinessLogicLayer.Services
                         Status = TransactionStatus.Completed,
                         BalanceBefore = learnerBalanceBefore,
                         BalanceAfter = learnerWallet.Balance,
+                        CreatedAt = now,
+                        ReferenceCode = $"BOOKING_LEARNER_CANCEL_{booking.Id}",
+                        BookingId = booking.Id
+                    });
+
+                    await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
+                    {
+                        WalletId = systemWallet.Id,
+                        Amount = refundable,
+                        TransactionType = WalletTransactionType.Debit,
+                        Reason = WalletTransactionReason.BookingRefund,
+                        Status = TransactionStatus.Completed,
+                        BalanceBefore = systemLockedBefore,
+                        BalanceAfter = systemWallet.LockedBalance,
                         CreatedAt = now,
                         ReferenceCode = $"BOOKING_LEARNER_CANCEL_{booking.Id}",
                         BookingId = booking.Id
@@ -637,6 +652,8 @@ namespace EduMatch.BusinessLogicLayer.Services
             var systemWallet = await GetOrCreateWalletAsync(SystemWalletEmail);
             if (systemWallet.LockedBalance < amountToProcess)
                 throw new InvalidOperationException("Số dư khóa của hệ thống không hợp lệ.");
+            var systemLockedBefore = systemWallet.LockedBalance;
+            var systemBalanceBefore = systemWallet.Balance;
             systemWallet.LockedBalance -= amountToProcess;
 
             decimal learnerAmount;
@@ -687,7 +704,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             if (platformFeePortion > 0)
             {
-                var systemBalanceBefore = systemWallet.Balance;
                 systemWallet.Balance += platformFeePortion;
                 systemWallet.UpdatedAt = now;
 
@@ -696,7 +712,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                     WalletId = systemWallet.Id,
                     Amount = platformFeePortion,
                     TransactionType = WalletTransactionType.Credit,
-                    Reason = WalletTransactionReason.PlatformFee,
+                    Reason = WalletTransactionReason.BookingRefund,
                     Status = TransactionStatus.Completed,
                     BalanceBefore = systemBalanceBefore,
                     BalanceAfter = systemWallet.Balance,
@@ -708,6 +724,19 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 systemWallet.UpdatedAt = now;
             }
+
+            await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
+            {
+                WalletId = systemWallet.Id,
+                Amount = amountToProcess,
+                TransactionType = WalletTransactionType.Debit,
+                Reason = WalletTransactionReason.BookingRefund,
+                Status = TransactionStatus.Completed,
+                BalanceBefore = systemLockedBefore,
+                BalanceAfter = systemWallet.LockedBalance,
+                CreatedAt = now,
+                ReferenceCode = $"BOOKING_REFUND_{booking.Id}"
+            });
             _unitOfWork.Wallets.Update(systemWallet);
 
             if (tutorAmount > 0)

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using EduMatch.BusinessLogicLayer.Interfaces;
@@ -109,6 +109,8 @@ namespace EduMatch.BusinessLogicLayer.Services
                 _walletRepository.Update(learnerWallet);
 
                 var systemBalanceBefore = systemWallet.Balance;
+                var systemLockedBefore = systemWallet.LockedBalance;
+                
                 systemWallet.LockedBalance -= totalToRelease;
                 if (payout.SystemFeeAmount > 0)
                 {
@@ -133,22 +135,35 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                 await _walletTransactionRepository.AddAsync(transaction);
 
+                await _walletTransactionRepository.AddAsync(new WalletTransaction
+                {
+                    WalletId = systemWallet.Id,
+                    Amount = totalToRelease,
+                    TransactionType = WalletTransactionType.Debit,
+                    Reason = WalletTransactionReason.BookingPayout,
+                    Status = TransactionStatus.Completed,
+                    BalanceBefore = systemLockedBefore,
+                    BalanceAfter = systemWallet.LockedBalance,
+                    CreatedAt = now,
+                    ReferenceCode = $"BOOKING_PAYOUT_LOCK_{payout.BookingId}",
+                    BookingId = payout.BookingId
+                });
+
                 if (payout.SystemFeeAmount > 0)
                 {
-                    var sysTx = new WalletTransaction
+                    await _walletTransactionRepository.AddAsync(new WalletTransaction
                     {
                         WalletId = systemWallet.Id,
                         Amount = payout.SystemFeeAmount,
                         TransactionType = WalletTransactionType.Credit,
-                        Reason = WalletTransactionReason.PlatformFee,
+                        Reason = WalletTransactionReason.BookingPayout,
                         Status = TransactionStatus.Completed,
                         BalanceBefore = systemBalanceBefore,
                         BalanceAfter = systemWallet.Balance,
                         CreatedAt = now,
-                        ReferenceCode = $"BOOKING_PLATFORM_FEE_{payout.BookingId}",
+                        ReferenceCode = $"BOOKING_PAYOUT_FEE_{payout.BookingId}",
                         BookingId = payout.BookingId
-                    };
-                    await _walletTransactionRepository.AddAsync(sysTx);
+                    });
                 }
 
                 payout.Status = (byte)TutorPayoutStatus.Paid;
@@ -173,8 +188,8 @@ namespace EduMatch.BusinessLogicLayer.Services
                 return;
 
             var message = scheduleId.HasValue
-                 ? $"B?n ?� nh?n {amount:N0} VND cho bu?i h?c #{scheduleId}."
-                 : $"B?n ?� nh?n {amount:N0} VND t? payout.";
+                 ? $"Bạn đã nhận được {amount:N0} VND cho buổi học #{scheduleId}."
+                 : $"Bạn đã nhận {amount:N0} VND từ payout.";
 
             await _notificationService.CreateNotificationAsync(tutorEmail, message, "/wallet/my-wallet");
         }
