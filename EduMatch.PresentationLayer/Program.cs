@@ -37,6 +37,7 @@ builder.Services.AddHostedService<ClassRequestExpireBackgroundService>();
 //builder.Services.AddHostedService<TutorSyncBackgroundService>();
 
 builder.Services.AddHostedService<BookingAutoCancelBackgroundService>();
+builder.Services.AddHostedService<BookingAutoCompleteBackgroundService>();
 builder.Services.AddHostedService<ScheduleChangeRequestAutoCancelBackgroundService>();
 builder.Services.AddHostedService<ScheduleAutoStatusUpdateBackgroundService>();
 builder.Services.AddHostedService<ScheduleCompletionAutoCompleteBackgroundService>();

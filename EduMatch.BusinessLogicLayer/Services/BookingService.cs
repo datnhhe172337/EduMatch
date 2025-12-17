@@ -853,6 +853,37 @@ namespace EduMatch.BusinessLogicLayer.Services
 			return cancelledCount;
 		}
 
+		/// <summary>
+		/// Tự động hoàn thành các booking Confirmed khi tất cả schedule đều không còn Upcoming
+		/// </summary>
+		public async Task<int> AutoCompleteConfirmedBookingsAsync()
+		{
+			var confirmedBookings = await _bookingRepository.GetConfirmedBookingsAsync();
+			int completedCount = 0;
+
+			foreach (var booking in confirmedBookings)
+			{
+				// Lấy tất cả schedules của booking
+				var schedules = await _scheduleRepository.GetAllByBookingIdOrderedAsync(booking.Id);
+				var schedulesList = schedules.ToList();
+
+				// Kiểm tra nếu booking không có schedule nào thì bỏ qua
+				if (!schedulesList.Any())
+					continue;
+
+				// Kiểm tra xem tất cả schedules có status khác Upcoming không
+				bool allSchedulesNotUpcoming = schedulesList.All(s => s.Status != (int)ScheduleStatus.Upcoming);
+
+				if (allSchedulesNotUpcoming)
+				{
+					await UpdateStatusAsync(booking.Id, BookingStatus.Completed);
+					completedCount++;
+				}
+			}
+
+			return completedCount;
+		}
+
         /// <summary>
         /// Hủy toàn bộ Schedule theo bookingId: set Status=Cancelled, xóa MeetingSession (bao gồm Google Calendar event), trả Availability về Available
         /// </summary>
