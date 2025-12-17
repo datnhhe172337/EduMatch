@@ -480,13 +480,8 @@ namespace EduMatch.PresentationLayer.Controllers
 			{
 				// Rollback transaction nếu có lỗi
 				await dbTransaction.RollbackAsync();
-				return BadRequest(ApiResponse<string>.Fail(
-					"Failed to approve and verify all.", 
-					new { 
-						exception = ex.Message,
-						innerException = ex.InnerException?.Message,
-						stackTrace = ex.StackTrace
-					}));
+				return BadRequest(ApiResponse<string>.Fail("Failed to approve and verify all."));
+
 			}
 		}
 
