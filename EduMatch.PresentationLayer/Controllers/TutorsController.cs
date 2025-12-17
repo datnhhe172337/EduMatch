@@ -137,14 +137,15 @@ namespace EduMatch.PresentationLayer.Controllers
 					// Cấp role Tutor ngay khi đăng ký become-tutor
 					await _userService.UpdateRoleUserAsync(userEmail, 2);
 
-					await tx.CommitAsync();
-
 					// Gửi thông báo đăng ký trở thành gia sư thành công
 					await _notificationService.CreateNotificationAsync(
 						userEmail,
 						"Đăng ký trở thành gia sư thành công! Hồ sơ của bạn đang chờ được phê duyệt.",
 						$"/tutor/profile/{tutorId}"
 					);
+
+				await tx.CommitAsync();
+
 
 					var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
 
@@ -472,6 +473,19 @@ namespace EduMatch.PresentationLayer.Controllers
 					$"/tutor/profile/{tutorId}"
 				);
 
+				// Gửi email thông báo phê duyệt đơn đăng ký gia sư
+
+					try
+					{
+						await _emailService.SendTutorApplicationResultAsync(
+							existingProfile.UserEmail,
+							isApproved: true);
+					}
+					catch (Exception ex)
+					{
+						Console.WriteLine($"[TutorsController] Error sending email: {ex.Message}");
+					}
+
 				var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
 				return Ok(ApiResponse<TutorProfileDto>.Ok(fullProfile!, $"Tutor approved and all certificates/educations verified by {currentUserEmail}."));
 			}
@@ -479,13 +493,8 @@ namespace EduMatch.PresentationLayer.Controllers
 			{
 				// Rollback transaction nếu có lỗi
 				await dbTransaction.RollbackAsync();
-				return BadRequest(ApiResponse<string>.Fail(
-					"Failed to approve and verify all.", 
-					new { 
-						exception = ex.Message,
-						innerException = ex.InnerException?.Message,
-						stackTrace = ex.StackTrace
-					}));
+				return BadRequest(ApiResponse<string>.Fail("Failed to approve and verify all."));
+
 			}
 		}
 
@@ -584,6 +593,20 @@ namespace EduMatch.PresentationLayer.Controllers
 					$"Rất tiếc, hồ sơ gia sư của bạn đã bị từ chối. Lý do: {request.Reason}. Vui lòng kiểm tra và cập nhật hồ sơ để đăng ký lại.",
 					$"/tutor/profile/{tutorId}"
 				);
+
+					// Gửi email thông báo từ chối đơn đăng ký gia sư
+					try
+					{
+						await _emailService.SendTutorApplicationResultAsync(
+							existingProfile.UserEmail,
+							isApproved: false,
+							rejectionReason: request.Reason);
+					}
+					catch (Exception ex)
+					{
+						Console.WriteLine($"[TutorsController] Error sending email: {ex.Message}");
+					}
+				
 
 				var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
 				return Ok(ApiResponse<TutorProfileDto>.Ok(fullProfile!, $"Tutor rejected and all certificates/educations rejected by {currentUserEmail}. Reason: {request.Reason}"));

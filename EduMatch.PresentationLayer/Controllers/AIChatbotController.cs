@@ -136,7 +136,7 @@ namespace EduMatch.PresentationLayer.Controllers
                 if (embeddingVector == null || embeddingVector.Length != 768)
                     throw new InvalidOperationException("Embedding vector is null or has invalid length.");
 
-                var systemPrompt = _promptService.PromptV1(); ;
+                var systemPrompt = _promptService.PromptV4();
 
                 if (_chatbotService.IsTutorQuery(req.Message) == false)
                 {
@@ -160,34 +160,6 @@ namespace EduMatch.PresentationLayer.Controllers
                 // Step 2: Vector search (Semantic search) - Qdrant
                 var vectorResults = await _qdrantService.SearchTutorsAsync(embeddingVector, topK: 5);
 
-                // Filter theo score threshold
-                //float threshold = 0.65f;
-                //var filteredTutors = vectorResults
-                //    .Where(t => t.Score >= threshold)
-                //    .OrderByDescending(t => t.Score)
-                //    .Take(3)
-                //    .ToList();
-
-                //if (!filteredTutors.Any())
-                //{
-                //    var promptWithQueryIsNull = $@"
-                //    Người dùng hỏi: ""{req.Message}""
-                    
-                //    Không có tutor nào phù hợp từ yêu cầu của người dùng.
-
-                //    Hãy trả lời người dùng theo hướng dẫn như sau: 
-                //    {systemPrompt}
-                //    ";
-
-                //    var resp = await _gemini.GenerateTextAsync(sessionId, promptWithQueryIsNull, req.Message);
-
-                //    return Ok(new ChatResponseDto
-                //    {
-                //        SessionId = sessionId,
-                //        Reply = resp
-                //    });
-                //}
-
                 // Step 3: Keyword search
                 var keywordResults = await _service.SearchByKeywordAsync(req.Message);
 
@@ -202,25 +174,29 @@ namespace EduMatch.PresentationLayer.Controllers
                     .Take(3)
                     .ToList();
 
+                if(filteredTutors == null || !filteredTutors.Any())
+                {
+                    var promptWithQueryIsNull = $@"
+                    Người dùng hỏi: ""{req.Message}""
 
-                // Step 3: Buld Context + Prompt
+                    Hãy trả lời người dùng theo hướng dẫn như sau: 
+                    {systemPrompt}
+                    ";
+
+                    var resp = await _gemini.GenerateTextAsync(sessionId, promptWithQueryIsNull, req.Message);
+                    return Ok(new ChatResponseDto
+                    {
+                        SessionId = sessionId,
+                        Reply = resp
+                    });
+                }
+                // Step 6: Build Context + Prompt
                 var contextJson = BuildContextJson(filteredTutors);
                 var contextJsonString = JsonSerializer.Serialize(contextJson, new JsonSerializerOptions { WriteIndented = false });
 
                  Console.WriteLine(contextJsonString);
 
-                //var prompt = $@"
-                //    Người dùng hỏi: ""{req.Message}""
-
-                //    Dưới đây là danh sách tutor phù hợp (JSON context):
-                //    {contextJsonString}
-
-                //    Hãy trả lời người dùng theo đúng hướng dẫn như sau: 
-                //    {systemPrompt}
-                //    ";
-
-                var prompt = $@"
-                    Bạn là EduMatch AI – trợ lý ảo hỗ trợ người học tìm kiếm gia sư phù hợp. 
+                var prompt = $@" 
 
                     Người dùng hỏi: ""{req.Message}""
                     
@@ -248,8 +224,7 @@ namespace EduMatch.PresentationLayer.Controllers
                       ]
                     }}
 
-                  {_promptService.PromptV2}
-
+                  {systemPrompt}
 
                 ";
 
@@ -299,61 +274,114 @@ namespace EduMatch.PresentationLayer.Controllers
         }
 
 
+        //private object BuildContextJson(List<(TutorProfileDto Tutor, float Score)> topTutors)
+        //{
+        //    if (topTutors == null || !topTutors.Any())
+        //        return new { message = "Không tìm thấy tutor phù hợp.", tutors = new List<object>() };
+
+        //    var tutorList = topTutors.Select((t, idx) =>
+        //    {
+        //        var tutor = t.Tutor;
+        //        var subjects = tutor.TutorSubjects?.Select(s => s.Subject.SubjectName).ToList() ?? new List<string>();
+        //        var levels = tutor.TutorSubjects?.Select(s => s.Level.Name).ToList() ?? new List<string>();
+        //        var hourlyRates = tutor.TutorSubjects?.Select(s => s.HourlyRate).ToList();
+
+        //        return new
+        //        {
+        //            Rank = idx + 1,
+        //            TutorId = tutor.Id,
+        //            Name = tutor.UserName,
+        //            Subjects = subjects,
+        //            Levels = levels,
+        //            TeachingExp = tutor.TeachingExp,
+        //            Province = tutor.Province?.Name,
+        //            SubDistrict = tutor.SubDistrict?.Name,
+        //            HourlyRates = hourlyRates.Select(r => $"{r}").ToList(),
+        //            MatchScore = Math.Round(t.Score, 2),
+        //            ProfileUrl = $"http://localhost:3000/tutor/{tutor.Id}"
+        //        };
+        //    }).ToList();
+
+        //    return new
+        //    {
+        //        message = $"Tìm thấy {tutorList.Count} tutor phù hợp",
+        //        tutors = tutorList
+        //    };
+        //}
+
         private object BuildContextJson(List<(TutorProfileDto Tutor, float Score)> topTutors)
         {
-            if (topTutors == null || !topTutors.Any())
-                return new { message = "Không tìm thấy tutor phù hợp.", tutors = new List<object>() };
+            //if (topTutors == null || !topTutors.Any())
+            //    return new { message = "Không tìm thấy tutor phù hợp.", tutors = new List<object>() };
 
             var tutorList = topTutors.Select((t, idx) =>
             {
                 var tutor = t.Tutor;
-                var subjects = tutor.TutorSubjects?.Select(s => s.Subject.SubjectName).ToList() ?? new List<string>();
-                var levels = tutor.TutorSubjects?.Select(s => s.Level.Name).ToList() ?? new List<string>();
-                var hourlyRates = tutor.TutorSubjects?.Select(s => s.HourlyRate).ToList();
+                var tutorSubjects = tutor.TutorSubjects ?? new List<TutorSubjectDto>();
+
+                var subjects = tutorSubjects
+                    .Select(s => s.Subject.SubjectName)
+                    .Distinct()
+                    .ToList();
+
+                var levelNumbers = tutorSubjects
+                    .Select(s => s.Level.Name) 
+                    .Distinct()
+                    .ToList();
+
+                var hourlyRates = tutorSubjects
+                    .Select(s => s.HourlyRate)
+                    .Distinct()
+                    .ToList();
 
                 return new
                 {
-                    Rank = idx + 1,
-                    TutorId = tutor.Id,
-                    Name = tutor.UserName,
-                    Subjects = subjects,
-                    Levels = levels,
-                    TeachingExp = tutor.TeachingExp,
-                    Province = tutor.Province?.Name,
-                    SubDistrict = tutor.SubDistrict?.Name,
-                    HourlyRates = hourlyRates.Select(r => $"{r}").ToList(),
-                    MatchScore = Math.Round(t.Score, 2),
-                    ProfileUrl = $"http://localhost:3000/tutor/{tutor.Id}"
+                    rank = idx + 1,
+                    tutorId = tutor.Id,
+                    name = tutor.UserName,
+
+                    subjects = subjects,
+                    levels = levelNumbers,
+                    hourlyRate = hourlyRates,
+
+                    province = tutor.Province?.Name,
+                    subDistrict = tutor.SubDistrict?.Name,
+                    teachingExp = tutor.TeachingExp,
+                    matchScore = Math.Round(t.Score, 2),
+                    profileUrl = $"http://localhost:3000/tutor/{tutor.Id}"
                 };
             }).ToList();
 
             return new
             {
-                message = $"Tìm thấy {tutorList.Count} tutor phù hợp",
+                message = $"Tìm thấy {tutorList.Count} gia sư phù hợp với yêu cầu của bạn",
                 tutors = tutorList
             };
         }
 
-        //[HttpPost("testCallLLM")]
-        //public async Task<IActionResult> TestCallLLMAsync([FromBody] ChatRequestDto req)
+        //private static string NormalizeLevels(List<string> levels)
         //{
-        //    if (string.IsNullOrWhiteSpace(req.Message))
-        //        return BadRequest("Message is required");
+        //    var distinct = levels.Distinct().OrderBy(x => x).ToList();
 
-        //    var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+        //    if (!distinct.Any()) return "";
 
-        //    int sessionId = req.SessionId ?? await _chatbotService.CreateSessionAsync(userEmail);
-
-        //    try
+        //    if (distinct.Count > 1 &&
+        //        distinct.Last() - distinct.First() + 1 == distinct.Count)
         //    {
-        //        // Step 5: Call LLM - Gemini
-        //        var response = await _gemini.GenerateTextAsync(sessionId, req.Message);
-
-        //        var resp = new ChatResponseDto { Reply = response };
-        //        return Ok(resp);
+        //        return $"Lớp {distinct.First()}–{distinct.Last()}";
         //    }
-        //    catch (InvalidOperationException ex) { throw new Exception(ex.Message); }
 
+        //    return string.Join(", ", distinct.Select(l => $"Lớp {l}"));
+        //}
+
+        //private static string NormalizeHourlyRate(List<decimal?> rates)
+        //{
+        //    var distinct = rates.Distinct().OrderBy(x => x).ToList();
+
+        //    if (distinct.Count == 1)
+        //        return $"{distinct[0]:N0}đ / giờ";
+
+        //    return $"{distinct.First():N0}đ – {distinct.Last():N0}đ / giờ";
         //}
 
 

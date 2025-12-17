@@ -199,7 +199,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
 
         /// <summary>
-        /// Tạo danh sách Schedule cho một Booking; tổng sau khi tạo phải bằng TotalSessions của Booking
+        /// Tạo danh sách Schedule cho một Booking; nếu Booking đã có Schedule thì chặn tạo mới
         /// </summary>
         public async Task<List<ScheduleDto>> CreateListAsync(List<ScheduleCreateRequest> requests)
         {
@@ -211,13 +211,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (requests.Any(r => r.BookingId != bookingId))
                 throw new Exception("Tất cả Schedule phải thuộc cùng một Booking");
 
-            // Lấy booking và kiểm tra tổng sessions
-            var bookingDto = await _bookingService.GetByIdAsync(bookingId)
-                ?? throw new Exception("Booking không tồn tại");
+            // Lấy booking và chặn tạo mới nếu đã có Schedule trước đó
+            var bookingDto = await _bookingService.GetByIdAsync(bookingId);
+            if (bookingDto == null)
+                throw new Exception("Booking không tồn tại");
+
             var currentCount = await _scheduleRepository.CountByBookingIdAndStatusAsync(bookingId, null);
-            var totalAfterCreate = currentCount + requests.Count;
-            if (totalAfterCreate != bookingDto.TotalSessions)
-                throw new Exception($"Tổng số Schedule sau khi tạo ({totalAfterCreate}) phải bằng TotalSessions ({bookingDto.TotalSessions}) của Booking");
+            if (currentCount > 0)
+                throw new Exception("Booking này đã có Schedule, không thể tạo thêm");
 
             var created = new List<ScheduleDto>();
             foreach (var req in requests)
@@ -444,6 +445,46 @@ namespace EduMatch.BusinessLogicLayer.Services
             int? statusInt = status.HasValue ? (int?)status.Value : null;
             var entities = await _scheduleRepository.GetAllByTutorEmailAsync(tutorEmail, startDate, endDate, statusInt);
             return _mapper.Map<List<ScheduleDto>>(entities);
+        }
+
+        /// <summary>
+        /// Lấy một số buổi dạy của Tutor theo email và status, sắp xếp theo thời gian tăng dần (mặc định lấy 1 buổi).
+        /// Nếu API không truyền status thì controller sẽ mặc định là Upcoming.
+        /// </summary>
+        public async Task<List<ScheduleDto>> GetByTutorEmailAndStatusAsync(string tutorEmail, ScheduleStatus status, int bookingId, int take = 1)
+        {
+            if (string.IsNullOrWhiteSpace(tutorEmail))
+                throw new Exception("TutorEmail không được để trống");
+
+            if (!Enum.IsDefined(typeof(ScheduleStatus), status))
+                throw new Exception("Status không hợp lệ");
+
+            if (bookingId <= 0)
+                throw new Exception("BookingId phải lớn hơn 0");
+
+            // Kiểm tra booking tồn tại và thuộc về tutor
+            var bookingDto = await _bookingService.GetByIdAsync(bookingId);
+            if (bookingDto == null)
+                throw new Exception("Booking không tồn tại");
+
+            // Kiểm tra booking có thuộc về tutor không
+            if (bookingDto.TutorSubject == null || bookingDto.TutorSubject.TutorEmail != tutorEmail)
+                throw new Exception("Booking không thuộc về tutor này");
+
+            int statusInt = (int)status;
+            // Lấy schedule theo bookingId và status
+            var entities = await _scheduleRepository.GetAllByBookingIdAndStatusNoPagingAsync(bookingId, statusInt);
+            var dtos = _mapper.Map<List<ScheduleDto>>(entities);
+
+            // Lấy theo giờ Việt Nam (UTC+7) để đảm bảo là lịch sắp dạy
+            var nowVn = DateTime.UtcNow.AddHours(7);
+
+            return dtos
+                .Where(s => s.Availability != null && s.Availability.StartDate >= nowVn)
+                .OrderBy(s => s.Availability!.StartDate)
+                .ThenBy(s => s.Id)
+                .Take(take)
+                .ToList();
         }
 
         /// <summary>

@@ -76,5 +76,9 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         /// Tự động hủy các booking Pending quá hạn xác nhận
         /// </summary>
         Task<int> AutoCancelUnconfirmedBookingsAsync();
+        /// <summary>
+        /// Tự động hoàn thành các booking Confirmed khi tất cả schedule đều không còn Upcoming
+        /// </summary>
+        Task<int> AutoCompleteConfirmedBookingsAsync();
     }
 }

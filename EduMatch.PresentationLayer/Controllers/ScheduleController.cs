@@ -498,7 +498,55 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 		/// <summary>
-		/// Cập nhật Status của Schedule (chỉ cho phép update tiến dần, ngoại lệ: Completed và Absent có thể update qua lại)
+		/// Lấy một số buổi dạy của Tutor theo email và status, mặc định lấy 1  và status là Upcoming
+		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
+		[HttpGet("get-by-tutor-email-and-status")]
+		[ProducesResponseType(typeof(ApiResponse<IEnumerable<ScheduleDto>>), StatusCodes.Status200OK)]
+		[ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+		public async Task<ActionResult<ApiResponse<IEnumerable<ScheduleDto>>>> GetByTutorEmailAndStatus(
+			[FromQuery] string tutorEmail,
+			[FromQuery] int bookingId,
+			[FromQuery] ScheduleStatus status = ScheduleStatus.Upcoming,
+			[FromQuery] int take = 1)
+		{
+			try
+			{
+				if (string.IsNullOrWhiteSpace(tutorEmail))
+				{
+					return BadRequest(ApiResponse<object>.Fail("TutorEmail không được để trống"));
+				}
+				if (!new EmailAddressAttribute().IsValid(tutorEmail))
+				{
+					return BadRequest(ApiResponse<object>.Fail("TutorEmail không đúng định dạng"));
+				}
+
+				if (bookingId <= 0)
+				{
+					return BadRequest(ApiResponse<object>.Fail("BookingId phải lớn hơn 0"));
+				}
+
+				if (take <= 0)
+				{
+					take = 1;
+				}
+
+				if (!Enum.IsDefined(typeof(ScheduleStatus), status))
+				{
+					return BadRequest(ApiResponse<object>.Fail("Status không hợp lệ"));
+				}
+
+				var items = await _scheduleService.GetByTutorEmailAndStatusAsync(tutorEmail, status, bookingId, take);
+				return Ok(ApiResponse<IEnumerable<ScheduleDto>>.Ok(items));
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Cập nhật Status của Schedule (chỉ cho phép update tiến dần)
 		/// </summary>
 		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
 		[HttpPut("update-status/{id:int}")]

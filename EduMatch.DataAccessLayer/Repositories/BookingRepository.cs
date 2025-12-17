@@ -255,5 +255,15 @@ namespace EduMatch.DataAccessLayer.Repositories
                     ))
                 .ToListAsync();
         }
+
+        /// <summary>
+        /// Lấy danh sách Booking có status Confirmed
+        /// </summary>
+        public async Task<List<Booking>> GetConfirmedBookingsAsync()
+        {
+            return await _context.Bookings
+                .Where(b => b.Status == (int)BookingStatus.Confirmed)
+                .ToListAsync();
+        }
     }
 }

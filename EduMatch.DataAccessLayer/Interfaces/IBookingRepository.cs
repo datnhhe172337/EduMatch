@@ -51,5 +51,9 @@ namespace EduMatch.DataAccessLayer.Interfaces
         /// Lấy danh sách Booking Pending cần auto-cancel dựa trên thời gian tạo và lịch học sắp diễn ra
         /// </summary>
         Task<List<Booking>> GetPendingBookingsNeedingAutoCancelAsync(DateTime createdBeforeUtc, DateTime scheduleStartBeforeUtc);
+        /// <summary>
+        /// Lấy danh sách Booking có status Confirmed
+        /// </summary>
+        Task<List<Booking>> GetConfirmedBookingsAsync();
     }
 }

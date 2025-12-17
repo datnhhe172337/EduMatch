@@ -36,20 +36,20 @@ namespace EduMatch.PresentationLayer.Controllers
 		/// Tạo nhiều lịch trình cùng lúc cho gia sư
 		/// </summary>
 
-		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor + "," + Roles.Learner)]
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor )]
 		[HttpPost("tutor-availability-create-list")]
 		public async Task<IActionResult> TutorAvailabilityCreateList([FromBody] List<TutorAvailabilityCreateRequest> requests)
 		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ApiResponse<object>.Fail("Dữ liệu không hợp lệ", ModelState));
+			}
+
 			await using var transaction = await _context.Database.BeginTransactionAsync();
 			try
 			{
-				var results = new List<TutorAvailabilityDto>();
-				foreach (var request in requests)
-				{
-					var result = await _tutorAvailabilityService.CreateAsync(request);
-					results.Add(result);
-				}
-				
+				var results = await _tutorAvailabilityService.CreateBulkAsync(requests);
+
 				await transaction.CommitAsync();
 				return Ok(ApiResponse<List<TutorAvailabilityDto>>.Ok(results, $"Tạo {results.Count} lịch trình thành công"));
 			}
@@ -71,24 +71,24 @@ namespace EduMatch.PresentationLayer.Controllers
 		}
 
 		/// <summary>
-		/// Cập nhật nhiều lịch trình cùng lúc
+		/// Cập nhật 1 lịch trình
 		/// </summary>
 		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
-		[HttpPut("tutor-availability-update-list")]
-		public async Task<IActionResult> TutorAvailabilityUpdateList([FromBody] List<TutorAvailabilityUpdateRequest> requests)
+		[HttpPut("tutor-availability-update")]
+		public async Task<IActionResult> TutorAvailabilityUpdate([FromBody] TutorAvailabilityUpdateRequest request)
 		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ApiResponse<object>.Fail("Dữ liệu không hợp lệ", ModelState));
+			}
+
 			await using var transaction = await _context.Database.BeginTransactionAsync();
 			try
 			{
-				var results = new List<TutorAvailabilityDto>();
-				foreach (var request in requests)
-				{
-					var result = await _tutorAvailabilityService.UpdateAsync(request);
-					results.Add(result);
-				}
-				
+				var result = await _tutorAvailabilityService.UpdateAsync(request);
+
 				await transaction.CommitAsync();
-				return Ok(ApiResponse<List<TutorAvailabilityDto>>.Ok(results, $"Cập nhật {results.Count} lịch trình thành công"));
+				return Ok(ApiResponse<TutorAvailabilityDto>.Ok(result, "Cập nhật lịch trình thành công"));
 			}
 			catch (ArgumentException ex)
 			{
@@ -172,6 +172,7 @@ namespace EduMatch.PresentationLayer.Controllers
 			}
 		}
 
+
 		/// <summary>
 		/// Lấy lịch trình theo trạng thái (repository đã lọc những ngày còn tương lai)
 		/// </summary>
@@ -190,6 +191,32 @@ namespace EduMatch.PresentationLayer.Controllers
 				return Ok(ApiResponse<IReadOnlyList<TutorAvailabilityDto>>.Ok(
 					filteredAvailabilities, 
 					$"Lấy danh sách lịch trình của gia sư {tutorId} theo trạng thái {status} thành công. Tìm thấy {filteredAvailabilities.Count} lịch trình"));
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, ApiResponse<object>.Fail("Lỗi hệ thống", ex.Message));
+			}
+		}
+
+		/// <summary>
+		/// Cập nhật trạng thái của một lịch trình
+		/// </summary>
+		[Authorize(Roles = Roles.BusinessAdmin + "," + Roles.Tutor)]
+		[HttpPut("tutor-availability-update-status/{id}")]
+		public async Task<IActionResult> TutorAvailabilityUpdateStatus(int id, [FromQuery] TutorAvailabilityStatus status)
+		{
+			try
+			{
+				var result = await _tutorAvailabilityService.UpdateStatusAsync(id, status);
+				return Ok(ApiResponse<TutorAvailabilityDto>.Ok(result, "Cập nhật trạng thái lịch trình thành công"));
+			}
+			catch (ArgumentException ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
+			}
+			catch (InvalidOperationException ex)
+			{
+				return BadRequest(ApiResponse<object>.Fail(ex.Message));
 			}
 			catch (Exception ex)
 			{
