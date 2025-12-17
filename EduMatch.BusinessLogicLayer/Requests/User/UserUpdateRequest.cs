@@ -15,7 +15,6 @@ namespace EduMatch.BusinessLogicLayer.Requests.User
 		[StringLength(100, ErrorMessage = "Username cannot exceed 100 characters")]
 		public string? UserName { get; set; }
 
-		[Phone(ErrorMessage = "Invalid phone number")]
 		public string? Phone { get; set; }
 
 		public bool? IsEmailConfirmed { get; set; }

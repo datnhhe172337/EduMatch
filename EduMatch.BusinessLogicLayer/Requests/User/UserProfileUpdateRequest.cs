@@ -13,8 +13,8 @@ namespace EduMatch.BusinessLogicLayer.Requests.User
 		[StringLength(100, ErrorMessage = "Username cannot exceed 100 characters")]
 		public string? UserName { get; set; }
 
-		[Phone(ErrorMessage = "Invalid phone number")]
-		[RegularExpression(@"^(?:0\d{9}|(?:\+?84)\d{9,10})$", ErrorMessage = "Phone is not a valid VN number.")]
+		//[Phone(ErrorMessage = "Invalid phone number")]
+		//[RegularExpression(@"^(?:0\d{9}|(?:\+?84)\d{9,10})$", ErrorMessage = "Phone is not a valid VN number.")]
 		public string? Phone { get; set; }
 
 		[DataType(DataType.Date)]
