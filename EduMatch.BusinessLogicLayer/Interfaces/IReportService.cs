@@ -10,6 +10,8 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task<ReportDetailDto> CreateReportAsync(ReportCreateRequest request, string reporterEmail);
         Task<IReadOnlyList<ReportListItemDto>> GetReportsByReporterAsync(string reporterEmail);
         Task<IReadOnlyList<ReportListItemDto>> GetReportsByReportedUserAsync(string reportedEmail);
+        Task<IReadOnlyList<int>> GetReportIdsByBookingIdAsync(int bookingId, string? currentUserEmail, bool currentUserIsAdmin);
+        Task<IReadOnlyList<int>> GetReportIdsByScheduleIdAsync(int scheduleId, string? currentUserEmail, bool currentUserIsAdmin);
         Task<ReportDetailDto?> GetReportDetailAsync(int reportId, string requesterEmail, bool requesterIsAdmin);
         Task<ReportDetailDto> UpdateReportAsync(int reportId, ReportUpdateRequest request, string adminEmail);
         Task<ReportDetailDto> UpdateReportByLearnerAsync(int reportId, ReportUpdateByLearnerRequest request, string learnerEmail);

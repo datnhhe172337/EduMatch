@@ -80,6 +80,24 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .ToListAsync();
         }
 
+        public async Task<List<Report>> GetByBookingIdAsync(int bookingId)
+        {
+            return await _context.Reports
+                .AsNoTracking()
+                .Where(r => r.BookingId == bookingId)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<List<Report>> GetByScheduleIdAsync(int scheduleId)
+        {
+            return await _context.Reports
+                .AsNoTracking()
+                .Where(r => r.ScheduleId == scheduleId)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+        }
+
         public async Task<List<Report>> GetByReporterAsync(string reporterEmail)
         {
             return await BuildQueryable()

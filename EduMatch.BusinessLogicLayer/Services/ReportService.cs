@@ -131,6 +131,48 @@ namespace EduMatch.BusinessLogicLayer.Services
             return _mapper.Map<ReportDetailDto>(report);
         }
 
+        public async Task<IReadOnlyList<int>> GetReportIdsByBookingIdAsync(int bookingId, string? currentUserEmail, bool currentUserIsAdmin)
+        {
+            if (bookingId <= 0)
+                throw new ArgumentException("BookingId must be greater than 0.", nameof(bookingId));
+
+            var reports = await _reportRepository.GetByBookingIdAsync(bookingId);
+            if (!currentUserIsAdmin)
+            {
+                if (string.IsNullOrWhiteSpace(currentUserEmail))
+                    throw new UnauthorizedAccessException("User email not found.");
+
+                var normalizedEmail = currentUserEmail.Trim();
+                reports = reports
+                    .Where(r => r.ReporterUserEmail.Equals(normalizedEmail, StringComparison.OrdinalIgnoreCase) ||
+                                r.ReportedUserEmail.Equals(normalizedEmail, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            return reports.Select(r => r.Id).ToList();
+        }
+
+        public async Task<IReadOnlyList<int>> GetReportIdsByScheduleIdAsync(int scheduleId, string? currentUserEmail, bool currentUserIsAdmin)
+        {
+            if (scheduleId <= 0)
+                throw new ArgumentException("ScheduleId must be greater than 0.", nameof(scheduleId));
+
+            var reports = await _reportRepository.GetByScheduleIdAsync(scheduleId);
+            if (!currentUserIsAdmin)
+            {
+                if (string.IsNullOrWhiteSpace(currentUserEmail))
+                    throw new UnauthorizedAccessException("User email not found.");
+
+                var normalizedEmail = currentUserEmail.Trim();
+                reports = reports
+                    .Where(r => r.ReporterUserEmail.Equals(normalizedEmail, StringComparison.OrdinalIgnoreCase) ||
+                                r.ReportedUserEmail.Equals(normalizedEmail, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            return reports.Select(r => r.Id).ToList();
+        }
+
         public async Task<IReadOnlyList<ReportListItemDto>> GetReportsByReportedUserAsync(string reportedEmail)
         {
             if (string.IsNullOrWhiteSpace(reportedEmail))

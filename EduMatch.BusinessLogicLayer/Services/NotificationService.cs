@@ -4,6 +4,7 @@ using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using Microsoft.AspNetCore.SignalR;
+using System;
 
 
 namespace EduMatch.BusinessLogicLayer.Services
@@ -32,7 +33,9 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 UserEmail = userEmail,
                 Message = message,
-                LinkUrl = linkUrl
+                LinkUrl = linkUrl,
+                IsRead = false,
+                CreatedAt = GetVietnamNow()
             };
 
             var savedNotification = await _repo.CreateAsync(notification);
@@ -70,6 +73,23 @@ namespace EduMatch.BusinessLogicLayer.Services
         public async Task<int> GetUnreadNotificationCountAsync(string userEmail)
         {
             return await _repo.GetUnreadCountAsync(userEmail);
+        }
+
+        private static DateTime GetVietnamNow()
+        {
+            try
+            {
+                var timeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                return DateTime.UtcNow.AddHours(7);
+            }
+            catch (InvalidTimeZoneException)
+            {
+                return DateTime.UtcNow.AddHours(7);
+            }
         }
     }
 }
