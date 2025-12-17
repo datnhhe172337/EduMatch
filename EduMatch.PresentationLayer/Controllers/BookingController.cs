@@ -26,11 +26,12 @@ namespace EduMatch.PresentationLayer.Controllers
 		private readonly CurrentUserService _currentUserService;
 		private readonly INotificationService _notificationService;
 		private readonly ITutorSubjectService _tutorSubjectService;
+		private readonly EmailService _emailService;
 
 		/// <summary>
 		/// API Booking: lấy danh sách theo LearnerEmail/TutorId (có/không phân trang), lấy theo Id, tạo, cập nhật, cập nhật Status/PaymentStatus
 		/// </summary>
-		public BookingController(IBookingService bookingService, IScheduleService scheduleService, EduMatchContext context, CurrentUserService currentUserService, INotificationService notificationService, ITutorSubjectService tutorSubjectService)
+		public BookingController(IBookingService bookingService, IScheduleService scheduleService, EduMatchContext context, CurrentUserService currentUserService, INotificationService notificationService, ITutorSubjectService tutorSubjectService, EmailService emailService)
 		{
 			_bookingService = bookingService;
 			_scheduleService = scheduleService;
@@ -38,6 +39,7 @@ namespace EduMatch.PresentationLayer.Controllers
 			_currentUserService = currentUserService;
 			_notificationService = notificationService;
 			_tutorSubjectService = tutorSubjectService;
+			_emailService = emailService;
 		}
 
 		/// <summary>
@@ -350,17 +352,36 @@ namespace EduMatch.PresentationLayer.Controllers
 							tutorSubject.TutorEmail,
 							$"Bạn có đơn yêu cầu dạy học thử với học viên: {learnerEmail} - Môn: {tutorSubject.Subject.SubjectName} - {tutorSubject.Level.Name}. Vui lòng xác nhận đơn hàng.",
 							"/bookings");
+
 					}
 					
 					// Gửi notification cho learner khi booking tạo thành công
-					if (!string.IsNullOrWhiteSpace(learnerEmail))
+					if (!string.IsNullOrWhiteSpace(learnerEmail) && tutorSubject != null)
 					{
 						
 						await _notificationService.CreateNotificationAsync(
 							learnerEmail,
 							$"Bạn đã tạo đơn học thử thành công với gia sư: {tutorSubject.TutorEmail} - Môn: {tutorSubject.Subject.SubjectName} - {tutorSubject.Level.Name}. Đang chờ gia sư xác nhận.",
 							"/bookings");
+
+
+						// Gửi email thông báo booking tạo thành công cho learner
+						try
+						{
+							await _emailService.SendBookingCreatedNotificationAsync(
+								learnerEmail,
+								tutorSubject.Subject?.SubjectName ?? "N/A",
+								tutorSubject.Level?.Name ?? "N/A",
+								trialBooking.TotalAmount,
+								tutorSubject.TutorEmail);
+						}
+						catch (Exception ex)
+						{
+							Console.WriteLine($"[BookingController] Error sending email: {ex.Message}");
+						}
+
 					}
+
 					
 					return Ok(ApiResponse<BookingDto>.Ok(trialBooking, "Tạo Booking học thử (miễn phí) và cập nhật thanh toán thành công"));
 				}
@@ -381,12 +402,28 @@ namespace EduMatch.PresentationLayer.Controllers
 				}
 				
 				// Gửi notification cho learner khi booking tạo thành công
-				if (!string.IsNullOrWhiteSpace(learnerEmail))
+				if (!string.IsNullOrWhiteSpace(learnerEmail) && tutorSubjectForPaid != null)
 				{
 					await _notificationService.CreateNotificationAsync(
 						learnerEmail,
 						$"Bạn đã tạo đơn đặt lịch thành công với gia sư: {tutorSubjectForPaid.TutorEmail} - Môn: {tutorSubjectForPaid.Subject.SubjectName} - {tutorSubjectForPaid.Level.Name}. Đang chờ gia sư xác nhận.",
 						"/bookings");
+					// Gửi email thông báo booking tạo thành công cho learner
+
+					try
+					{
+
+						await _emailService.SendBookingCreatedNotificationAsync(
+							learnerEmail,
+							tutorSubjectForPaid.Subject?.SubjectName ?? "N/A",
+							tutorSubjectForPaid.Level?.Name ?? "N/A",
+							paidBooking.TotalAmount,
+							tutorSubjectForPaid.TutorEmail);
+					}
+					catch (Exception ex)
+					{
+						Console.WriteLine($"[BookingController] Error sending email: {ex.Message}");
+					}
 				}
 				
 				return Ok(ApiResponse<BookingDto>.Ok(paidBooking, "Tạo Booking, danh sách Schedule và thanh toán thành công"));
