@@ -455,10 +455,10 @@ namespace EduMatch.BusinessLogicLayer.Services
             booking.UpdatedAt = now;
             await _bookingRepository.UpdateAsync(booking);
 
-            await _notificationService.CreateNotificationAsync(
-                booking.LearnerEmail,
-                $"Bạn đã thanh toán booking #{booking.Id}. Số tiền {amountToPay:N0} VND đã được khóa và chờ hoàn tất buổi học.",
-                "/wallet/my-wallet");
+            //await _notificationService.CreateNotificationAsync(
+            //    booking.LearnerEmail,
+            //    $"Bạn đã thanh toán booking #{booking.Id}. Số tiền {amountToPay:N0} VND đã được khóa và chờ hoàn tất buổi học.",
+            //    "/wallet/my-wallet");
 
             return _mapper.Map<BookingDto>(booking);
         }
