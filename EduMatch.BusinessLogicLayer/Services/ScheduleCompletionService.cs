@@ -332,6 +332,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                     learnerWallet.UpdatedAt = now;
                     _unitOfWork.Wallets.Update(learnerWallet);
 
+                    var sysLockedBefore = systemWallet.LockedBalance;
                     systemWallet.LockedBalance -= totalRefund;
                     systemWallet.UpdatedAt = now;
                     _unitOfWork.Wallets.Update(systemWallet);
@@ -341,7 +342,6 @@ namespace EduMatch.BusinessLogicLayer.Services
                     bookingForRefund.UpdatedAt = now;
                     await _bookingRepository.UpdateAsync(bookingForRefund);
 
-                    var sysBefore = systemWallet.Balance;
                     await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
                     {
                         WalletId = systemWallet.Id,
@@ -349,8 +349,8 @@ namespace EduMatch.BusinessLogicLayer.Services
                         TransactionType = WalletTransactionType.Debit,
                         Reason = WalletTransactionReason.BookingRefund,
                         Status = TransactionStatus.Completed,
-                        BalanceBefore = sysBefore,
-                        BalanceAfter = systemWallet.Balance,
+                        BalanceBefore = sysLockedBefore,
+                        BalanceAfter = systemWallet.LockedBalance,
                         CreatedAt = now,
                         ReferenceCode = $"SCHEDULE_CANCEL_REFUND_{scheduleId}",
                         BookingId = bookingForRefund.Id
@@ -408,5 +408,4 @@ namespace EduMatch.BusinessLogicLayer.Services
         }
     }
 }
-
 
