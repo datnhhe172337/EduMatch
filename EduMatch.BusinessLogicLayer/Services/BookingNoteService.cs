@@ -2,6 +2,7 @@ using AutoMapper;
 using EduMatch.BusinessLogicLayer.DTOs;
 using EduMatch.BusinessLogicLayer.Interfaces;
 using EduMatch.BusinessLogicLayer.Requests.BookingNote;
+using EduMatch.BusinessLogicLayer.Utils;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Interfaces;
 using System;
@@ -82,7 +83,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 BookingId = request.BookingId,
                 Content = request.Content.Trim(),
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = VietnamTimeProvider.Now(),
                 CreatedByEmail = currentEmail
             };
 
@@ -98,7 +99,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                         MediaType = (int)m.MediaType,
                         FileUrl = m.FileUrl.Trim(),
                         FilePublicId = string.IsNullOrWhiteSpace(m.FilePublicId) ? null : m.FilePublicId.Trim(),
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = VietnamTimeProvider.Now()
                     });
                 }
 
@@ -142,7 +143,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                         MediaType = (int)m.MediaType,
                         FileUrl = m.FileUrl.Trim(),
                         FilePublicId = string.IsNullOrWhiteSpace(m.FilePublicId) ? null : m.FilePublicId.Trim(),
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = VietnamTimeProvider.Now()
                     });
                 }
 

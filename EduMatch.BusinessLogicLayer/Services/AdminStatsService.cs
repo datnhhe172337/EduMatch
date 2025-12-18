@@ -33,11 +33,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             var refundsQuery = _context.BookingRefundRequests.AsNoTracking();
             var reportsQuery = _context.Reports.AsNoTracking();
 
-            var totalUsers = await usersQuery.CountAsync();
-            var activeUsers = await usersQuery.CountAsync(u => u.IsActive == true);
-            var learners = await usersQuery.CountAsync(u => u.Role.RoleName == Roles.Learner);
-            var tutors = await usersQuery.CountAsync(u => u.Role.RoleName == Roles.Tutor);
-            var newUsers30 = await usersQuery.CountAsync(u => u.CreatedAt >= cutoff30Days);
+            var scopedUsersQuery = usersQuery.Where(u =>
+                u.Role.RoleName == Roles.Learner || u.Role.RoleName == Roles.Tutor);
+
+            var totalUsers = await scopedUsersQuery.CountAsync();
+            var activeUsers = await scopedUsersQuery.CountAsync(u => u.IsActive == true);
+            var learners = await scopedUsersQuery.CountAsync(u => u.Role.RoleName == Roles.Learner);
+            var tutors = await scopedUsersQuery.CountAsync(u => u.Role.RoleName == Roles.Tutor);
+            var newUsers30 = await scopedUsersQuery.CountAsync(u => u.CreatedAt >= cutoff30Days);
 
             var tutorApproved = await tutorProfilesQuery.CountAsync(t => t.Status == (int)TutorStatus.Approved);
             var tutorPending = await tutorProfilesQuery.CountAsync(t => t.Status == (int)TutorStatus.Pending);

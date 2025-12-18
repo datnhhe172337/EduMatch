@@ -15,6 +15,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
         private readonly ITutorPayoutRepository _tutorPayoutRepository;
         private readonly IBookingRepository _bookingRepository;
+        private readonly IScheduleRepository _scheduleRepository;
         private readonly IWalletRepository _walletRepository;
         private readonly IWalletTransactionRepository _walletTransactionRepository;
         private readonly INotificationService _notificationService;
@@ -23,6 +24,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         public TutorPayoutService(
             ITutorPayoutRepository tutorPayoutRepository,
             IBookingRepository bookingRepository,
+            IScheduleRepository scheduleRepository,
             IWalletRepository walletRepository,
             IWalletTransactionRepository walletTransactionRepository,
             INotificationService notificationService,
@@ -30,6 +32,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         {
             _tutorPayoutRepository = tutorPayoutRepository;
             _bookingRepository = bookingRepository;
+            _scheduleRepository = scheduleRepository;
             _walletRepository = walletRepository;
             _walletTransactionRepository = walletTransactionRepository;
             _notificationService = notificationService;
@@ -156,7 +159,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                         WalletId = systemWallet.Id,
                         Amount = payout.SystemFeeAmount,
                         TransactionType = WalletTransactionType.Credit,
-                        Reason = WalletTransactionReason.BookingPayout,
+                        Reason = WalletTransactionReason.PlatformFee,
                         Status = TransactionStatus.Completed,
                         BalanceBefore = systemBalanceBefore,
                         BalanceAfter = systemWallet.Balance,
@@ -187,9 +190,32 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (string.IsNullOrWhiteSpace(tutorEmail))
                 return;
 
-            var message = scheduleId.HasValue
-                 ? $"Bạn đã nhận được {amount:N0} VND cho buổi học #{scheduleId}."
-                 : $"Bạn đã nhận {amount:N0} VND từ payout.";
+            string? scheduleDetail = null;
+            if (scheduleId.HasValue)
+            {
+                var schedule = await _scheduleRepository.GetByIdAsync(scheduleId.Value);
+                if (schedule?.Availabiliti?.Slot != null)
+                {
+                    var dateText = schedule.Availabiliti.StartDate.ToString("dd/MM/yyyy");
+                    var startText = schedule.Availabiliti.Slot.StartTime.ToString(@"hh\:mm");
+                    var endText = schedule.Availabiliti.Slot.EndTime.ToString(@"hh\:mm");
+                    scheduleDetail = $"Ngày {dateText}, {startText} - {endText}";
+                }
+            }
+
+            string message;
+            if (scheduleId.HasValue)
+            {
+                var detailText = !string.IsNullOrWhiteSpace(scheduleDetail)
+                    ? scheduleDetail
+                    : $"buổi học #{scheduleId.Value}";
+
+                message = $"Bạn đã nhận được {amount:N0} VND cho {detailText}.";
+            }
+            else
+            {
+                message = $"Bạn đã nhận {amount:N0} VND từ payout.";
+            }
 
             await _notificationService.CreateNotificationAsync(tutorEmail, message, "/wallet/my-wallet");
         }

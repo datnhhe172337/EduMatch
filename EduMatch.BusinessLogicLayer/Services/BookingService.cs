@@ -439,7 +439,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 WalletId = systemWallet.Id,
                 Amount = amountToPay,
                 TransactionType = WalletTransactionType.Credit,
-                Reason = WalletTransactionReason.BookingPayout,
+                Reason = WalletTransactionReason.BookingPayment,
                 Status = TransactionStatus.Pending,
                 BalanceBefore = systemLockedBefore,
                 BalanceAfter = systemWallet.LockedBalance,
@@ -568,19 +568,20 @@ namespace EduMatch.BusinessLogicLayer.Services
             booking.UpdatedAt = now;
             await _bookingRepository.UpdateAsync(booking);
 
+            var tutorEmail = booking.TutorSubject?.Tutor?.UserEmail;
+
             await _notificationService.CreateNotificationAsync(
                 booking.LearnerEmail,
                 refunded > 0
-                    ? $"Booking #{booking.Id} da bi huy. {refunded:N0} VND da duoc hoan ve vi cua ban."
-                    : $"Booking #{booking.Id} da bi huy.",
+                    ? $"Booking với gia sư {tutorEmail} đã bị hủy. {refunded:N0} VND đã được hoàn về ví của bạn."
+                    : $"Booking với gia sư {tutorEmail} đã bị hủy.",
                 "/bookings");
 
-            var tutorEmail = booking.TutorSubject?.Tutor?.UserEmail;
             if (!string.IsNullOrWhiteSpace(tutorEmail))
             {
                 await _notificationService.CreateNotificationAsync(
                     tutorEmail,
-                    $"Booking #{booking.Id} da bi huy boi hoc vien.",
+                    $"Booking với học viên {booking.LearnerEmail} đã bị hủy bởi học viên.",
                     "/bookings");
             }
 
@@ -702,22 +703,22 @@ namespace EduMatch.BusinessLogicLayer.Services
                 });
             }
 
-            if (platformFeePortion > 0)
-            {
-                systemWallet.Balance += platformFeePortion;
-                systemWallet.UpdatedAt = now;
-
-                await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
+                if (platformFeePortion > 0)
                 {
-                    WalletId = systemWallet.Id,
-                    Amount = platformFeePortion,
-                    TransactionType = WalletTransactionType.Credit,
-                    Reason = WalletTransactionReason.BookingRefund,
-                    Status = TransactionStatus.Completed,
-                    BalanceBefore = systemBalanceBefore,
-                    BalanceAfter = systemWallet.Balance,
-                    CreatedAt = now,
-                    ReferenceCode = $"BOOKING_PLATFORM_FEE_{booking.Id}"
+                    systemWallet.Balance += platformFeePortion;
+                    systemWallet.UpdatedAt = now;
+
+                    await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
+                    {
+                        WalletId = systemWallet.Id,
+                        Amount = platformFeePortion,
+                        TransactionType = WalletTransactionType.Credit,
+                        Reason = WalletTransactionReason.PlatformFee,
+                        Status = TransactionStatus.Completed,
+                        BalanceBefore = systemBalanceBefore,
+                        BalanceAfter = systemWallet.Balance,
+                        CreatedAt = now,
+                        ReferenceCode = $"BOOKING_PLATFORM_FEE_{booking.Id}"
                 });
             }
             else
@@ -780,7 +781,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 await _notificationService.CreateNotificationAsync(
                     booking.LearnerEmail,
-                    $"Booking #{booking.Id} đã được hoàn {learnerAmount:N0} VND về ví của bạn.",
+                    $"Booking với gia sư {tutorEmail} đã được hoàn {learnerAmount:N0} VND về ví của bạn.",
                     "/wallet/my-wallet");
             }
 
@@ -788,7 +789,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 await _notificationService.CreateNotificationAsync(
                     tutorEmail,
-                    $"Bạn đã nhận {tutorAmount:N0} VND từ booking #{booking.Id} sau khi xử lý hoàn tiền.",
+                    $"Bạn đã nhận {tutorAmount:N0} VND từ booking với học viên {booking.LearnerEmail} sau khi xử lý hoàn tiền.",
                     "/wallet/my-wallet");
             }
 
@@ -829,19 +830,19 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (status == BookingStatus.Cancelled)
             {
                 await CancelAllSchedulesByBookingAsync(id);
+                var tutorSubject = await _tutorSubjectRepository.GetByIdFullAsync(entity.TutorSubjectId);
 
                 await _notificationService.CreateNotificationAsync(
                     entity.LearnerEmail,
-                    $"Đơn hàng booking #{entity.Id} đã được hủy.",
+                    $"Booking với gia sư {tutorSubject?.Tutor?.UserEmail} đã được hủy.",
                     "/bookings");
 
                 // Gửi notification báo đơn hàng đã hủy cho tutor TRƯỚC
-                var tutorSubject = await _tutorSubjectRepository.GetByIdFullAsync(entity.TutorSubjectId);
                 if (tutorSubject?.Tutor?.UserEmail != null)
                 {
                     await _notificationService.CreateNotificationAsync(
                         tutorSubject.Tutor.UserEmail,
-                        $"Đơn hàng booking #{entity.Id} đã được hủy.",
+                        $"Booking với học viên {entity.LearnerEmail} đã được hủy.",
                         "/bookings");
                 }
                 
