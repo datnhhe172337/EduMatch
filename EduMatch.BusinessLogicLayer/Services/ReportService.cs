@@ -21,6 +21,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly INotificationService _notificationService;
         private readonly IReportEvidenceRepository _reportEvidenceRepository;
         private readonly IReportDefenseRepository _reportDefenseRepository;
+        private readonly EmailService _emailService;
 
         public ReportService(
             IReportRepository reportRepository,
@@ -29,7 +30,8 @@ namespace EduMatch.BusinessLogicLayer.Services
             IReportContentValidator contentValidator,
             INotificationService notificationService,
             IReportEvidenceRepository reportEvidenceRepository,
-            IReportDefenseRepository reportDefenseRepository)
+            IReportDefenseRepository reportDefenseRepository,
+            EmailService emailService)
         {
             _reportRepository = reportRepository;
             _userRepository = userRepository;
@@ -38,6 +40,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             _notificationService = notificationService;
             _reportEvidenceRepository = reportEvidenceRepository;
             _reportDefenseRepository = reportDefenseRepository;
+            _emailService = emailService;
         }
 
         public async Task<ReportDetailDto> CreateReportAsync(ReportCreateRequest request, string reporterEmail)
@@ -79,6 +82,21 @@ namespace EduMatch.BusinessLogicLayer.Services
             var reporterName = string.IsNullOrWhiteSpace(reporter.UserName) ? reporter.Email : reporter.UserName;
             var tutorMessage = $"Bạn vừa nhận được một báo cáo mới từ {reporterName}. Lý do: {report.Reason}. Bạn có 2 ngày để gửi giải trình trước khi quản trị viên xem xét.";
             await _notificationService.CreateNotificationAsync(reported.Email, tutorMessage);
+            await _emailService.SendMailAsync(new MailContent
+            {
+                To = reported.Email,
+                Subject = "Báo cáo mới liên quan đến bạn",
+                Body = tutorMessage
+            });
+
+            var reporterMessage = $"Bạn đã tạo báo cáo đối với {reported.Email}. Lý do: {report.Reason}.";
+            await _notificationService.CreateNotificationAsync(reporter.Email, reporterMessage);
+            await _emailService.SendMailAsync(new MailContent
+            {
+                To = reporter.Email,
+                Subject = "Báo cáo đã được tạo",
+                Body = reporterMessage
+            });
 
             if (request.Evidences != null && request.Evidences.Count > 0)
             {
@@ -486,6 +504,24 @@ namespace EduMatch.BusinessLogicLayer.Services
                 await NotifyStatusChangeAsync(report);
             }
 
+            // Notify reporter that the tutor has added a defense
+            var defenseNotice = $"Gia sư {report.ReportedUserEmail} đã gửi phản hồi cho báo cáo của bạn (ID {report.Id}).";
+            await _notificationService.CreateNotificationAsync(report.ReporterUserEmail, defenseNotice);
+            await _emailService.SendMailAsync(new MailContent
+            {
+                To = report.ReporterUserEmail,
+                Subject = "Báo cáo đã có phản hồi",
+                Body = defenseNotice
+            });
+
+            // Confirm to tutor
+            await _emailService.SendMailAsync(new MailContent
+            {
+                To = tutorEmail.Trim(),
+                Subject = "Đã gửi phản hồi cho báo cáo",
+                Body = $"Bạn đã gửi phản hồi cho báo cáo (ID {report.Id})."
+            });
+
             if (request.Evidences != null && request.Evidences.Count > 0)
             {
                 foreach (var ev in request.Evidences)
@@ -688,9 +724,21 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             var reporterMessage = $"Báo cáo của bạn đối với {report.ReportedUserEmail} hiện {statusMessage}.";
             await _notificationService.CreateNotificationAsync(report.ReporterUserEmail, reporterMessage);
+            await _emailService.SendMailAsync(new MailContent
+            {
+                To = report.ReporterUserEmail,
+                Subject = "Cập nhật trạng thái báo cáo",
+                Body = reporterMessage
+            });
 
             var tutorMessage = $"Báo cáo liên quan tới bạn từ {report.ReporterUserEmail} hiện {statusMessage}.";
             await _notificationService.CreateNotificationAsync(report.ReportedUserEmail, tutorMessage);
+            await _emailService.SendMailAsync(new MailContent
+            {
+                To = report.ReportedUserEmail,
+                Subject = "Cập nhật trạng thái báo cáo",
+                Body = tutorMessage
+            });
         }
     }
 }
