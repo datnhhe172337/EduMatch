@@ -439,7 +439,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 WalletId = systemWallet.Id,
                 Amount = amountToPay,
                 TransactionType = WalletTransactionType.Credit,
-                Reason = WalletTransactionReason.BookingPayout,
+                Reason = WalletTransactionReason.BookingPayment,
                 Status = TransactionStatus.Pending,
                 BalanceBefore = systemLockedBefore,
                 BalanceAfter = systemWallet.LockedBalance,
@@ -702,22 +702,22 @@ namespace EduMatch.BusinessLogicLayer.Services
                 });
             }
 
-            if (platformFeePortion > 0)
-            {
-                systemWallet.Balance += platformFeePortion;
-                systemWallet.UpdatedAt = now;
-
-                await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
+                if (platformFeePortion > 0)
                 {
-                    WalletId = systemWallet.Id,
-                    Amount = platformFeePortion,
-                    TransactionType = WalletTransactionType.Credit,
-                    Reason = WalletTransactionReason.BookingRefund,
-                    Status = TransactionStatus.Completed,
-                    BalanceBefore = systemBalanceBefore,
-                    BalanceAfter = systemWallet.Balance,
-                    CreatedAt = now,
-                    ReferenceCode = $"BOOKING_PLATFORM_FEE_{booking.Id}"
+                    systemWallet.Balance += platformFeePortion;
+                    systemWallet.UpdatedAt = now;
+
+                    await _unitOfWork.WalletTransactions.AddAsync(new WalletTransaction
+                    {
+                        WalletId = systemWallet.Id,
+                        Amount = platformFeePortion,
+                        TransactionType = WalletTransactionType.Credit,
+                        Reason = WalletTransactionReason.PlatformFee,
+                        Status = TransactionStatus.Completed,
+                        BalanceBefore = systemBalanceBefore,
+                        BalanceAfter = systemWallet.Balance,
+                        CreatedAt = now,
+                        ReferenceCode = $"BOOKING_PLATFORM_FEE_{booking.Id}"
                 });
             }
             else

@@ -156,7 +156,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                         WalletId = systemWallet.Id,
                         Amount = payout.SystemFeeAmount,
                         TransactionType = WalletTransactionType.Credit,
-                        Reason = WalletTransactionReason.BookingPayout,
+                        Reason = WalletTransactionReason.PlatformFee,
                         Status = TransactionStatus.Completed,
                         BalanceBefore = systemBalanceBefore,
                         BalanceAfter = systemWallet.Balance,
