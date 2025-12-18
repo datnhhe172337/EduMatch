@@ -151,7 +151,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (adminAction)
             {
                 await SendNotificationsAsync(booking, completion.ScheduleId,
-                    learnerMessage: "Khiếu nại đã được xử lý. Thanh toán cho buổi học này sẽ tiếp tục.",
+                    learnerMessage: $"Khiếu nại cho buổi học #{completion.ScheduleId} đã được xử lý. Thanh toán cho buổi học này sẽ tiếp tục.",
                     tutorMessage: $"Khiếu nại cho buổi học #{completion.ScheduleId} đã được xử lý.Thanh toán sẽ được giải ngân.");
             }
             else
@@ -202,7 +202,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             await _unitOfWork.CompleteAsync();
             var booking = await _bookingRepository.GetByIdAsync(completion.BookingId);
             await SendNotificationsAsync(booking, completion.ScheduleId,
-                learnerMessage: null,
+                learnerMessage: $"Bạn đã báo cáo buổi học #{completion.ScheduleId}. Thanh toán đang tạm giữ.",
                 tutorMessage: $"Buổi học #{completion.ScheduleId} đã bị báo cáo. Thanh toán đang tạm giữ.");
             return true;
         }
@@ -261,13 +261,13 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (releaseToTutor)
             {
                 await SendNotificationsAsync(booking, completion.ScheduleId,
-                    learnerMessage: "Khiếu nại đã được xử lý. Thanh toán sẽ tiếp tục.",
+                    learnerMessage: $"Khiếu nại cho buổi học #{completion.ScheduleId} đã được xử lý. Thanh toán sẽ tiếp tục.",
                     tutorMessage: $"Khiếu nại cho buổi học #{completion.ScheduleId} đã được xử lý. Thanh toán sẽ tiếp tục.");
             }
             else
             {
                 await SendNotificationsAsync(booking, completion.ScheduleId,
-                    learnerMessage: "Khiếu nại đã được xử lý. Thanh toán cho buổi học này bị hủy.",
+                    learnerMessage: $"Khiếu nại cho buổi học #{completion.ScheduleId} đã được xử lý. Thanh toán cho buổi học này bị hủy.",
                     tutorMessage: $"Khiếu nại cho buổi học #{completion.ScheduleId} đã được xử lý. Thanh toán bị hủy.");
             }
             return true;
@@ -377,7 +377,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (adminAction)
             {
                 await SendNotificationsAsync(booking, completion.ScheduleId,
-                    learnerMessage: "Khiếu nại đã được xử lý. Thanh toán cho buổi học này bị hủy.Bạn sẽ được hoàn tiền.",
+                    learnerMessage: $"Khiếu nại cho buổi học #{completion.ScheduleId} đã được xử lý. Thanh toán cho buổi học này bị hủy.Bạn sẽ được hoàn tiền.",
                     tutorMessage: $"Khiếu nại cho buổi học #{completion.ScheduleId} đã được xử lý. Thanh toán bị hủy.");
             }
             else
@@ -390,10 +390,37 @@ namespace EduMatch.BusinessLogicLayer.Services
             return true;
         }
 
+        private async Task<string?> BuildScheduleDetailAsync(int scheduleId)
+        {
+            var schedule = await _scheduleRepository.GetByIdAsync(scheduleId);
+            if (schedule?.Availabiliti?.Slot == null)
+                return null;
+
+            var dateText = schedule.Availabiliti.StartDate.ToString("dd/MM/yyyy");
+            var startText = schedule.Availabiliti.Slot.StartTime.ToString(@"hh\:mm");
+            var endText = schedule.Availabiliti.Slot.EndTime.ToString(@"hh\:mm");
+
+            return $"ngày {dateText}, {startText} - {endText}";
+        }
+
         private async Task SendNotificationsAsync(Booking? booking, int scheduleId, string? learnerMessage, string? tutorMessage)
         {
             if (booking == null)
                 return;
+
+            var detail = await BuildScheduleDetailAsync(scheduleId);
+            if (!string.IsNullOrWhiteSpace(detail))
+            {
+                var idToken = $"#{scheduleId}";
+                if (!string.IsNullOrWhiteSpace(learnerMessage))
+                {
+                    learnerMessage = learnerMessage.Replace(idToken, detail);
+                }
+                if (!string.IsNullOrWhiteSpace(tutorMessage))
+                {
+                    tutorMessage = tutorMessage.Replace(idToken, detail);
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(learnerMessage))
             {
