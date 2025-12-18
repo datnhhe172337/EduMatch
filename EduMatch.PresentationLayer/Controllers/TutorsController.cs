@@ -474,7 +474,7 @@ namespace EduMatch.PresentationLayer.Controllers
 				);
 
 				// Gửi email thông báo phê duyệt đơn đăng ký gia sư
-
+				
 					try
 					{
 						await _emailService.SendTutorApplicationResultAsync(
@@ -485,6 +485,7 @@ namespace EduMatch.PresentationLayer.Controllers
 					{
 						Console.WriteLine($"[TutorsController] Error sending email: {ex.Message}");
 					}
+				
 
 				var fullProfile = await _tutorProfileService.GetByIdFullAsync(tutorId);
 				return Ok(ApiResponse<TutorProfileDto>.Ok(fullProfile!, $"Tutor approved and all certificates/educations verified by {currentUserEmail}."));
@@ -594,7 +595,8 @@ namespace EduMatch.PresentationLayer.Controllers
 					$"/tutor/profile/{tutorId}"
 				);
 
-					// Gửi email thông báo từ chối đơn đăng ký gia sư
+				// Gửi email thông báo từ chối đơn đăng ký gia sư
+				
 					try
 					{
 						await _emailService.SendTutorApplicationResultAsync(
