@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using EduMatch.BusinessLogicLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.Services;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
@@ -17,6 +18,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IBookingRepository _bookingRepository;
         private readonly INotificationService _notificationService;
         private readonly IScheduleRepository _scheduleRepository;
+        private readonly EmailService _emailService;
         private readonly TimeZoneInfo _vietnamTz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
 
         public ScheduleCompletionService(
@@ -26,7 +28,8 @@ namespace EduMatch.BusinessLogicLayer.Services
             ITutorPayoutService tutorPayoutService,
             IBookingRepository bookingRepository,
             INotificationService notificationService,
-            IScheduleRepository scheduleRepository)
+            IScheduleRepository scheduleRepository,
+            EmailService emailService)
         {
             _completionRepository = completionRepository;
             _payoutRepository = payoutRepository;
@@ -35,6 +38,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             _bookingRepository = bookingRepository;
             _notificationService = notificationService;
             _scheduleRepository = scheduleRepository;
+            _emailService = emailService;
         }
 
         public async Task<int> AutoCompletePastDueAsync()
@@ -425,12 +429,24 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (!string.IsNullOrWhiteSpace(learnerMessage))
             {
                 await _notificationService.CreateNotificationAsync(booking.LearnerEmail, learnerMessage, "/schedules");
+                await _emailService.SendMailAsync(new MailContent
+                {
+                    To = booking.LearnerEmail,
+                    Subject = "Cập nhật buổi học",
+                    Body = learnerMessage
+                });
             }
 
             var tutorEmail = booking.TutorSubject?.Tutor?.UserEmail;
             if (!string.IsNullOrWhiteSpace(tutorEmail) && !string.IsNullOrWhiteSpace(tutorMessage))
             {
                 await _notificationService.CreateNotificationAsync(tutorEmail, tutorMessage, "/schedules");
+                await _emailService.SendMailAsync(new MailContent
+                {
+                    To = tutorEmail,
+                    Subject = "Cập nhật buổi học",
+                    Body = tutorMessage
+                });
             }
         }
     }
