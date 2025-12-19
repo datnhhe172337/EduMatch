@@ -23,7 +23,8 @@ namespace EduMatch.UnitTests
         private readonly Mock<INotificationService> _notifier = new();
         private readonly Mock<IReportEvidenceRepository> _evidenceRepo = new();
         private readonly Mock<IReportDefenseRepository> _defenseRepo = new();
-        private readonly IMapper _mapper;
+        private readonly Mock<EmailService> _emailService = new();
+		private readonly IMapper _mapper;
 
         public ReportServiceTests()
         {
@@ -40,7 +41,8 @@ namespace EduMatch.UnitTests
                 _validator.Object,
                 _notifier.Object,
                 _evidenceRepo.Object,
-                _defenseRepo.Object);
+                _defenseRepo.Object,
+                _emailService.Object);
         }
 
         [Fact]
