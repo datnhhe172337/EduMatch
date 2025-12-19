@@ -19,6 +19,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IWalletRepository _walletRepository;
         private readonly IWalletTransactionRepository _walletTransactionRepository;
         private readonly INotificationService _notificationService;
+        private readonly EmailService _emailService;
         private readonly IUnitOfWork _unitOfWork;
 
         public TutorPayoutService(
@@ -28,6 +29,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             IWalletRepository walletRepository,
             IWalletTransactionRepository walletTransactionRepository,
             INotificationService notificationService,
+            EmailService emailService,
             IUnitOfWork unitOfWork)
         {
             _tutorPayoutRepository = tutorPayoutRepository;
@@ -36,6 +38,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             _walletRepository = walletRepository;
             _walletTransactionRepository = walletTransactionRepository;
             _notificationService = notificationService;
+            _emailService = emailService;
             _unitOfWork = unitOfWork;
         }
 
@@ -218,6 +221,12 @@ namespace EduMatch.BusinessLogicLayer.Services
             }
 
             await _notificationService.CreateNotificationAsync(tutorEmail, message, "/wallet/my-wallet");
+            await _emailService.SendMailAsync(new MailContent
+            {
+                To = tutorEmail,
+                Subject = "Thanh toán buổi học",
+                Body = message
+            });
         }
     }
 }

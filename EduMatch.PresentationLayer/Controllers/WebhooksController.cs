@@ -14,18 +14,16 @@ namespace EduMatch.PresentationLayer.Controllers
     public class WebhooksController : ControllerBase
     {
         private readonly IDepositService _depositService;
-        private readonly IVnpayService _vnpayService; // <-- ADD THIS
+        private readonly IVnpayService _vnpayService; 
 
-        // --- UPDATE CONSTRUCTOR ---
         public WebhooksController(
             IDepositService depositService,
-            IVnpayService vnpayService) // <-- ADD THIS
+            IVnpayService vnpayService)
         {
             _depositService = depositService;
-            _vnpayService = vnpayService; // <-- ADD THIS
+            _vnpayService = vnpayService;
         }
-
-        // --- THIS IS THE NEW VNPAY IPN ENDPOINT ---
+    
         [HttpGet("vnpay-ipn")] // VNPay sends confirmation via GET
         [AllowAnonymous]
         public async Task<IActionResult> HandleVnpayIpn()

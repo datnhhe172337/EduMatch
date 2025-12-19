@@ -19,17 +19,20 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly IMapper _mapper;
         private readonly EduMatchContext _context; 
         private readonly INotificationService _notificationService;
+        private readonly EmailService _emailService;
 
         public DepositService(
             IUnitOfWork unitOfWork,
             IMapper mapper,
             EduMatchContext context,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            EmailService emailService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _context = context;
             _notificationService = notificationService;
+            _emailService = emailService;
         }
 
         public async Task<Deposit> CreateDepositRequestAsync(WalletDepositRequest request, string userEmail)
@@ -146,10 +149,16 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 await _notificationService.CreateNotificationAsync(
                     notifiedUserEmail,
-                    $"Bạn đã nạp thành công {creditedAmount:N0} VND vào ví.",
+                    $"Nạp thành công {creditedAmount:N0} VND vào ví.",
                     "/wallet/my-wallet");
-            }
 
+                await _emailService.SendMailAsync(new MailContent
+                {
+                    To = notifiedUserEmail,
+                    Subject = "Nạp tiền thành công",
+                    Body = $"Bạn đã nạp thành công {creditedAmount:N0} VND vào ví của bạn ở hệ thống EduMatch. Mã giao dịch: VNPAY_{transactionId}"
+                });
+            }
             if (amountMismatch && mismatchMessage != null)
             {
                 throw new Exception(mismatchMessage);
