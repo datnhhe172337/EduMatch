@@ -519,7 +519,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             {
                 To = tutorEmail.Trim(),
                 Subject = "Đã gửi phản hồi cho báo cáo",
-                Body = $"Bạn đã gửi phản hồi cho báo cáo (ID {report.Id})."
+                Body = $"Bạn đã gửi phản hồi cho báo cáo từ người dùng {report.ReporterUserEmail}."
             });
 
             if (request.Evidences != null && request.Evidences.Count > 0)
