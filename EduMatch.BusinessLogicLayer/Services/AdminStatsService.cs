@@ -15,6 +15,7 @@ namespace EduMatch.BusinessLogicLayer.Services
     {
         private readonly EduMatchContext _context;
         private readonly IAdminWalletService _adminWalletService;
+        private const string SystemWalletEmail = "system@edumatch.com";
 
         public AdminStatsService(EduMatchContext context, IAdminWalletService adminWalletService)
         {
@@ -145,6 +146,15 @@ namespace EduMatch.BusinessLogicLayer.Services
 
                 var monthUsers = users.Where(u => u.CreatedAt >= monthStart && u.CreatedAt < monthEnd);
                 var monthBookings = bookings.Where(b => b.CreatedAt >= monthStart && b.CreatedAt < monthEnd);
+                var monthSystemTx = await _context.WalletTransactions
+                    .AsNoTracking()
+                    .Include(tx => tx.Wallet)
+                    .Where(tx =>
+                        tx.Wallet.UserEmail == SystemWalletEmail &&
+                        tx.Status == TransactionStatus.Completed &&
+                        tx.CreatedAt >= monthStart &&
+                        tx.CreatedAt < monthEnd)
+                    .ToListAsync();
 
                 results.Add(new MonthlyAdminStatsDto
                 {
@@ -168,32 +178,14 @@ namespace EduMatch.BusinessLogicLayer.Services
                     },
                     Revenue = new MonthlyRevenueStatsDto
                     {
-                        TutorPayoutAmount = monthBookings.Sum(b => b.TutorReceiveAmount),
-                        RefundedAmount = monthBookings.Sum(b => b.RefundedAmount),
-                        NetPlatformRevenueAmount = monthBookings.Sum(b =>
-                        {
-                            // Platform recognizes revenue only when a booking is completed, or when a refund was <100%.
-                            if (b.TotalAmount == 0)
-                                return 0m;
-
-                            // Completed and paid: keep fee minus any partial refund.
-                            if (b.Status == (int)BookingStatus.Completed && b.PaymentStatus == (int)PaymentStatus.Paid)
-                            {
-                                var systemPortionRefunded = b.RefundedAmount * (b.SystemFeeAmount / b.TotalAmount);
-                                return Math.Max(0m, b.SystemFeeAmount - systemPortionRefunded);
-                            }
-
-                            // Partially refunded bookings (<100%) still keep a portion of the fee.
-                            if ((b.PaymentStatus == (int)PaymentStatus.RefundPending || b.PaymentStatus == (int)PaymentStatus.Refunded) &&
-                                b.RefundedAmount > 0 && b.RefundedAmount < b.TotalAmount)
-                            {
-                                var systemPortionRefunded = b.RefundedAmount * (b.SystemFeeAmount / b.TotalAmount);
-                                return Math.Max(0m, b.SystemFeeAmount - systemPortionRefunded);
-                            }
-
-                            // In all other cases (pending, cancelled, fully refunded), platform keeps nothing.
-                            return 0m;
-                        })
+                        TutorPayoutAmount = monthSystemTx
+                            .Where(tx => tx.Reason == WalletTransactionReason.BookingPayout && tx.TransactionType == WalletTransactionType.Debit)
+                            .Sum(tx => tx.Amount),
+                        RefundedAmount = monthSystemTx
+                            .Where(tx => tx.Reason == WalletTransactionReason.BookingRefund && tx.TransactionType == WalletTransactionType.Debit)
+                            .Sum(tx => tx.Amount),
+                        NetPlatformRevenueAmount = monthSystemTx.Sum(tx =>
+                            tx.TransactionType == WalletTransactionType.Credit ? tx.Amount : -tx.Amount)
                     }
                 });
             }

@@ -33,6 +33,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             var schedules = await BuildTutorScheduleQuery(email)
                 .Where(s => s.Availabiliti.StartDate.Date >= startDate && s.Availabiliti.StartDate.Date <= endDate)
+                .Where(s => s.Status == (int)ScheduleStatus.Upcoming)
                 .OrderBy(s => s.Availabiliti.StartDate)
                 .ThenBy(s => s.Id)
                 .ToListAsync();
