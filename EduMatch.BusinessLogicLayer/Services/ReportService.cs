@@ -5,6 +5,7 @@ using EduMatch.BusinessLogicLayer.Requests.Report;
 using EduMatch.DataAccessLayer.Entities;
 using EduMatch.DataAccessLayer.Enum;
 using EduMatch.DataAccessLayer.Interfaces;
+using EduMatch.BusinessLogicLayer.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -73,7 +74,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 ReportedUserEmail = reported.Email,
                 Reason = request.Reason.Trim(),
                 BookingId = request.BookingId,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = VietnamTimeProvider.Now(),
             };
             report.StatusEnum = ReportStatus.Pending;
 
@@ -220,13 +221,13 @@ namespace EduMatch.BusinessLogicLayer.Services
                 ?? throw new KeyNotFoundException("Không tìm thấy báo cáo.");
 
             var reviewAllowedAt = report.CreatedAt.AddDays(2);
-            if (DateTime.UtcNow < reviewAllowedAt)
+            if (VietnamTimeProvider.Now() < reviewAllowedAt)
                 throw new InvalidOperationException("Quản trị viên chỉ được xử lý báo cáo sau 2 ngày kể từ khi được tạo để gia sư có thời gian giải trình.");
 
             report.StatusEnum = request.Status;
             report.AdminNotes = string.IsNullOrWhiteSpace(request.AdminNotes) ? null : request.AdminNotes.Trim();
             report.HandledByAdminEmail = adminEmail.Trim();
-            report.UpdatedAt = DateTime.UtcNow;
+            report.UpdatedAt = VietnamTimeProvider.Now();
 
             if (request.Status != ReportStatus.Resolved && request.Status != ReportStatus.Dismissed)
                 throw new InvalidOperationException("Quản trị viên chỉ cập nhật trạng thái sang Resolved hoặc Dismissed.");
@@ -256,7 +257,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             await _contentValidator.ValidateAsync(report.ReporterUserEmail, report.ReportedUserEmail, request.Reason, report.Id);
 
             report.Reason = request.Reason.Trim();
-            report.UpdatedAt = DateTime.UtcNow;
+            report.UpdatedAt = VietnamTimeProvider.Now();
 
             var updated = await _reportRepository.UpdateAsync(report);
             return _mapper.Map<ReportDetailDto>(updated);
@@ -277,7 +278,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 throw new InvalidOperationException("Báo cáo chỉ có thể hủy trước khi quản trị viên xử lý.");
 
             report.StatusEnum = ReportStatus.Dismissed;
-            report.UpdatedAt = DateTime.UtcNow;
+            report.UpdatedAt = VietnamTimeProvider.Now();
 
             var updated = await _reportRepository.UpdateAsync(report);
             return _mapper.Map<ReportDetailDto>(updated);
@@ -333,7 +334,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 FileUrl = request.FileUrl.Trim(),
                 FilePublicId = string.IsNullOrWhiteSpace(request.FilePublicId) ? null : request.FilePublicId.Trim(),
                 Caption = string.IsNullOrWhiteSpace(request.Caption) ? null : request.Caption.Trim(),
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = VietnamTimeProvider.Now()
             };
 
             var saved = await _reportEvidenceRepository.AddAsync(evidence);
@@ -460,7 +461,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
                 return false;
 
-            return DateTime.UtcNow <= report.CreatedAt.AddDays(2);
+            return VietnamTimeProvider.Now() <= report.CreatedAt.AddDays(2);
         }
 
         public async Task<ReportDefenseDto> AddDefenseAsync(int reportId, ReportDefenseCreateRequest request, string tutorEmail, bool currentUserIsAdmin)
@@ -479,7 +480,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
                 throw new InvalidOperationException("Báo cáo đã được xử lý, không thể gửi thêm báo vệ.");
 
-            if (DateTime.UtcNow > report.CreatedAt.AddDays(2) && !currentUserIsAdmin)
+            if (VietnamTimeProvider.Now() > report.CreatedAt.AddDays(2) && !currentUserIsAdmin)
                 throw new InvalidOperationException("Đã quá hạn 2 ngày để gửi báo vệ.");
 
             var defense = new ReportDefense
@@ -487,7 +488,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 ReportId = reportId,
                 TutorEmail = tutorEmail.Trim(),
                 Note = request.Note.Trim(),
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = VietnamTimeProvider.Now()
             };
 
             var savedDefense = await _reportDefenseRepository.AddAsync(defense);
@@ -495,7 +496,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (report.StatusEnum == ReportStatus.Pending)
             {
                 report.StatusEnum = ReportStatus.UnderReview;
-                report.UpdatedAt = DateTime.UtcNow;
+                report.UpdatedAt = VietnamTimeProvider.Now();
                 await _reportRepository.UpdateAsync(report);
                 await NotifyStatusChangeAsync(report);
             }
@@ -598,7 +599,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             if (report.StatusEnum == ReportStatus.Resolved || report.StatusEnum == ReportStatus.Dismissed)
                 throw new InvalidOperationException("Báo cáo đã được xử lý, không thể chỉnh sửa báo vệ.");
 
-            if (DateTime.UtcNow > report.CreatedAt.AddDays(2) && !currentUserIsAdmin)
+            if (VietnamTimeProvider.Now() > report.CreatedAt.AddDays(2) && !currentUserIsAdmin)
                 throw new InvalidOperationException("Đã quá hạn 2 ngày để chỉnh sửa báo vệ.");
 
             defense.Note = request.Note.Trim();
