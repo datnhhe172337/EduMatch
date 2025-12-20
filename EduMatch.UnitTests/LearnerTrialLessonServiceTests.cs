@@ -11,8 +11,11 @@ namespace EduMatch.UnitTests
     {
         private readonly Mock<ILearnerTrialLessonRepository> _repo = new();
         private readonly Mock<ITutorSubjectRepository> _tutorSubjectRepo = new();
+        private readonly Mock<IUserRepository> _userRepo = new();
+        private readonly Mock<ISubjectRepository> _subjectRepo = new();
 
-        private LearnerTrialLessonService CreateService() => new(_repo.Object, _tutorSubjectRepo.Object);
+
+		private LearnerTrialLessonService CreateService() => new(_repo.Object, _tutorSubjectRepo.Object, _userRepo.Object, _subjectRepo.Object);
 
         #region HasTrialedAsync
         [Fact]
