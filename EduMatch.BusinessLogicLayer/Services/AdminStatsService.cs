@@ -184,8 +184,9 @@ namespace EduMatch.BusinessLogicLayer.Services
                         RefundedAmount = monthSystemTx
                             .Where(tx => tx.Reason == WalletTransactionReason.BookingRefund && tx.TransactionType == WalletTransactionType.Debit)
                             .Sum(tx => tx.Amount),
-                        NetPlatformRevenueAmount = monthSystemTx.Sum(tx =>
-                            tx.TransactionType == WalletTransactionType.Credit ? tx.Amount : -tx.Amount)
+                        NetPlatformRevenueAmount = monthSystemTx
+                            .Where(tx => tx.Reason == WalletTransactionReason.PlatformFee)
+                            .Sum(tx => tx.TransactionType == WalletTransactionType.Credit ? tx.Amount : -tx.Amount)
                     }
                 });
             }
