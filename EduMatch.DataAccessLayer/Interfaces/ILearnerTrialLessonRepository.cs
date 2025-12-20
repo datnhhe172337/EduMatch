@@ -11,5 +11,7 @@ namespace EduMatch.DataAccessLayer.Interfaces
         Task<bool> ExistsAsync(string learnerEmail, int tutorId, int subjectId);
 
         Task<IReadOnlyList<LearnerTrialLesson>> GetByLearnerAndTutorAsync(string learnerEmail, int tutorId);
+
+        Task<bool> DeleteAsync(string learnerEmail, int tutorId, int subjectId);
     }
 }

@@ -10,5 +10,7 @@ namespace EduMatch.BusinessLogicLayer.Interfaces
         Task<bool> RecordTrialAsync(string learnerEmail, int tutorId, int subjectId);
 
         Task<IReadOnlyList<DTOs.TrialLessonSubjectStatusDto>> GetSubjectTrialStatusesAsync(string learnerEmail, int tutorId);
+
+        Task<bool> DeleteTrialAsync(string learnerEmail, int tutorId, int subjectId);
     }
 }

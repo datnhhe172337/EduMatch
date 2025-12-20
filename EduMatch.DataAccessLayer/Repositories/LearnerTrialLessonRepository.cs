@@ -52,5 +52,20 @@ namespace EduMatch.DataAccessLayer.Repositories
                 .Where(t => t.LearnerEmail == learnerEmail && t.TutorId == tutorId)
                 .ToListAsync();
         }
+
+        public async Task<bool> DeleteAsync(string learnerEmail, int tutorId, int subjectId)
+        {
+            var trial = await _context.LearnerTrialLessons
+                .FirstOrDefaultAsync(t => t.LearnerEmail == learnerEmail && t.TutorId == tutorId && t.SubjectId == subjectId);
+
+            if (trial == null)
+            {
+                return false;
+            }
+
+            _context.LearnerTrialLessons.Remove(trial);
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

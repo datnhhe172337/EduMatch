@@ -12,11 +12,15 @@ namespace EduMatch.BusinessLogicLayer.Services
     {
         private readonly ILearnerTrialLessonRepository _trialLessonRepository;
         private readonly ITutorSubjectRepository _tutorSubjectRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly ISubjectRepository _subjectRepository;
 
-        public LearnerTrialLessonService(ILearnerTrialLessonRepository trialLessonRepository, ITutorSubjectRepository tutorSubjectRepository)
+        public LearnerTrialLessonService(ILearnerTrialLessonRepository trialLessonRepository, ITutorSubjectRepository tutorSubjectRepository, IUserRepository userRepository, ISubjectRepository subjectRepository)
         {
             _trialLessonRepository = trialLessonRepository;
             _tutorSubjectRepository = tutorSubjectRepository;
+            _userRepository = userRepository;
+            _subjectRepository = subjectRepository;
         }
 
         public async Task<bool> HasTrialedAsync(string learnerEmail, int tutorId, int subjectId)
@@ -57,6 +61,45 @@ namespace EduMatch.BusinessLogicLayer.Services
                 .ToList();
 
             return result;
+        }
+
+        public async Task<bool> DeleteTrialAsync(string learnerEmail, int tutorId, int subjectId)
+        {
+            if (string.IsNullOrWhiteSpace(learnerEmail))
+            {
+                throw new ArgumentException("Learner email is required", nameof(learnerEmail));
+            }
+
+            // Kiểm tra learner tồn tại
+            var learner = await _userRepository.GetUserByEmailAsync(learnerEmail);
+            if (learner == null)
+            {
+                return false;
+            }
+
+            // Kiểm tra subject tồn tại
+            var subject = await _subjectRepository.GetByIdAsync(subjectId);
+            if (subject == null)
+            {
+                return false;
+            }
+
+            // Kiểm tra tutor và subject có tồn tại trong TutorSubject (tutor có dạy subject này không)
+            var tutorSubjects = await _tutorSubjectRepository.GetByTutorIdAsync(tutorId);
+            var tutorSubjectExists = tutorSubjects.Any(ts => ts.TutorId == tutorId && ts.SubjectId == subjectId);
+            if (!tutorSubjectExists)
+            {
+                return false;
+            }
+
+            // Kiểm tra trial lesson có tồn tại không
+            var trialExists = await _trialLessonRepository.ExistsAsync(learnerEmail, tutorId, subjectId);
+            if (!trialExists)
+            {
+                return false;
+            }
+
+            return await _trialLessonRepository.DeleteAsync(learnerEmail, tutorId, subjectId);
         }
     }
 }

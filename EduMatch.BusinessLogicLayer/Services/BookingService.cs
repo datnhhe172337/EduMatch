@@ -826,11 +826,24 @@ namespace EduMatch.BusinessLogicLayer.Services
             entity.UpdatedAt = DateTime.UtcNow;
             await _bookingRepository.UpdateAsync(entity);
 
+			// Kiểm tra nếu booking là học thử (TotalAmount == 0)
+			var isTrialLesson = entity.TotalAmount == 0;
+  
             // Nếu status là Cancelled thì hủy tất cả Schedule liên quan
             if (status == BookingStatus.Cancelled)
             {
                 await CancelAllSchedulesByBookingAsync(id);
+
                 var tutorSubject = await _tutorSubjectRepository.GetByIdFullAsync(entity.TutorSubjectId);
+
+                // Nếu booking là học thử thì xóa LearnerTrialLesson
+                if (isTrialLesson && tutorSubject != null)
+                {
+                    await _learnerTrialLessonService.DeleteTrialAsync(
+                        entity.LearnerEmail,
+                        tutorSubject.TutorId,
+                        tutorSubject.SubjectId);
+                }
 
                 await _notificationService.CreateNotificationAsync(
                     entity.LearnerEmail,
@@ -847,7 +860,10 @@ namespace EduMatch.BusinessLogicLayer.Services
                 }
                 
                 // Sau đó mới thực hiện hoàn tiền nếu chuyển từ Pending sang Cancelled và PaymentStatus là Paid
-                if (currentStatus == BookingStatus.Pending && entity.PaymentStatus == (int)PaymentStatus.Paid)
+                // Bỏ qua hoàn tiền cho đơn học thử (TotalAmount = 0)
+                if (currentStatus == BookingStatus.Pending 
+                    && entity.PaymentStatus == (int)PaymentStatus.Paid
+                    && entity.TotalAmount > 0)
                 {
                     await RefundBookingAsync(id, 100);
                 }
