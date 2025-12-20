@@ -23,6 +23,7 @@ namespace EduMatch.BusinessLogicLayer.Services
         private readonly EduMatchContext _context;
         private readonly IMapper _mapper;
         private readonly INotificationService _notificationService;
+        private readonly EmailService _emailService;
 
         public ScheduleChangeRequestService(
             IScheduleChangeRequestRepository scheduleChangeRequestRepository,
@@ -31,7 +32,8 @@ namespace EduMatch.BusinessLogicLayer.Services
             ITutorAvailabilityRepository tutorAvailabilityRepository,
             EduMatchContext context,
             IMapper mapper,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            EmailService emailService)
         {
             _scheduleChangeRequestRepository = scheduleChangeRequestRepository;
             _scheduleService = scheduleService;
@@ -40,6 +42,7 @@ namespace EduMatch.BusinessLogicLayer.Services
             _context = context;
             _mapper = mapper;
             _notificationService = notificationService;
+            _emailService = emailService;
         }
 
         /// <summary>
@@ -111,6 +114,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 // Commit transaction
                 await dbTransaction.CommitAsync();
 
+               
                 // Gửi notification cho người được yêu cầu (RequestedToEmail)
                 if (!string.IsNullOrWhiteSpace(entity.RequestedToEmail))
                 {
@@ -118,6 +122,22 @@ namespace EduMatch.BusinessLogicLayer.Services
                         entity.RequestedToEmail,
                         $"Bạn có yêu cầu thay đổi lịch học mới từ {entity.RequesterEmail}. Vui lòng xem xét và phản hồi.",
                         $"/schedule-change-requests/{entity.Id}");
+
+                    // Gửi email thông báo cho người được yêu cầu
+                    try
+                    {
+                        await _emailService.SendScheduleChangeRequestCreatedAsync(
+                            entity.RequestedToEmail, 
+                            entity.RequesterEmail,
+                            entity.RequestedToEmail,
+							oldAvailability.StartDate,
+                            newAvailability.StartDate,
+                            entity.Reason);
+                    }
+                    catch (Exception emailEx)
+                    {
+                        Console.WriteLine($"[ScheduleChangeRequest] Error sending email to {entity.RequestedToEmail}: {emailEx.Message}");
+                    }
                 }
 				// Gửi notification cho người  yêu cầu (RequesterEmail)
 				if (!string.IsNullOrWhiteSpace(entity.RequesterEmail))
@@ -324,7 +344,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 // Commit transaction
                 await dbTransaction.CommitAsync();
 
-                // Gửi thông báo cho các bên liên quan
+                  // Gửi thông báo cho các bên liên quan
                 if (status == ScheduleChangeRequestStatus.Approved)
                 {
                     // Thông báo cho người yêu cầu (RequesterEmail)
@@ -333,6 +353,22 @@ namespace EduMatch.BusinessLogicLayer.Services
                         "Yêu cầu thay đổi lịch học của bạn đã được chấp nhận. Lịch học đã được cập nhật.",
                         $"/schedule/{entity.ScheduleId}");
 
+                    // Gửi email thông báo cho người yêu cầu
+                    if (entity.OldAvailabiliti != null && entity.NewAvailabiliti != null)
+                    {
+                        try
+                        {
+                            await _emailService.SendScheduleChangeRequestApprovedAsync(
+                                entity.RequesterEmail,
+                                entity.RequestedToEmail,
+								entity.OldAvailabiliti.StartDate,
+                                entity.NewAvailabiliti.StartDate);
+                        }
+                        catch (Exception emailEx)
+                        {
+                            Console.WriteLine($"[ScheduleChangeRequest] Error sending approval email to {entity.RequesterEmail}: {emailEx.Message}");
+                        }
+                    }
                 }
                 else if (status == ScheduleChangeRequestStatus.Rejected)
                 {
@@ -345,7 +381,25 @@ namespace EduMatch.BusinessLogicLayer.Services
                         entity.RequesterEmail,
                         rejectMessage,
                         $"/schedule/{entity.ScheduleId}");
-                }
+
+
+					// Gửi email thông báo cho người yêu cầu
+					if (entity.OldAvailabiliti != null && entity.NewAvailabiliti != null)
+					{
+						try
+						{
+							await _emailService.SendScheduleChangeRequestRejectedAsync(
+								entity.RequesterEmail,
+								entity.RequestedToEmail,
+								entity.OldAvailabiliti.StartDate,
+								entity.NewAvailabiliti.StartDate);
+						}
+						catch (Exception emailEx)
+						{
+							Console.WriteLine($"[ScheduleChangeRequest] Error sending reject email to {entity.RequesterEmail}: {emailEx.Message}");
+						}
+					}
+				}
                 else if (status == ScheduleChangeRequestStatus.Cancelled)
                 {
                     // Thông báo cho cả hai bên khi hủy

@@ -24,7 +24,8 @@ public sealed class DepositServiceTests : IAsyncLifetime
     private readonly Mock<IWalletRepository> _walletRepository = new();
     private readonly Mock<IWalletTransactionRepository> _walletTransactionRepository = new();
     private readonly Mock<INotificationService> _notificationService = new();
-    private readonly IMapper _mapper = new Mock<IMapper>().Object;
+    private readonly Mock<EmailService> _emailService = new();
+	private readonly IMapper _mapper = new Mock<IMapper>().Object;
     private readonly DepositService _sut;
 
     public DepositServiceTests()
@@ -36,7 +37,7 @@ public sealed class DepositServiceTests : IAsyncLifetime
         _unitOfWork.SetupGet(u => u.WalletTransactions).Returns(_walletTransactionRepository.Object);
         _unitOfWork.Setup(u => u.CompleteAsync()).ReturnsAsync(1);
 
-        _sut = new DepositService(_unitOfWork.Object, _mapper, _context, _notificationService.Object);
+        _sut = new DepositService(_unitOfWork.Object, _mapper, _context, _notificationService.Object,_emailService.Object);
     }
 
     public Task InitializeAsync() => Task.CompletedTask;

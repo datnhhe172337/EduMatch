@@ -273,42 +273,6 @@ namespace EduMatch.PresentationLayer.Controllers
             return json;
         }
 
-
-        //private object BuildContextJson(List<(TutorProfileDto Tutor, float Score)> topTutors)
-        //{
-        //    if (topTutors == null || !topTutors.Any())
-        //        return new { message = "Không tìm thấy tutor phù hợp.", tutors = new List<object>() };
-
-        //    var tutorList = topTutors.Select((t, idx) =>
-        //    {
-        //        var tutor = t.Tutor;
-        //        var subjects = tutor.TutorSubjects?.Select(s => s.Subject.SubjectName).ToList() ?? new List<string>();
-        //        var levels = tutor.TutorSubjects?.Select(s => s.Level.Name).ToList() ?? new List<string>();
-        //        var hourlyRates = tutor.TutorSubjects?.Select(s => s.HourlyRate).ToList();
-
-        //        return new
-        //        {
-        //            Rank = idx + 1,
-        //            TutorId = tutor.Id,
-        //            Name = tutor.UserName,
-        //            Subjects = subjects,
-        //            Levels = levels,
-        //            TeachingExp = tutor.TeachingExp,
-        //            Province = tutor.Province?.Name,
-        //            SubDistrict = tutor.SubDistrict?.Name,
-        //            HourlyRates = hourlyRates.Select(r => $"{r}").ToList(),
-        //            MatchScore = Math.Round(t.Score, 2),
-        //            ProfileUrl = $"http://localhost:3000/tutor/{tutor.Id}"
-        //        };
-        //    }).ToList();
-
-        //    return new
-        //    {
-        //        message = $"Tìm thấy {tutorList.Count} tutor phù hợp",
-        //        tutors = tutorList
-        //    };
-        //}
-
         private object BuildContextJson(List<(TutorProfileDto Tutor, float Score)> topTutors)
         {
             //if (topTutors == null || !topTutors.Any())
