@@ -31,8 +31,6 @@ namespace EduMatch.BusinessLogicLayer.Services
 
             int completed = await _repo.CountCompletedSessionsAsync(request.BookingId);
             int total = await _repo.GetTotalSessionsAsync(request.BookingId);
-            if (total == 0 || (double)completed / total < 0.8)
-                throw new InvalidOperationException("Bạn chỉ có thể đánh giá sau khi hoàn thành ít nhất 80% số buổi học.");
 
             double overall = request.FeedbackDetails.Average(x => x.Rating);
 
