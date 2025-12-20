@@ -137,6 +137,13 @@ namespace EduMatch.BusinessLogicLayer.Services
                 .Where(b => b.CreatedAt >= start && b.CreatedAt < end)
                 .ToListAsync();
 
+            var systemWallet = await _context.Wallets
+                .AsNoTracking()
+                .FirstOrDefaultAsync(w => w.UserEmail == SystemWalletEmail);
+            var currentMonth = DateTime.UtcNow.Month;
+            var currentYear = DateTime.UtcNow.Year;
+            var systemWalletBalance = systemWallet?.Balance ?? 0m;
+
             var results = new List<MonthlyAdminStatsDto>();
 
             for (var month = 1; month <= 12; month++)
@@ -184,9 +191,13 @@ namespace EduMatch.BusinessLogicLayer.Services
                         RefundedAmount = monthSystemTx
                             .Where(tx => tx.Reason == WalletTransactionReason.BookingRefund && tx.TransactionType == WalletTransactionType.Debit)
                             .Sum(tx => tx.Amount),
-                        NetPlatformRevenueAmount = monthSystemTx
-                            .Where(tx => tx.Reason == WalletTransactionReason.PlatformFee)
-                            .Sum(tx => tx.TransactionType == WalletTransactionType.Credit ? tx.Amount : -tx.Amount)
+                        // For the current month, surface the system wallet's available balance as platform revenue.
+                        // For other months (historical), fall back to platform fee movements within that month.
+                        NetPlatformRevenueAmount = (year == currentYear && month == currentMonth)
+                            ? systemWalletBalance
+                            : monthSystemTx
+                                .Where(tx => tx.Reason == WalletTransactionReason.PlatformFee)
+                                .Sum(tx => tx.TransactionType == WalletTransactionType.Credit ? tx.Amount : -tx.Amount)
                     }
                 });
             }
