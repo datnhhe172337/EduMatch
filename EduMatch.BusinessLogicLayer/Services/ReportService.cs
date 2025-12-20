@@ -74,6 +74,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                 ReportedUserEmail = reported.Email,
                 Reason = request.Reason.Trim(),
                 BookingId = request.BookingId,
+                ScheduleId = request.ScheduleId,
                 CreatedAt = VietnamTimeProvider.Now(),
             };
             report.StatusEnum = ReportStatus.Pending;
