@@ -14,6 +14,8 @@ namespace EduMatch.BusinessLogicLayer.Requests.Report
 
         public int? BookingId { get; set; }
 
+        public int? ScheduleId { get; set; }
+
         public List<BasicEvidenceRequest>? Evidences { get; set; }
     }
 }

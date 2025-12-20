@@ -46,6 +46,13 @@ namespace EduMatch.PresentationLayer.Controllers
             try
             {
                 var result = await _reportService.CreateReportAsync(request, reporterEmail);
+
+                // If a schedule is provided, put it on hold and link to this report
+                if (request.ScheduleId.HasValue)
+                {
+                    await _scheduleCompletionService.MarkReportedAsync(request.ScheduleId.Value, result.Id, reporterEmail);
+                }
+
                 return Ok(ApiResponse<ReportDetailDto>.Ok(result, "Report created successfully."));
             }
             catch (ArgumentException ex)
