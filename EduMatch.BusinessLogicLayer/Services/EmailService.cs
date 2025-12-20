@@ -115,7 +115,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                           </div>
                           <div class=""footer"">
                             Email này được gửi từ hệ thống {brand}. Vui lòng không trả lời trực tiếp. 
-                            Cần hỗ trợ? Liên hệ <a href=""mailto:support@edumatch.vn"">support@edumatch.vn</a>.
+                            Cần hỗ trợ? Liên hệ <a href=""support@edumatch.vn"">support@edumatch.vn</a>.
                             <br/>© {DateTime.UtcNow.Year} {brand}.
                           </div>
                         </div>
@@ -199,7 +199,7 @@ namespace EduMatch.BusinessLogicLayer.Services
                           </div>
                           <div class=""footer"">
                             Email này được gửi từ hệ thống {brand}. Vui lòng không trả lời trực tiếp. 
-                            Cần hỗ trợ? Liên hệ <a href=""mailto:support@edumatch.vn"">support@edumatch.vn</a>.
+                            Cần hỗ trợ? Liên hệ <a href=""support@edumatch.vn"">support@edumatch.vn</a>.
                             <br/>© {DateTime.UtcNow.Year} {brand}.
                           </div>
                         </div>
@@ -289,7 +289,343 @@ namespace EduMatch.BusinessLogicLayer.Services
                           </div>
                           <div class=""footer"">
                             Email này được gửi từ hệ thống {brand}. Vui lòng không trả lời trực tiếp. 
-                            Cần hỗ trợ? Liên hệ <a href=""mailto:support@edumatch.vn"">support@edumatch.vn</a>.
+                            Cần hỗ trợ? Liên hệ <a href=""support@edumatch.vn"">support@edumatch.vn</a>.
+                            <br/>© {DateTime.UtcNow.Year} {brand}.
+                          </div>
+                        </div>
+                      </div>
+                    </body>
+                    </html>";
+		}
+
+		// Gửi mail thông báo yêu cầu chuyển lịch được tạo
+		public Task<string> SendScheduleChangeRequestCreatedAsync(
+			string toEmail, 
+			string requesterName, 
+			string requestedToName,
+			DateTime oldScheduleTime,
+			DateTime newScheduleTime,
+			string? reason = null,
+			string recipientName = null)
+		{
+			var recipient = string.IsNullOrWhiteSpace(recipientName) ? toEmail : recipientName;
+			var html = BuildScheduleChangeRequestCreatedHtml(
+				recipient, 
+				requesterName, 
+				requestedToName,
+				oldScheduleTime,
+				newScheduleTime,
+				reason,
+				_mailSettings.DisplayName ?? "EduMatch");
+
+			return SendMailAsync(new MailContent
+			{
+				To = toEmail,
+				Subject = "Yêu cầu thay đổi lịch học mới",
+				Body = html
+			});
+		}
+
+		// HTML thông báo yêu cầu chuyển lịch được tạo
+		private static string BuildScheduleChangeRequestCreatedHtml(
+			string recipientName, 
+			string requesterName, 
+			string requestedToName,
+			DateTime oldScheduleTime,
+			DateTime newScheduleTime,
+			string? reason,
+			string brand)
+		{
+			var today = DateTime.UtcNow.AddHours(7).ToString("dd/MM/yyyy HH:mm");
+			var oldTimeStr = oldScheduleTime.ToString("dd/MM/yyyy HH:mm");
+			var newTimeStr = newScheduleTime.ToString("dd/MM/yyyy HH:mm");
+
+			var reasonSection = !string.IsNullOrWhiteSpace(reason)
+				? $@"
+					<div class=""info-box"">
+						<div class=""info-label"">Lý do yêu cầu:</div>
+						<div class=""info-value"">{reason}</div>
+					</div>"
+				: "";
+
+			return $@"
+                    <!DOCTYPE html>
+                    <html lang=""vi"">
+                    <head>
+                      <meta charset=""UTF-8"">
+                      <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+                      <title>{brand} - Yêu cầu thay đổi lịch học</title>
+                      <style>
+                        body {{ margin:0; padding:0; background:#f7fafc; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; color:#1a202c; }}
+                        .container {{ max-width:640px; margin:0 auto; padding:32px 20px; }}
+                        .card {{ background:#ffffff; border-radius:16px; box-shadow:0 6px 18px rgba(0,0,0,0.06); overflow:hidden; }}
+                        .header {{ background:linear-gradient(135deg,#f59e0b,#d97706); padding:28px 24px; color:#fff; }}
+                        .brand {{ font-size:22px; font-weight:700; letter-spacing:.3px; }}
+                        .content {{ padding:28px 24px; line-height:1.6; }}
+                        h1 {{ font-size:20px; margin:0 0 10px; color:#111827; }}
+                        p {{ margin:10px 0; }}
+                        .info-box {{ background:#fffbeb; border-left:4px solid #f59e0b; padding:16px; margin:16px 0; border-radius:4px; }}
+                        .info-row {{ display:flex; justify-content:space-between; margin:8px 0; }}
+                        .info-label {{ color:#6b7280; font-weight:600; }}
+                        .info-value {{ color:#111827; font-weight:500; }}
+                        .time-comparison {{ display:flex; align-items:center; gap:16px; margin:16px 0; }}
+                        .time-box {{ flex:1; padding:12px; background:#f3f4f6; border-radius:8px; text-align:center; }}
+                        .time-label {{ font-size:12px; color:#6b7280; margin-bottom:4px; }}
+                        .time-value {{ font-size:16px; font-weight:600; color:#111827; }}
+                        .arrow {{ font-size:20px; color:#f59e0b; }}
+                        .pill {{ display:inline-block; padding:6px 10px; border-radius:999px; background:#fef3c7; color:#92400e; font-size:12px; font-weight:600; }}
+                        .muted {{ color:#6b7280; font-size:12px; }}
+                        .footer {{ padding:16px 24px 24px; color:#6b7280; font-size:12px; border-top:1px solid #f3f4f6; }}
+                      </style>
+                    </head>
+                    <body>
+                      <div class=""container"">
+                        <div class=""card"">
+                          <div class=""header"">
+                            <div class=""brand"">{brand}</div>
+                            <div class=""muted"" style=""color:rgba(255,255,255,.9); margin-top:6px;"">Thông báo yêu cầu thay đổi lịch học — {today} (GMT+7)</div>
+                          </div>
+                          <div class=""content"">
+                            <div class=""pill"">Yêu cầu mới</div>
+                            <h1>Xin chào {recipientName},</h1>
+                            <p><b>{requesterName}</b> đã gửi yêu cầu thay đổi lịch học cho bạn.</p>
+                            <div class=""info-box"">
+                              <div class=""time-comparison"">
+                                <div class=""time-box"">
+                                  <div class=""time-label"">Lịch cũ</div>
+                                  <div class=""time-value"">{oldTimeStr}</div>
+                                </div>
+                                <div class=""arrow"">→</div>
+                                <div class=""time-box"">
+                                  <div class=""time-label"">Lịch mới</div>
+                                  <div class=""time-value"">{newTimeStr}</div>
+                                </div>
+                              </div>
+                              {reasonSection}
+                            </div>
+                            <p>Vui lòng đăng nhập hệ thống để xem xét và phản hồi yêu cầu này.</p>
+                            <p class=""muted"">Chúc bạn một ngày tuyệt vời 🌟</p>
+                          </div>
+                          <div class=""footer"">
+                            Email này được gửi từ hệ thống {brand}. Vui lòng không trả lời trực tiếp. 
+                            Cần hỗ trợ? Liên hệ <a href=""support@edumatch.vn"">support@edumatch.vn</a>.
+                            <br/>© {DateTime.UtcNow.Year} {brand}.
+                          </div>
+                        </div>
+                      </div>
+                    </body>
+                    </html>";
+		}
+
+		// Gửi mail thông báo yêu cầu chuyển lịch được chấp nhận
+		public Task<string> SendScheduleChangeRequestApprovedAsync(
+			string toEmail,
+			string requesterName,
+			DateTime oldScheduleTime,
+			DateTime newScheduleTime,
+			string recipientName = null)
+		{
+			var recipient = string.IsNullOrWhiteSpace(recipientName) ? toEmail : recipientName;
+			var html = BuildScheduleChangeRequestApprovedHtml(
+				recipient,
+				requesterName,
+				oldScheduleTime,
+				newScheduleTime,
+				_mailSettings.DisplayName ?? "EduMatch");
+
+			return SendMailAsync(new MailContent
+			{
+				To = toEmail,
+				Subject = "Yêu cầu thay đổi lịch học của bạn đã được chấp nhận",
+				Body = html
+			});
+		}
+
+		// HTML thông báo yêu cầu chuyển lịch được chấp nhận
+		private static string BuildScheduleChangeRequestApprovedHtml(
+			string recipientName,
+			string requesterName,
+			DateTime oldScheduleTime,
+			DateTime newScheduleTime,
+			string brand)
+		{
+			var today = DateTime.UtcNow.AddHours(7).ToString("dd/MM/yyyy HH:mm");
+			var oldTimeStr = oldScheduleTime.ToString("dd/MM/yyyy HH:mm");
+			var newTimeStr = newScheduleTime.ToString("dd/MM/yyyy HH:mm");
+
+			return $@"
+                    <!DOCTYPE html>
+                    <html lang=""vi"">
+                    <head>
+                      <meta charset=""UTF-8"">
+                      <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+                      <title>{brand} - Yêu cầu thay đổi lịch học đã được chấp nhận</title>
+                      <style>
+                        body {{ margin:0; padding:0; background:#f7fafc; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; color:#1a202c; }}
+                        .container {{ max-width:640px; margin:0 auto; padding:32px 20px; }}
+                        .card {{ background:#ffffff; border-radius:16px; box-shadow:0 6px 18px rgba(0,0,0,0.06); overflow:hidden; }}
+                        .header {{ background:linear-gradient(135deg,#10b981,#059669); padding:28px 24px; color:#fff; }}
+                        .brand {{ font-size:22px; font-weight:700; letter-spacing:.3px; }}
+                        .content {{ padding:28px 24px; line-height:1.6; }}
+                        h1 {{ font-size:20px; margin:0 0 10px; color:#111827; }}
+                        p {{ margin:10px 0; }}
+                        .info-box {{ background:#f0fdf4; border-left:4px solid #10b981; padding:16px; margin:16px 0; border-radius:4px; }}
+                        .time-comparison {{ display:flex; align-items:center; gap:16px; margin:16px 0; }}
+                        .time-box {{ flex:1; padding:12px; background:#f3f4f6; border-radius:8px; text-align:center; }}
+                        .time-label {{ font-size:12px; color:#6b7280; margin-bottom:4px; }}
+                        .time-value {{ font-size:16px; font-weight:600; color:#111827; }}
+                        .arrow {{ font-size:20px; color:#10b981; }}
+                        .pill {{ display:inline-block; padding:6px 10px; border-radius:999px; background:#d1fae5; color:#065f46; font-size:12px; font-weight:600; }}
+                        .muted {{ color:#6b7280; font-size:12px; }}
+                        .footer {{ padding:16px 24px 24px; color:#6b7280; font-size:12px; border-top:1px solid #f3f4f6; }}
+                      </style>
+                    </head>
+                    <body>
+                      <div class=""container"">
+                        <div class=""card"">
+                          <div class=""header"">
+                            <div class=""brand"">{brand}</div>
+                            <div class=""muted"" style=""color:rgba(255,255,255,.9); margin-top:6px;"">Thông báo yêu cầu thay đổi lịch học — {today} (GMT+7)</div>
+                          </div>
+                          <div class=""content"">
+                            <div class=""pill"">Đã chấp nhận</div>
+                            <h1>Xin chào {recipientName},</h1>
+                            <p>Yêu cầu thay đổi lịch học của bạn đã được <b>chấp nhận</b>.</p>
+                            <div class=""info-box"">
+                              <div class=""time-comparison"">
+                                <div class=""time-box"">
+                                  <div class=""time-label"">Lịch cũ</div>
+                                  <div class=""time-value"">{oldTimeStr}</div>
+                                </div>
+                                <div class=""arrow"">→</div>
+                                <div class=""time-box"">
+                                  <div class=""time-label"">Lịch mới</div>
+                                  <div class=""time-value"">{newTimeStr}</div>
+                                </div>
+                              </div>
+                            </div>
+                            <p>Lịch học của bạn đã được cập nhật thành công. Vui lòng kiểm tra lại lịch học mới trên hệ thống.</p>
+                            <p class=""muted"">Chúc bạn một ngày tuyệt vời 🌟</p>
+                          </div>
+                          <div class=""footer"">
+                            Email này được gửi từ hệ thống {brand}. Vui lòng không trả lời trực tiếp. 
+                            Cần hỗ trợ? Liên hệ <a href=""support@edumatch.vn"">support@edumatch.vn</a>.
+                            <br/>© {DateTime.UtcNow.Year} {brand}.
+                          </div>
+                        </div>
+                      </div>
+                    </body>
+                    </html>";
+		}
+
+		// Gửi mail thông báo yêu cầu chuyển lịch bị từ chối
+		public Task<string> SendScheduleChangeRequestRejectedAsync(
+			string toEmail,
+			string requesterName,
+			DateTime oldScheduleTime,
+			DateTime newScheduleTime,
+			string? rejectionReason = null,
+			string recipientName = null)
+		{
+			var recipient = string.IsNullOrWhiteSpace(recipientName) ? toEmail : recipientName;
+			var html = BuildScheduleChangeRequestRejectedHtml(
+				recipient,
+				requesterName,
+				oldScheduleTime,
+				newScheduleTime,
+				rejectionReason,
+				_mailSettings.DisplayName ?? "EduMatch");
+
+			return SendMailAsync(new MailContent
+			{
+				To = toEmail,
+				Subject = "Yêu cầu thay đổi lịch học của bạn đã bị từ chối",
+				Body = html
+			});
+		}
+
+		// HTML thông báo yêu cầu chuyển lịch bị từ chối
+		private static string BuildScheduleChangeRequestRejectedHtml(
+			string recipientName,
+			string requesterName,
+			DateTime oldScheduleTime,
+			DateTime newScheduleTime,
+			string? rejectionReason,
+			string brand)
+		{
+			var today = DateTime.UtcNow.AddHours(7).ToString("dd/MM/yyyy HH:mm");
+			var oldTimeStr = oldScheduleTime.ToString("dd/MM/yyyy HH:mm");
+			var newTimeStr = newScheduleTime.ToString("dd/MM/yyyy HH:mm");
+
+			var reasonSection = !string.IsNullOrWhiteSpace(rejectionReason)
+				? $@"
+					<div class=""reason-box"">
+						<div class=""info-label"">Lý do từ chối:</div>
+						<div class=""info-value"">{rejectionReason}</div>
+					</div>"
+				: "";
+
+			return $@"
+                    <!DOCTYPE html>
+                    <html lang=""vi"">
+                    <head>
+                      <meta charset=""UTF-8"">
+                      <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+                      <title>{brand} - Yêu cầu thay đổi lịch học bị từ chối</title>
+                      <style>
+                        body {{ margin:0; padding:0; background:#f7fafc; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; color:#1a202c; }}
+                        .container {{ max-width:640px; margin:0 auto; padding:32px 20px; }}
+                        .card {{ background:#ffffff; border-radius:16px; box-shadow:0 6px 18px rgba(0,0,0,0.06); overflow:hidden; }}
+                        .header {{ background:linear-gradient(135deg,#ef4444,#dc2626); padding:28px 24px; color:#fff; }}
+                        .brand {{ font-size:22px; font-weight:700; letter-spacing:.3px; }}
+                        .content {{ padding:28px 24px; line-height:1.6; }}
+                        h1 {{ font-size:20px; margin:0 0 10px; color:#111827; }}
+                        p {{ margin:10px 0; }}
+                        .info-box {{ background:#fef2f2; border-left:4px solid #ef4444; padding:16px; margin:16px 0; border-radius:4px; }}
+                        .reason-box {{ background:#fee2e2; padding:12px 16px; margin:12px 0; border-radius:4px; }}
+                        .time-comparison {{ display:flex; align-items:center; gap:16px; margin:16px 0; }}
+                        .time-box {{ flex:1; padding:12px; background:#f3f4f6; border-radius:8px; text-align:center; }}
+                        .time-label {{ font-size:12px; color:#6b7280; margin-bottom:4px; }}
+                        .time-value {{ font-size:16px; font-weight:600; color:#111827; }}
+                        .arrow {{ font-size:20px; color:#ef4444; }}
+                        .info-label {{ color:#6b7280; font-weight:600; font-size:12px; }}
+                        .info-value {{ color:#111827; font-weight:500; margin-top:4px; }}
+                        .pill {{ display:inline-block; padding:6px 10px; border-radius:999px; background:#fee2e2; color:#991b1b; font-size:12px; font-weight:600; }}
+                        .muted {{ color:#6b7280; font-size:12px; }}
+                        .footer {{ padding:16px 24px 24px; color:#6b7280; font-size:12px; border-top:1px solid #f3f4f6; }}
+                      </style>
+                    </head>
+                    <body>
+                      <div class=""container"">
+                        <div class=""card"">
+                          <div class=""header"">
+                            <div class=""brand"">{brand}</div>
+                            <div class=""muted"" style=""color:rgba(255,255,255,.9); margin-top:6px;"">Thông báo yêu cầu thay đổi lịch học — {today} (GMT+7)</div>
+                          </div>
+                          <div class=""content"">
+                            <div class=""pill"">Bị từ chối</div>
+                            <h1>Xin chào {recipientName},</h1>
+                            <p>Rất tiếc, yêu cầu thay đổi lịch học của bạn đã bị <b>từ chối</b>.</p>
+                            <div class=""info-box"">
+                              <div class=""time-comparison"">
+                                <div class=""time-box"">
+                                  <div class=""time-label"">Lịch cũ</div>
+                                  <div class=""time-value"">{oldTimeStr}</div>
+                                </div>
+                                <div class=""arrow"">→</div>
+                                <div class=""time-box"">
+                                  <div class=""time-label"">Lịch mới (yêu cầu)</div>
+                                  <div class=""time-value"">{newTimeStr}</div>
+                                </div>
+                              </div>
+                              {reasonSection}
+                            </div>
+                            <p>Lịch học của bạn vẫn giữ nguyên như ban đầu. Vui lòng kiểm tra lại lịch học trên hệ thống.</p>
+                            <p class=""muted"">Nếu bạn có thắc mắc, vui lòng liên hệ với chúng tôi.</p>
+                          </div>
+                          <div class=""footer"">
+                            Email này được gửi từ hệ thống {brand}. Vui lòng không trả lời trực tiếp. 
+                            Cần hỗ trợ? Liên hệ <a href=""support@edumatch.vn"">support@edumatch.vn</a>.
                             <br/>© {DateTime.UtcNow.Year} {brand}.
                           </div>
                         </div>
@@ -299,6 +635,7 @@ namespace EduMatch.BusinessLogicLayer.Services
 		}
 
 	}
+  
 }
 
     
