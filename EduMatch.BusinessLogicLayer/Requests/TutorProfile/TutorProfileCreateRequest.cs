@@ -59,7 +59,5 @@ namespace EduMatch.BusinessLogicLayer.Requests.TutorProfile
 		[EnumDataType(typeof(TeachingMode))]
 		public TeachingMode TeachingModes { get; set; }
 
-
-
 	}
 }
