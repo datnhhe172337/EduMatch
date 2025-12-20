@@ -51,7 +51,6 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
-        [Authorize]
         [HttpGet("Get-Feedback-By-Id/{feedbackId}")]
         public async Task<IActionResult> GetFeedbackById(int feedbackId)
         {
@@ -70,8 +69,6 @@ namespace EduMatch.PresentationLayer.Controllers
             }
         }
 
-
-        [Authorize]
         [HttpGet("Get-Feedback-By-Learner")]
         public async Task<IActionResult> GetFeedbackByLearner(string learnerEmail)
         {
@@ -82,7 +79,6 @@ namespace EduMatch.PresentationLayer.Controllers
             return Ok(ApiResponse<List<TutorFeedbackDto>>.Ok(feedbacks, "Lấy feedback thành công"));
         }
 
-        [Authorize]
         [HttpGet("Get-Feedback-By-Tutor")]
         public async Task<IActionResult> GetFeedbackByTutor(int tutorId)
         {
