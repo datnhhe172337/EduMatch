@@ -195,6 +195,14 @@ namespace EduMatch.BusinessLogicLayer.Services
             completion.UpdatedAt = DateTime.UtcNow;
             _completionRepository.Update(completion);
 
+            var schedule = await _scheduleRepository.GetByIdAsync(scheduleId);
+            if (schedule != null && schedule.Status != (int)ScheduleStatus.Completed && schedule.Status != (int)ScheduleStatus.Cancelled)
+            {
+                schedule.Status = (int)ScheduleStatus.Processing;
+                schedule.UpdatedAt = DateTime.UtcNow;
+                await _scheduleRepository.UpdateAsync(schedule);
+            }
+
             var payout = await _payoutRepository.GetByScheduleIdAsync(scheduleId);
             if (payout != null)
             {
